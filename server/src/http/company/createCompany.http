@@ -1,0 +1,17 @@
+POST http://localhost:5000/api/companies
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0Y2U1NDQ4Ny0xYjAyLTQyMTYtYWQ4ZS1iZDQyODQzMWIyMmUiLCJjaWQiOm51bGwsImlhdCI6MTc1NTUzNjA4NiwiZXhwIjoxNzU1NjAwODg2fQ.5_varZPY6HUFmrDG2M9n2shmCJoyVErkKqbR4Ux9vFM
+Content-Type: application/json
+
+{
+  "name": "Acme Sp. z o.o.",
+  "nip": "5250000000",
+  "regon": "12345678901234",
+  "krs": "0000123456",
+  "bdo": "BDO123456",
+  "website": "https://acme.example",
+  "street": "Prosta 51",
+  "postalCode": "00-838",
+  "city": "Warszawa",
+  "country": "PL",
+  "description": "Demo company"
+}

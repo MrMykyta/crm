@@ -1,0 +1,9 @@
+PATCH http://localhost:5000/api/users/me
+Authorization: Bearer {{ACCESS_TOKEN}
+Content-Type: application/json
+
+{
+  "firstName": "OwnerUpdated",
+  "lastName": "UserUpdated",
+  "password": "NewP@ssw0rd!"
+}

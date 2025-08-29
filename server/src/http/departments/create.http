@@ -1,0 +1,8 @@
+POST http://localhost:5000/api/departments/bec0b5a5-0a57-437a-9bd5-cc07812fd4ca
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiZTg4ODY3YS00ZGMzLTRlYTgtYWZhNy1kN2ZjM2Q1MGY3NDEiLCJjaWQiOiJiZWMwYjVhNS0wYTU3LTQzN2EtOWJkNS1jYzA3ODEyZmQ0Y2EiLCJpYXQiOjE3NTUxNzg5NzMsImV4cCI6MTc1NTE3OTg3M30.UZYLXCTvr6THQVCtSNt3tsFc83x6WvbfNqWEbpyiueA
+Content-Type: application/json
+
+{   
+    "name": "Finance", 
+    "description": "Billing & invoicing" 
+}

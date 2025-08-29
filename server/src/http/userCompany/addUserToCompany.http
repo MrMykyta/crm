@@ -1,0 +1,8 @@
+POST http://localhost:5000/api/members/d071ec5a-c59b-4f70-8529-565f22f576e1/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwNWUxZTRhZC00NWZkLTRjZDctYjg3Ny1hYzU3ZmVkZjgzYTAiLCJjaWQiOm51bGwsImlhdCI6MTc1NTAyMDcwOSwiZXhwIjoxNzU1MDIxNjA5fQ.dizJr7mHrWTMzWFkFIPMbYG73MttXfvQ57uroQQRfYM
+Content-Type: application/json
+
+{
+  "userId": "ba488e2e-f95f-46b0-b97c-87d5bde62e78",
+  "role": "manager"
+}

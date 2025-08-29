@@ -1,0 +1,8 @@
+PUT http://localhost:5000/api/companies/d071ec5a-c59b-4f70-8529-565f22f576e1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwNWUxZTRhZC00NWZkLTRjZDctYjg3Ny1hYzU3ZmVkZjgzYTAiLCJjaWQiOm51bGwsImlhdCI6MTc1NTAyMDcwOSwiZXhwIjoxNzU1MDIxNjA5fQ.dizJr7mHrWTMzWFkFIPMbYG73MttXfvQ57uroQQRfYM
+Content-Type: application/json
+
+{
+  "website": "https://acme-updated.example",
+  "description": "Updated description"
+}

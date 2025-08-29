@@ -1,0 +1,2 @@
+GET http://localhost:5000/api/companies/d071ec5a-c59b-4f70-8529-565f22f576e1
+Authorization: Bearer {{ACCESS_TOKEN}

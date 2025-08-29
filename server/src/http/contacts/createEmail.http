@@ -1,0 +1,12 @@
+POST http://localhost:5000/api/contact-points/<COMPANY_ID>
+Authorization: Bearer <ACCESS>
+Content-Type: application/json
+
+{
+  "ownerType": "counterparty",
+  "ownerId": "<CP_ID>",
+  "channel": "email",
+  "value": "sales@beta.pl",
+  "label": "Sales",
+  "isPrimary": true
+}

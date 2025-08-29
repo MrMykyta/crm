@@ -1,0 +1,14 @@
+POST http://localhost:5000/api/deals
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3ZGJjM2EyMy00YjNiLTQ2NGMtYjY5MC0zYmNjYTQ4Mjc2MmEiLCJjaWQiOiI1MWZhYWZjYy1mOTgyLTRiNGQtYWJjYi1hZmMxODczMzY1MjgiLCJpYXQiOjE3NTU1MjE2MTQsImV4cCI6MTc1NTU4NjQxNH0.RW0isgEark5H4lLCas8PZu9qRmlZUGcEhjsjFZ6fNJo
+Content-Type: application/json
+
+{
+  "companyId": "51faafcc-f982-4b4d-abcb-afc187336528",
+  "counterpartyId": "93e1a2a3-d477-4359-8987-ef0d67a747ce",
+  "title": "New CRM Implementation",
+  "description": "Full setup for client",
+  "status": "new",
+  "value": 15000.50,
+  "currency": "PLN",
+  "responsibleId": "7dbc3a23-4b3b-464c-b690-3bcca482762a"
+}

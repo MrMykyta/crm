@@ -1,0 +1,6 @@
+POST http://localhost:5000/api/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "REFRESH_TOKEN"
+}
