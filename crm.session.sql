@@ -1,1 +1,1 @@
-DROP TABLE "ProductVariants"
+DROP TABLE "Coupons";

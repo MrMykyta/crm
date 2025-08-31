@@ -11,18 +11,29 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Offer.belongsTo(Company, { 
-        as:'company', 
-        foreignKey:'companyId' 
+      Offer.belongsTo(models.Company, { 
+        as: 'company', 
+        foreignKey: 'companyId' 
       });
-      Offer.belongsTo(Counterparty, { 
-        as:'customer', 
-        foreignKey:'customerId' 
+      Offer.belongsTo(models.Counterparty, { 
+        as: 'customer', 
+        foreignKey: 'customerId' 
       });
-      Offer.hasMany(OfferItem, { 
-        as:'items', 
-        foreignKey:'offerId', 
-        onDelete:'CASCADE' 
+
+      Offer.hasMany(models.OfferItem, { 
+        as: 'items', 
+        foreignKey: 'offerId', 
+        onDelete: 'CASCADE' 
+      });
+      Offer.hasMany(models.Discount, { 
+        as: 'discounts', 
+        foreignKey: 'ownerId', 
+        scope: { ownerType: 'offer' } 
+      });
+
+      Offer.hasMany(models.Order, { 
+        as: 'orders', 
+        foreignKey: 'offerId' 
       });
     }
   }

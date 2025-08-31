@@ -11,6 +11,24 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      OfferItem.belongsTo(models.Offer, { 
+        as: 'offer', 
+        foreignKey: 'offerId' 
+      });
+      OfferItem.belongsTo(models.ProductVariant, { 
+        as: 'variant', 
+        foreignKey: 'variantId' 
+      });
+      OfferItem.belongsTo(models.Uom, { 
+        as: 'uom', 
+        foreignKey: 'uomId' 
+      });
+
+      OfferItem.hasMany(models.Discount, { 
+        as: 'discounts', 
+        foreignKey: 'ownerId', 
+        scope: { ownerType: 'offerItem' } 
+      });
     }
   }
   OfferItem.init({

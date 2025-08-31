@@ -11,6 +11,20 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Invoice.belongsTo(models.Company, { 
+        as: 'company', 
+        foreignKey: 'companyId' 
+      });
+      Invoice.belongsTo(models.Order, { 
+        as: 'order', 
+        foreignKey: 'orderId' 
+      });
+
+      Invoice.hasMany(models.CreditNote, { 
+        as: 'creditNotes', 
+        foreignKey: 'invoiceId', 
+        onDelete: 'CASCADE' 
+      });
     }
   }
   Invoice.init({

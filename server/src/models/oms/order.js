@@ -11,6 +11,63 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Order.belongsTo(models.Company, { 
+        as: 'company', 
+        foreignKey: 'companyId' 
+      });
+      Order.belongsTo(models.Offer, { 
+        as: 'offer', 
+        foreignKey: 'offerId' 
+      });
+      Order.belongsTo(models.Counterparty, { 
+        as: 'customer', 
+        foreignKey: 'customerId' 
+      });
+      Order.belongsTo(models.ShippingClass, { 
+        as: 'shippingClass', 
+        foreignKey: 'shippingClassId' 
+      });
+      Order.belongsTo(models.Channel, { 
+        as: 'salesChannel', 
+        foreignKey: 'salesChannelId' 
+      });
+
+      Order.hasMany(models.OrderItem, { 
+        as: 'items', 
+        foreignKey: 'orderId', 
+        onDelete: 'CASCADE' 
+      });
+      Order.hasMany(models.Payment, { 
+        as: 'payments', 
+        foreignKey: 'orderId', 
+        onDelete: 'CASCADE' 
+      });
+      Order.hasMany(models.Invoice, { 
+        as: 'invoices', 
+        foreignKey: 'orderId', 
+        onDelete: 'CASCADE' 
+      });
+      Order.hasMany(models.Shipment, { 
+        as: 'shipments', 
+        foreignKey: 'orderId', 
+        onDelete: 'CASCADE' 
+      });
+      Order.hasMany(models.OrderEvent, { 
+        as: 'events', 
+        foreignKey: 'orderId', 
+        onDelete: 'CASCADE' 
+      });
+      Order.hasMany(models.OrderNote, { 
+        as: 'notes', 
+        foreignKey: 'orderId', 
+        onDelete: 'CASCADE' 
+      });
+
+      Order.hasMany(models.Discount, { 
+        as: 'discounts', 
+        foreignKey: 'ownerId', 
+        scope: { ownerType: 'order' } 
+      });
     }
   }
   Order.init({
