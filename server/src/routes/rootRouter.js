@@ -94,3 +94,6 @@ rootRouter.use('/wms/transfers',     auth, require('./wms/transfer.commands.rout
 rootRouter.use('/wms/adjustments',   auth, require('./wms/adjustment.commands.router')); // +/- adjust
 
 module.exports = rootRouter;
+
+
+

@@ -70,6 +70,21 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID, 
       field: 'responsible_id' 
     },
+    pipelineId: { 
+      type: DataTypes.UUID,
+      allowNull:true, 
+      field: 'pipeline_id' 
+    },
+    stageId: {
+      type: DataTypes.UUID, 
+      allowNull:true,
+      field:'stage_id'
+    },
+    stageEnteredAt: {
+      type: DataTypes.DATE,
+      allowNull:true,
+      field:'stage_entered_at'
+    },
     createdAt: {
       type: DataTypes.DATE,
       field: 'created_at'
