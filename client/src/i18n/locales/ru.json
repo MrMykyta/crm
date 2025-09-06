@@ -1,0 +1,193 @@
+{
+  "auth": {
+    "signup": "Регистрация",
+    "signin": "Войти",
+    "createAccount": "Создать аккаунт",
+    "firstName": "Имя",
+    "lastName": "Фамилия",
+    "signIn": "Войти",
+    "resendEmail": "Отправить письмо повторно",
+    "forgot": "Забыли пароль?",
+    "verifyTitle": "Проверьте почту",
+    "verified": "Подтверждено",
+    "redirecting": "Перенаправление…",
+    "verificationError": "Ошибка подтверждения",
+    "verifySentTo": "Мы отправили ссылку на",
+    "openMailbox": "Открыть почту",
+    "verificationResent": "Письмо отправлено",
+    "verificationResendFail": "Не удалось отправить",
+    "verifyHint": "Нажмите на ссылку в письме, чтобы продолжить.",
+    "forgotTitle": "Забыли пароль?",
+    "forgotSubtitle": "Укажите email, и мы вышлем ссылку для сброса.",
+    "sendReset": "Отправить ссылку",
+    "resetSent": "Ссылка отправлена. Проверьте почту.",
+    "resetFailed": "Не удалось отправить письмо",
+    "resetHint": "Вы получите письмо со ссылкой для изменения пароля.",
+    "setNewPassword": "Новый пароль",
+    "confirmPassword": "Подтверждение пароля",
+    "passwordsMustMatch": "Пароли должны совпадать",
+    "resetInvalid": "Недействительная или устаревшая ссылка",
+    "passwordUpdated": "Пароль обновлен",
+    "updatePassword": "Обновить пароль"
+  },
+  "company": {
+    "title": "Создать компанию",
+    "subtitle": "Расскажите немного о вашем бизнесе.",
+    "name": "Название компании",
+    "legalName": "Юридическое название (опционально)",
+    "country": "Страна",
+    "taxId": "ИНН / NIP (опционально)",
+    "website": "Сайт (опционально)",
+    "continue": "Продолжить",
+    "nipHint": "Для PL используйте 10 цифр без дефисов.",
+    "chooseTitle": "Выберите компанию",
+    "chooseSubtitle": "Выберите компанию для продолжения",
+    "createNew": "Создать новую"
+  },
+  "common": {
+    "email": "Email",
+    "password": "Пароль",
+    "required": "Обязательно",
+    "invalidEmail": "Некорректный email",
+    "tooShort": "Слишком коротко",
+    "atLeast": "Не менее {{n}} символов",
+    "uppercase": "1 заглавная буква",
+    "lowercase": "1 строчная буква",
+    "number": "1 цифра",
+    "saving": "Сохранение…",
+    "creating": "Создание…",
+    "signingIn": "Вход…",
+    "continue": "Продолжить",
+    "close": "Закрыть",
+    "error": "Ошибка",
+    "success": "Успех",
+    "loading": "Загрузка…",
+    "sending": "Отправка…",
+    "save": "Сохранить",
+    "edit": "Редактировать",
+    "reset": "Сбросить"
+  },
+  "countries": {
+    "PL": "PL — Польша",
+    "UA": "UA — Украина",
+    "DE": "DE — Германия",
+    "CZ": "CZ — Чехия",
+    "LT": "LT — Литва"
+  },
+  "errors": {
+    "registrationFailed": "Ошибка регистрации",
+    "loginFailed": "Неверный email или пароль",
+    "createCompanyFailed": "Не удалось создать компанию",
+    "accountNotActive": "Аккаунт не активен",
+    "invalidToken": "Недействительный токен",
+    "emailNotVerified": "Email не подтвержден",
+    "verificationFailed": "Ошибка подтверждения",
+    "companyNotSelected": "Компания не выбрана"
+  },
+  "menu": {
+    "bookmarks": "Закладки",
+    "pulpit": "Рабочий стол",
+    "crm": "CRM",
+    "counterparties": "Контрагенты",
+    "leads": "Лиды",
+    "clients": "Клиенты",
+    "deals": "Сделки",
+    "tasks": "Задачи",
+    "calendar": "Календарь",
+    "oms": "OMS",
+    "invoices": "Счета",
+    "receipts": "Квитанции",
+    "orders": "Заказы",
+    "offers": "Предложения",
+    "promotions": "Акции",
+    "coupons": "Купоны",
+    "shipments": "Отправки",
+    "pim": "PIM",
+    "products": "Товары",
+    "services": "Услуги",
+    "wms": "WMS",
+    "warehouse": "Склад",
+    "wmsDocs": "Документы склада",
+    "settings": "Настройки",
+    "userSettings": "Настройки пользователя"
+  },
+  "widgets": {
+    "kpi": "KPI",
+    "funnel": "Воронка продаж",
+    "tasks": "Задачи на сегодня",
+    "ordersQueue": "Заказы в очереди",
+    "calendar": "Календарь"
+  },
+  "kpi": {
+    "leads": "Лиды",
+    "deals": "Сделки",
+    "orders": "Заказы"
+  },
+  "topbar": {
+    "searchPlaceholder": "Поиск…",
+    "notifications": "Уведомления",
+    "userMenu": "Меню пользователя",
+    "find": "Найти",
+    "logout": "Выйти"
+  },
+  "theme": {
+    "auto": "Авто",
+    "dark": "Тёмная",
+    "light": "Светлая"
+  },
+  "dashboard": {
+    "addWidget": "Добавить виджет",
+    "resetLayout": "Сбросить сетку",
+    "resize": "Изменить размер",
+    "remove": "Удалить"
+  },
+  "userMenu": {
+    "profile": "Профиль",
+    "settings": "Настройки",
+    "logout": "Выйти"
+  },
+  "settings": {
+    "tabs": {
+      "profile": "Профиль",
+      "security": "Безопасность",
+      "notifications": "Уведомления",
+      "appearance": "Вид",
+      "preferences": "Предпочтения"
+    },
+    "profile": {
+      "title": "Данные профиля",
+      "firstName": "Имя",
+      "lastName": "Фамилия",
+      "firstNamePH": "Иван",
+      "lastNamePH": "Петров",
+      "email": "Email",
+      "contacts": "Контактные данные",
+      "phone": "Телефон",
+      "telegram": "Telegram",
+      "emailVerified": "Email подтвержден",
+      "emailNotVerified": "Email не подтвержден",
+      "active": "Аккаунт активен",
+      "inactive": "Аккаунт неактивен",
+      "joined": "Дата регистрации"
+    },
+    "security": {
+      "title": "Пароль",
+      "current": "Текущий пароль",
+      "new": "Новый пароль",
+      "confirm": "Подтверждение пароля",
+      "update": "Изменить пароль"
+    },
+    "notifications": {
+      "title": "Уведомления",
+      "email": "Email-уведомления",
+      "push": "Push-уведомления"
+    },
+    "appearance": {
+      "title": "Вид"
+    },
+    "preferences": {
+      "language": "Язык",
+      "theme": "Тема"
+    }
+  }
+}

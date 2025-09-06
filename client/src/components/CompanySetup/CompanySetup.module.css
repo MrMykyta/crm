@@ -1,0 +1,101 @@
+.wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.card {
+  width: 100%;
+  max-width: 640px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-brd);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(var(--blur));
+  padding: 24px;
+  color: var(--text);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+  opacity: .9;
+}
+
+/* форма как в formGlass */
+.form { display: grid; gap: 14px; }
+
+.field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.field input {
+  width: 100%;
+  padding: 16px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--card-brd);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.field input:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 25%, transparent);
+}
+.field label {
+  position: absolute;
+  left: 12px; top: 14px;
+  padding: 0 6px;
+  color: var(--muted);
+  background: transparent;
+  pointer-events: none;
+  transition: all .2s ease;
+}
+.field input:focus + label,
+.field input:not(:placeholder-shown) + label {
+  top: -9px;
+  left: 10px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  color: var(--focus);
+  border-radius: 8px;
+}
+
+.btn {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--card-brd);
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .08s ease, box-shadow .2s ease;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--primary-start) 35%, transparent);
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+
+.err {
+  color: #ff6b6b;
+  font-size: 12px;
+  margin-top: 4px;
+}

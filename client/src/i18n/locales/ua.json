@@ -1,0 +1,193 @@
+{
+  "auth": {
+    "signup": "Зареєструватися",
+    "signin": "Увійти",
+    "createAccount": "Створити акаунт",
+    "firstName": "Імʼя",
+    "lastName": "Прізвище",
+    "signIn": "Увійти",
+    "resendEmail": "Надіслати лист повторно",
+    "forgot": "Забули пароль?",
+    "verifyTitle": "Перевірте пошту",
+    "verified": "Підтверджено",
+    "redirecting": "Перенаправлення…",
+    "verificationError": "Помилка підтвердження",
+    "verifySentTo": "Ми надіслали посилання на",
+    "openMailbox": "Відкрити пошту",
+    "verificationResent": "Лист відправлено",
+    "verificationResendFail": "Не вдалося надіслати",
+    "verifyHint": "Натисніть посилання в листі, щоб продовжити.",
+    "forgotTitle": "Забули пароль?",
+    "forgotSubtitle": "Вкажіть email — надішлемо посилання для відновлення.",
+    "sendReset": "Надіслати посилання",
+    "resetSent": "Посилання відправлено. Перевірте пошту.",
+    "resetFailed": "Не вдалося надіслати лист",
+    "resetHint": "Вам прийде лист із посиланням для зміни пароля.",
+    "setNewPassword": "Новий пароль",
+    "confirmPassword": "Підтвердження пароля",
+    "passwordsMustMatch": "Паролі мають збігатися",
+    "resetInvalid": "Недійсне чи прострочене посилання",
+    "passwordUpdated": "Пароль змінено",
+    "updatePassword": "Оновити пароль"
+  },
+  "company": {
+    "title": "Створити компанію",
+    "subtitle": "Розкажіть трохи про бізнес.",
+    "name": "Назва компанії",
+    "legalName": "Юридична назва (необовʼязково)",
+    "country": "Країна",
+    "taxId": "Податковий номер / NIP (необовʼязково)",
+    "website": "Сайт (необовʼязково)",
+    "continue": "Продовжити",
+    "nipHint": "Для PL використовуйте 10 цифр без дефісів.",
+    "chooseTitle": "Виберіть компанію",
+    "chooseSubtitle": "Оберіть компанію для продовження",
+    "createNew": "Створити нову"
+  },
+  "common": {
+    "email": "Email",
+    "password": "Пароль",
+    "required": "Обовʼязково",
+    "invalidEmail": "Некоректний email",
+    "tooShort": "Занадто коротко",
+    "atLeast": "Щонайменше {{n}} символів",
+    "uppercase": "1 велика літера",
+    "lowercase": "1 мала літера",
+    "number": "1 цифра",
+    "saving": "Збереження…",
+    "creating": "Створення…",
+    "signingIn": "Вхід…",
+    "continue": "Продовжити",
+    "close": "Закрити",
+    "error": "Помилка",
+    "success": "Успіх",
+    "loading": "Завантаження…",
+    "sending": "Відправлення…",
+    "save": "Зберегти",
+    "edit": "Редагувати",
+    "reset": "Скинути"
+  },
+  "countries": {
+    "PL": "PL — Польща",
+    "UA": "UA — Україна",
+    "DE": "DE — Німеччина",
+    "CZ": "CZ — Чехія",
+    "LT": "LT — Литва"
+  },
+  "errors": {
+    "registrationFailed": "Помилка реєстрації",
+    "loginFailed": "Невірний email або пароль",
+    "createCompanyFailed": "Не вдалося створити компанію",
+    "accountNotActive": "Обліковий запис не активний",
+    "invalidToken": "Недійсний токен",
+    "emailNotVerified": "Email не підтверджено",
+    "verificationFailed": "Помилка підтвердження",
+    "companyNotSelected": "Компанію не вибрано"
+  },
+  "menu": {
+    "bookmarks": "Закладки",
+    "pulpit": "Робочий стіл",
+    "crm": "CRM",
+    "counterparties": "Контрагенти",
+    "leads": "Ліди",
+    "clients": "Клієнти",
+    "deals": "Угоди",
+    "tasks": "Завдання",
+    "calendar": "Календар",
+    "oms": "OMS",
+    "invoices": "Рахунки",
+    "receipts": "Квитанції",
+    "orders": "Замовлення",
+    "offers": "Пропозиції",
+    "promotions": "Акції",
+    "coupons": "Купони",
+    "shipments": "Відправки",
+    "pim": "PIM",
+    "products": "Товари",
+    "services": "Послуги",
+    "wms": "WMS",
+    "warehouse": "Склад",
+    "wmsDocs": "Складські документи",
+    "settings": "Налаштування",
+    "userSettings": "Налаштування користувача"
+  },
+  "widgets": {
+    "kpi": "KPI",
+    "funnel": "Воронка продажів",
+    "tasks": "Завдання на сьогодні",
+    "ordersQueue": "Замовлення в черзі",
+    "calendar": "Календар"
+  },
+  "kpi": {
+    "leads": "Ліди",
+    "deals": "Угоди",
+    "orders": "Замовлення"
+  },
+  "topbar": {
+    "searchPlaceholder": "Пошук…",
+    "notifications": "Сповіщення",
+    "userMenu": "Користувач",
+    "find": "Знайти",
+    "logout": "Вийти"
+  },
+  "theme": {
+    "auto": "Авто",
+    "dark": "Темна",
+    "light": "Світла"
+  },
+  "dashboard": {
+    "addWidget": "Додати віджет",
+    "resetLayout": "Скинути сітку",
+    "resize": "Змінити розмір",
+    "remove": "Видалити"
+  },
+  "userMenu": {
+    "profile": "Профіль",
+    "settings": "Налаштування",
+    "logout": "Вийти"
+  },
+  "settings": {
+    "tabs": {
+      "profile": "Профіль",
+      "security": "Безпека",
+      "notifications": "Сповіщення",
+      "appearance": "Вигляд",
+      "preferences": "Налаштування"
+    },
+    "profile": {
+      "title": "Дані профілю",
+      "firstName": "Імʼя",
+      "lastName": "Прізвище",
+      "firstNamePH": "Іван",
+      "lastNamePH": "Петренко",
+      "email": "Email",
+      "contacts": "Контактні дані",
+      "phone": "Телефон",
+      "telegram": "Telegram",
+      "emailVerified": "Email підтверджено",
+      "emailNotVerified": "Email не підтверджено",
+      "active": "Обліковий запис активний",
+      "inactive": "Обліковий запис неактивний",
+      "joined": "Дата реєстрації"
+    },
+    "security": {
+      "title": "Пароль",
+      "current": "Поточний пароль",
+      "new": "Новий пароль",
+      "confirm": "Підтвердження пароля",
+      "update": "Змінити пароль"
+    },
+    "notifications": {
+      "title": "Сповіщення",
+      "email": "Email-сповіщення",
+      "push": "Push-сповіщення"
+    },
+    "appearance": {
+      "title": "Вигляд"
+    },
+    "preferences": {
+      "language": "Мова",
+      "theme": "Тема"
+    }
+  }
+}

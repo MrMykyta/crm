@@ -56,7 +56,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'CompanyDepartment',
     tableName: 'company_departments',
-    paranoid: true, 
     underscored: true, 
     timestamps: true
   });

@@ -1,0 +1,13 @@
+/* корневой масштаб шрифта — ThemeProvider переставляет font-size через --font-scale */
+html { font-size: calc(16px * var(--font-scale) / 100); }
+body { font: 400 var(--fs-md)/var(--lh-normal) system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: var(--text); }
+
+/* кнопки/инпуты по умолчанию под сетку темы */
+button { font: inherit; }
+input, select, textarea { font: inherit; }
+
+/* утилиты отступов (часто полезно) */
+.u-m0 { margin: 0; }
+.u-p0 { padding: 0; }
+.u-flex { display: flex; }
+.u-center { display:grid; place-items:center; }

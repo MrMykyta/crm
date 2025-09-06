@@ -1,0 +1,194 @@
+{
+  "auth": {
+    "signup": "Sign up",
+    "signin": "Sign in",
+    "createAccount": "Create account",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "signIn": "Sign in",
+    "resendEmail": "Resend verification email",
+    "forgot": "Forgot password?",
+    "verifyTitle": "Check your email",
+    "verified": "Verified",
+    "redirecting": "Redirecting…",
+    "verificationError": "Verification error",
+    "verifySentTo": "We sent a verification link to",
+    "openMailbox": "Open mailbox",
+    "verificationResent": "Verification email sent",
+    "verificationResendFail": "Resend failed",
+    "verifyHint": "Click the link in the email to continue.",
+    "forgotTitle": "Forgot password?",
+    "forgotSubtitle": "Enter your email and we will send a reset link.",
+    "sendReset": "Send reset link",
+    "resetSent": "Reset link sent. Please check your inbox.",
+    "resetFailed": "Failed to send reset email",
+    "resetHint": "You will receive an email with a link to set a new password.",
+    "setNewPassword": "Set a new password",
+    "confirmPassword": "Confirm password",
+    "passwordsMustMatch": "Passwords must match",
+    "resetInvalid": "Invalid or expired link",
+    "passwordUpdated": "Password updated",
+    "updatePassword": "Update password"
+  },
+  "company": {
+    "title": "Create company",
+    "subtitle": "Tell us a bit about your business.",
+    "name": "Company name",
+    "legalName": "Legal name (optional)",
+    "country": "Country",
+    "taxId": "Tax ID / NIP (optional)",
+    "website": "Website (optional)",
+    "continue": "Continue",
+    "nipHint": "For PL use 10 digits without dashes.",
+    "chooseTitle": "Select a company",
+    "chooseSubtitle": "Pick a company to continue",
+    "createNew": "Create new company"
+  },
+  "common": {
+    "email": "Email",
+    "password": "Password",
+    "required": "Required",
+    "invalidEmail": "Invalid email",
+    "tooShort": "Too short",
+    "atLeast": "At least {{n}} chars",
+    "uppercase": "1 uppercase",
+    "lowercase": "1 lowercase",
+    "number": "1 number",
+    "saving": "Saving…",
+    "creating": "Creating…",
+    "signingIn": "Signing in…",
+    "continue": "Continue",
+    "close": "Close",
+    "error": "Error",
+    "success": "Success",
+    "loading": "Loading…",
+    "sending": "Sending…",
+    "save": "Save",
+    "edit": "Edit",
+    "reset": "Reset"
+  },
+  "countries": {
+    "PL": "PL — Poland",
+    "UA": "UA — Ukraine",
+    "DE": "DE — Germany",
+    "CZ": "CZ — Czechia",
+    "LT": "LT — Lithuania"
+  },
+  "errors": {
+    "registrationFailed": "Registration failed",
+    "loginFailed": "Wrong email or password",
+    "createCompanyFailed": "Create company failed",
+    "accountNotActive": "Account is not active",
+    "invalidToken": "Invalid token",
+    "emailNotVerified": "Email not verified",
+    "verificationFailed": "Verification error",
+    "companyNotSelected": "Company not selected"
+  },
+  "menu": {
+    "bookmarks": "Bookmarks",
+    "pulpit": "Dashboard",
+    "crm": "CRM",
+    "counterparties": "Counterparties",
+    "leads": "Leads",
+    "clients": "Clients",
+    "deals": "Deals",
+    "tasks": "Tasks",
+    "calendar": "Calendar",
+    "oms": "OMS",
+    "invoices": "Invoices",
+    "receipts": "Receipts",
+    "orders": "Orders",
+    "offers": "Offers",
+    "promotions": "Promotions",
+    "coupons": "Coupons",
+    "shipments": "Shipments",
+    "pim": "PIM",
+    "products": "Products",
+    "services": "Services",
+    "wms": "WMS",
+    "warehouse": "Warehouse",
+    "wmsDocs": "Warehouse docs",
+    "settings": "Settings",
+    "userSettings": "User settings"
+  },
+  "widgets": {
+    "kpi": "KPI",
+    "funnel": "Sales Funnel",
+    "tasks": "Tasks Today",
+    "ordersQueue": "Orders in Queue",
+    "calendar": "Calendar"
+  },
+  "kpi": {
+    "leads": "Leads",
+    "deals": "Deals",
+    "orders": "Orders"
+  },
+  "topbar": {
+    "searchPlaceholder": "Search…",
+    "notifications": "Notifications",
+    "find": "Find",
+    "userMenu": "User menu",
+    "logout": "Logout"
+  },
+  "theme": {
+    "auto": "Auto",
+    "dark": "Dark",
+    "light": "Light"
+  },
+  "dashboard": {
+    "addWidget": "Add widget",
+    "resetLayout": "Reset layout",
+    "resize": "Resize",
+    "remove": "Remove"
+  },
+  "userMenu": {
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Log out"
+  },
+  "settings": {
+    "tabs": {
+      "profile": "Profile",
+      "security": "Security",
+      "notifications": "Notifications",
+      "appearance": "Appearance",
+      "preferences": "Preferences"
+    },
+    "profile": {
+      "title": "Profile data",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "firstNamePH": "John",
+      "lastNamePH": "Doe",
+      "email": "Email",
+      "contacts": "Contacts",
+      "phone": "Phone",
+      "telegram": "Telegram",
+      "emailVerified": "Email verified",
+      "emailNotVerified": "Email not verified",
+      "active": "Account active",
+      "inactive": "Account inactive",
+      "joined": "Joined"
+    },
+    "security": {
+      "title": "Password",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm password",
+      "update": "Change password"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "email": "Email notifications",
+      "push": "Push notifications"
+    },
+    "appearance": {
+      "title": "Appearance"
+    },
+    "preferences": {
+      "language": "Language",
+      "theme": "Theme"
+    }
+    
+  }
+}

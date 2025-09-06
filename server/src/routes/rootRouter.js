@@ -92,6 +92,7 @@ rootRouter.use('/wms/picks',         auth, require('./wms/pick.commands.router')
 rootRouter.use('/wms/shipments',     auth, require('./wms/shipment.commands.router'));   // ship item(s), close shipment
 rootRouter.use('/wms/transfers',     auth, require('./wms/transfer.commands.router'));   // execute/complete transfer
 rootRouter.use('/wms/adjustments',   auth, require('./wms/adjustment.commands.router')); // +/- adjust
+rootRouter.use('/system',            auth, require('./system/userPreferencesRouter'));
 
 module.exports = rootRouter;
 

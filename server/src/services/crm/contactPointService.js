@@ -63,11 +63,10 @@ module.exports.create = async (userId, companyId, p = {}) => {
     return await ContactPoint.create(base);
 };
 
-module.exports.addContacts = async ({ companyId, ownerType, ownerId, contacts = [], actorUserId = null, t }) => {
-    
-    console.log(contacts)
+module.exports.addContacts = async ({ companyId, ownerType, ownerId, contacts = {}, actorUserId = null, t }) => {
     
     if (!Array.isArray(contacts) || contacts.length === 0) {
+        console.log('No contacts to add');
         return [];
     }
 
@@ -100,7 +99,7 @@ module.exports.addContacts = async ({ companyId, ownerType, ownerId, contacts = 
             : null;
 
         return {
-            companyId,
+            companyId: c.companyId ?? companyId,
             ownerType,
             ownerId,
             channel: c.channel,
@@ -114,7 +113,7 @@ module.exports.addContacts = async ({ companyId, ownerType, ownerId, contacts = 
             createdBy: actorUserId
         };
         });
-
+    console.log('access to add',rows)
     if (!rows.length) {
         return [];
     }

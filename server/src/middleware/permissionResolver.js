@@ -63,6 +63,6 @@ module.exports.getPermissionsAndRole = async ({ userId, companyId }) => {
 
 // обратная совместимость с твоим текущим кодом
 module.exports.getPermissions = async ({ userId, companyId }) => {
-  const { permissions } = await module.exports.getPermissionsAndRole({ userId, companyId });
+  const permissions = await module.exports.getPermissionsAndRole({ userId, companyId });
   return permissions;
 };

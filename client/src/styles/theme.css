@@ -1,0 +1,141 @@
+/* ========= CORE TOKENS ========= */
+
+/* Базовая шкала REM управляется var(--font-scale)
+   -> 1rem = 16px * (font-scale/100)  (ставится в ThemeProvider)
+*/
+:root {
+  /* цветовая база (без изменений по смыслу) */
+  --bg: #0c0f16;
+  --text: #e9edff;
+  --muted: #aab2d6;
+
+  --card-bg: rgba(16,18,27,.6);
+  --card-brd: rgba(255,255,255,.12);
+  --input-bg: rgba(10,12,19,.65);
+  --shadow: 0 20px 60px rgba(0,0,0,.45);
+
+  --primary-start: #5b7cff;
+  --primary-end:   #7a5bff;
+  --focus: #85a2ff;
+
+  --bg-gradient: linear-gradient(160deg, #0a0c13 0%, #0e1220 100%);
+  --bg-radial-1: radial-gradient(1200px 600px at 10% -10%, #1a1f3a 0%, transparent 60%);
+  --bg-radial-2: radial-gradient(800px 400px at 110% 10%, #271a3a 0%, transparent 60%);
+
+  --blob-1: #5b7cff;
+  --blob-2: #7a5bff;
+
+  --sidebar-bg: rgba(18,21,33,.52);
+  --sidebar-brd: rgba(255,255,255,.12);
+  --sidebar-text: #e9edff;
+  --sidebar-hover: color-mix(in srgb, var(--primary-start) 12%, transparent);
+  --sidebar-active: color-mix(in srgb, var(--primary-start) 18%, transparent);
+
+  --topbar-bg: rgba(16,18,27,.72);
+  --topbar-brd: rgba(255,255,255,.12);
+  --topbar-text: #e9edff;
+  --topbar-input-bg: rgba(10,12,19,.65);
+
+  /* ========= TYPOGRAPHY ========= */
+  --font-base: 16px;
+  --font-multiplier: 1;
+  /* шкала */
+  --fs-xs: calc(0.75rem * var(--font-multiplier));
+  --fs-sm: calc(0.875rem * var(--font-multiplier));
+  --fs-md: calc(1rem * var(--font-multiplier));
+  --fs-lg: calc(1.125rem * var(--font-multiplier));
+  --fs-xl: calc(1.25rem * var(--font-multiplier));
+  --fs-2xl: calc(1.375rem * var(--font-multiplier));
+  --fs-3xl: calc(1.75rem * var(--font-multiplier));
+
+  --lh-tight: 1.1;
+  --lh-normal: 1.4;
+  --lh-comfy: 1.6;
+
+  --fw-regular: 400;
+  --fw-medium:  600;
+  --fw-bold:    800;
+
+  /* ========= SPACING ========= */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem;  /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem;    /* 16px */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem;  /* 24px */
+
+  /* ========= RADII ========= */
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* ========= ELEVATION ========= */
+  --elev-1: 0 6px 18px rgba(0,0,0,.28);
+  --elev-2: 0 10px 24px color-mix(in srgb, var(--primary-start) 35%, transparent);
+  --elev-3: 0 20px 60px rgba(0,0,0,.45);
+
+  /* ========= SIZES / LAYOUT ========= */
+  --sidebar-w: 15.5rem;        /* 248px */
+  --sidebar-w-collapsed: 4.75rem; /* 76px */
+  --topbar-h: 4rem;            /* 64px */
+
+  /* ========= ANIMATION ========= */
+  --tr-fast: .15s ease;
+  --tr-med:  .25s ease;
+
+  /* controls from ThemeProvider */
+  --font-scale: 100; /* процентовка, 100 по умолчанию */
+
+  /* glass */
+  --glass-blur: 6px;
+
+  /* topbar */
+  --topbar-h: 64px;
+}
+
+/* LIGHT */
+:root[data-theme="light"]{
+  --bg: #fff9f4;
+  --text: #2b2f3a;
+  --muted: #6c7280;
+
+  --card-bg: rgba(255,255,255,.7);
+  --card-brd: rgba(20,24,36,.08);
+  --input-bg: rgba(255,255,255,.9);
+  --shadow: 0 16px 50px rgba(221,140,94,.18);
+
+  --primary-start: #ff9a73;
+  --primary-end:   #a88bff;
+  --focus: #ffb686;
+
+  --bg-gradient: linear-gradient(160deg, #fff9f4 0%, #ffeede 100%);
+  --bg-radial-1: radial-gradient(1200px 600px at 10% -10%, #ffd6c1 0%, transparent 60%);
+  --bg-radial-2: radial-gradient(800px 400px at 110% 10%, #f3d8ff 0%, transparent 60%);
+
+  --sidebar-bg: rgba(255,255,255,.7);
+  --sidebar-brd: rgba(20,24,36,.08);
+  --sidebar-text: #2b2f3a;
+  --sidebar-hover: rgba(255,154,115,.12);
+  --sidebar-active: rgba(255,154,115,.2);
+
+  --topbar-bg: rgba(255,255,255,.8);
+  --topbar-brd: rgba(20,24,36,.08);
+  --topbar-text: #2b2f3a;
+  --topbar-input-bg: rgba(255,255,255,.9);
+}
+
+/* плавная смена темы */
+html { font-size: var(--font-base); transition: background .25s ease, color .25s ease; }
+
+/* ========= GLOBAL TYPOGRAPHY UTILS ========= */
+/* Эти классы — глобальные. Используй где удобно. */
+.u-text      { font-size: var(--fs-md); line-height: var(--lh-normal); }
+.u-muted     { color: var(--muted); }
+.u-title     { font-size: var(--fs-lg); font-weight: var(--fw-bold); line-height: var(--lh-tight); }
+.u-title-sm  { font-size: var(--fs-md); font-weight: var(--fw-bold); line-height: var(--lh-tight); }
+.u-caption   { font-size: var(--fs-xs); color: var(--muted); }
+.u-kpi       { font-size: var(--fs-2xl); font-weight: var(--fw-bold); line-height: var(--lh-tight); }
+
+.u-btn       { font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.u-input     { font-size: var(--fs-sm); line-height: var(--lh-normal); }

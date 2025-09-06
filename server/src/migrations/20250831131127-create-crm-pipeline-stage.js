@@ -67,6 +67,12 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
+    await queryInterface.sequelize.query(
+    'ALTER TABLE "deals" DROP CONSTRAINT IF EXISTS "deals_stage_id_fkey";'
+  );
+  await queryInterface.sequelize.query(
+    'ALTER TABLE "deals" DROP CONSTRAINT IF EXISTS "deals_stageId_fkey";'
+  );
     await queryInterface.dropTable('crm_pipeline_stages');
   }
 };

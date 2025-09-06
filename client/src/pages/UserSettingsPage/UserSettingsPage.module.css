@@ -1,0 +1,197 @@
+/* UserSettingsPage.module.css — tokenized */
+
+/* контейнер */
+.wrap{ padding: var(--space-4) var(--space-5); }
+
+.card{
+  position: relative;
+  background: var(--card-bg);
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-3);
+  color: var(--text);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+/* Tabs */
+.tabs{
+  display:flex;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-bottom:1px solid var(--card-brd);
+}
+.tab{
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border:1px solid transparent;
+  background:transparent;
+  color:inherit;
+  cursor:pointer;
+  transition: background var(--tr-fast), border-color var(--tr-fast);
+  font-size: var(--fs-sm);
+}
+.tab:hover{ background: var(--sidebar-hover); border-color: var(--card-brd); }
+.active{ background: var(--sidebar-active); border-color: var(--card-brd); }
+
+.body{ padding: var(--space-4); }
+
+.section{ padding: var(--space-3) var(--space-2); }
+.section h3{
+  margin: 0 0 var(--space-4);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+}
+
+/* Form grid */
+.grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(15rem, 1fr)); /* 240px */
+  column-gap: var(--space-4);
+  row-gap: var(--space-3);
+  align-items: start;
+}
+@media (max-width: 900px){
+  .grid{ grid-template-columns: 1fr; }
+}
+
+/* Field wrapper */
+.field{
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.full{ grid-column: 1 / -1; }
+
+.label{
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  user-select: none;
+}
+
+/* Input / selects */
+.input{
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  border: 1px solid var(--card-brd);
+  color: var(--text);
+  outline: none;
+  transition: border-color var(--tr-fast), box-shadow var(--tr-fast), background var(--tr-fast);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+}
+.input::placeholder{
+  color: color-mix(in srgb, var(--text) 45%, transparent);
+}
+.input:hover{
+  border-color: color-mix(in srgb, var(--card-brd) 70%, var(--focus));
+}
+.input:focus{
+  border-color: var(--focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
+}
+
+/* Checklist rows */
+.row{
+  display:flex; align-items:center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-1);
+  font-size: var(--fs-sm);
+}
+
+/* Actions */
+.actions{ margin-top: var(--space-3); }
+.primary{
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-brd);
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  box-shadow: var(--elev-2);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+.primary:hover{ filter: brightness(1.05); }
+
+/* Close button */
+.closeBtn{
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 2rem; height: 2rem; /* 32px */
+  display: grid; place-items: center;
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background var(--tr-fast), color var(--tr-fast), border-color var(--tr-fast);
+}
+.closeBtn:hover{
+  background: var(--sidebar-hover);
+  color: var(--text);
+  border-color: var(--focus);
+}
+
+/* errors (Formik) — если используешь */
+.err{
+  color: #ff7a7a;
+  font-size: var(--fs-xs);
+}
+
+.ghost{
+  --h: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  height: var(--h);
+  padding: 0 12px;
+
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text);
+
+  background: var(--card-bg);
+  border: 1px solid var(--card-brd);
+  border-radius: calc(var(--h) / 2);
+
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--shadow-clr, #000) 12%, transparent);
+  cursor: pointer;
+  transition:
+    background .15s ease,
+    border-color .15s ease,
+    box-shadow .15s ease,
+    transform .05s ease;
+}
+
+.ghost:hover{
+  background: var(--sidebar-hover);
+  border-color: var(--focus);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--primary-start) 22%, transparent);
+}
+
+.ghost:active{ transform: translateY(1px); }
+
+.ghost:focus-visible{
+  outline: none;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--focus) 45%, transparent),
+    0 6px 18px color-mix(in srgb, var(--primary-start) 22%, transparent);
+}
+
+/* чуть компактнее вариант, если понадобится */
+.ghostSm{
+  --h: 30px;
+  font-size: 13px;
+  padding: 0 10px;
+}
+
+/* иконка внутри — не ловит клики */
+.ghost :where(svg){ pointer-events: none; }

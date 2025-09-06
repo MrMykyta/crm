@@ -61,7 +61,7 @@ module.exports = {
           model: 'users',
           key: 'id'
         },
-        onDelete: 'SET NULL',
+        onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
         field: 'owner_user_id'
       },
@@ -76,11 +76,6 @@ module.exports = {
         type: Sequelize.DATE,
         field: 'updated_at',
         defaultValue: Sequelize.NOW
-      },
-      deletedAt: {
-        type: Sequelize.DATE,
-        field: 'deleted_at',
-        allowNull: true
       }
     });
 

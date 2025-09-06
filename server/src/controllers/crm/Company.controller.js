@@ -1,5 +1,6 @@
 // src/controllers/companyController.js
 const companyService = require('../../services/crm/companyService');
+const tokenService = require('../../utils/tokenService');
 
 exports.listForMe = async (req, res) => {
   try {
@@ -26,8 +27,8 @@ exports.create = async (req, res) => {
   try {
     const company = await companyService.createWithOwner(req.user.id, req.body);
     const accessToken = tokenService.signAccessToken({ userId: req.user.id, activeCompanyId: company.id });
-    const { token: refreshToken } = await tokenService.issueRefreshToken({ userId: user.id });
-    res.status(201).send({company, tokens: {accessToken, refreshToken }});
+    const { token: refreshToken } = await tokenService.issueRefreshToken({ userId: req.user.id });
+    res.status(201).send({activeCompanyId: company.id, tokens: {accessToken, refreshToken }});
   } catch (e) { 
     res.status(400).send({ error: e.message }); 
   }

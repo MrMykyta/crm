@@ -1,0 +1,194 @@
+{
+  "auth": {
+    "signup": "Zarejestruj się",
+    "signin": "Zaloguj się",
+    "createAccount": "Utwórz konto",
+    "firstName": "Imię",
+    "lastName": "Nazwisko",
+    "signIn": "Zaloguj",
+    "resendEmail": "Wyślij ponownie e-mail weryfikacyjny",
+    "forgot": "Zapomniałeś hasła?",
+    "verifyTitle": "Sprawdź pocztę",
+    "verified": "Zweryfikowano",
+    "redirecting": "Przekierowanie…",
+    "verificationError": "Błąd weryfikacji",
+    "verifySentTo": "Wysłaliśmy link weryfikacyjny na",
+    "openMailbox": "Otwórz pocztę",
+    "verificationResent": "E-mail wysłany ponownie",
+    "verificationResendFail": "Nie udało się wysłać",
+    "verifyHint": "Kliknij link w e-mailu, aby kontynuować.",
+    "forgotTitle": "Zapomniałeś hasła?",
+    "forgotSubtitle": "Podaj email, a wyślemy link do resetu.",
+    "sendReset": "Wyślij link",
+    "resetSent": "Link wysłany. Sprawdź skrzynkę.",
+    "resetFailed": "Nie udało się wysłać",
+    "resetHint": "Otrzymasz e-mail z linkiem do zmiany hasła.",
+    "setNewPassword": "Ustaw nowe hasło",
+    "confirmPassword": "Potwierdź hasło",
+    "passwordsMustMatch": "Hasła muszą być takie same",
+    "resetInvalid": "Nieprawidłowy lub wygasły link",
+    "passwordUpdated": "Hasło zaktualizowane",
+    "updatePassword": "Zmień hasło"
+  },
+  "company": {
+    "title": "Utwórz firmę",
+    "subtitle": "Opowiedz nam krótko o swojej działalności.",
+    "name": "Nazwa firmy",
+    "legalName": "Nazwa prawna (opcjonalnie)",
+    "country": "Kraj",
+    "taxId": "NIP (opcjonalnie)",
+    "website": "Strona WWW (opcjonalnie)",
+    "continue": "Kontynuuj",
+    "nipHint": "Dla PL użyj 10 cyfr bez myślników.",
+    "chooseTitle": "Wybierz firmę",
+    "chooseSubtitle": "Wybierz firmę, aby kontynuować",
+    "createNew": "Utwórz nową"
+  },
+  "common": {
+    "email": "Email",
+    "password": "Hasło",
+    "required": "Wymagane",
+    "invalidEmail": "Nieprawidłowy email",
+    "tooShort": "Zbyt krótkie",
+    "atLeast": "Co najmniej {{n}} znaków",
+    "uppercase": "1 wielka litera",
+    "lowercase": "1 mała litera",
+    "number": "1 cyfra",
+    "saving": "Zapisywanie…",
+    "creating": "Tworzenie…",
+    "signingIn": "Logowanie…",
+    "continue": "Kontynuuj",
+    "close": "Zamknij",
+    "error": "Błąd",
+    "success": "Sukces",
+    "loading": "Ładowanie…",
+    "sending": "Wysyłanie…",
+    "save": "Zapisz",
+    "edit": "Edytuj",
+    "reset": "Resetuj"
+  },
+  "countries": {
+    "PL": "PL — Polska",
+    "UA": "UA — Ukraina",
+    "DE": "DE — Niemcy",
+    "CZ": "CZ — Czechy",
+    "LT": "LT — Litwa"
+  },
+  "errors": {
+    "registrationFailed": "Rejestracja nie powiodła się",
+    "loginFailed": "Błędny email lub hasło",
+    "createCompanyFailed": "Nie udało się utworzyć firmy",
+    "accountNotActive": "Konto nieaktywne",
+    "invalidToken": "Nieprawidłowy token",
+    "emailNotVerified": "Email niezweryfikowany",
+    "verificationFailed": "Błąd weryfikacji",
+    "companyNotSelected": "Nie wybrano firmy"
+  },
+  "menu": {
+    "bookmarks": "Zakładki",
+    "pulpit": "Pulpit",
+    "crm": "CRM",
+    "counterparties": "Kontrahenci",
+    "leads": "Leady",
+    "clients": "Klienci",
+    "deals": "Transakcje",
+    "tasks": "Zadania",
+    "calendar": "Kalendarz",
+    "oms": "OMS",
+    "invoices": "Faktury",
+    "receipts": "Paragony",
+    "orders": "Zamówienia",
+    "offers": "Oferty",
+    "promotions": "Promocje",
+    "coupons": "Kupony",
+    "shipments": "Wysyłki",
+    "pim": "PIM",
+    "products": "Produkty",
+    "services": "Usługi",
+    "wms": "WMS",
+    "warehouse": "Magazyn",
+    "wmsDocs": "Dokumenty magazynowe",
+    "settings": "Ustawienia",
+    "userSettings": "Ustawienia użytkownika"
+  },
+  "widgets": {
+    "kpi": "KPI",
+    "funnel": "Lejek sprzedaży",
+    "tasks": "Zadania na dziś",
+    "ordersQueue": "Zamówienia w kolejce",
+    "calendar": "Kalendarz"
+  },
+  "kpi": {
+    "leads": "Leady",
+    "deals": "Transakcje",
+    "orders": "Zamówienia"
+  },
+  "topbar": {
+    "searchPlaceholder": "Szukaj…",
+    "notifications": "Powiadomienia",
+    "userMenu": "Menu Użytkownik",
+    "find": "Znajdź",
+    "logout": "Wyloguj"
+  },
+  "theme": {
+    "auto": "Auto",
+    "dark": "Ciemny",
+    "light": "Jasny"
+  },
+  "dashboard": {
+    "addWidget": "Dodaj widżet",
+    "resetLayout": "Zresetuj układ",
+    "resize": "Zmień rozmiar",
+    "remove": "Usuń"
+  },
+  "userMenu": {
+    "profile": "Profil",
+    "settings": "Ustawienia",
+    "logout": "Wyloguj"
+  },
+  "settings": {
+    "tabs": {
+      "profile": "Profil",
+      "security": "Bezpieczeństwo",
+      "notifications": "Powiadomienia",
+      "appearance": "Wygląd",
+      "preferences": "Preferencje"
+    },
+    "profile": {
+      "title": "Dane profilu",
+      "firstName": "Imię",
+      "lastName": "Nazwisko",
+      "firstNamePH": "Jan",
+      "lastNamePH": "Kowalski",
+      "email": "Email",
+      "contacts": "Dane kontaktowe",
+      "phone": "Telefon",
+      "telegram": "Telegram",
+      "emailVerified": "E-mail zweryfikowany",
+      "emailNotVerified": "E-mail niezweryfikowany",
+      "active": "Konto aktywne",
+      "inactive": "Konto nieaktywne",
+      "joined": "Dołączył"
+    },
+    "security": {
+      "title": "Hasło",
+      "current": "Aktualne hasło",
+      "new": "Nowe hasło",
+      "confirm": "Potwierdź hasło",
+      "update": "Zmień hasło"
+    },
+    "notifications": {
+      "title": "Powiadomienia",
+      "email": "Powiadomienia e-mail",
+      "push": "Powiadomienia push"
+    },
+    "appearance": {
+      "title": "Wygląd",
+      "hint": "Przełącznik motywu przeniesiemy tutaj później."
+    },
+    "preferences": {
+      "language": "Język",
+      "theme": "Motyw"
+    }
+  }
+}

@@ -58,11 +58,6 @@ module.exports = {
         allowNull:false, 
         defaultValue: Sequelize.NOW,
         field: 'updated_at'
-      },
-      deletedAt: { 
-        type: Sequelize.DATE, 
-        allowNull: true,
-        field: 'deleted_at'
       }
     });
 

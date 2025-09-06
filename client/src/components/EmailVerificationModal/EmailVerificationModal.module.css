@@ -1,0 +1,41 @@
+.backdrop {
+  position: fixed; inset: 0;
+  background: rgba(5,6,10,0.6);
+  backdrop-filter: blur(6px);
+  display: grid; place-items: center;
+  z-index: 9999;
+}
+
+.modal {
+  width: min(560px, 92vw);
+  background: rgba(16,18,27,0.6);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  padding: 18px 16px;
+  color: #e9edff;
+  text-align: center;
+}
+
+.icon { font-size: 36px; margin-bottom: 6px; }
+.title { margin: 4px 4px 2px; font-size: 18px; font-weight: 700; }
+.subtitle { margin: 0 4px 10px; color:#c6cbf7; opacity:.9; font-size:14px; }
+
+.actions {
+  display:flex; align-items:center; justify-content:center; gap: 10px;
+  margin-top: 8px; flex-wrap: wrap;
+}
+.primary {
+  padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);
+  color:#fff; background: linear-gradient(135deg,#5b7cff,#7a5bff);
+  font-weight:700; cursor:pointer; text-decoration: none;
+}
+.secondary {
+  padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.18);
+  background: transparent; color:#cbd2ff; cursor:pointer;
+}
+.link {
+  background: none; border: none; color:#c6ceff; text-decoration: underline; cursor: pointer;
+}
+
+.hint { margin-top: 10px; color:#aab2d6; font-size: 13px; opacity: .9; }

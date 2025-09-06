@@ -11,13 +11,13 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Webhook.belongsTo(models.Company, {
+      SystemWebhook.belongsTo(models.Company, {
         foreignKey: 'company_id',
         as: 'company',
         onDelete: 'CASCADE', 
         onUpdate: 'CASCADE'
       });
-      Webhook.hasMany(models.SystemWebhookDelivery, {
+      SystemWebhook.hasMany(models.SystemWebhookDelivery, {
         foreignKey: 'webhook_id',
         as: 'deliveries',
         onDelete: 'CASCADE', 

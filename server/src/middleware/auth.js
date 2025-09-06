@@ -28,6 +28,8 @@ module.exports.auth = async (req, res, next) => {
     req.user = { id: userId, role, permissions };
     req.companyId = companyId || null;
 
+    console.log('[auth]', `User ${userId} authenticated with role ${role} and company ${companyId || 'None'}  `);
+
     next();
   } catch (e) {
     console.error('[auth]', e);

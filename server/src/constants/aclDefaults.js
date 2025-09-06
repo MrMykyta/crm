@@ -28,5 +28,5 @@ module.exports.DEFAULT_ROLE_SETS = {
   owner: OWNER_PERMS,
   admin: ADMIN_PERMS,
   manager: MANAGER_PERMS,
-  employee: EMPLOYEE_PERMS
+  user: EMPLOYEE_PERMS
 };

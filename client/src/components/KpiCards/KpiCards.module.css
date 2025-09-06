@@ -1,0 +1,72 @@
+/* Dashboard card — tokenized & responsive */
+.card{
+  background: var(--card-bg);
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-3, var(--shadow));
+  padding: var(--space-3,12px);
+  color: var(--text);
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: clip;
+}
+
+.header{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom: var(--space-3,10px);
+  font-weight: var(--fw-bold,800);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-tight,1.2);
+  flex-shrink: 0;
+}
+
+/* сетка KPI */
+.kpiRow{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3,12px);
+  flex: 1 1 auto;
+  align-items: stretch;
+  min-height: 0; /* важно для корректного растяжения внутри RGL */
+}
+
+/* карточка KPI */
+.kpi{
+  background: color-mix(in srgb, var(--card-bg) 92%, var(--primary-start) 8%);
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-md);
+  padding: var(--space-3,12px);
+  text-align: center;
+
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  min-height: 64px; /* приятный минимум, чтобы не скукоживалось */
+}
+
+/* значения и подписи */
+.kpiVal{
+  font-weight: var(--fw-bold,800);
+  line-height: var(--lh-tight,1.1);
+  /* авто-масштаб: от sm до 2xl, но в малых высотах не ломается */
+  font-size: clamp(var(--fs-base), calc(var(--fs-xl) * 1.05), var(--fs-2xl));
+}
+.kpiLabel{
+  margin-top: var(--space-1,6px);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-normal,1.35);
+}
+
+/* более дружелюбно на узких ширинах */
+@media (max-width: 840px){
+  .kpiRow{ grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px){
+  .kpiRow{ grid-template-columns: 1fr; }
+}
+
+/* если пользователь просит меньше анимаций */
+@media (prefers-reduced-motion: reduce){
+  .card, .kpiRow { scroll-behavior: auto; }
+}

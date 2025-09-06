@@ -1,1 +1,1 @@
-DROP TABLE "Coupons";
+DELETE FROM users WHERE email='mrparnisha@icloud.com';

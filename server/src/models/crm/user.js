@@ -80,6 +80,23 @@ module.exports = (sequelize, DataTypes) => {
       field: 'last_login_at',
       allowNull: true
     },
+
+    verificationToken: {
+      type: DataTypes.STRING(128),
+      field:'verification_token',
+      allowNull: true
+    },
+    verificationExpiresAt: {
+      type: DataTypes.DATE,
+      field:'verification_expires_at',
+      allowNull: true
+    },
+    emailVerifiedAt: {
+      type: DataTypes.DATE,
+      field: 'email_verified_at',
+      allowNull: true
+    },
+
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,

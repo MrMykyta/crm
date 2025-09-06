@@ -15,7 +15,7 @@ async function getUserRole(userId, companyId) {
 }
 
 module.exports.listForUser = async (userId) => {
-  return Company.findAll({
+  return await Company.findAll({
     include: [{
       model: UserCompany,
       as: 'memberships',
@@ -28,7 +28,7 @@ module.exports.listForUser = async (userId) => {
 
 module.exports.getByIdScoped = async (userId, companyId) => {
   // видит только если состоит в компании
-  return Company.findOne({
+  return await Company.findOne({
     where: { id: companyId },
     include: [{
       model: UserCompany,

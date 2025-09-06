@@ -1,0 +1,138 @@
+/* Dashboard.module.css — tokenized, text-only scaling */
+
+/* обёртка контента под топбар,
+   72px → берём из токена высоты топбара + небольшой зазор */
+.wrap{
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: calc(100dvh - var(--topbar-h) - var(--space-2));
+  padding: 0 var(--space-4) var(--space-5);
+  box-sizing: border-box;
+}
+
+/* контейнеру даём высоту — чтобы было куда тянуть вниз */
+.grid{
+  position: relative;
+  min-height: 100%;
+}
+
+/* карточка */
+.card{
+  position: relative;
+  background: var(--card-bg);
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-3);
+  padding: var(--space-3);
+  color: var(--text);
+  overflow: clip;
+}
+
+/* заголовок — зона drag */
+.header{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom: var(--space-3);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  user-select:none;
+}
+.drag-handle{ cursor: move; }
+.drag-handle *{ pointer-events: none; }  /* текст/иконки не глушат drag */
+.more{
+  pointer-events:auto;
+  border:none; background:transparent;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+/* контент */
+.content{ display:block; }
+
+/* сетка KPI */
+.kpiRow{
+  display:grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: var(--space-3);
+}
+.kpi{
+  background: color-mix(in srgb, var(--card-bg) 92%, var(--primary-start) 8%);
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  text-align: center;
+}
+.kpiVal{
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+}
+.kpiLabel{
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-normal);
+}
+
+/* === EDGE RESIZE ВНУТРИ .card (CSS Modules → :global) === */
+
+/* 0) полностью отключаем дефолтную «стрелку» библиотеки */
+.card :global(.react-resizable-handle)::after{
+  content: none !important;
+}
+
+/* базовое — никаких фоновых картинок/символов, поднимаем над контентом */
+.card :global(.react-resizable-handle){
+  background: none !important;
+  background-image: none !important;
+  font-size: 0;
+  line-height: 0;
+  z-index: 3;
+}
+
+/* правый край */
+.card :global(.react-resizable-handle-e){
+  position:absolute !important;
+  top: 8px; bottom: 8px; right: 0;
+  width: 18px;
+  cursor: e-resize;
+  opacity: 0; transition: opacity var(--tr-fast);
+  pointer-events: auto;
+}
+.card:hover :global(.react-resizable-handle-e){ opacity: .85; }
+.card :global(.react-resizable-handle-e)::before{
+  content:"";
+  position:absolute; top:0; bottom:0; left:8px;
+  width:2px; background: var(--card-brd); border-radius:2px;
+}
+
+/* нижний край */
+.card :global(.react-resizable-handle-s){
+  position:absolute !important;
+  left: 8px; right: 8px; bottom: 0;
+  height: 18px;
+  cursor: s-resize;
+  opacity: 0; transition: opacity var(--tr-fast);
+  pointer-events: auto; /* критично для «тянуть вниз» */
+}
+.card:hover :global(.react-resizable-handle-s){ opacity: .85; }
+.card :global(.react-resizable-handle-s)::before{
+  content:"";
+  position:absolute; left:0; right:0; top:8px;
+  height:2px; background: var(--card-brd); border-radius:2px;
+}
+
+/* угол (правый-нижний) */
+.card :global(.react-resizable-handle-se){
+  position:absolute !important;
+  right: 2px; bottom: 2px; width: 18px; height: 18px;
+  cursor: se-resize;
+  opacity: 0; transition: opacity var(--tr-fast);
+  pointer-events: auto;
+}
+.card:hover :global(.react-resizable-handle-se){ opacity: .85; }
+.card :global(.react-resizable-handle-se)::after{
+  content:""; position:absolute; inset:3px;
+  border-right:2px solid var(--card-brd);
+  border-bottom:2px solid var(--card-brd);
+  border-bottom-right-radius:3px;
+}

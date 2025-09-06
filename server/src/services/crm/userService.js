@@ -3,7 +3,7 @@ const { sequelize, User, Company, UserCompany, ContactPoint } = require('../../m
 const { addContacts } = require('./contactPointService');
 const tokenService = require('../../utils/tokenService');
 
-module.exports.register = async ({ email, password, firstName, lastName }, meta={}) => {
+module.exports.register = async ({ email, password, firstName, lastName, verificationToken, expiresAt}, meta={}) => {
   const exists = await User.findOne({ where: { email } });
   if (exists) {
     throw new Error('Email уже используется');
@@ -15,6 +15,9 @@ module.exports.register = async ({ email, password, firstName, lastName }, meta=
     passwordHash: password_hash,
     firstName: firstName || null,
     lastName: lastName || null,
+    verificationToken: verificationToken,
+    verificationExpiresAt: expiresAt,
+    emailVerifiedAt: null
   });
 
   const accessToken = tokenService.signAccessToken({ userId: user.id });
@@ -27,15 +30,40 @@ module.exports.register = async ({ email, password, firstName, lastName }, meta=
 };
 
 module.exports.login = async ({ email, password, companyId }, meta = {}) => {
-  const user = await User.findOne({ where: { email } });
-  if (!user) throw new Error('Неверные логин или пароль');
+  let user = await User.findOne({ where: { email } });
+  if (!user) throw new Error('errors.loginFailed');
 
   const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) throw new Error('Неверные логин или пароль');
+  if (!ok) throw new Error('errors.loginFailed');
 
-  if (user.isActive === false) throw new Error('Аккаунт деактивирован');
+  if (user.isActive === false) throw new Error('errors.accountNotActive');
 
   await user.update({ lastLoginAt: new Date() });
+
+  user = await User.findByPk(user.id, {
+    attributes: ['id', 'email', 'firstName', 'lastName', 'isActive', 'lastLoginAt', 'emailVerifiedAt', 'createdAt'],
+    include: [{
+      model: ContactPoint, 
+      as: 'contacts'
+    }]
+  });
+
+  const phoneRaw = user.contacts.find(c => c.channel == 'phone' && c.isPublic)?.valueRaw || null;
+  const phoneNorm = user.contacts.find(c => c.channel == 'phone' && c.isPublic)?.valueNorm || null;
+  const emailRaw = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueRaw || null;
+  const emailNorm = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueNorm || null;
+  const safeUser = {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    isActive: user.isActive,
+    phoneRaw,
+    phoneNorm,
+    emailRaw,
+    emailNorm,
+    createdAt: user.createdAt,
+    emailVerifiedAt: user.emailVerifiedAt
+  };
 
   // активные членства + названия компаний
   const memberships = await UserCompany.findAll({
@@ -66,7 +94,8 @@ module.exports.login = async ({ email, password, companyId }, meta = {}) => {
       userAgent: meta.userAgent,
       ip: meta.ip,
     });
-    return { accessToken, refreshToken, companies };
+
+    return { safeUser, accessToken, refreshToken, activeCompanyId: companyId };
   }
 
   // companyId НЕ пришёл
@@ -78,7 +107,7 @@ module.exports.login = async ({ email, password, companyId }, meta = {}) => {
       userAgent: meta.userAgent,
       ip: meta.ip,
     });
-    return { accessToken, refreshToken, companyId: companies };
+    return { safeUser, accessToken, refreshToken, undefined };
   }
 
   if (companies.length === 1) {
@@ -90,7 +119,7 @@ module.exports.login = async ({ email, password, companyId }, meta = {}) => {
       userAgent: meta.userAgent,
       ip: meta.ip,
     });
-    return { accessToken, refreshToken, companyId};
+    return { safeUser, accessToken, refreshToken, activeCompanyId: companyId};
   }
 
   // несколько компаний — просим выбрать (БЕЗ токенов)
@@ -101,13 +130,81 @@ module.exports.login = async ({ email, password, companyId }, meta = {}) => {
   };
 };
 
+module.exports.loginFromCompany = async ({userId, companyId}) => {
+  try{
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'email', 'firstName', 'lastName', 'isActive', 'lastLoginAt', 'createdAt'],
+      include: [{
+        model: ContactPoint, 
+        as: 'contacts'
+      }]
+    });
+    
+    if (user.isActive === false) throw new Error('errors.accountNotActive');
+
+    await user.update({ lastLoginAt: new Date() });
+    const phoneRaw = user.contacts.find(c => c.channel == 'phone' && c.isPublic)?.valueRaw || null;
+    const phoneNorm = user.contacts.find(c => c.channel == 'phone' && c.isPublic)?.valueNorm || null;
+    const emailRaw = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueRaw || null;
+    const emailNorm = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueNorm || null;
+    const safeUser = {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      isActive: user.isActive,
+      phoneRaw,
+      phoneNorm,
+      emailRaw,
+      emailNorm,
+      createdAt: user.createdAt,
+      emailVerifiedAt: user.emailVerifiedAt
+    };
+    const membership = await UserCompany.findAll({
+      where: { userId: userId, companyId:companyId, status: 'active' }
+    });
+
+    if (!membership) {
+      throw new Error('Выбранная компания недоступна');
+    }
+    
+    const accessToken = tokenService.signAccessToken({ userId, activeCompanyId: companyId });
+    const { token: refreshToken } = await tokenService.issueRefreshToken({
+      userId
+    });
+
+    return { safeUser, accessToken, refreshToken, activeCompanyId: companyId };
+  }catch(e){
+    console.log(e);
+  }
+  
+}
+
 module.exports.getMe = async (userId) => {
-  return User.findByPk(userId, {
-    attributes: ['id', 'email', 'first_name', 'last_name', 'is_active', 'last_login_at', 'created_at', 'updated_at'],
+  const user = await User.findByPk(userId, {
+    attributes: ['id', 'email', 'firstName', 'lastName', 'isActive', 'lastLoginAt', 'emailVerifiedAt', 'createdAt'],
     include: [{
-      model: ContactPoint, as: 'contacts'
+      model: ContactPoint, 
+      as: 'contacts'
     }]
   });
+  console.log(user.contacts[0])
+  const phoneRaw = user.contacts.find(c => c.channel == 'phone' && c.isPublic)?.valueRaw || null;
+  const phoneNorm = user.contacts.find(c => c.channel == 'phone' && c.isPublic)?.valueNorm || null;
+  const emailRaw = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueRaw || null;
+  const emailNorm = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueNorm || null;
+  const safeUser = {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    isActive: user.isActive,
+    phoneRaw,
+    phoneNorm,
+    emailRaw,
+    emailNorm,
+    createdAt: user.createdAt,
+    emailVerifiedAt: user.emailVerifiedAt
+  };
+  return safeUser;
 };
 
 module.exports.updateMe = async (userId, companyId, data = {}) => {
@@ -122,7 +219,6 @@ module.exports.updateMe = async (userId, companyId, data = {}) => {
     if (!user) {
       throw new Error('Пользователь не найден');
     }
-
     // собираем патч только из разрешённых полей
     const patch = {};
     if (data.firstName !== undefined) {
@@ -136,13 +232,13 @@ module.exports.updateMe = async (userId, companyId, data = {}) => {
     }
 
     await user.update(patch, { transaction: t });
-
+    console.log('User updated:', data.contacts);
     // добавление НОВЫХ контактов (create)
     await addContacts({
       companyId,
       ownerType: 'user',
       ownerId: user.id,
-      contacts: data.contacts,
+      contacts: [data.contacts],
       userId,
       t
     });
