@@ -1,0 +1,91 @@
+/* секции */
+.section{ grid-column:1 / -1; margin: 4px 0 2px; }
+.sectionTitle{ font-weight:800; letter-spacing:.02em; font-size:14px; color: color-mix(in srgb, var(--text) 85%, #fff 0%); }
+.sectionSub{ font-size:12px; opacity:.7; margin-top:2px; }
+
+/* сетка формы */
+.grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
+  gap:16px 14px;
+  align-items:start;
+}
+
+/* ячейка поля */
+.field{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+.full{ grid-column:1 / -1; }
+
+/* floating */
+.floatWrap{ position:relative; }
+.floatLabel{
+  position:absolute; left:12px; top:12px; pointer-events:none;
+  font-size:13px; color: color-mix(in srgb, var(--text) 60%, #fff 0%);
+  transition: transform .15s ease, color .15s ease, top .15s ease, font-size .15s ease, background .15s ease;
+  padding: 0 4px;
+}
+.input.float:not(:placeholder-shown),
+.input.float:focus{ padding-top:18px; }
+.input.float:not(:placeholder-shown) ~ .floatLabel,
+.input.float:focus ~ .floatLabel{
+  top:-8px; font-size:11px;
+  color: color-mix(in srgb, var(--primary) 70%, #fff 0%);
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  border-radius:6px;
+}
+
+/* базовые инпуты */
+.input, select, textarea{
+  width:100%; min-width:0; box-sizing:border-box;
+  border-radius:14px;
+  border:1px solid color-mix(in srgb, var(--card-brd), #fff 8%);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--card-bg) 86%, #fff 6%),
+                           color-mix(in srgb, var(--card-bg) 92%, #000 0%));
+  color: var(--text);
+  font-size:14px; line-height:1.45;
+  padding:10px 12px;
+  min-height:40px; outline:0;
+  transition: border-color .15s, box-shadow .15s;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+}
+.input:hover, select:hover, textarea:hover{
+  border-color: color-mix(in srgb, var(--card-brd), var(--primary) 25%);
+}
+.input:focus, select:focus, textarea:focus{
+  border-color: color-mix(in srgb, var(--primary), #fff 30%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+textarea{ min-height:120px; resize:vertical; }
+
+/* подписи/счётчики/подсказки */
+.helpRow{ display:flex; justify-content:space-between; align-items:center; }
+.hint{ font-size:12px; opacity:.6; }
+.counter{
+  font-size:11px; padding:2px 6px; border-radius:999px;
+  background: color-mix(in srgb, var(--card-bg) 78%, #fff 8%);
+  border:1px solid color-mix(in srgb, var(--card-brd), #fff 20%);
+  color: color-mix(in srgb, var(--text) 70%, #fff 0%);
+}
+
+/* ошибки */
+.err{ color:#e45858; font-size:12px; line-height:1.25; }
+.invalid{ border-color:#e45858; box-shadow: 0 0 0 3px color-mix(in srgb, #e45858 22%, transparent); }
+
+/* checkbox “как input” */
+.chkLine{ display:flex; gap:8px; align-items:center; font-size:14px; color: color-mix(in srgb, var(--text) 85%, #fff 0%); }
+
+/* контакты */
+.contacts{ display:flex; flex-direction:column; gap:10px; }
+.contactsHead{ display:flex; justify-content:space-between; align-items:center; }
+.muted{ opacity:.6; font-size:13px; }
+.contactRow{
+  display:grid; grid-template-columns: 160px 1fr auto auto; gap:8px; align-items:center;
+}
+.btnAdd, .btnDel{
+  height:30px; padding:0 10px; border-radius:10px; border:1px solid var(--card-brd);
+  background: color-mix(in srgb, var(--card-bg) 85%, #fff 6%); color: var(--text); font-size:13px;
+}
+.btnDel{ color:#e45858; }
+
+/* адаптив */
+@media (max-width: 760px){ .grid{ grid-template-columns: 1fr; } }

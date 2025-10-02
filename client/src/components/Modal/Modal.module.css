@@ -1,0 +1,173 @@
+/* ===== Overlay (подложка) ===== */
+.overlay{
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(8px, 2vw, 20px);
+  /* лёгкий виньет + размытие фона */
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(0,0,0,.08), transparent 60%),
+    color-mix(in srgb, #000 42%, transparent);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  animation: fadeIn .18s ease both;
+}
+
+/* ===== Constrain ===== */
+.content{
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+}
+
+/* ===== Card ===== */
+.inner{
+  display: flex; flex-direction: column;
+  width: 100%;
+  max-height: min(92vh, 980px);
+  margin: auto;
+
+  /* стекло базовое из темы, но с легким «поверхностным» слоем */
+  background-color: var(--card-bg);
+  background-image:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--card-bg) 98%, transparent) 0%,
+      color-mix(in srgb, var(--card-bg) 92%, transparent) 60%,
+      transparent 100%);
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur, 12px) * 1.1));
+  backdrop-filter: blur(calc(var(--glass-blur, 12px) * 1.1));
+
+  border-radius: var(--radius-lg);             /* унификация с темой */
+  border: 1px solid color-mix(in srgb, var(--card-brd) 85%, transparent);
+  box-shadow:
+    0 14px 44px color-mix(in srgb, var(--shadow-clr, #000) 28%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent);
+
+  color: var(--text);
+  animation: slideUp .22s cubic-bezier(.2,.7,.2,1) both;
+}
+
+/* чуть уже на маленьких — читается лучше */
+.sm{ max-width: 560px; }
+.md{ max-width: 760px; }
+.lg{ max-width: 920px; }
+.xl{ max-width: 1180px; }
+
+/* ===== Header ===== */
+.header{
+  position: sticky; top: 0; z-index: 2;
+  display:flex; align-items:center; justify-content:space-between; gap: var(--space-2);
+  padding: clamp(12px, 1.8vw, 18px) clamp(16px, 2vw, 22px);
+
+  background-color: var(--card-bg);
+  background-image:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--card-bg) 98%, transparent) 0%,
+      color-mix(in srgb, var(--card-bg) 92%, transparent) 70%,
+      transparent 100%);
+
+  border-bottom: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
+  border-top-left-radius: inherit; border-top-right-radius: inherit;
+}
+.title{
+  font-size: clamp(16px, 1.8vw, 20px);
+  font-weight: var(--fw-bold);
+  letter-spacing: .2px;
+}
+
+.closeBtn{
+  width: 36px; height: 36px;
+  display:grid; place-items:center;
+  border-radius: 10px;
+  border: 1px solid var(--card-brd);
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  color: var(--muted);
+  cursor:pointer;
+  transition: background .15s, border-color .15s, color .15s, transform .06s, box-shadow .15s;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--shadow-clr, #000) 18%, transparent);
+}
+.closeBtn:hover{
+  background: color-mix(in srgb, var(--sidebar-hover) 85%, transparent);
+  border-color: var(--focus); color: var(--text);
+}
+.closeBtn:active{ transform: translateY(1px) scale(.98); }
+
+/* ===== Body ===== */
+.body{
+  padding: clamp(14px, 2.2vw, 24px);
+  overflow: auto;
+}
+
+/* ===== Footer ===== */
+.footer{
+  position: sticky; bottom: 0; z-index: 2;
+  display:flex; align-items:center; justify-content:flex-end; gap: 10px;
+  padding: clamp(12px, 1.8vw, 18px) clamp(16px, 2vw, 22px);
+
+  background-color: var(--card-bg);
+  background-image:
+    linear-gradient(0deg,
+      color-mix(in srgb, var(--card-bg) 98%, transparent) 0%,
+      color-mix(in srgb, var(--card-bg) 90%, transparent) 70%,
+      transparent 100%);
+
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur, 12px) * .75));
+  backdrop-filter: blur(calc(var(--glass-blur, 12px) * .75));
+  border-top: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
+  border-bottom-left-radius: inherit; border-bottom-right-radius: inherit;
+}
+
+/* ===== Buttons (локальные) ===== */
+.btn{
+  --h: 36px;
+  height: var(--h);
+  padding: 0 12px;
+  border-radius: calc(var(--h) / 2);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
+  color: var(--text);
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, transform .06s ease, box-shadow .15s ease;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--shadow-clr, #000) 12%, transparent);
+}
+.btn:hover{
+  background: var(--sidebar-hover);
+  border-color: var(--focus);
+}
+.btn:active{ transform: translateY(1px); }
+.btn:disabled{ opacity: .6; cursor: default; }
+
+.primary{
+  --h: 36px;
+  height: var(--h);
+  padding: 0 16px;
+  border-radius: calc(var(--h) / 2);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  color: #fff;
+  font-weight: 600; letter-spacing: .2px;
+
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  box-shadow:
+    0 8px 24px color-mix(in srgb, var(--primary-start) 22%, transparent),
+    inset 0 1px 0 rgba(255,255,255,.08);
+
+  cursor: pointer;
+  transition: filter .15s ease, transform .06s ease;
+}
+.primary:hover{ filter: brightness(1.04); }
+.primary:active{ transform: translateY(1px); }
+.primary:disabled{ opacity: .7; cursor: default; }
+
+/* ===== Tiny screens ===== */
+@media (max-width: 600px){
+  .overlay{ padding: 8px; }
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn{ from{ opacity: 0; } to{ opacity: 1; } }
+@keyframes slideUp{ from{ opacity: 0; transform: translateY(8px) scale(.99); } to{ opacity: 1; transform: translateY(0) scale(1); } }
+
+/* ===== Light-theme специфическая подстройка контраста ===== */
+
+

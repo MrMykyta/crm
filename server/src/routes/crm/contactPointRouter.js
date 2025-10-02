@@ -2,7 +2,7 @@ const express = require('express');
 const contactPointRouter = express.Router();
 const { requireMember } = require('../../middleware/requireMember');
 
-const contactPointController = require('../../controllers/crm/ContactPoint.controller');
+const contactPointController = require('../../controllers/crm/СontactPoint.controller');
 const validateBody = require('../../middleware/validateBody');
 const validateQuery = require('../../middleware/validateQuery');
 const contactPointSchema = require('../../schemas/contactPointSchema');

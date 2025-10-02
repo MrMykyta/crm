@@ -6,24 +6,23 @@
     "firstName": "First name",
     "lastName": "Last name",
     "signIn": "Sign in",
-    "resendEmail": "Resend verification email",
+    "resendEmail": "Resend email",
     "forgot": "Forgot password?",
     "verifyTitle": "Check your email",
     "verified": "Verified",
     "redirecting": "Redirecting…",
     "verificationError": "Verification error",
-    "verifySentTo": "We sent a verification link to",
+    "verifySentTo": "We sent a link to",
     "openMailbox": "Open mailbox",
-    "verificationResent": "Verification email sent",
-    "verificationResendFail": "Resend failed",
-    "verifyHint": "Click the link in the email to continue.",
+    "verificationResent": "Email sent",
+    "verificationResendFail": "Failed to send",
     "forgotTitle": "Forgot password?",
-    "forgotSubtitle": "Enter your email and we will send a reset link.",
+    "forgotSubtitle": "Enter your email and we'll send a reset link.",
     "sendReset": "Send reset link",
-    "resetSent": "Reset link sent. Please check your inbox.",
-    "resetFailed": "Failed to send reset email",
-    "resetHint": "You will receive an email with a link to set a new password.",
-    "setNewPassword": "Set a new password",
+    "resetSent": "Reset link sent. Check your email.",
+    "resetFailed": "Couldn't send the email",
+    "resetHint": "You'll receive an email to change your password.",
+    "setNewPassword": "New password",
     "confirmPassword": "Confirm password",
     "passwordsMustMatch": "Passwords must match",
     "resetInvalid": "Invalid or expired link",
@@ -31,7 +30,7 @@
     "updatePassword": "Update password"
   },
   "company": {
-    "title": "Create company",
+    "title": "Create a company",
     "subtitle": "Tell us a bit about your business.",
     "name": "Company name",
     "legalName": "Legal name (optional)",
@@ -40,9 +39,9 @@
     "website": "Website (optional)",
     "continue": "Continue",
     "nipHint": "For PL use 10 digits without dashes.",
-    "chooseTitle": "Select a company",
-    "chooseSubtitle": "Pick a company to continue",
-    "createNew": "Create new company"
+    "chooseTitle": "Choose a company",
+    "chooseSubtitle": "Select a company to continue",
+    "createNew": "Create new"
   },
   "common": {
     "email": "Email",
@@ -50,9 +49,9 @@
     "required": "Required",
     "invalidEmail": "Invalid email",
     "tooShort": "Too short",
-    "atLeast": "At least {{n}} chars",
-    "uppercase": "1 uppercase",
-    "lowercase": "1 lowercase",
+    "atLeast": "At least {{n}} characters",
+    "uppercase": "1 uppercase letter",
+    "lowercase": "1 lowercase letter",
     "number": "1 number",
     "saving": "Saving…",
     "creating": "Creating…",
@@ -65,7 +64,12 @@
     "sending": "Sending…",
     "save": "Save",
     "edit": "Edit",
-    "reset": "Reset"
+    "reset": "Reset",
+    "none": "—",
+    "cancel": "Cancel",
+    "primary": "Primary",
+    "saved": "Saved",
+    "unsaved": "Unsaved changes"
   },
   "countries": {
     "PL": "PL — Poland",
@@ -76,12 +80,12 @@
   },
   "errors": {
     "registrationFailed": "Registration failed",
-    "loginFailed": "Wrong email or password",
-    "createCompanyFailed": "Create company failed",
+    "loginFailed": "Invalid email or password",
+    "createCompanyFailed": "Couldn't create company",
     "accountNotActive": "Account is not active",
     "invalidToken": "Invalid token",
     "emailNotVerified": "Email not verified",
-    "verificationFailed": "Verification error",
+    "verificationFailed": "Verification failed",
     "companyNotSelected": "Company not selected"
   },
   "menu": {
@@ -113,9 +117,9 @@
   },
   "widgets": {
     "kpi": "KPI",
-    "funnel": "Sales Funnel",
-    "tasks": "Tasks Today",
-    "ordersQueue": "Orders in Queue",
+    "funnel": "Sales funnel",
+    "tasks": "Today's tasks",
+    "ordersQueue": "Orders queue",
     "calendar": "Calendar"
   },
   "kpi": {
@@ -126,9 +130,9 @@
   "topbar": {
     "searchPlaceholder": "Search…",
     "notifications": "Notifications",
-    "find": "Find",
     "userMenu": "User menu",
-    "logout": "Logout"
+    "find": "Find",
+    "logout": "Log out"
   },
   "theme": {
     "auto": "Auto",
@@ -137,7 +141,7 @@
   },
   "dashboard": {
     "addWidget": "Add widget",
-    "resetLayout": "Reset layout",
+    "resetLayout": "Reset grid",
     "resize": "Resize",
     "remove": "Remove"
   },
@@ -161,7 +165,7 @@
       "firstNamePH": "John",
       "lastNamePH": "Doe",
       "email": "Email",
-      "contacts": "Contacts",
+      "contacts": "Contact details",
       "phone": "Phone",
       "telegram": "Telegram",
       "emailVerified": "Email verified",
@@ -189,6 +193,120 @@
       "language": "Language",
       "theme": "Theme"
     }
-    
+  },
+  "list": {
+    "rangeOfTotal": "{{start}}–{{end}} of {{total}}",
+    "perPageShort": "/page",
+    "refresh": "Refresh",
+    "back": "Back",
+    "forward": "Forward",
+    "pageLabel": "p. {{page}} / {{pages}}"
+  },
+  "crm": {
+    "titles": {
+      "counterparties": "Counterparties",
+      "leads": "Leads"
+    },
+    "actions": {
+      "addCounterparty": "Add counterparty",
+      "addLead": "Add lead"
+    },
+    "dialogs": {
+      "newCounterparty": "New counterparty",
+      "newLead": "New lead",
+      "counterpartyDetails": "Counterparty card"
+    },
+    "table": {
+      "columns": {
+        "counterparty": "Counterparty",
+        "contacts": "Contacts",
+        "updatedAt": "Updated",
+        "lead": "Lead",
+        "createdAt": "Created"
+      },
+      "contactCount": "{{count}} contact",
+      "contactCount_plural": "{{count}} contacts"
+    },
+    "common": {
+      
+    },
+    "form": {
+      "sections": {
+        "contacts": "Contacts"
+      },
+      "fields": {
+        "shortName": "Short name",
+        "fullName": "Full legal name",
+        "type": "Type",
+        "status": "Status",
+        "nip": "NIP",
+        "regon": "REGON",
+        "krs": "KRS",
+        "bdo": "BDO",
+        "country": "Country",
+        "city": "City",
+        "postalCode": "Postal code",
+        "street": "Street",
+        "description": "Description",
+        "primary": "Primary",
+        "isCompany": "Company"
+      },
+      "placeholders": {
+        "shortName": "Short company name",
+        "fullName": "Registered legal name",
+        "nip": "digits only",
+        "postalCode": "e.g. 00-000",
+        "contactValue": "value (email, phone, link...)"
+      },
+      "actions": {
+        "addContact": "+ Add contact",
+        "remove": "Remove"
+      },
+      "hints": {
+        "noContacts": "No contacts added"
+      },
+      "errors": {
+        "requiredShort": "Enter a short name",
+        "requiredFull": "Enter a full name",
+        "required": "Required",
+        "max": "No more than {{max}} characters",
+        "badType": "Invalid type",
+        "badStatus": "Invalid status",
+        "digitsOnly": "Digits only",
+        "nipLen": "Must be exactly 10 digits",
+        "countryIso": "ISO-2, e.g. PL",
+        "selectChannel": "Select a channel",
+        "valueRequired": "Enter a value",
+        "badEmail": "Invalid email",
+        "badPhone": "Invalid phone"
+      }
+    },
+    "enums": {
+      "type": {
+        "lead": "Lead",
+        "client": "Client",
+        "partner": "Partner",
+        "supplier": "Supplier",
+        "manufacturer": "Manufacturer"
+      },
+      "status": {
+        "potential": "Potential",
+        "active": "Active",
+        "inactive": "Inactive"
+      }
+    },
+    "channels": {
+      "email": "Email",
+      "phone": "Phone",
+      "website": "Website",
+      "telegram": "Telegram",
+      "whatsapp": "WhatsApp",
+      "linkedin": "LinkedIn"
+    },
+    "filters": {
+      "allTypes": "All types",
+      "allStatuses": "All statuses",
+      "searchPlaceholder": "Search (name, NIP, REGON...)"
+    }
   }
 }

@@ -167,7 +167,7 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'Counterparty',
     tableName: 'counterparties',
-    paranoid: true,
+    // paranoid: true,
     underscored: true,
     timestamps: true
   });

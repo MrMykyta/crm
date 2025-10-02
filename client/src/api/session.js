@@ -1,51 +1,59 @@
-import httpClient from './index';
+// src/api/session.js
+import axios from 'axios';
 
-export const getTokens = () => ({
-  access: localStorage.getItem('accessToken'),
-  refresh: localStorage.getItem('refreshToken'),
-});
+/** ===== Helpers for baseURL ===== */
+function makeBaseURL() {
+  const raw = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  const trimmed = raw.replace(/\/+$/, '');
+  return `${trimmed}/api`;
+}
+
+/** ===== LocalStorage session helpers ===== */
+export const getAccessToken  = () => localStorage.getItem('accessToken');
+export const getRefreshToken = () => localStorage.getItem('refreshToken');
+export const getCompanyId    = () => localStorage.getItem('companyId');
+
+export const setCompanyId = (companyId) => {
+  if (companyId) localStorage.setItem('companyId', companyId);
+};
 
 export const setTokens = async ({ accessToken, refreshToken, activeCompanyId }) => {
-  if (accessToken) localStorage.setItem('accessToken', accessToken);
+  if (accessToken)  localStorage.setItem('accessToken', accessToken);
   if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-  if (activeCompanyId) localStorage.setItem('companyId', activeCompanyId);
+  if (activeCompanyId) setCompanyId(activeCompanyId);
 };
-
-export const getCompanyId = () => localStorage.getItem('companyId');
-export const setCompanyId = async (companyId) => localStorage.setItem('companyId', companyId);
 
 export const clearSession = () => {
-  try {
-    localStorage.removeItem('accessToken');
-    console.log('accessToken removed');
-  } catch (_) {}
-  try {
-    localStorage.removeItem('refreshToken');
-    console.log('refreshToken removed');
-  } catch (_) {}
-  try {
-    localStorage.removeItem('companyId');
-    console.log('companyId removed');
-  } catch (_) {}
-  try {
-    localStorage.removeItem('user');
-    console.log('user removed');
-  } catch (_) {}
-  try {
-    localStorage.removeItem('avatarUrl');
-    console.log('avatarUrl removed');
-  } catch (_) {}
+  ['accessToken','refreshToken','companyId','user','ui.appearance','theme','avatarUrl']
+    .forEach(k => { try { localStorage.removeItem(k); } catch(_) {} });
 };
 
-export const logoutUser = () => {
+export const logoutUser = async () => {
   clearSession();
 };
 
+/** ===== Bare axios для refresh (без перехватчиков) ===== */
+const bare = axios.create({
+  baseURL: makeBaseURL(),
+  withCredentials: true,
+  timeout: 30000,
+});
+
+/** 
+ * Обновление токенов. 
+ * Если refresh хранится в localStorage — шлём в теле запроса (как у тебя).
+ * Если сервер работает на HttpOnly cookie — тело можно не слать.
+ */
 export const refreshSession = async () => {
-  const { refresh } = getTokens();
-  if (!refresh) return null;
-  // важно: используем "чистый" axios, чтобы не задеть перехватчики httpClient
-  const { data } = await httpClient.post(`/auth/refresh`, { refreshToken: refresh }, { withCredentials: true });
-  console.log('Refreshing tokens:', data);
-  return { data };
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) throw new Error('No refresh token');
+
+  const { data } = await bare.post('/auth/refresh', { refreshToken });
+  // ожидаем либо {accessToken, refreshToken?}, либо {tokens:{accessToken,refreshToken?}}
+  const tokens = data?.tokens || data || {};
+  await setTokens({
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+  });
+  return tokens;
 };

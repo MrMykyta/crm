@@ -1,93 +1,64 @@
+'use strict';
+
 const { sequelize, Counterparty, ContactPoint } = require('../../models');
 const { Op } = require('sequelize');
-const { parsePagination, packResult } = require('../../utils/pagination');
+const { parsePagination, packResult, applyCommonFilters } = require('../../utils/pagination');
 const { addContacts } = require('./contactPointService');
 
-const SORT_WHITELIST = new Set(['created_at', 'name', 'status', 'type', 'updated_at']);
+// какие поля разрешаем сортировать
+const SORT_WHITELIST = ['createdAt', 'updatedAt', 'shortName', 'status', 'type'];
 
 module.exports.list = async (companyId, query = {}) => {
-    const { limit, page, offset } = parsePagination(query);
+  // разберём query и зададим дефолты
+  const parsed = parsePagination(query, {
+    sortWhitelist: SORT_WHITELIST,
+    defaultSort: 'createdAt',
+    defaultDir: 'DESC',
+    defaultLimit: 25,
+    maxLimit: 100,
+  });
 
-    // базовый where
-    const where = { companyId };
+  const where = { companyId };
 
-    // фильтры по одиночным полям
-    if (query.type) {
-      where.type = query.type;
-    }
-    if (query.status) {
-      where.status = query.status;
-    }
+  // одиночные фильтры (если прилетят)
+  if (query.type) where.type = query.type;
+  if (query.status) where.status = query.status;
+  if (query.departmentId) where.departmentId = query.departmentId;
+  if (query.isCompany != null) where.isCompany = String(query.isCompany) === 'true';
 
-    // фильтры по множественным значениям
-    if (Array.isArray(query.types) && query.types.length) {
-      where.type = { [Op.in]: query.types };
-    }
-    if (Array.isArray(query.statuses) && query.statuses.length) {
-      where.status = { [Op.in]: query.statuses };
-    }
+  // множественные фильтры из parsePagination
+  if (parsed.types?.length) where.type = { [Op.in]: parsed.types };
+  if (parsed.statuses?.length) where.status = { [Op.in]: parsed.statuses };
 
-    // полнотекстовый/like поиск (Postgres: ILIKE)
-    if (query.search && String(query.search).trim()) {
-      const s = `%${String(query.search).trim()}%`;
-      // подстрой под реальные поля (name, taxId, email и т.д.)
-      where[Op.or] = [
-        { name:   { [Op.iLike]: s } },
-        { nip: { [Op.iLike]: s } },      // если есть
-        { email:  { [Op.iLike]: s } },      // если есть
-      ];
-    }
+  // общий поиск + диапазоны дат (createdAt)
+  applyCommonFilters(where, parsed, ['shortName', 'fullName', 'nip', 'regon', 'krs']);
 
-    // диапазон дат
-    const createdFrom = query.createdFrom ? new Date(query.createdFrom) : null;
-    const createdTo   = query.createdTo   ? new Date(query.createdTo)   : null;
-    if (createdFrom || createdTo) {
-      where.createdAt = {};
-      if (createdFrom) where.createdAt[Op.gte] = createdFrom;
-      if (createdTo)   where.createdAt[Op.lte] = createdTo;
-    }
+  // выбор колонок (если ?fields=id,shortName,status)
+  const attributes = parsed.fields ? parsed.fields : {
+    exclude: ['companyId','mainResponsibleUserId','createdBy','updatedBy','holdingId']
+  };
 
-    // безопасная сортировка
-    let sort = String(query.sort || 'created_at');
-    let dir  = String(query.dir  || 'DESC').toUpperCase();
-    if (!SORT_WHITELIST.has(sort)) sort = 'created_at';
-    if (!['ASC', 'DESC'].includes(dir)) dir = 'DESC';
+  const data = await Counterparty.findAndCountAll({
+    where,
+    include: [{
+      model: ContactPoint,
+      as: 'contacts',
+      // ВАЖНО: эти имена должны совпадать с определением модели ContactPoint (camelCase)
+      attributes: ['id', 'channel', 'valueNorm', 'isPrimary', 'createdAt'],
+    }],
+    attributes,
+    order: [[parsed.sort, parsed.dir]],
+    limit: parsed.limit,
+    offset: parsed.offset,
+    distinct: true,
+  });
 
-    // выбор колонок при желании (ускоряет ответ)
-    const attributes = query.fields
-      ? String(query.fields)
-          .split(',')
-          .map(f => f.trim())
-          .filter(Boolean)
-      : undefined; // все поля
-
-    // include при необходимости (комментарий: добавь свои связи)
-    // const include = [{ model: ContactPoint, as: 'contacts', attributes: ['id', 'type', 'value'] }];
-
-    try {
-      const data = await Counterparty.findAndCountAll({
-        where,
-        include: [{
-          model: ContactPoint,
-          as: 'contacts',
-          attributes: ['id', 'channel', 'value_norm', 'is_primary', 'created_at'],
-        }],
-        attributes: {
-          exclude: ['company_id','main_responsible_user_id','created_by','updated_by','holding_id']
-        },
-        order: [[sort, dir]],
-        limit,
-        distinct: true,
-        offset,
-      });
-      return packResult(data, { limit, page });
-    } catch (e) {
-        throw new Error('Failed to list counterparties');
-    }
+  return packResult(data, parsed);
 };
 
 module.exports.create = async (userId, companyId, data = {}) => {
   const t = await sequelize.transaction();
+  console.log('Creating counterparty add:', data, userId, companyId);
   try {
     const counterparty = await Counterparty.create({
       companyId,
@@ -112,7 +83,8 @@ module.exports.create = async (userId, companyId, data = {}) => {
       updatedBy: userId
     }, { transaction: t });
     
-    // Контакт‑поинты (опционально)
+    console.log('Created counterparty added:', counterparty);
+    // Контакт-поинты (опционально)
     await addContacts({
       companyId,
       ownerType: 'counterparty',
@@ -121,6 +93,7 @@ module.exports.create = async (userId, companyId, data = {}) => {
       actorUserId: userId,
       t
     });
+    console.log('Counterparty contacts added:', data.contacts);
 
     await t.commit();
     return counterparty;
@@ -130,32 +103,25 @@ module.exports.create = async (userId, companyId, data = {}) => {
   }
 };
 
-module.exports.getOne = async(companyId, id) =>{
-    try {
-        return await Counterparty.findOne({ 
-          where: { 
-            id, 
-            companyId: companyId 
-          }, 
-          include: [{
-            model: ContactPoint,
-            as: 'contacts',
-            attributes: ['id', 'channel', 'valueNorm', 'isPrimary', 'createdAt'],
-          }],
-          attributes: {
-            exclude: ['company_id','main_responsible_user_id','created_by','updated_by','holding_id']
-          },
-        });
-    } catch (e) {
-        throw new Error('Counterparty not found');
-    }
-}
+module.exports.getOne = async (companyId, id) => {
+  return Counterparty.findOne({
+    where: { id, companyId },
+    include: [{
+      model: ContactPoint,
+      as: 'contacts',
+      attributes: ['id', 'channel', 'valueNorm', 'isPrimary', 'createdAt'],
+    }],
+    attributes: {
+      exclude: ['companyId','mainResponsibleUserId','createdBy','updatedBy','holdingId']
+    },
+  });
+};
 
 module.exports.update = async (userId, companyId, id, data = {}) => {
   const t = await sequelize.transaction();
   try {
     const counterparty = await Counterparty.findOne({
-      where: { id, companyId: companyId },
+      where: { id, companyId },
       transaction: t
     });
     if (!counterparty) {
@@ -169,10 +135,10 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
       mainResponsibleUserId: data.mainResponsibleUserId ?? counterparty.mainResponsibleUserId,
       fullName: data.fullName ?? counterparty.fullName,
       shortName: data.shortName ?? counterparty.shortName,
-      regon: data.regon ?? counterparty.regon,
-      nip: data.nip ?? counterparty.nip,
-      krs: data.krs ?? counterparty.krs,
-      bdo: data.bdo ?? counterparty.bdo,
+      regon: data.regon ,
+      nip: data.nip ,
+      krs: data.krs ,
+      bdo: data.bdo ,
       type: data.type ?? counterparty.type,
       status: data.status ?? counterparty.status,
       country: data.country ?? counterparty.country,
@@ -184,7 +150,8 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
       updatedBy: userId
     }, { transaction: t });
 
-    // Добавление НОВЫХ контакт‑поинтов (редактирование/удаление — отдельными эндпоинтами)
+    console.log('Counterparty updated:', counterparty);
+
     await addContacts({
       companyId,
       ownerType: 'counterparty',
@@ -198,19 +165,22 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
     return counterparty;
   } catch (e) {
     await t.rollback();
-    throw e;
+    console.log(e);
   }
 };
 
 module.exports.remove = async (companyId, id) => {
-    try {
-        const counterparty = await Counterparty.findOne({ where: { id, companyId: companyId } });
-        if (!counterparty) {
-            return false;
-        }
-        await counterparty.destroy();
-        return true;
-    } catch (e) {
-        throw new Error('Failed to delete counterparty');
-    }
+  const row = await Counterparty.findOne({ where: { id, companyId } });
+  if (!row) return false;
+  await row.destroy();
+  return true;
+};
+
+// POST /:companyId/:id/convert-lead
+module.exports.convertLead = async (companyId, id, userId) => {
+  const [n] = await Counterparty.update(
+    { type: 'client', status: 'active', updatedBy: userId },
+    { where: { id, companyId, type: 'lead' } }
+  );
+  return n > 0;
 };

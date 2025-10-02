@@ -1,4 +1,4 @@
-/* убираем дефолтную стрелку, которую добавляет rgl */
+/* убираем дефолтную стрелку */
 .react-grid-item .react-resizable-handle::after {
   content: none !important;
   background: none !important;
@@ -14,10 +14,10 @@
   pointer-events: auto;
 }
 
-/* ===== ПРАВЫЙ КРАЙ: hitbox на всю сторону ===== */
+/* правый край */
 .react-grid-item .react-resizable-handle-e {
   top: 0; bottom: 0; right: 0;
-  width: 28px;                 /* широкая зона хвата */
+  width: 28px;
   cursor: e-resize;
   opacity: 0; transition: opacity .15s ease;
 }
@@ -33,7 +33,7 @@
   transform: none;
 }
 
-/* ===== НИЖНИЙ КРАЙ: hitbox на всю сторону ===== */
+/* нижний край */
 .react-grid-item .react-resizable-handle-s {
   left: 0; right: 0; bottom: 0;
   height: 24px;
@@ -46,14 +46,13 @@
   position:absolute; left:0; right:0; top:10px;
   height:2px; border-radius:2px; background: var(--card-brd);
 }
-
 .react-grid-item > .react-resizable-handle.react-resizable-handle-s{
   left: 25%;
   width: 50%;
   transform: none;
 }
 
-/* ===== УГОЛ SE: удобный hitbox + аккуратный маркер ===== */
+/* угол SE */
 .react-grid-item .react-resizable-handle-se {
   right: 0; bottom: 0; width: 22px; height: 22px;
   cursor: se-resize;

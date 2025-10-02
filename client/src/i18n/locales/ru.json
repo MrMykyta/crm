@@ -1,12 +1,12 @@
 {
   "auth": {
-    "signup": "Регистрация",
+    "signup": "Зарегистрироваться",
     "signin": "Войти",
     "createAccount": "Создать аккаунт",
     "firstName": "Имя",
     "lastName": "Фамилия",
     "signIn": "Войти",
-    "resendEmail": "Отправить письмо повторно",
+    "resendEmail": "Отправить письмо ещё раз",
     "forgot": "Забыли пароль?",
     "verifyTitle": "Проверьте почту",
     "verified": "Подтверждено",
@@ -15,29 +15,28 @@
     "verifySentTo": "Мы отправили ссылку на",
     "openMailbox": "Открыть почту",
     "verificationResent": "Письмо отправлено",
-    "verificationResendFail": "Не удалось отправить",
-    "verifyHint": "Нажмите на ссылку в письме, чтобы продолжить.",
+    "verificationResendFail": "Не удалось отправить письмо",
     "forgotTitle": "Забыли пароль?",
-    "forgotSubtitle": "Укажите email, и мы вышлем ссылку для сброса.",
+    "forgotSubtitle": "Введите email, и мы отправим ссылку для сброса.",
     "sendReset": "Отправить ссылку",
-    "resetSent": "Ссылка отправлена. Проверьте почту.",
+    "resetSent": "Ссылка для сброса отправлена. Проверьте почту.",
     "resetFailed": "Не удалось отправить письмо",
-    "resetHint": "Вы получите письмо со ссылкой для изменения пароля.",
+    "resetHint": "Вы получите письмо со ссылкой на смену пароля.",
     "setNewPassword": "Новый пароль",
-    "confirmPassword": "Подтверждение пароля",
+    "confirmPassword": "Подтвердите пароль",
     "passwordsMustMatch": "Пароли должны совпадать",
-    "resetInvalid": "Недействительная или устаревшая ссылка",
-    "passwordUpdated": "Пароль обновлен",
-    "updatePassword": "Обновить пароль"
+    "resetInvalid": "Неверная или просроченная ссылка",
+    "passwordUpdated": "Пароль обновлён",
+    "updatePassword": "Сменить пароль"
   },
   "company": {
-    "title": "Создать компанию",
-    "subtitle": "Расскажите немного о вашем бизнесе.",
+    "title": "Создание компании",
+    "subtitle": "Расскажите немного о бизнесе.",
     "name": "Название компании",
-    "legalName": "Юридическое название (опционально)",
+    "legalName": "Юридическое название (необязательно)",
     "country": "Страна",
-    "taxId": "ИНН / NIP (опционально)",
-    "website": "Сайт (опционально)",
+    "taxId": "Налоговый номер / NIP (необязательно)",
+    "website": "Сайт (необязательно)",
     "continue": "Продолжить",
     "nipHint": "Для PL используйте 10 цифр без дефисов.",
     "chooseTitle": "Выберите компанию",
@@ -47,16 +46,16 @@
   "common": {
     "email": "Email",
     "password": "Пароль",
-    "required": "Обязательно",
+    "required": "Обязательное поле",
     "invalidEmail": "Некорректный email",
-    "tooShort": "Слишком коротко",
+    "tooShort": "Слишком короткий",
     "atLeast": "Не менее {{n}} символов",
     "uppercase": "1 заглавная буква",
     "lowercase": "1 строчная буква",
     "number": "1 цифра",
-    "saving": "Сохранение…",
-    "creating": "Создание…",
-    "signingIn": "Вход…",
+    "saving": "Сохраняем…",
+    "creating": "Создаём…",
+    "signingIn": "Входим…",
     "continue": "Продолжить",
     "close": "Закрыть",
     "error": "Ошибка",
@@ -65,7 +64,12 @@
     "sending": "Отправка…",
     "save": "Сохранить",
     "edit": "Редактировать",
-    "reset": "Сбросить"
+    "reset": "Сбросить",
+    "none": "—",
+    "cancel": "Отмена",
+    "primary": "Основной",
+    "saved": "Сохранено",
+    "unsaved": "Есть несохранённые изменения"
   },
   "countries": {
     "PL": "PL — Польша",
@@ -75,18 +79,18 @@
     "LT": "LT — Литва"
   },
   "errors": {
-    "registrationFailed": "Ошибка регистрации",
+    "registrationFailed": "Не удалось зарегистрироваться",
     "loginFailed": "Неверный email или пароль",
     "createCompanyFailed": "Не удалось создать компанию",
     "accountNotActive": "Аккаунт не активен",
     "invalidToken": "Недействительный токен",
-    "emailNotVerified": "Email не подтвержден",
-    "verificationFailed": "Ошибка подтверждения",
+    "emailNotVerified": "Email не подтверждён",
+    "verificationFailed": "Не удалось подтвердить",
     "companyNotSelected": "Компания не выбрана"
   },
   "menu": {
     "bookmarks": "Закладки",
-    "pulpit": "Рабочий стол",
+    "pulpit": "Дашборд",
     "crm": "CRM",
     "counterparties": "Контрагенты",
     "leads": "Лиды",
@@ -98,16 +102,16 @@
     "invoices": "Счета",
     "receipts": "Квитанции",
     "orders": "Заказы",
-    "offers": "Предложения",
+    "offers": "Оферты",
     "promotions": "Акции",
     "coupons": "Купоны",
-    "shipments": "Отправки",
+    "shipments": "Отгрузки",
     "pim": "PIM",
     "products": "Товары",
     "services": "Услуги",
     "wms": "WMS",
     "warehouse": "Склад",
-    "wmsDocs": "Документы склада",
+    "wmsDocs": "Складские документы",
     "settings": "Настройки",
     "userSettings": "Настройки пользователя"
   },
@@ -115,7 +119,7 @@
     "kpi": "KPI",
     "funnel": "Воронка продаж",
     "tasks": "Задачи на сегодня",
-    "ordersQueue": "Заказы в очереди",
+    "ordersQueue": "Очередь заказов",
     "calendar": "Календарь"
   },
   "kpi": {
@@ -151,7 +155,7 @@
       "profile": "Профиль",
       "security": "Безопасность",
       "notifications": "Уведомления",
-      "appearance": "Вид",
+      "appearance": "Внешний вид",
       "preferences": "Предпочтения"
     },
     "profile": {
@@ -159,23 +163,23 @@
       "firstName": "Имя",
       "lastName": "Фамилия",
       "firstNamePH": "Иван",
-      "lastNamePH": "Петров",
+      "lastNamePH": "Иванов",
       "email": "Email",
-      "contacts": "Контактные данные",
+      "contacts": "Контакты",
       "phone": "Телефон",
       "telegram": "Telegram",
-      "emailVerified": "Email подтвержден",
-      "emailNotVerified": "Email не подтвержден",
+      "emailVerified": "Email подтверждён",
+      "emailNotVerified": "Email не подтверждён",
       "active": "Аккаунт активен",
-      "inactive": "Аккаунт неактивен",
-      "joined": "Дата регистрации"
+      "inactive": "Аккаунт не активен",
+      "joined": "Присоединился"
     },
     "security": {
       "title": "Пароль",
       "current": "Текущий пароль",
       "new": "Новый пароль",
-      "confirm": "Подтверждение пароля",
-      "update": "Изменить пароль"
+      "confirm": "Повторите пароль",
+      "update": "Сменить пароль"
     },
     "notifications": {
       "title": "Уведомления",
@@ -183,11 +187,124 @@
       "push": "Push-уведомления"
     },
     "appearance": {
-      "title": "Вид"
+      "title": "Внешний вид"
     },
     "preferences": {
       "language": "Язык",
       "theme": "Тема"
+    }
+  },
+  "list": {
+    "rangeOfTotal": "{{start}}–{{end}} из {{total}}",
+    "perPageShort": "/стр.",
+    "refresh": "Обновить",
+    "back": "Назад",
+    "forward": "Вперёд",
+    "pageLabel": "стр. {{page}} / {{pages}}"
+  },
+  "crm": {
+    "titles": {
+      "counterparties": "Контрагенты",
+      "leads": "Лиды"
+    },
+    "actions": {
+      "addCounterparty": "Добавить контрагента",
+      "addLead": "Добавить лид"
+    },
+    "dialogs": {
+      "newCounterparty": "Новый контрагент",
+      "newLead": "Новый лид",
+      "counterpartyDetails": "Карточка контрагента"
+    },
+    "table": {
+      "columns": {
+        "counterparty": "Контрагент",
+        "contacts": "Контакты",
+        "updatedAt": "Обновлено",
+        "lead": "Лид",
+        "createdAt": "Создано"
+      },
+      "contactCount": "{{count}} контакт",
+      "contactCount_plural": "{{count}} контактов"
+    },
+    "common": {},
+    "form": {
+      "sections": {
+        "contacts": "Контакты"
+      },
+      "fields": {
+        "shortName": "Краткое название",
+        "fullName": "Юридическое название",
+        "type": "Тип",
+        "status": "Статус",
+        "nip": "NIP",
+        "regon": "REGON",
+        "krs": "KRS",
+        "bdo": "BDO",
+        "country": "Страна",
+        "city": "Город",
+        "postalCode": "Почтовый индекс",
+        "street": "Улица",
+        "description": "Описание",
+        "primary": "Основной",
+        "isCompany": "Компания"
+      },
+      "placeholders": {
+        "shortName": "Короткое название компании",
+        "fullName": "Зарегистрированное юр. название",
+        "nip": "только цифры",
+        "postalCode": "напр. 00-000",
+        "contactValue": "значение (email, телефон, ссылка...)"
+      },
+      "actions": {
+        "addContact": "+ Добавить контакт",
+        "remove": "Удалить"
+      },
+      "hints": {
+        "noContacts": "Контактов нет"
+      },
+      "errors": {
+        "requiredShort": "Введите краткое название",
+        "requiredFull": "Введите полное название",
+        "required": "Обязательное поле",
+        "max": "Не более {{max}} символов",
+        "badType": "Неверный тип",
+        "badStatus": "Неверный статус",
+        "digitsOnly": "Только цифры",
+        "nipLen": "Должно быть ровно 10 цифр",
+        "countryIso": "ISO-2, напр. PL",
+        "selectChannel": "Выберите канал",
+        "valueRequired": "Введите значение",
+        "badEmail": "Некорректный email",
+        "badPhone": "Некорректный телефон"
+      }
+    },
+    "enums": {
+      "type": {
+        "lead": "Лид",
+        "client": "Клиент",
+        "partner": "Партнёр",
+        "supplier": "Поставщик",
+        "manufacturer": "Производитель"
+      },
+      "status": {
+        "potential": "Потенциальный",
+        "active": "Активный",
+        "inactive": "Неактивный"
+      }
+    },
+    "channels": {
+      "email": "Email",
+      "phone": "Телефон",
+      "website": "Сайт",
+      "telegram": "Telegram",
+      "whatsapp": "WhatsApp",
+      "linkedin": "LinkedIn"
+    },
+    "filters": {
+      "allTypes": "Все типы",
+      "allStatuses": "Все статусы",
+      "searchPlaceholder": "Поиск (название, NIP, REGON...)"
     }
   }
 }

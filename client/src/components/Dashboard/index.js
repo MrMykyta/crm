@@ -111,7 +111,7 @@ export default function Dashboard() {
     // стартовые размеры; minW/minH скромные, дальше карточка поднимет minH сама
     return clampLayouts({
       lg: [
-        { i:'kpi', x:0, y:0, w:3, h:5, minW:3, minH:5, resizeHandles:['e','s','se'] },
+        { i:'kpi', x:0, y:0, w:3, h:6, minW:3, minH:6, resizeHandles:['e','s','se'] },
       ],
     });
   });
@@ -128,7 +128,9 @@ export default function Dashboard() {
     const next = clampLayouts(ls);
     if (jsonEqual(next, layouts)) return;      // НЕ трогаем state, если по факту без изменений
     setLayouts(next);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+    try { 
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); 
+    } catch {}
   }, [layouts]);
 
   // Мин-высота поднимается, но не опускается; мемо через useCallback

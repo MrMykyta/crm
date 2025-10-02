@@ -1,0 +1,35 @@
+.shell{
+  position: relative;
+  display:flex; align-items:center; gap:8px;
+  background: color-mix(in srgb, var(--card-bg) 94%, #000 0%);
+  border:1px solid var(--card-brd);
+  border-radius: 12px;
+  padding:6px 10px;
+}
+.tabs{
+  display:flex; gap:8px; align-items:center;
+  overflow:hidden; white-space:nowrap;
+  flex:1; height: 28px;
+}
+.tabs.expanded{ height:auto; flex-wrap:wrap; white-space:normal; row-gap:6px; }
+
+.tab{
+  height:24px; line-height:24px;
+  padding:0 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card-bg) 80%, #fff 8%);
+  border:1px solid var(--card-brd);
+  color: var(--text);
+  font-size:12px;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.tab:hover{ outline:1px solid color-mix(in srgb, var(--primary), #fff 60%); }
+.active{ outline:2px solid color-mix(in srgb, var(--primary), #fff 50%); }
+
+.pin{ opacity:.55; font-size:11px; }
+.close{ opacity:.45; font-size:11px; }
+.chevron{
+  width:26px; height:26px; border-radius: 8px;
+  border:1px solid var(--card-brd);
+  background: color-mix(in srgb, var(--card-bg) 80%, #fff 4%);
+}

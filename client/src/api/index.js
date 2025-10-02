@@ -1,67 +1,114 @@
+// src/api/index.js
 import axios from 'axios';
-import { refreshSession, logoutUser, setTokens } from './session';
+import { refreshSession, logoutUser, getAccessToken as _getAccessToken, getCompanyId as _getCompanyId } from './session';
 
-const httpClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001/api',
-  withCredentials: true,
+/** ===== Base URL ===== */
+function makeBaseURL() {
+  const raw = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  const trimmed = raw.replace(/\/+$/, '');
+  return `${trimmed}/api`;
+}
+
+export const httpClient = axios.create({
+  baseURL: makeBaseURL(),
+  withCredentials: true, // оставь true, если аутентификация через cookie тоже используется
+  timeout: 30000,
 });
 
+/** Удобные ре-экспорты для остальных модулей */
+export const getAccessToken = _getAccessToken;
+export const getCompanyId   = _getCompanyId;
+
+/** ===== Request: подставляем Bearer ===== */
 httpClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  const token = _getAccessToken();
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
-}, (err) => Promise.reject(err));
+});
 
-httpClient.interceptors.response.use(
-  (response) => {
-    // если бэкенд иногда возвращает tokens вместе с ответом — подхватываем
-    if (response?.tokens) setTokens(response.tokens);
-    if (response?.user?.avatarUrl) {
-      localStorage.setItem('avatarUrl', response.data.user.avatarUrl);
-    }
-    return response;
-  },
-  async (error) => {
-    const res = error.response;
-    const originalRequest = error.config || {};
-    const url = (originalRequest.url || '').toString();
+/** ===== Refresh очередь ===== */
+let isRefreshing = false;
+let queue = [];
 
-    // роуты, где 401/403 — нормальная бизнес-ошибка (не надо разлогинивать/редиректить)
-    const isPublicAuthRoute =
-      url.includes('/auth/login') ||
-      url.includes('/auth/register') ||
-      url.includes('/auth/verify') ||
-      url.includes('/auth/refresh');
-
-    const hadAuthHeader = !!originalRequest.headers?.Authorization;
-
-    // ---- 403: пробуем refresh только если запрос был с Authorization и это не публичный роут
-    if (res?.status === 403 && !originalRequest._retry && hadAuthHeader && !isPublicAuthRoute) {
-      originalRequest._retry = true;
-      try {
-        const newTokens = await refreshSession();
-        if (newTokens?.data?.accessToken) {
-          originalRequest.headers.Authorization = `Bearer ${newTokens.data.accessToken}`;
-          return httpClient(originalRequest);
+function enqueue(originalRequest) {
+  return new Promise((resolve, reject) => {
+    queue.push({
+      resolve: (newToken) => {
+        if (newToken) {
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
         }
-      } catch (_) {
-        // упадём в общий блок ниже
+        resolve(httpClient(originalRequest));
+      },
+      reject,
+    });
+  });
+}
+
+function flushQueue(error, token = null) {
+  queue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve(token);
+  });
+  queue = [];
+}
+
+/** ===== Response: авто-refresh + защита от рекурсии ===== */
+httpClient.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const { response, config } = error || {};
+    const original = config || {};
+    if (!response) throw error;
+
+    const status = response.status;
+    const url = String(original?.url || '');
+    const isAuthRoute = [
+      '/auth/login',
+      '/auth/register',
+      '/auth/verify',
+      '/auth/refresh',
+      '/auth/logout',
+    ].some(p => url.includes(p));
+
+    const alreadyRetried   = Boolean(original._retry);
+    const hadAuthHeader    = Boolean(original?.headers?.Authorization);
+    const tokenErr         = response.data?.error === 'TokenError' || response.data?.code === 'TOKEN_EXPIRED';
+    const shouldTryRefresh = !alreadyRetried && !isAuthRoute && hadAuthHeader && ([401,403,408].includes(status) || tokenErr);
+
+    if (shouldTryRefresh) {
+      original._retry = true;
+
+      if (isRefreshing) return enqueue(original);
+
+      isRefreshing = true;
+      try {
+        const tokens = await refreshSession(); // кладёт новые токены в localStorage
+        const newToken = tokens?.accessToken || _getAccessToken();
+        isRefreshing = false;
+        flushQueue(null, newToken);
+
+        original.headers = original.headers || {};
+        if (newToken) original.headers.Authorization = `Bearer ${newToken}`;
+        return httpClient(original);
+      } catch (e) {
+        isRefreshing = false;
+        flushQueue(e, null);
+        await logoutUser();
+        window.location.replace('/');
+        throw e;
       }
     }
-    // ---- 401: 
-    // 1) если публичный auth-роут или неавторизованный запрос — отдать ошибку форме (Formik её покажет)
-    if (res?.status === 401 && (isPublicAuthRoute || !hadAuthHeader)) {
-      return Promise.reject(error);
+
+    if (status === 401 && !isAuthRoute) {
+      await logoutUser();
+      window.location.replace('/');
     }
 
-    // 2) для приватных запросов: разлогин и редирект на /auth
-    if (res?.status === 401 || res?.status === 403) {
-      logoutUser();
-      window.location.href = '/auth';
-      return Promise.reject(error);
-    }
-
-    return Promise.reject(error);
+    throw error;
   }
 );
 

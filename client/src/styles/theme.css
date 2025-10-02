@@ -4,7 +4,7 @@
    -> 1rem = 16px * (font-scale/100)  (ставится в ThemeProvider)
 */
 :root {
-  /* цветовая база (без изменений по смыслу) */
+  /* цветовая база */
   --bg: #0c0f16;
   --text: #e9edff;
   --muted: #aab2d6;
@@ -14,6 +14,10 @@
   --input-bg: rgba(10,12,19,.65);
   --shadow: 0 20px 60px rgba(0,0,0,.45);
 
+  /* вспомогательные */
+  --shadow-clr: #000;         /* для color-mix в модулях */
+  --glass-brd: var(--card-brd); /* единый бордер для “glass” */
+  
   --primary-start: #5b7cff;
   --primary-end:   #7a5bff;
   --focus: #85a2ff;
@@ -39,14 +43,16 @@
   /* ========= TYPOGRAPHY ========= */
   --font-base: 16px;
   --font-multiplier: 1;
+
   /* шкала */
-  --fs-xs: calc(0.75rem * var(--font-multiplier));
-  --fs-sm: calc(0.875rem * var(--font-multiplier));
-  --fs-md: calc(1rem * var(--font-multiplier));
-  --fs-lg: calc(1.125rem * var(--font-multiplier));
-  --fs-xl: calc(1.25rem * var(--font-multiplier));
-  --fs-2xl: calc(1.375rem * var(--font-multiplier));
-  --fs-3xl: calc(1.75rem * var(--font-multiplier));
+  --fs-2xs: calc(0.6875rem * var(--font-multiplier)); /* 11px */
+  --fs-xs:  calc(0.75rem * var(--font-multiplier));   /* 12px */
+  --fs-sm:  calc(0.875rem * var(--font-multiplier));  /* 14px */
+  --fs-md:  calc(1rem * var(--font-multiplier));      /* 16px */
+  --fs-lg:  calc(1.125rem * var(--font-multiplier));  /* 18px */
+  --fs-xl:  calc(1.25rem * var(--font-multiplier));   /* 20px */
+  --fs-2xl: calc(1.375rem * var(--font-multiplier));  /* 22px */
+  --fs-3xl: calc(1.75rem * var(--font-multiplier));   /* 28px */
 
   --lh-tight: 1.1;
   --lh-normal: 1.4;
@@ -68,6 +74,7 @@
   --radius-sm: 10px;
   --radius-md: 12px;
   --radius-lg: 16px;
+  --radius-xl: 20px;      /* добавлено для модалок/крупных карточек */
   --radius-full: 999px;
 
   /* ========= ELEVATION ========= */
@@ -76,60 +83,59 @@
   --elev-3: 0 20px 60px rgba(0,0,0,.45);
 
   /* ========= SIZES / LAYOUT ========= */
-  --sidebar-w: 15.5rem;        /* 248px */
-  --sidebar-w-collapsed: 4.75rem; /* 76px */
-  --topbar-h: 4rem;            /* 64px */
+  --sidebar-w: 15.5rem;          /* 248px */
+  --sidebar-w-collapsed: 4.75rem;/* 76px */
+  --topbar-h: 4rem;              /* 64px */
+  --icon-box: 40px;              /* базовый квадрат кнопок/аватара в topbar */
 
   /* ========= ANIMATION ========= */
   --tr-fast: .15s ease;
   --tr-med:  .25s ease;
 
-  /* controls from ThemeProvider */
-  --font-scale: 100; /* процентовка, 100 по умолчанию */
-
-  /* glass */
+  /* управляется ThemeProvider */
+  --font-scale: 100;
   --glass-blur: 6px;
 
-  /* topbar */
-  --topbar-h: 64px;
 }
 
 /* LIGHT */
-:root[data-theme="light"]{
-  --bg: #fff9f4;
-  --text: #2b2f3a;
-  --muted: #6c7280;
+:root[data-theme="light"] {
+  --bg: #fdfcf9;
+  --text: #2e2e35;
+  --muted: #777b85;
 
-  --card-bg: rgba(255,255,255,.7);
-  --card-brd: rgba(20,24,36,.08);
-  --input-bg: rgba(255,255,255,.9);
-  --shadow: 0 16px 50px rgba(221,140,94,.18);
+  --card-bg: rgba(255, 255, 255, .85);
+  --card-brd: rgba(30, 30, 40, .08);
+  --input-bg: rgba(255, 255, 255, .95);
 
-  --primary-start: #ff9a73;
-  --primary-end:   #a88bff;
-  --focus: #ffb686;
+  --shadow: 0 16px 40px rgba(180, 150, 120, .15);
 
-  --bg-gradient: linear-gradient(160deg, #fff9f4 0%, #ffeede 100%);
-  --bg-radial-1: radial-gradient(1200px 600px at 10% -10%, #ffd6c1 0%, transparent 60%);
-  --bg-radial-2: radial-gradient(800px 400px at 110% 10%, #f3d8ff 0%, transparent 60%);
+  --primary-start: #ff8c5c;
+  --primary-end:   #a77bff;
+  --focus: #ffb685;
 
-  --sidebar-bg: rgba(255,255,255,.7);
-  --sidebar-brd: rgba(20,24,36,.08);
-  --sidebar-text: #2b2f3a;
-  --sidebar-hover: rgba(255,154,115,.12);
-  --sidebar-active: rgba(255,154,115,.2);
+  --bg-gradient: linear-gradient(160deg, #fff8f2 0%, #f9f4ff 100%);
+  --bg-radial-1: radial-gradient(1200px 600px at 10% -10%, #ffe1c4 0%, transparent 60%);
+  --bg-radial-2: radial-gradient(800px 400px at 110% 10%, #e3d2ff 0%, transparent 60%);
 
-  --topbar-bg: rgba(255,255,255,.8);
-  --topbar-brd: rgba(20,24,36,.08);
-  --topbar-text: #2b2f3a;
-  --topbar-input-bg: rgba(255,255,255,.9);
+  --sidebar-bg: rgba(255, 255, 255, .82);
+  --sidebar-brd: rgba(30, 30, 40, .08);
+  --sidebar-text: #2e2e35;
+  --sidebar-hover: rgba(255, 154, 115, .10);
+  --sidebar-active: rgba(255, 154, 115, .18);
+
+  --topbar-bg: rgba(255, 255, 255, .9);
+  --topbar-brd: rgba(30, 30, 40, .08);
+  --topbar-text: #2e2e35;
+  --topbar-input-bg: rgba(255, 255, 255, .96);
+
+  --glass-blur: 2px;
 }
 
-/* плавная смена темы */
+/* плавная смена темы и остальные утилы остаются как были */
 html { font-size: var(--font-base); transition: background .25s ease, color .25s ease; }
 
 /* ========= GLOBAL TYPOGRAPHY UTILS ========= */
-/* Эти классы — глобальные. Используй где удобно. */
 .u-text      { font-size: var(--fs-md); line-height: var(--lh-normal); }
 .u-muted     { color: var(--muted); }
 .u-title     { font-size: var(--fs-lg); font-weight: var(--fw-bold); line-height: var(--lh-tight); }
@@ -139,3 +145,51 @@ html { font-size: var(--font-base); transition: background .25s ease, color .25s
 
 .u-btn       { font-size: var(--fs-sm); font-weight: var(--fw-medium); }
 .u-input     { font-size: var(--fs-sm); line-height: var(--lh-normal); }
+
+
+
+/* === Light override: Pastel Glow === */
+:root[data-theme="light"] .inner {
+  background: linear-gradient(180deg, #fff7f2 0%, #fff 100%);
+  border: 1px solid rgba(255, 170, 130, .25);
+  box-shadow:
+    0 16px 36px rgba(255, 140, 100, .14),
+    inset 0 1px 0 rgba(255, 255, 255, .65);
+}
+
+/* header/footer остаются стеклянными */
+:root[data-theme="light"] .header,
+:root[data-theme="light"] .footer {
+  background: linear-gradient(180deg, rgba(255, 247, 242, .97) 0%, rgba(255,255,255,.92) 100%);
+  border-color: rgba(255,170,130,.25);
+}
+
+/* ================= INPUTS ================= */
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea {
+  background: rgba(255,255,255,.96);
+  border: 1px solid rgba(200,120,90,.35);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.05);
+  transition: border-color .15s, box-shadow .15s;
+}
+
+/* hover/focus: яркий персиковый акцент */
+:root[data-theme="light"] input:hover,
+:root[data-theme="light"] select:hover,
+:root[data-theme="light"] textarea:hover {
+  border-color: rgba(255,140,100,.55);
+}
+
+:root[data-theme="light"] input:focus,
+:root[data-theme="light"] select:focus,
+:root[data-theme="light"] textarea:focus {
+  border-color: #ff8c64;
+  box-shadow: 0 0 0 3px rgba(255,140,100,.25);
+  outline: none;
+}
+
+/* label подсвечиваем сильнее */
+:root[data-theme="light"] label {
+  color: #7a5b55;
+}

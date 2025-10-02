@@ -10,6 +10,12 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import UserSettingsPage from './pages/UserSettingsPage';
 import UserProfilePage from './pages/UserProfilePage';
 
+//-------------------CRM Pages----------------------------------
+import LeadsPage from './pages/CRM/LeadsPage';
+import CounterpartiesPage from './pages/CRM/CounterpartiesPage';
+import CounterpartyDetailPage from './pages/CRM/CounterpartyDetailPage';
+
+
 import Dashboard from './components/Dashboard';
 
 import './reset.css';
@@ -74,7 +80,13 @@ export default function App() {
             }
           >
 
-            <Route index element={<Dashboard currentUser={user} />} />
+            <Route path="pulpit" element={<Dashboard currentUser={user} />} />
+
+            {/* CRM */}
+            <Route path="crm/counterparties" element={<CounterpartiesPage />} />
+            <Route path="crm/counterparties/:id" element={<CounterpartyDetailPage />} />
+            <Route path="crm/leads" element={<LeadsPage />} />
+
             <Route path="user-settings" element={<UserSettingsPage user={user} />} />
             <Route path="user-profile" element={<UserProfilePage user={user}/>} />
           </Route>

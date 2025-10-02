@@ -9,11 +9,12 @@
 
 /* input */
 .field input {
-  width: 96%;
-  padding: 16px 14px;
+  width: 100%;
+  padding: 14px 14px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--glass-brd);
   background: var(--input-bg);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   color: var(--text);
   font-size: 15px;
@@ -29,7 +30,7 @@
 /* label */
 .field label {
   position: absolute;
-  left: 12px; top: 14px;
+  left: 12px; top: 12px;
   padding: 0 6px;
   color: var(--muted);
   background: transparent;
@@ -60,11 +61,12 @@
 }
 
 .select{
-  width: 96%;
-  padding: 16px 44px 16px 14px;
+  width: 100%;
+  padding: 14px 44px 14px 14px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--glass-brd);
   background: var(--input-bg);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   color: var(--text);
   font-size: 15px;
@@ -94,10 +96,10 @@
   background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
   color: #fff; font-weight: 600;
   cursor: pointer;
-  transition: transform .08s ease, box-shadow .2s ease;
+  transition: transform .08s ease, box-shadow .2s ease, filter .15s ease;
   box-shadow: 0 10px 30px color-mix(in srgb, var(--primary-start) 35%, transparent);
 }
-.btn:hover{ transform: translateY(-1px); }
+.btn:hover{ transform: translateY(-1px); filter: brightness(1.04); }
 .btn:active{ transform: translateY(0); }
 
 .link{
@@ -113,11 +115,8 @@
   display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 6px;
 }
 
-/* хелпер для заголовков/подзаголовков карточек */
+/* заголовки */
 .title{ margin:0; font-size:20px; font-weight:700; color: var(--text); }
 .subtitle{ margin:6px 0 0; color: var(--muted); font-size:13px; opacity:.9; }
 
-.hint {
-  margin:0;
-  color: var(--text);
-}
+.hint { margin:0; color: var(--text); }

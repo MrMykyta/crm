@@ -59,7 +59,6 @@ export default function CompanySetup({setUser}) {
           const company = await createCompany(values);
           await refreshSession(); // ожидаем { token, user }
           const user = await getMe(); // ожидаем { id, name, shortName, vat, domain, logoUrl,... }
-          console.log('user:', user);
           const contacts = {
             companyId: company.activeCompanyId,
             ownerType: 'user',
@@ -71,7 +70,6 @@ export default function CompanySetup({setUser}) {
           };
           await updateMe(contacts);
           const res = await loginFromCompany(company.activeCompanyId);
-          console.log('res:', res.safeUser);
           setUser(res.safeUser);
           navigate('/main');
         } catch (e) {

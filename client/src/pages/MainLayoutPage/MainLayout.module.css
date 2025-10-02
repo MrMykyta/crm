@@ -4,18 +4,18 @@
   inset: 0;
   z-index: 0;
   overflow: hidden;
-
   background:
     var(--bg-radial-1),
     var(--bg-radial-2),
     var(--bg-gradient);
-}
-
-.bg{
-  background-image: var(--custom-bg-layer, none);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+/* слой пользовательского фона из ThemeProvider (url) */
+.bg{
+  background-image: var(--custom-bg-layer, none), var(--bg-radial-1), var(--bg-radial-2), var(--bg-gradient);
 }
 
 .bg::before,
@@ -34,7 +34,6 @@
   left: -120px;
   top: -120px;
 }
-
 @keyframes float {
   0%   { transform: translateY(0) translateX(0) scale(1); }
   50%  { transform: translateY(-20px) translateX(10px) scale(1.03); }
@@ -46,7 +45,7 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: var(--sidebar-w) 1fr;   /* ширина из темы */
+  grid-template-columns: var(--sidebar-w) 1fr;
   transition: grid-template-columns .25s ease;
   min-height: 100dvh;
   width: 100%;
@@ -60,19 +59,16 @@
 .content{
   position: relative;
   min-height: 100dvh;
-  padding-top: 72px;           /* высота топбара (64) + небольшой зазор */
-  /* Важно: не задаём padding-left — ширину даёт grid в .shell */
+  padding-top: calc(var(--topbar-h) + 8px);
 }
 
 /* Внутренняя область страниц */
 .body{
   width: 100%;
-  min-height: calc(100dvh - 72px);
+  min-height: calc(100dvh - var(--topbar-h));
   overflow: auto;
   padding: 16px 20px 24px;
   box-sizing: border-box;
-  margin-top: 1%;
-  height: auto;
 }
 
 /* Узкий режим — всегда узкий сайдбар */

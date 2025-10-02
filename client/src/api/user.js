@@ -1,4 +1,4 @@
-// src/api/user.ts (или user.js)
+// src/api/user.js
 import httpClient from './index';
 
 /** ===================== Users ===================== **/
@@ -6,35 +6,29 @@ import httpClient from './index';
 // Профиль текущего пользователя
 export async function getMe() {
   const { data } = await httpClient.get('/users/me');
-  return data; // { id, firstName, lastName, email*, ... , contacts?: [] }
+  return data; // { id, firstName, lastName, email, ... }
 }
 
-// Обновить контактные точки (email/phone/telegram и т.п.)
+// Обновить контактные точки
 export async function updateMe(contacts) {
-  // contacts: [{ type:'email', valueRaw:'a@b.c', isPublic:true }, ...]
   const { data } = await httpClient.patch('/users/me', { contacts });
-  return data; // вернём свежего пользователя/ok, зависит от бэка
+  return data;
 }
 
 /** ===================== Preferences ===================== **/
 
-// Прочитать пользовательские предпочтения UI
 export async function getMyPreferences() {
-  const { data } = await httpClient.get('system/me/preferences');
-  // ожидается: { themeMode, lang, appearance: { fontScale, backgroundPath } }
+  const { data } = await httpClient.get('/system/me/preferences');
   return data || {};
 }
 
-// Сохранить пользовательские предпочтения UI
 export async function saveMyPreferences(payload) {
-  // payload: { themeMode?, lang?, appearance?: { fontScale?, backgroundPath? } }
-  const { data } = await httpClient.put('system/me/preferences', payload);
-  return data; // свежие prefs
+  const { data } = await httpClient.put('/system/me/preferences', payload);
+  return data;
 }
 
 /** ===================== Uploads ===================== **/
 
-// Загрузка фонового изображения; сервер возвращает публичный URL
 export async function uploadBackground(file) {
   const fd = new FormData();
   fd.append('file', file);
@@ -42,13 +36,11 @@ export async function uploadBackground(file) {
   const { data } = await httpClient.post('/upload/background', fd, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-  // ожидается: { url: "/static/backgrounds/uuid.png" }
-  return data;
+  return data; // { url: "/static/backgrounds/uuid.png" }
 }
 
 /** ===================== Helpers ===================== **/
 
-// Нормализация пути (если сервер иногда отдаёт без /static)
 export function toStaticUrl(p) {
   if (!p) return null;
   if (p.startsWith('http')) return p;

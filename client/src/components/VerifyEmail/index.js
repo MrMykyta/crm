@@ -17,9 +17,10 @@ export default function VerifyEmail() {
     (async () => {
       try {
         const res = await verifyEmail(token); // { verified, tokens? }
-        if (res.data?.verified) {
+        console.log('res',res); // { verified: true, tokens? }
+        if (res?.verified) {
           setState({ status: 'success', msg: 'Verified' });
-          setTimeout(() => navigate('/auth/company-setup'), 600);
+          setTimeout(() => navigate('/auth/company-setup'), 100);
         } else {
           setState({ status: 'error', msg: 'Verification failed' });
         }

@@ -11,15 +11,12 @@ module.exports.requireMember = async (req, res, next) => {
       const membership = await UserCompany.findOne({
         where: {
           userId: req.user.id,
-          companyId: companyId,
-          status: 'active'
+          companyId: companyId
         }
       });
-
       if (!membership) {
         throw new Error('User is not a member of this company');
       }
-
       // Пока роли не используем, но сохраняем в req на будущее
       req.membership = membership;
       next();

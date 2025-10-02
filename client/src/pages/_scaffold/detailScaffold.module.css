@@ -1,0 +1,72 @@
+.wrap{
+  display:grid; grid-template-columns: 1fr 1fr; gap:16px;
+  height: calc(100dvh - var(--topbar-h,64px) - 24px);
+}
+.left, .right{
+  background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+  color: var(--text); border:1px solid var(--card-brd);
+  border-radius:16px; box-shadow: var(--shadow);
+  padding:12px; backdrop-filter: blur(var(--glass-blur,6px));
+  min-width:0;
+}
+.left{ overflow:auto; }
+.right{ display:flex; flex-direction:column; min-height:0; min-width:0; }
+
+.tabsSticky{ position: sticky; top: 10px; z-index: 2; }
+.panel{
+  flex:1; margin-top:8px; border-radius:12px;
+  background: color-mix(in srgb, var(--card-bg) 92%, #000 0%);
+  border:1px solid var(--card-brd);
+  display:flex; align-items:center; justify-content:center;
+  padding:20px; min-height:240px; min-width:0;
+}
+
+.actions{ margin-top: 10px; display:flex; justify-content:flex-start; }
+.saveBtn{
+  height: 36px; padding: 0 16px; border-radius: 12px;
+  border:1px solid color-mix(in srgb, var(--primary) 70%, #000 0%);
+  background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--primary), #fff 35%));
+  color:#fff; font-weight:700;
+}
+.saveBtn:disabled{
+  opacity:.65; background: color-mix(in srgb, var(--card-bg) 85%, #000 10%);
+  border-color: var(--card-brd); color: var(--muted);
+}
+
+.wrap{
+  display:grid; grid-template-columns: 1fr 1fr; gap:16px;
+  height: calc(100dvh - var(--topbar-h,64px) - 24px);
+}
+.left, .right{
+  background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+  color: var(--text); border:1px solid var(--card-brd);
+  border-radius:16px; box-shadow: var(--shadow);
+  padding:12px; backdrop-filter: blur(var(--glass-blur,6px));
+  min-width:0;
+}
+.left{ overflow:auto; }
+.right{ display:flex; flex-direction:column; min-height:0; min-width:0; }
+
+.tabsSticky{ position: sticky; top: 10px; z-index: 2; }
+.panel{
+  flex:1; margin-top:8px; border-radius:12px;
+  background: color-mix(in srgb, var(--card-bg) 92%, #000 0%);
+  border:1px solid var(--card-brd);
+  display:flex; align-items:center; justify-content:center;
+  padding:20px; min-height:240px; min-width:0;
+}
+
+/* индикатор автосейва */
+.autosaveHint{
+  margin-top:10px; font-size:12px; opacity:.7;
+}
+.saveErr{ color: #e45858; }
+
+/* адаптив */
+@media (max-width: 1100px){
+  .wrap{ grid-template-columns: 1fr; height:auto; }
+}
+
+@media (max-width: 1100px){
+  .wrap{ grid-template-columns: 1fr; height:auto; }
+}

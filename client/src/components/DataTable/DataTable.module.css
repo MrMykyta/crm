@@ -1,0 +1,38 @@
+.table{
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+  color: var(--text);
+}
+
+.th{
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid var(--card-brd);
+  font-size: var(--fs-sm);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sortable{ cursor: pointer; }
+.sortable:hover{ background: var(--sidebar-hover); }
+
+.tr{
+  border-bottom: 1px solid var(--card-brd);
+  transition: background var(--tr-fast);
+}
+.tr:hover{
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+}
+
+.td{
+  padding: 10px;
+  font-size: var(--fs-sm);
+  vertical-align: middle;
+}
+
+.muted{ color: var(--muted); }
+
+/* опционально: выравнивание числовых колонок/иконок */
+.td--right { text-align: right; }
+.td--center{ text-align: center; }

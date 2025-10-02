@@ -1,0 +1,60 @@
+www.shishasklepweb.pp.ua {
+  redir https://shishasklepweb.pp.ua{uri} 308
+}
+
+shishasklepweb.pp.ua {
+  encode zstd gzip
+
+  # базовые security-заголовки для статики
+  header {
+    # HSTS включится только на https
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    # простая CSP без запрета инлайна (под React)
+    Content-Security-Policy "default-src 'self' https:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; connect-src 'self' https: wss:;"
+  }
+
+  @api    path /api/* 
+  @files  path /uploads/*
+
+  handle @api {
+    reverse_proxy api:3000
+  }
+
+  handle @files {
+    reverse_proxy api:3000
+  }
+
+  # SPA статика с fallback на index.html
+  handle {
+    root * /srv
+    try_files {path} /index.html
+    file_server
+  }
+}
+
+
+
+
+
+# shishasklepweb.pp.ua, www.shishasklepweb.pp.ua {
+#   encode zstd gzip
+
+#   route {
+#     handle /api/* {
+#       reverse_proxy api:3000
+#     }
+
+#     handle /uploads/* {
+#       reverse_proxy api:3000
+#     }
+
+#     handle {
+#       root * /srv
+#       try_files {path} /index.html
+#       file_server
+#     }
+#   }
+# }

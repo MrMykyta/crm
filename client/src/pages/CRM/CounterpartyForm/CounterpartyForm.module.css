@@ -1,0 +1,141 @@
+/* Layout */
+.form{ display:flex; flex-direction:column; gap: 18px; }
+
+.grid{
+  --col-gap: clamp(14px, 1.8vw, 20px);
+  --row-gap: clamp(12px, 1.6vw, 16px);
+  display:grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  column-gap: var(--col-gap);
+  row-gap: var(--row-gap);
+}
+@media (max-width: 980px){
+  .grid{ grid-template-columns: 1fr; }
+}
+.full{ grid-column: 1 / -1; }
+
+/* Fields */
+.field{ position: relative; display:flex; flex-direction:column; gap: 6px; }
+.label{
+  display:flex; align-items:center; justify-content:space-between; gap: 10px;
+  font-size: 12px; letter-spacing:.2px; color: color-mix(in srgb, var(--muted) 90%, transparent);
+}
+
+.counter{
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: color-mix(in srgb, var(--muted) 80%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 60%, transparent);
+  padding: 2px 6px; border-radius: 999px;
+}
+
+/* Inputs */
+.input{
+  width:100%; box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--input-bg, var(--card-bg)) 96%, transparent), transparent);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  color: var(--text);
+  outline: none;
+  transition:
+    border-color .14s ease,
+    box-shadow .14s ease,
+    background .14s ease,
+    transform .06s ease;
+  font-size: 14px; line-height: 1.35;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
+}
+.input:hover{
+  border-color: color-mix(in srgb, var(--card-brd) 55%, var(--focus));
+}
+.input:focus{
+  border-color: var(--focus);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--focus) 28%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+}
+.invalid{ border-color: #ff7a7a !important; box-shadow: 0 0 0 3px color-mix(in srgb, #ff7a7a 35%, transparent) !important; }
+
+textarea.input{ min-height: 84px; resize: vertical; }
+
+/* Errors */
+.err{
+  color:#ff8686;
+  text-shadow: 0 1px 0 rgba(0,0,0,.1);
+  font-size: 12px;
+}
+
+/* Section header (Contacts) */
+.sectionHeader{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top: 6px; margin-bottom: 4px;
+}
+.sectionHeader h4{
+  margin:0;
+  font-size: 15px; font-weight: 700; letter-spacing:.2px;
+}
+
+/* Buttons */
+.btn, .btnAdd, .btnDel{
+  height: 36px; padding: 0 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  color: var(--text); cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s, transform .06s;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--shadow-clr, #000) 12%, transparent);
+}
+.btn:hover, .btnAdd:hover, .btnDel:hover{
+  background: color-mix(in srgb, var(--sidebar-hover) 80%, transparent);
+  border-color: var(--focus);
+}
+.btn:active, .btnAdd:active, .btnDel:active{ transform: translateY(1px); }
+.btnDel{ color: #ff6b6b; }
+
+.primary{
+  height: 36px; padding: 0 16px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  color:#fff; font-weight: 600; letter-spacing:.2px;
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  box-shadow:
+    0 8px 24px color-mix(in srgb, var(--primary-start) 24%, transparent),
+    inset 0 1px 0 rgba(255,255,255,.08);
+  cursor:pointer;
+  transition: filter .15s, transform .06s;
+}
+.primary:hover{ filter: brightness(1.04); }
+.primary:active{ transform: translateY(1px); }
+
+/* Contacts list */
+.contactsGrid{
+  display:flex; flex-direction:column; gap: 10px;
+}
+.muted{ color: var(--muted); font-size: 13px; }
+
+/* Contact row card */
+.contactRow{
+  display:grid;
+  grid-template-columns: 160px 1fr auto auto;
+  gap: 10px; align-items:center;
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--shadow-clr, #000) 12%, transparent);
+}
+@media (max-width: 760px){
+  .contactRow{ grid-template-columns: 1fr; }
+}
+
+.chkPrimary{ display:flex; align-items:center; gap:8px; font-size: 13px; color: var(--muted); }
+.errRow{ grid-column: 1 / -1; color:#ff8686; font-size: 12px; }
+
+/* Footer actions (when withButtons=true) */
+.actions{
+  margin-top: 6px;
+  display:flex; justify-content:flex-end; gap: 10px;
+}

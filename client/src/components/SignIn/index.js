@@ -6,6 +6,7 @@ import { getMe } from '../../api/user';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { setTokens, setCompanyId } from '../../api/session';
+import { useTheme } from "../../Providers/ThemeProvider";
 import CompanySelect from '../../components/CompanySelect';
 import ForgotPasswordModal from '../ForgotPasswordModal';
 import s from '../../styles/formGlass.module.css';
@@ -28,6 +29,8 @@ export default function SignIn({ onSwitch, onLogin }) {
   const [companiesModal, setCompaniesModal] = useState({ open: false, list: [], creds: null });
   const [forgotOpen, setForgotOpen] = useState(false);
   const [emailForForgot, setEmailForForgot] = useState('');
+  const { hydrateFromServer } = useTheme();
+
 
   const schema = Yup.object({
     email: Yup.string().email(t('common.invalidEmail')).required(t('common.required')),
@@ -45,6 +48,7 @@ export default function SignIn({ onSwitch, onLogin }) {
 
     if (d.tokens) {
       await setTokens(d.tokens, d.activeCompanyId);
+      await hydrateFromServer();
     } else if (d.activeCompanyId) {
       // если токен уже проставлен интерсептором/кукой — просто активируем компанию
       await setCompanyId(d.activeCompanyId);
@@ -58,8 +62,8 @@ export default function SignIn({ onSwitch, onLogin }) {
         onLogin?.(user);
       } catch {}
     }
-
-    navigate('/main', { replace: true });
+    
+    navigate('/main/pulpit', { replace: true });
   };
 
   const handleLogin = async (values, { setSubmitting, setStatus }) => {

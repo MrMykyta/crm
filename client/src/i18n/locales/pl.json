@@ -5,39 +5,38 @@
     "createAccount": "Utwórz konto",
     "firstName": "Imię",
     "lastName": "Nazwisko",
-    "signIn": "Zaloguj",
-    "resendEmail": "Wyślij ponownie e-mail weryfikacyjny",
+    "signIn": "Zaloguj się",
+    "resendEmail": "Wyślij ponownie",
     "forgot": "Zapomniałeś hasła?",
-    "verifyTitle": "Sprawdź pocztę",
+    "verifyTitle": "Sprawdź skrzynkę e-mail",
     "verified": "Zweryfikowano",
     "redirecting": "Przekierowanie…",
     "verificationError": "Błąd weryfikacji",
-    "verifySentTo": "Wysłaliśmy link weryfikacyjny na",
+    "verifySentTo": "Wysłaliśmy link do",
     "openMailbox": "Otwórz pocztę",
-    "verificationResent": "E-mail wysłany ponownie",
+    "verificationResent": "E-mail wysłany",
     "verificationResendFail": "Nie udało się wysłać",
-    "verifyHint": "Kliknij link w e-mailu, aby kontynuować.",
-    "forgotTitle": "Zapomniałeś hasła?",
-    "forgotSubtitle": "Podaj email, a wyślemy link do resetu.",
+    "forgotTitle": "Reset hasła",
+    "forgotSubtitle": "Podaj e-mail, wyślemy link do resetu.",
     "sendReset": "Wyślij link",
-    "resetSent": "Link wysłany. Sprawdź skrzynkę.",
-    "resetFailed": "Nie udało się wysłać",
-    "resetHint": "Otrzymasz e-mail z linkiem do zmiany hasła.",
-    "setNewPassword": "Ustaw nowe hasło",
+    "resetSent": "Link wysłany. Sprawdź pocztę.",
+    "resetFailed": "Nie udało się wysłać e-maila",
+    "resetHint": "Otrzymasz wiadomość z linkiem do zmiany hasła.",
+    "setNewPassword": "Nowe hasło",
     "confirmPassword": "Potwierdź hasło",
-    "passwordsMustMatch": "Hasła muszą być takie same",
+    "passwordsMustMatch": "Hasła muszą być identyczne",
     "resetInvalid": "Nieprawidłowy lub wygasły link",
     "passwordUpdated": "Hasło zaktualizowane",
     "updatePassword": "Zmień hasło"
   },
   "company": {
     "title": "Utwórz firmę",
-    "subtitle": "Opowiedz nam krótko o swojej działalności.",
+    "subtitle": "Opowiedz trochę o swojej działalności.",
     "name": "Nazwa firmy",
     "legalName": "Nazwa prawna (opcjonalnie)",
     "country": "Kraj",
     "taxId": "NIP (opcjonalnie)",
-    "website": "Strona WWW (opcjonalnie)",
+    "website": "Strona www (opcjonalnie)",
     "continue": "Kontynuuj",
     "nipHint": "Dla PL użyj 10 cyfr bez myślników.",
     "chooseTitle": "Wybierz firmę",
@@ -65,7 +64,12 @@
     "sending": "Wysyłanie…",
     "save": "Zapisz",
     "edit": "Edytuj",
-    "reset": "Resetuj"
+    "reset": "Resetuj",
+    "none": "—",
+    "cancel": "Anuluj",
+    "primary": "Główny",
+    "saved": "Zapisano",
+    "unsaved": "Niezapisane zmiany"
   },
   "countries": {
     "PL": "PL — Polska",
@@ -76,17 +80,17 @@
   },
   "errors": {
     "registrationFailed": "Rejestracja nie powiodła się",
-    "loginFailed": "Błędny email lub hasło",
+    "loginFailed": "Nieprawidłowy email lub hasło",
     "createCompanyFailed": "Nie udało się utworzyć firmy",
     "accountNotActive": "Konto nieaktywne",
     "invalidToken": "Nieprawidłowy token",
     "emailNotVerified": "Email niezweryfikowany",
-    "verificationFailed": "Błąd weryfikacji",
+    "verificationFailed": "Weryfikacja nie powiodła się",
     "companyNotSelected": "Nie wybrano firmy"
   },
   "menu": {
     "bookmarks": "Zakładki",
-    "pulpit": "Pulpit",
+    "pulpit": "Panel",
     "crm": "CRM",
     "counterparties": "Kontrahenci",
     "leads": "Leady",
@@ -114,8 +118,8 @@
   "widgets": {
     "kpi": "KPI",
     "funnel": "Lejek sprzedaży",
-    "tasks": "Zadania na dziś",
-    "ordersQueue": "Zamówienia w kolejce",
+    "tasks": "Dzisiejsze zadania",
+    "ordersQueue": "Kolejka zamówień",
     "calendar": "Kalendarz"
   },
   "kpi": {
@@ -126,8 +130,8 @@
   "topbar": {
     "searchPlaceholder": "Szukaj…",
     "notifications": "Powiadomienia",
-    "userMenu": "Menu Użytkownik",
-    "find": "Znajdź",
+    "userMenu": "Menu użytkownika",
+    "find": "Szukaj",
     "logout": "Wyloguj"
   },
   "theme": {
@@ -137,7 +141,7 @@
   },
   "dashboard": {
     "addWidget": "Dodaj widżet",
-    "resetLayout": "Zresetuj układ",
+    "resetLayout": "Zresetuj siatkę",
     "resize": "Zmień rozmiar",
     "remove": "Usuń"
   },
@@ -164,15 +168,15 @@
       "contacts": "Dane kontaktowe",
       "phone": "Telefon",
       "telegram": "Telegram",
-      "emailVerified": "E-mail zweryfikowany",
-      "emailNotVerified": "E-mail niezweryfikowany",
+      "emailVerified": "Email zweryfikowany",
+      "emailNotVerified": "Email niezweryfikowany",
       "active": "Konto aktywne",
       "inactive": "Konto nieaktywne",
       "joined": "Dołączył"
     },
     "security": {
       "title": "Hasło",
-      "current": "Aktualne hasło",
+      "current": "Obecne hasło",
       "new": "Nowe hasło",
       "confirm": "Potwierdź hasło",
       "update": "Zmień hasło"
@@ -183,12 +187,124 @@
       "push": "Powiadomienia push"
     },
     "appearance": {
-      "title": "Wygląd",
-      "hint": "Przełącznik motywu przeniesiemy tutaj później."
+      "title": "Wygląd"
     },
     "preferences": {
       "language": "Język",
       "theme": "Motyw"
+    }
+  },
+  "list": {
+    "rangeOfTotal": "{{start}}–{{end}} z {{total}}",
+    "perPageShort": "/str.",
+    "refresh": "Odśwież",
+    "back": "Wstecz",
+    "forward": "Dalej",
+    "pageLabel": "s. {{page}} / {{pages}}"
+  },
+  "crm": {
+    "titles": {
+      "counterparties": "Kontrahenci",
+      "leads": "Leady"
+    },
+    "actions": {
+      "addCounterparty": "Dodaj kontrahenta",
+      "addLead": "Dodaj leada"
+    },
+    "dialogs": {
+      "newCounterparty": "Nowy kontrahent",
+      "newLead": "Nowy lead",
+      "counterpartyDetails": "Karta kontrahenta"
+    },
+    "table": {
+      "columns": {
+        "counterparty": "Kontrahent",
+        "contacts": "Kontakty",
+        "updatedAt": "Zaktualizowano",
+        "lead": "Lead",
+        "createdAt": "Utworzono"
+      },
+      "contactCount": "{{count}} kontakt",
+      "contactCount_plural": "{{count}} kontaktów"
+    },
+    "common": {},
+    "form": {
+      "sections": {
+        "contacts": "Kontakty"
+      },
+      "fields": {
+        "shortName": "Krótka nazwa",
+        "fullName": "Pełna nazwa prawna",
+        "type": "Typ",
+        "status": "Status",
+        "nip": "NIP",
+        "regon": "REGON",
+        "krs": "KRS",
+        "bdo": "BDO",
+        "country": "Kraj",
+        "city": "Miasto",
+        "postalCode": "Kod pocztowy",
+        "street": "Ulica",
+        "description": "Opis",
+        "primary": "Główny",
+        "isCompany": "Firma"
+      },
+      "placeholders": {
+        "shortName": "Krótka nazwa firmy",
+        "fullName": "Zarejestrowana nazwa prawna",
+        "nip": "tylko cyfry",
+        "postalCode": "np. 00-000",
+        "contactValue": "wartość (email, telefon, link...)"
+      },
+      "actions": {
+        "addContact": "+ Dodaj kontakt",
+        "remove": "Usuń"
+      },
+      "hints": {
+        "noContacts": "Brak kontaktów"
+      },
+      "errors": {
+        "requiredShort": "Wprowadź krótką nazwę",
+        "requiredFull": "Wprowadź pełną nazwę",
+        "required": "Wymagane",
+        "max": "Nie więcej niż {{max}} znaków",
+        "badType": "Nieprawidłowy typ",
+        "badStatus": "Nieprawidłowy status",
+        "digitsOnly": "Tylko cyfry",
+        "nipLen": "Dokładnie 10 cyfr",
+        "countryIso": "ISO-2, np. PL",
+        "selectChannel": "Wybierz kanał",
+        "valueRequired": "Podaj wartość",
+        "badEmail": "Nieprawidłowy email",
+        "badPhone": "Nieprawidłowy telefon"
+      }
+    },
+    "enums": {
+      "type": {
+        "lead": "Lead",
+        "client": "Klient",
+        "partner": "Partner",
+        "supplier": "Dostawca",
+        "manufacturer": "Producent"
+      },
+      "status": {
+        "potential": "Potencjalny",
+        "active": "Aktywny",
+        "inactive": "Nieaktywny"
+      }
+    },
+    "channels": {
+      "email": "Email",
+      "phone": "Telefon",
+      "website": "Strona",
+      "telegram": "Telegram",
+      "whatsapp": "WhatsApp",
+      "linkedin": "LinkedIn"
+    },
+    "filters": {
+      "allTypes": "Wszystkie typy",
+      "allStatuses": "Wszystkie statusy",
+      "searchPlaceholder": "Szukaj (nazwa, NIP, REGON...)"
     }
   }
 }

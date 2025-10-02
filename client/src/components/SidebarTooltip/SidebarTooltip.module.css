@@ -12,27 +12,14 @@
   box-shadow: var(--shadow);
   -webkit-backdrop-filter: blur(var(--glass-blur));
   backdrop-filter: blur(var(--glass-blur));
-  z-index: 99; /* поверх всего */
+  z-index: 99;
 }
-
 .arrow {
-  position: absolute;
-  top: 50%;
-  left: -6px;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-right: 6px solid var(--card-brd);
+  position: absolute; top: 50%; left: -6px; transform: translateY(-50%);
+  width: 0; height: 0;
+  border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 6px solid var(--card-brd);
 }
-
 .arrow::after {
-  content: "";
-  position: absolute;
-  top: -5px;
-  left: 1px;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-right: 5px solid var(--card-bg);
+  content: ""; position: absolute; top: -5px; left: 1px;
+  border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-right: 5px solid var(--card-bg);
 }

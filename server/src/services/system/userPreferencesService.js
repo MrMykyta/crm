@@ -3,7 +3,7 @@ const { UserPreferences } = require('../../models');
 async function getByUserId(userId) {
     try {
         const pref = await UserPreferences.findOne({ where: { userId } });
-        console.log("From [getByUserId]", pref) // зависит от твоего auth middleware
+
         return pref || null;
     } catch (error) {
         return { error: error.message };
@@ -18,9 +18,8 @@ async function upsertByUserId(userId, payload) {
     if (payload.themeMode != null) allowed.themeMode = String(payload.themeMode);
     if (payload.appearance != null) allowed.appearance = payload.appearance;
     if (payload.background != null) allowed.background = payload.background;
-    // console.log(userId, allowed);
     const existing = await UserPreferences.findOne({ where: { userId } }) || null;
-
+    console.log('allowed', allowed);
     if (existing) {
         await existing.update(allowed);
         return existing;

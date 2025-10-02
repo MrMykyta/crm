@@ -31,7 +31,7 @@ module.exports = {
         field: 'owner_id'
       },
       channel: {
-        type: Sequelize.ENUM('phone','email'), 
+        type: Sequelize.ENUM('phone','email','website','whatsapp','telegram','viber','facebook','linkedin','other'), 
         allowNull: false
       },
       valueRaw: {
