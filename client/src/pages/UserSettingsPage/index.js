@@ -8,6 +8,8 @@ import s from "./UserSettingsPage.module.css";
 import { getMyPreferences, saveMyPreferences } from "../../api/user";
 import { useTheme } from "../../Providers/ThemeProvider";
 
+import { useTopbar } from "../../Providers/TopbarProvider";
+
 import AppearanceForm from "./sections/AppearanceForm";
 import PreferencesForm from "./sections/PreferencesForm";
 import ProfileForm from "./sections/ProfileForm";
@@ -19,6 +21,12 @@ export default function UserSettingsPage({ user }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState("profile");
   const [prefs, setPrefs] = useState(null);
+  const { setTitle, setSubtitle, reset } = useTopbar(); // ← получаем методы провайдера
+    
+  useEffect(() => {
+    setTitle(t('userMenu.settings'));  // можно ключ перевода: 'company.settings'
+    return () => reset();            // при выходе вернуть дефолтное значение
+  }, [setTitle, setSubtitle, reset]);
 
   const { setAppearance, setBackground, setMode } = useTheme();
 

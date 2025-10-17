@@ -46,14 +46,17 @@ const bare = axios.create({
  */
 export const refreshSession = async () => {
   const refreshToken = getRefreshToken();
+  const companyId = getCompanyId();
   if (!refreshToken) throw new Error('No refresh token');
 
-  const { data } = await bare.post('/auth/refresh', { refreshToken });
+  const { data } = await bare.post('/auth/refresh', { refreshToken, companyId });
   // ожидаем либо {accessToken, refreshToken?}, либо {tokens:{accessToken,refreshToken?}}
-  const tokens = data?.tokens || data || {};
+  const {accessToken, refreshToken: refresh} = data;
+  console.log('access', accessToken, 'refersh', refresh);
+
   await setTokens({
-    accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken,
+    accessToken: accessToken,
+    refreshToken: refresh,
   });
-  return tokens;
+  return data;
 };

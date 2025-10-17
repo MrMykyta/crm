@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Bell } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useTopbarOptional } from "../../Providers/TopbarProvider"; // провайдер необязателен
 import styles from "./Topbar.module.css";
 import UserMenu from "../UserMenu";
 
@@ -10,6 +11,7 @@ export default function Topbar({
   onSearch, onLogout, onNotifications,
 }) {
   const { t } = useTranslation();
+  const ctx = useTopbarOptional(); // может быть null
   const inputRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -19,9 +21,13 @@ export default function Topbar({
         e.preventDefault(); 
         inputRef.current?.focus(); 
       }};
-      window.addEventListener("keydown", h);
-      return ()=>window.removeEventListener("keydown", h);
+    window.addEventListener("keydown", h);
+    return ()=>window.removeEventListener("keydown", h);
   },[]);
+
+  // контекст → пропсы
+  const titleToShow = ctx?.title ?? title;
+  const subtitleToShow = ctx?.subtitle ?? "";
 
   const initials = useMemo(() => {
     const a = user?.firstName || user?.name || "";
@@ -35,7 +41,10 @@ export default function Topbar({
       className={styles.topbar}
       style={{ insetInlineStart: `var(${collapsed ? "--sidebar-w-collapsed" : "--sidebar-w"})` }}
     >
-      <div className={styles.left}><span className={styles.title}>{t(title)}</span></div>
+      <div className={styles.left}>
+        <span className={styles.title}>{t(titleToShow)}</span>
+        {subtitleToShow ? <span className={styles.subtitle}>{subtitleToShow}</span> : null}
+      </div>
 
       <div className={styles.searchWrap}>
         <input
@@ -55,7 +64,6 @@ export default function Topbar({
           <span className={styles.badge}>3</span>
         </button>
 
-        {/* AVATAR + MENU */}
         <div className={styles.avatarWrap}>
           <button
             className={styles.avatar}

@@ -1,19 +1,21 @@
 // src/components/layout/Sidebar.jsx
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useMemo, useState, useEffect } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { MENU } from "../../config/menu";
 import { getCompanyById } from "../../api/company";
 import { getActiveCompanyId } from "../../utils/company";
 import SidebarTooltip from "../SidebarTooltip";
+import CompanyMenu from "../../components/CompanyMenu"; // <— добавлено
 import styles from "./Sidebar.module.css";
 
 export default function Sidebar({ collapsed = false, onToggle, t }) {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
 
   // ---- company
   const [company, setCompany] = useState(null);
   const [loadingCompany, setLoadingCompany] = useState(true);
+  const [menuCompanyOpen, setMenuCompanyOpen] = useState(false); // <— исправлено/добавлено
+  const brandWrapRef = useRef(null);
 
   useEffect(() => {
     const id = getActiveCompanyId();
@@ -75,32 +77,42 @@ export default function Sidebar({ collapsed = false, onToggle, t }) {
 
   return (
     <>
-      <aside
-        className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}
-      >
+      <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
         <div className={styles.top}>
           {/* Бренд / компания */}
-          <button
-            type="button"
-            className={styles.brandBtn}
-            onClick={() => navigate("/settings/company")}
-            title={companyName}
-          >
-            <div className={styles.mark}>
-              {company?.logoUrl ? (
-                <img className={styles.logoImg} src={company.logoUrl} alt={companyName} />
-              ) : (
-                <span className={styles.markInitials}>{initials}</span>
-              )}
-            </div>
-
-            {!collapsed && (
-              <div className={styles.brandText}>
-                <span className={styles.companyName}>{loadingCompany ? "…" : companyName}</span>
-                {companySub && <span className={styles.companySub}>{companySub}</span>}
+          <div ref={brandWrapRef} style={{ position: "relative" }}>
+            <button
+              type="button"
+              className={styles.brandBtn}
+              onClick={() => setMenuCompanyOpen((v) => !v)} // <— открываем меню компании
+              title={companyName}
+              aria-haspopup="menu"
+              aria-expanded={menuCompanyOpen}
+            >
+              <div className={styles.mark}>
+                {company?.logoUrl ? (
+                  <img className={styles.logoImg} src={company.logoUrl} alt={companyName} />
+                ) : (
+                  <span className={styles.markInitials}>{initials}</span>
+                )}
               </div>
+
+              {!collapsed && (
+                <div className={styles.brandText}>
+                  <span className={styles.companyName}>{loadingCompany ? "…" : companyName}</span>
+                  {companySub && <span className={styles.companySub}>{companySub}</span>}
+                </div>
+              )}
+            </button>
+
+            {/* Выпадающее меню компании */}
+            {menuCompanyOpen && (
+              <CompanyMenu
+                company={company}
+                onClose={() => setMenuCompanyOpen(false)}
+              />
             )}
-          </button>
+          </div>
 
           <button
             className={styles.toggle}
@@ -116,16 +128,13 @@ export default function Sidebar({ collapsed = false, onToggle, t }) {
             if (sec.type !== "section") {
               const Icon = sec.icon;
               const label = tr(sec.labelKey);
-              const isActive =
-                sec.route && pathname.startsWith(sec.route || "");
+              const isActive = sec.route && pathname.startsWith(sec.route || "");
               return (
                 <NavLink
                   key={sec.key}
                   to={sec.route || "#"}
                   className={({ isActive: navActive }) =>
-                    `${styles.item} ${
-                      navActive || isActive ? styles.active : ""
-                    }`
+                    `${styles.item} ${navActive || isActive ? styles.active : ""}`
                   }
                   onMouseEnter={(e) => showTip(label, e.currentTarget)}
                   onMouseLeave={hideTip}
@@ -149,11 +158,7 @@ export default function Sidebar({ collapsed = false, onToggle, t }) {
                   ) : (
                     <span className={styles.dot} />
                   )}
-                  {!collapsed && (
-                    <span className={styles.sectionTitle}>
-                      {tr(sec.labelKey)}
-                    </span>
-                  )}
+                  {!collapsed && <span className={styles.sectionTitle}>{tr(sec.labelKey)}</span>}
                 </div>
 
                 <div className={styles.list}>
@@ -175,9 +180,7 @@ export default function Sidebar({ collapsed = false, onToggle, t }) {
                         ) : (
                           <span className={styles.bullet} />
                         )}
-                        {!collapsed && (
-                          <span className={styles.label}>{label}</span>
-                        )}
+                        {!collapsed && <span className={styles.label}>{label}</span>}
                       </NavLink>
                     );
                   })}
@@ -189,12 +192,7 @@ export default function Sidebar({ collapsed = false, onToggle, t }) {
       </aside>
 
       {/* плавающий тултип */}
-      <SidebarTooltip
-        visible={tip.visible}
-        text={tip.text}
-        x={tip.x}
-        y={tip.y}
-      />
+      <SidebarTooltip visible={tip.visible} text={tip.text} x={tip.x} y={tip.y} />
     </>
   );
 }

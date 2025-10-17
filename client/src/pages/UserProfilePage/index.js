@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X, CheckCircle2, CircleAlert } from "lucide-react";
+import { useTopbar } from "../../Providers/TopbarProvider";   // ← подключаем хук
 import s from "./UserProfilePage.module.css";
 
 /** Берёт значение по типу из contacts (email/phone), с приоритетом primary/public */
@@ -16,6 +18,12 @@ export default function UserProfilePage({ user }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const handleClose = () => navigate(-1);
+  const { setTitle, setSubtitle, reset } = useTopbar(); // ← получаем методы провайдера
+  
+  useEffect(() => {
+    setTitle(t('userMenu.profile'));  // можно ключ перевода: 'company.settings'
+    return () => reset();            // при выходе вернуть дефолтное значение
+  }, [setTitle, setSubtitle, reset]);
 
   if (!user) return <div className={s.wrap}>{t("common.loading")}</div>;
 

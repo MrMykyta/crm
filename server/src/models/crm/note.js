@@ -41,10 +41,20 @@ module.exports = (sequelize, DataTypes) => {
       allowNull:false, 
       field:'owner_id' 
     },
-    authorUserId: { 
+    createdBy: { 
       type: DataTypes.UUID, 
       allowNull:false, 
-      field:'author_user_id' 
+      field:'created_by' 
+    },
+    updatedBy: {
+      type: DataTypes.UUID, 
+      allowNull: true, 
+      field:'updated_by'
+    },
+    responsibleId: { 
+      type: DataTypes.UUID, 
+      allowNull:true, 
+      field:'responsible_id' 
     },
     visibility: { 
       type: DataTypes.ENUM('private','company'), 

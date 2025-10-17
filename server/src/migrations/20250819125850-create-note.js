@@ -30,7 +30,7 @@ module.exports = {
         allowNull:false,
         field: 'owner_id'
       },
-      authorUserId: {
+      createdBy: {
         type: Sequelize.UUID, 
         allowNull:false,
         references: { 
@@ -39,7 +39,29 @@ module.exports = {
         },
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL',
-        field: 'author_user_id'
+        field: 'created_by'
+      },
+      updatedBy: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        field: 'updated_by',
+        references: {
+          model: 'users', 
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
+      responsibleId: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        field:'responsible_id',
+        references: {
+          model: 'users', 
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
       },
       visibility: { 
         type: Sequelize.ENUM('private','company'), 

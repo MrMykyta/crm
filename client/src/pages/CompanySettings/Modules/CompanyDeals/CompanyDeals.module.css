@@ -1,0 +1,134 @@
+:root{ --stage-w: 180px; }
+
+.wrap{ display:grid; grid-template-rows:auto 1fr; gap:12px; height:100%; min-height:0; }
+.toolbar{ display:flex; gap:10px; align-items:center; padding:8px 2px; }
+
+.primary{
+  height:40px; padding:0 16px; border-radius:var(--radius-full);
+  border:1px solid var(--glass-brd);
+  background:color-mix(in srgb, var(--primary-start) 16%, transparent);
+  color:var(--text); cursor:pointer;
+}
+.primary:hover{ background:color-mix(in srgb, var(--primary-start) 26%, transparent); }
+
+.list{ display:flex; flex-direction:column; gap:16px; overflow-y:auto; overflow-x:hidden; min-height:0; }
+
+.card{
+  background:var(--card-bg);
+  border:1px solid var(--glass-brd);
+  border-radius:var(--radius-xl);
+  box-shadow:var(--elev-2);
+  padding:16px 18px;
+}
+
+.head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:12px; }
+.title{ margin:0; font-size:var(--fs-md); font-weight:var(--fw-medium); cursor:default; }
+.titleInput{
+  width:min(520px,100%);
+  font-size:var(--fs-md);
+  padding:8px 10px;
+  border-radius:var(--radius-md);
+  border:1px solid var(--card-brd);
+  background:var(--input-bg);
+  color:var(--text);
+}
+
+.headBtns{ display:flex; gap:8px; }
+.addStageInRow, .delFunnel{
+  height:32px; padding:0 12px; border-radius:var(--radius-full);
+  border:1px solid var(--glass-brd); cursor:pointer;
+}
+.addStageInRow{ background:color-mix(in srgb, var(--primary-start) 14%, transparent); color:var(--text); }
+.addStageInRow:hover{ background:color-mix(in srgb, var(--primary-start) 24%, transparent); }
+.delFunnel{ background:color-mix(in srgb, #d35c5c 20%, transparent); color:#fff; }
+.delFunnel:hover{ background:color-mix(in srgb, #d35c5c 35%, transparent); }
+
+/* горизонтальный скролл этапов */
+.scrollX{ overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.scrollX::-webkit-scrollbar{ width:0; height:0; }
+
+/* верхняя лента этапов — grid, чтобы совпадать с низом */
+.steps{
+  display: grid;
+  grid-auto-flow: column;          /* ← ключ */
+  grid-auto-columns: var(--stage-w);/* ← ширина каждой «плитки» */
+  gap: 0;
+  border-radius: 12px;
+  position: relative;
+}
+.step{
+  width:var(--stage-w);
+  height:44px;
+  display:grid; place-items:center;
+  color:#fff; font-weight:var(--fw-medium);
+  user-select:none; cursor:grab;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  transition:transform .1s ease, background .15s ease;
+}
+.dragging{ opacity:.9; transform:scale(.985); cursor:grabbing; }
+.stepText{ white-space:nowrap; text-shadow:0 1px 0 rgba(0,0,0,.15); }
+
+/* инпут-ренейм этапа */
+.stepInput{
+  width:calc(var(--stage-w) - 20px);
+  height:32px;
+  padding:0 8px;
+  border-radius:8px;
+  border:1px solid var(--card-brd);
+  background:rgba(255,255,255,.08);
+  color:#fff; text-align:center;
+}
+
+/* стрелка */
+.chevWrap{ display:grid; place-items:center; padding-top:8px; }
+.chevBtn{ width:36px; height:22px; border:0; background:transparent; cursor:pointer; position:relative; }
+.chev{ position:absolute; inset:0; }
+.chev::before,.chev::after{ content:""; position:absolute; top:8px; width:14px; height:2px; border-radius:2px; background:#fff; }
+.chev::before{ left:6px; transform:rotate(25deg); transform-origin:left center; }
+.chev::after{ right:6px; transform:rotate(-25deg); transform-origin:right center; }
+.chevBtn.open .chev::before{ transform:rotate(-25deg); }
+.chevBtn.open .chev::after{ transform:rotate(25deg); }
+
+/* раскрывашка */
+.details{ max-height:0; overflow:hidden; opacity:0; transition:max-height .28s ease, opacity .25s ease; }
+.show{ max-height:180px; opacity:1; }
+
+/* панель настроек — одна строка */
+.controls{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding-top:10px;
+}
+.ctrlLabel{ font-size:13px; color:var(--muted); }
+
+.select{
+  height:34px;
+  min-width:160px;
+  width:auto;
+  border-radius:10px;
+  border:1px solid var(--glass-brd);
+  background:var(--input-bg);
+  color:var(--text);
+  padding:0 10px;
+}
+
+.colorPicker{
+  display:flex; align-items:center; gap:8px;
+}
+.colorPreview{
+  width:22px; height:22px; border-radius:6px;
+  border:1px solid var(--glass-brd);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+}
+.colorInput{
+  width:42px; height:34px; border-radius:8px; border:1px solid var(--glass-brd); background:transparent; cursor:pointer;
+}
+.hex{
+  width:92px; height:34px; border-radius:8px;
+  border:1px solid var(--glass-brd);
+  background:var(--input-bg);
+  color:var(--text);
+  padding:0 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}

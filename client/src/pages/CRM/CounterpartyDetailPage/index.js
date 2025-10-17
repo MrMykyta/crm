@@ -59,7 +59,7 @@ export default function CounterpartyDetailPage(){
       load={async()=>base}
       save={save}
       storageKeyPrefix="counterparty"
-      autosave={{ debounceMs: 100 }}
+      autosave={{ debounceMs: 500 }}
       saveOnExit={false}          // не пишем черновик при закрытии вкладки
       clearDraftOnUnmount={true}  // вычищаем localStorage при выходе с карточки
       payloadDeps={[contacts]}    // автосейв реагирует на любые изменения контактов

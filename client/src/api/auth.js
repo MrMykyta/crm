@@ -11,7 +11,11 @@ export const registerUser = async ({ email, password, firstName, lastName }) => 
 // 2) верификация email по токену из письма
 export const verifyEmail = async (token) => {
   const { data } = await httpClient.get('/auth/verify', { params: { token } });
-  if (data?.tokens) await setTokens(data.tokens);
+  if (data?.tokens) {
+    const { accessToken, refreshToken } = data.tokens;
+    console.log('tokens', accessToken, refreshToken);
+    await setTokens({ accessToken, refreshToken, activeCompanyId: null });
+  }
   console.log(data)
   return data; // { verified:true, tokens? }
 };
@@ -45,6 +49,11 @@ export const loginFromCompany = async (companyId) => {
 // 5) создание компании (после верификации)
 export const createCompany = async (payload) => {
   const { data } = await httpClient.post('/companies', payload);
+  if (data?.tokens) {
+    const { accessToken, refreshToken } = data.tokens;
+    const { activeCompanyId } = data;
+    await setTokens({ accessToken, refreshToken, activeCompanyId });
+  }
   return data; // { company: {...} }
 };
 

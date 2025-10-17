@@ -8,12 +8,16 @@ export default function UserMenu({ user, onClose, onLogout }) {
   const ref = useRef(null);
   const navigate = useNavigate();
   const { t } = useTranslation();
+
   useEffect(() => {
     const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose?.(); };
     const onEsc = (e) => { if (e.key === "Escape") onClose?.(); };
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onEsc);
-    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onEsc); };
+    return () => { 
+      document.removeEventListener("mousedown", onDoc); 
+      document.removeEventListener("keydown", onEsc); 
+    };
   }, [onClose]);
 
   const goSettings = () => { onClose?.(); navigate("/main/user-settings"); };

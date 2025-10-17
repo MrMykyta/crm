@@ -93,7 +93,8 @@ module.exports.switchCompany = async ({ userId, companyId }) => {
 exports.refresh = async (req, res) => {
   try {
     const ref = req.body.refreshToken;
-    const { accessToken, refreshToken } = await tokenService.rotateRefresh(ref, {
+    const companyId = req.body.companyId;
+    const { accessToken, refreshToken } = await tokenService.rotateRefresh(ref, companyId, {
       userAgent: req.headers['user-agent'],
       ip: req.ip
     });

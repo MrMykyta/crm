@@ -1,5 +1,6 @@
 const { verifyAccess } = require('../utils/tokenService');
 const { getPermissions } = require('./permissionResolver');
+const TokenError = require('../errors/TokenError');
 
 module.exports.auth = async (req, res, next) => {
   try {
@@ -7,7 +8,7 @@ module.exports.auth = async (req, res, next) => {
     const token = hdr.startsWith('Bearer ') ? hdr.slice(7) : null;
 
     if (!token) {
-      throw new Error('No token');
+      throw new TokenError('No token');
     }
 
     const payload = await verifyAccess(token);
@@ -32,7 +33,6 @@ module.exports.auth = async (req, res, next) => {
 
     next();
   } catch (e) {
-    console.error('[auth]', e);
-    next(new Error('error token'));
+    next(new TokenError('error token'));
   }
 };

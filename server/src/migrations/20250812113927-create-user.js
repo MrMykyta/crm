@@ -12,10 +12,7 @@ module.exports = {
       email: {
         type: Sequelize.STRING(200),
         unique: true,
-        allowNull: false,
-        validate: {
-          isEmail: true
-        }
+        allowNull: false
       },
       passwordHash: {
         type: Sequelize.STRING(200),
@@ -41,6 +38,18 @@ module.exports = {
         type: Sequelize.DATE,
         field: 'last_login_at',
         allowNull: true
+      },
+      createdBy: {
+        type: Sequelize.UUID,
+        field: 'created_by',
+        allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id'
+          },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+        defaultValue: null
       },
       createdAt: {
         allowNull: false,

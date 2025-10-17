@@ -218,11 +218,12 @@
     },
     "table": {
       "columns": {
-        "counterparty": "Kontrahent",
-        "contacts": "Kontakty",
-        "updatedAt": "Zaktualizowano",
-        "lead": "Lead",
-        "createdAt": "Utworzono"
+        "name": "Nazwa",
+        "address": "Adres",
+        "type": "Typ",
+        "status": "Status",
+        "nip": "NIP",
+        "owner": "Odpowiedzialny użytkownik"
       },
       "contactCount": "{{count}} kontakt",
       "contactCount_plural": "{{count}} kontaktów"
@@ -306,5 +307,32 @@
       "allStatuses": "Wszystkie statusy",
       "searchPlaceholder": "Szukaj (nazwa, NIP, REGON...)"
     }
+  },
+  "companySettings": {
+    "title":"Ustawienia firmy",
+    "modules": "Moduły",
+    "lists": "Listy",
+    "deals": "Transakcje",
+    "offers": "Oferty",
+    "orders": "Zamówienia",
+    "invoices": "Faktury",
+    "warehouseDoc": "Dokumenty magazynowe",
+    "automation": "Automatyzacja",
+    "integrations": "Integracje",
+    "catalog": "Produkty / Usługi",
+    "warehouse": "Magazyn",
+    "other": "Inne",
+
+    "module" : {
+      "crm": "CRM",
+      "oms": "OMS",
+      "pim": "PIM",
+      "automation": "Automatyzacja",
+      "integrations": "Integracje",
+      "catalog": "Produkty / Usługi",
+      "warehouse": "Magazyn",
+      "other": "Inne"
+    }
   }
+  
 }

@@ -40,6 +40,12 @@
   100% { transform: translateY(0) translateX(0) scale(1); }
 }
 
+.bg::after {
+  background: var(--blob-2);
+  right: -120px;
+  bottom: -120px;
+}
+
 /* ====== Сетка приложения поверх фона ====== */
 .shell{
   position: relative;

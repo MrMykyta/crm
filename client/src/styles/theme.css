@@ -85,7 +85,7 @@
   /* ========= SIZES / LAYOUT ========= */
   --sidebar-w: 15.5rem;          /* 248px */
   --sidebar-w-collapsed: 4.75rem;/* 76px */
-  --topbar-h: 4rem;              /* 64px */
+  --topbar-h: 5rem;              /* 64px */
   --icon-box: 40px;              /* базовый квадрат кнопок/аватара в topbar */
 
   /* ========= ANIMATION ========= */
@@ -94,8 +94,24 @@
 
   /* управляется ThemeProvider */
   --font-scale: 100;
-  --glass-blur: 6px;
+  --glass-blur: 20px;
 
+
+  --success:        #65f797;    /* сочный зелёный под тёмной темой */
+  --success-weak:   color-mix(in srgb, var(--success) 18%, transparent);
+
+  --danger:         #ff665a;    /* мягкий красный */
+  --danger-weak:    color-mix(in srgb, var(--danger) 18%, transparent);
+
+  /* для тумблера/индикаторов */
+  --switch-track:   color-mix(in srgb, var(--card-bg) 80%, #0000);
+  --switch-knob:    #ffffff;
+
+
+  --deal-green-h: 120;      /* hue (0..360) — зелёный */
+  --deal-green-s: 60%;      /* saturation */
+  --deal-light-start: 50%;  /* самый светлый */
+  --deal-light-end: 20%;    /* самый тёмный */
 }
 
 /* LIGHT */
@@ -129,7 +145,16 @@
   --topbar-text: #2e2e35;
   --topbar-input-bg: rgba(255, 255, 255, .96);
 
-  --glass-blur: 2px;
+  --glass-blur: 4px;
+
+  --success:        #2ecc71;
+  --success-weak:   color-mix(in srgb, var(--success) 18%, transparent);
+
+  --danger:         #ff4d4f;
+  --danger-weak:    color-mix(in srgb, var(--danger) 18%, transparent);
+
+  --switch-track:   color-mix(in srgb, #000 6%, #fff);
+  --switch-knob:    #ffffff;
 }
 
 /* плавная смена темы и остальные утилы остаются как были */

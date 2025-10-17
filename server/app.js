@@ -58,22 +58,9 @@ app.use(express.json({ limit: '2mb' }));
 
 /* ---------- Static (/uploads -> public/uploads) ---------- */
 // Caddy проксирует /uploads/* на API → реально отдаём из public/uploads
+
 app.use(
   '/uploads',
-  express.static(path.join(__dirname, 'public', 'uploads'), {
-    dotfiles: 'deny',
-    etag: true,
-    maxAge: '7d',
-    index: false,
-    setHeaders(res) {
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-    },
-  })
-);
-
-// Если нужна отдельная статика по /static (не путать с uploads)
-app.use(
-  '/static',
   express.static(path.join(__dirname, 'uploads'), {
     maxAge: '30d',
     immutable: true,

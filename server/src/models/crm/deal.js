@@ -70,6 +70,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID, 
       field: 'responsible_id' 
     },
+    createdBy: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'created_by'
+    },
+    updatedBy: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'updated_by'
+    },
     pipelineId: { 
       type: DataTypes.UUID,
       allowNull:true, 

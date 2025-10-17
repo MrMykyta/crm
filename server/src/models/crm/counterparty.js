@@ -78,9 +78,19 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true, 
       field: 'main_responsible_user_id' 
     },
+    firstName: { 
+      type: DataTypes.STRING(100), 
+      allowNull: true, 
+      field: 'first_name' 
+    },
+    lastName: {
+      type: DataTypes.STRING(100), 
+      allowNull: true, 
+      field: 'last_name'
+    },
     fullName:  { 
       type: DataTypes.STRING(200), 
-      allowNull: false, 
+      allowNull: true, 
       field: 'full_name' 
     },
     shortName: { 

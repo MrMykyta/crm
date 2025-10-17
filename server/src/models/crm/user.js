@@ -80,7 +80,6 @@ module.exports = (sequelize, DataTypes) => {
       field: 'last_login_at',
       allowNull: true
     },
-
     verificationToken: {
       type: DataTypes.STRING(128),
       field:'verification_token',
@@ -96,7 +95,12 @@ module.exports = (sequelize, DataTypes) => {
       field: 'email_verified_at',
       allowNull: true
     },
-
+    createdBy: {
+      type: DataTypes.UUID,
+      field: 'created_by',
+      allowNull: true,
+      defaultValue: null
+    },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,

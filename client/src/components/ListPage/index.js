@@ -1,6 +1,9 @@
-import React, { forwardRef, useImperativeHandle } from 'react';
+// src/components/ListPage/index.jsx
+import React, {
+  forwardRef, useImperativeHandle, useMemo, useRef, useState, useCallback, useEffect,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import useListResource from '../../hooks/useListResource';
+import { listResource } from '../../api/resources';
 import DataTable from '../DataTable';
 import Toolbar from '../Toolbar';
 import s from './ListPage.module.css';
@@ -15,15 +18,98 @@ export function Button({ variant = 'secondary', children, className = '', ...pro
   );
 }
 
+// --- helpers ---
+const shallowEqualObj = (a, b) => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const ak = Object.keys(a); const bk = Object.keys(b);
+  if (ak.length !== bk.length) return false;
+  for (const k of ak) if (a[k] !== b[k]) return false;
+  return true;
+};
+
+const normalizeQuery = (q = {}) => ({
+  page: Number(q.page) > 0 ? Number(q.page) : 1,
+  limit: Number(q.limit) > 0 ? Number(q.limit) : 25,
+  sort: q.sort || 'createdAt',
+  dir: q.dir === 'ASC' ? 'ASC' : 'DESC',
+  search: q.search ?? undefined,
+  type: q.type ?? undefined,
+  ...q,
+});
+
+// --- component ---
 const ListPage = forwardRef(function ListPage(
-  { title, endpoint, columns = [], defaultQuery = {}, actions, rowActions },
+  { title, endpoint, columns = [], defaultQuery = {}, actions, rowActions,
+    columnWidths, onColumnResize },   // ← новое
   ref
 ) {
   const { t } = useTranslation();
-  const {
-    query, data, loading, error,
-    setPage, setLimit, setSort, refetch, replaceQuery,
-  } = useListResource({ endpoint, defaultQuery });
+
+  // стабильные начальные значения
+  const initQuery = useMemo(() => normalizeQuery(defaultQuery), [defaultQuery]);
+
+  const [query, setQuery] = useState(initQuery);
+  const [data, setData] = useState({ items: [], total: 0, page: initQuery.page, limit: initQuery.limit });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // отмена гонок запросов
+  const abortRef = useRef(null);
+
+  // при смене endpoint — мягкий сброс к дефолту, один раз
+  const prevEndpointRef = useRef(endpoint);
+  useEffect(() => {
+    if (prevEndpointRef.current !== endpoint) {
+      prevEndpointRef.current = endpoint;
+      setQuery(initQuery);
+    }
+  }, [endpoint, initQuery]);
+
+  const fetchList = useCallback(async (q = query) => {
+    // abort предыдущий
+    if (abortRef.current) abortRef.current.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await listResource(endpoint, q);
+      if (!ctrl.signal.aborted) {
+        setData({
+          items: res?.items || [],
+          total: Number(res?.total || 0),
+          page: Number(res?.page || q.page || 1),
+          limit: Number(res?.limit || q.limit || 25),
+        });
+      }
+    } catch (e) {
+      if (!ctrl.signal.aborted) setError(String(e?.message || e) || 'Error');
+    } finally {
+      if (abortRef.current === ctrl) abortRef.current = null;
+      setLoading(false);
+    }
+  }, [endpoint, query]);
+
+  // авто-загрузка при маунте и изменениях endpoint/query
+  useEffect(() => {
+    fetchList();
+    return () => abortRef.current?.abort?.();
+  }, [fetchList]);
+
+  // публичный API наружу
+  const replaceQuery = useCallback((nextOrSetter) => {
+    setQuery((prev) => {
+      const next = normalizeQuery(typeof nextOrSetter === 'function' ? nextOrSetter(prev) : nextOrSetter);
+      return shallowEqualObj(prev, next) ? prev : next; // не триггерим, если одинаково
+    });
+  }, []);
+
+  const setPage  = useCallback((page)  => replaceQuery(q => ({ ...q, page: Math.max(1, Number(page) || 1) })), [replaceQuery]);
+  const setLimit = useCallback((limit) => replaceQuery(q => ({ ...q, limit: Math.max(1, Number(limit) || 25), page: 1 })), [replaceQuery]);
+  const setSort  = useCallback((key, dir) => replaceQuery(q => ({ ...q, sort: key, dir: dir === 'ASC' ? 'ASC' : 'DESC', page: 1 })), [replaceQuery]);
+  const refetch  = useCallback(() => fetchList(), [fetchList]);
 
   useImperativeHandle(ref, () => ({
     refetch,
@@ -116,6 +202,8 @@ const ListPage = forwardRef(function ListPage(
           sortKey={query.sort}
           sortDir={query.dir}
           onSort={(key, dir) => setSort(key, dir)}
+          columnWidths={columnWidths}          // ← новое
+          onColumnResize={onColumnResize}      // ← новое
         />
       </div>
     </div>

@@ -74,14 +74,19 @@ module.exports = (sequelize, DataTypes) => {
     },
     dueDate: { 
       type: DataTypes.DATE, 
-      field: 'due_date' },
-    creatorId: { 
+      field: 'due_date' 
+    },
+    createdBy: { 
       type: DataTypes.UUID, 
-      field: 'creator_id' 
+      field: 'created_by' 
     },
     assigneeId: { 
       type: DataTypes.UUID, 
       field: 'assignee_id' 
+    },
+    updatedBy: {
+      type: DataTypes.UUID, 
+      field: 'updated_by'
     },
     ownerType: { 
       type: DataTypes.ENUM('user', 'department'), 

@@ -23,7 +23,7 @@ uploadRouter.post('/upload/background', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'no_file' });
 
   const base = process.env.FILE_BASE_URL || `${req.protocol}://${req.get('host')}`;
-  const url  = `${base}/static/backgrounds/${req.file.filename}`;
+  const url  = `${base}/uploads/backgrounds/${req.file.filename}`;
   res.json({ url });
 });
 

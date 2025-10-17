@@ -15,6 +15,11 @@ import LeadsPage from './pages/CRM/LeadsPage';
 import CounterpartiesPage from './pages/CRM/CounterpartiesPage';
 import CounterpartyDetailPage from './pages/CRM/CounterpartyDetailPage';
 
+//-------------------Company Pages----------------------------------
+import CompanySettings from './pages/CompanySettings';
+import CompanyModules from './pages/CompanySettings/Modules/CompanyModules';
+import CompanyDeals from './pages/CompanySettings/Modules/CompanyDeals';
+
 
 import Dashboard from './components/Dashboard';
 
@@ -81,6 +86,23 @@ export default function App() {
           >
 
             <Route path="pulpit" element={<Dashboard currentUser={user} />} />
+
+            <Route path="/main/company-settings" element={<CompanySettings />}>
+              <Route index element={<Navigate to="modules" replace />} />
+              <Route path="modules" element={<CompanyModules />} />
+              <Route path="deals" element={<CompanyDeals />} />
+              {/* <Route path="lists" element={<Stub title="Списки" />} />
+              
+              <Route path="offers" element={<Stub title="Предложения" />} />
+              <Route path="orders" element={<Stub title="Заказы" />} />
+              <Route path="invoices" element={<Stub title="Фактуры" />} />
+              <Route path="warehouse-docs" element={<Stub title="Складские документы" />} />
+              <Route path="automation" element={<Stub title="Автоматизация" />} />
+              <Route path="integrations" element={<Stub title="Интеграции" />} />
+              <Route path="catalog" element={<Stub title="Продукты/Услуги" />} />
+              <Route path="warehouse" element={<Stub title="Склад" />} />
+              <Route path="other" element={<Stub title="Прочее" />} /> */}
+            </Route>
 
             {/* CRM */}
             <Route path="crm/counterparties" element={<CounterpartiesPage />} />

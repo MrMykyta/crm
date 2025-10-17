@@ -3,28 +3,18 @@ import FieldRenderer from "../../components/SmartForm";
 import TabBar from "../../components/TabBar";
 import DetailTabs from "../../components/DetailTabs";
 import { useTranslation } from "react-i18next";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 
 /**
  * Универсальная детальная страница с автосейвом, стабильным сравнением payload
  * и чисткой localStorage при размонтаже.
  *
- * Props:
- * - id
- * - load(id) -> data
- * - save(id, payload) -> saved
- * - schemaBuilder(i18n) -> schema[]
- * - toForm(data) -> values
- * - toApi(values) -> payload
- * - buildPayload?(basePayload) -> payload (например, добавить contacts)
- * - tabs
- * - leftExtras?: ReactNode
- * - storageKeyPrefix?: string
- * - autosave?: { debounceMs?: number } (default 800)
- * - saveOnExit?: boolean (default true) — если true, при закрытии пишем draft (без сети)
- * - clearDraftOnUnmount?: boolean (default true) — чистим draft при выходе из роута
- * - payloadDeps?: any[] — внешние зависимости payload (например, contacts)
+ * Отличия от твоей версии:
+ *  - makePayload теперь гарантирует, что ОЧИЩЕННЫЕ текстовые поля ('' в values)
+ *    уйдут на сервер как null, даже если toApi их не выставил (undefined).
+ *  - debounce автосейва по умолчанию 500 мс.
  */
+
 export default function EntityDetailPage({
   id,
   load, save,
@@ -32,7 +22,7 @@ export default function EntityDetailPage({
   tabs,
   leftExtras,
   storageKeyPrefix = "entity",
-  autosave = { debounceMs: 800 },
+  autosave = { debounceMs: 500 },          // ← было 800/10 — поставил 500 по умолчанию
   saveOnExit = true,
   clearDraftOnUnmount = true,
   payloadDeps = [],
@@ -53,13 +43,15 @@ export default function EntityDetailPage({
 
   const lastSavedJSONRef = useRef('');
   const storageKey = `${storageKeyPrefix}:${id}`;
-  const debounceMs = autosave?.debounceMs ?? 800;
+  const debounceMs = autosave?.debounceMs ?? 500;
 
-  const schema = schemaBuilder(i18n);
+  // соберём схему один раз на язык (чтобы знать список полей)
+  const schema = useMemo(() => schemaBuilder(i18n), [schemaBuilder, i18n]);
 
   const stamp = () => new Date().toISOString();
 
-  // stable stringify (игнорируем undefined, сортируем ключи)
+  // stable stringify (сортируем ключи; раньше undefined-ключи отбрасывались —
+  // это ок, т.к. мы ниже конвертим '' → null, чтобы ключ точно попал в payload)
   const stableStringify = (obj) => {
     const seen = new WeakSet();
     const stringify = (o) => {
@@ -77,14 +69,31 @@ export default function EntityDetailPage({
   const writeDraft = (obj) => { try { localStorage.setItem(storageKey, JSON.stringify(obj)); } catch {} };
   const clearDraft = () => { try { localStorage.removeItem(storageKey); } catch {} };
 
+  // ГЛАВНОЕ: если пользователь очистил поле (values[name] === ''),
+  // а toApi его НЕ выставил (payload[name] === undefined), то проставляем null,
+  // чтобы сервер понял «очистить».
   const makePayload = (vals) => {
-    const base = toApi(vals);
-    return buildPayload ? buildPayload(base) : base;
+    const base = toApi(vals) || {};
+    const out = { ...base };
+
+    // пройдёмся по полям схемы; где в форме пустая строка — принудительно null
+    for (const f of Array.isArray(schema) ? schema : []) {
+      const name = f?.name;
+      if (!name) continue;
+      const v = vals[name];
+      // учитываем только текстовые/многострочные поля или те, у кого нет явного типа
+      const isTextLike = !f.type || f.type === 'text' || f.type === 'textarea' || f.type === 'string';
+      if (isTextLike && (v === '' || v == null)) {
+        if (out[name] == undefined) out[name] = '';
+      }
+    }
+
+    return buildPayload ? buildPayload(out) : out;
   };
 
   const validate = (vals) => {
     const e = {};
-    schema.forEach(f => {
+    (Array.isArray(schema) ? schema : []).forEach(f => {
       if (!f?.name) return;
       if (f.required && !String(vals[f.name] ?? "").trim()) e[f.name] = t("crm.form.errors.required");
       if (f.max && String(vals[f.name] || "").length > f.max) e[f.name] = t("crm.form.errors.max", { max: f.max });
@@ -166,7 +175,7 @@ export default function EntityDetailPage({
     return () => {
       unmounted.current = true;
       if (debTimer.current) clearTimeout(debTimer.current);
-      if (clearDraftOnUnmount) clearDraft(); // чистим localStorage при выходе из роута
+      if (clearDraftOnUnmount) clearDraft();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);

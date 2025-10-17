@@ -27,6 +27,7 @@ shishasklepweb.pp.ua {
     reverse_proxy api:3000
   }
 
+
   # SPA статика с fallback на index.html
   handle {
     root * /srv

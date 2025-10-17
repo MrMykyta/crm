@@ -68,10 +68,10 @@ module.exports = {
         field: 'due_date' 
       },
       // кто создал
-      creatorId: {
+      createdBy: {
         type: Sequelize.UUID,
         allowNull: true,
-        field: 'creator_id',
+        field: 'created_id',
         references: { 
           model: 'users', 
           key: 'id' 
@@ -84,6 +84,17 @@ module.exports = {
         type: Sequelize.UUID,
         allowNull: true,
         field: 'assignee_id',
+        references: { 
+          model: 'users', 
+          key: 'id' 
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
+      updatedBy: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        field: 'updated_by',
         references: { 
           model: 'users', 
           key: 'id' 

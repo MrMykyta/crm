@@ -1,5 +1,3 @@
-'use strict';
-
 const counterpartyService = require('../../services/crm/counterpartyService');
 
 // helper: берём companyId из params, а если middleware уже положил — сверим/используем его

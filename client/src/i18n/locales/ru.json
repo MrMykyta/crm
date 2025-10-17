@@ -218,11 +218,12 @@
     },
     "table": {
       "columns": {
-        "counterparty": "Контрагент",
-        "contacts": "Контакты",
-        "updatedAt": "Обновлено",
-        "lead": "Лид",
-        "createdAt": "Создано"
+        "name": "Название",
+        "address": "Адрес",
+        "type": "Тип",
+        "status": "Статус",
+        "nip": "NIP",
+        "owner": "Опекун"
       },
       "contactCount": "{{count}} контакт",
       "contactCount_plural": "{{count}} контактов"
@@ -305,6 +306,32 @@
       "allTypes": "Все типы",
       "allStatuses": "Все статусы",
       "searchPlaceholder": "Поиск (название, NIP, REGON...)"
+    }
+  },
+  "companySettings":{
+    "title": "Настройки компании",
+    "modules": "Модули",
+    "lists": "Списки",
+    "deals": "Сделки",
+    "offers": "Предложения",
+    "orders": "Заказы",
+    "invoices": "Фактуры",
+    "warehouseDoc": "Складские документы",
+    "automation": "Автоматизация",
+    "integrations": "Интеграции",
+    "catalog": "Продукты / Услуги",
+    "warehouse": "Склад",
+    "other": "Прочее",
+
+    "module" : {
+      "crm": "CRM",
+      "oms": "OMS",
+      "pim": "PIM",
+      "automation": "Автоматизация",
+      "integrations": "Интеграции",
+      "catalog": "Продукты / Услуги",
+      "warehouse": "Склад",
+      "other": "Другое"
     }
   }
 }

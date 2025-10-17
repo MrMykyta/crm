@@ -1,4 +1,3 @@
-// pages/MainLayoutPage/index.js (или как у тебя)
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +5,7 @@ import s from './MainLayout.module.css';
 import Sidebar from '../../components/Sidebar';
 import Topbar from '../../components/Topbar';
 import { MENU } from '../../config/menu';
+import { TopbarProvider } from '../../Providers/TopbarProvider';
 
 export default function MainLayoutPage({ currentUser, onLogout }) {
   const { t } = useTranslation();
@@ -13,7 +13,7 @@ export default function MainLayoutPage({ currentUser, onLogout }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Заголовок слева в топбаре
+  // Заголовок слева в топбаре (как у тебя было)
   const pageTitle = useMemo(() => {
     const path = location.pathname.replace(/\/+$/, '');
     const flat = MENU.filter(i => i.type === 'item' && i.route);
@@ -31,17 +31,22 @@ export default function MainLayoutPage({ currentUser, onLogout }) {
           t={t}
         />
         <div className={s.content}>
-          <Topbar
-            collapsed={collapsed}
-            title={pageTitle}
-            user={currentUser}
-            onSearch={(q)=>{}}
-            onNotifications={()=>{}}
-            onLogout={onLogout}
-          />
-          <div className={s.body}>
-            <Outlet /> {/* ← сюда роутер подставит Dashboard или Settings */}
-          </div>
+          {/* ↓↓↓ ВАЖНО: провайдер оборачивает Topbar + Outlet.
+              defaultTitle берём из твоего pageTitle, чтобы переводы не сломать */}
+          <TopbarProvider defaultTitle={pageTitle}>
+            <Topbar
+              collapsed={collapsed}
+              // title теперь берётся из контекста, проп оставим для бэкапа
+              title={pageTitle}
+              user={currentUser}
+              onSearch={(q)=>{}}
+              onNotifications={()=>{}}
+              onLogout={onLogout}
+            />
+            <div className={s.body}>
+              <Outlet />
+            </div>
+          </TopbarProvider>
         </div>
       </div>
     </div>

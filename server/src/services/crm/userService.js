@@ -17,6 +17,7 @@ module.exports.register = async ({ email, password, firstName, lastName, verific
     lastName: lastName || null,
     verificationToken: verificationToken,
     verificationExpiresAt: expiresAt,
+    createdBy: null,
     emailVerifiedAt: null
   });
 
@@ -61,6 +62,7 @@ module.exports.login = async ({ email, password, companyId }, meta = {}) => {
     phoneNorm,
     emailRaw,
     emailNorm,
+    createdBy: user.createdBy ?? 'system',
     createdAt: user.createdAt,
     emailVerifiedAt: user.emailVerifiedAt
   };
@@ -133,7 +135,7 @@ module.exports.login = async ({ email, password, companyId }, meta = {}) => {
 module.exports.loginFromCompany = async ({userId, companyId}) => {
   try{
     const user = await User.findByPk(userId, {
-      attributes: ['id', 'email', 'firstName', 'lastName', 'isActive', 'lastLoginAt', 'createdAt'],
+      attributes: ['id', 'email', 'firstName', 'lastName', 'isActive', 'lastLoginAt', 'createdBy', 'createdAt'],
       include: [{
         model: ContactPoint, 
         as: 'contacts'
@@ -156,6 +158,7 @@ module.exports.loginFromCompany = async ({userId, companyId}) => {
       phoneNorm,
       emailRaw,
       emailNorm,
+      createdBy: user.createdBy ?? 'system',
       createdAt: user.createdAt,
       emailVerifiedAt: user.emailVerifiedAt
     };
@@ -181,7 +184,7 @@ module.exports.loginFromCompany = async ({userId, companyId}) => {
 
 module.exports.getMe = async (userId) => {
   const user = await User.findByPk(userId, {
-    attributes: ['id', 'email', 'firstName', 'lastName', 'isActive', 'lastLoginAt', 'emailVerifiedAt', 'createdAt'],
+    attributes: ['id', 'email', 'firstName', 'lastName', 'isActive', 'lastLoginAt', 'emailVerifiedAt', 'createdBy', 'createdAt'],
     include: [{
       model: ContactPoint, 
       as: 'contacts'
@@ -201,9 +204,11 @@ module.exports.getMe = async (userId) => {
     phoneNorm,
     emailRaw,
     emailNorm,
+    createdBy: user.createdBy ?? 'system',
     createdAt: user.createdAt,
     emailVerifiedAt: user.emailVerifiedAt
   };
+  console.log(safeUser)
   return safeUser;
 };
 

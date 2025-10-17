@@ -53,14 +53,24 @@ module.exports = {
         onDelete: 'SET NULL',
         field: 'main_responsible_user_id'
       },
+      firstName: {
+        type: Sequelize.STRING(100),
+        allowNull: true,
+        field: 'first_name'
+      },
+      lastName: {
+        type: Sequelize.STRING(100),
+        allowNull: true,
+        field: 'last_name'
+      },
       fullName: {
         type: Sequelize.STRING(200),
-        allowNull: false,
+        allowNull: true,
         field: 'full_name'
       },
       shortName: {
         type: Sequelize.STRING(200),
-        allowNull: false,
+        allowNull: true,
         field:'short_name'
       },
       nip: {
