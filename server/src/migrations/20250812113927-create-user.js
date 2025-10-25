@@ -51,6 +51,16 @@ module.exports = {
         onDelete: 'SET NULL',
         defaultValue: null
       },
+      avatarUrl: {
+        type: Sequelize.STRING(512),
+        field: 'avatar_url',
+        allowNull: true
+      },
+      backgroundUrl: {
+        type: Sequelize.STRING(512),
+        field: 'background_url',
+        allowNull: true
+      },
       createdAt: {
         allowNull: false,
         field: 'created_at',

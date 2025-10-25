@@ -1,0 +1,129 @@
+/* backdrop и контейнер — на токенах */
+.backdrop {
+  position: fixed; inset: 0;
+  background: color-mix(in srgb, var(--shadow-clr) 55%, transparent);
+  backdrop-filter: blur(var(--glass-blur));
+  display: grid; place-items: center;
+  z-index: 2;
+}
+
+.modal {
+  width: min(520px, 92vw);
+  background: var(--card-bg);
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+  padding: var(--space-5);
+  color: var(--text);
+}
+
+.title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+}
+
+.subtitle {
+  margin: 0 0 var(--space-4);
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+}
+
+/* список */
+.list {
+  display: grid;
+  gap: var(--space-3);
+  max-height: 22rem;
+  overflow: auto;
+  padding: var(--space-2);
+}
+
+/* карточка компании */
+.item {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-brd);
+  background: var(--input-bg);
+  cursor: pointer;
+  transition: background var(--tr-fast), transform .06s ease, box-shadow var(--tr-med), border-color var(--tr-fast);
+  outline: none;
+}
+.item:hover { background: color-mix(in srgb, var(--primary-start) 12%, transparent); transform: translateY(-1px); }
+.item:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 35%, transparent); }
+
+/* скрываем нативный радио, оставляя доступность */
+.inputHidden {
+  position: absolute !important;
+  inset: 0;
+  width: 0; height: 0;
+  opacity: 0; pointer-events: none;
+}
+
+/* кастомный радио — на токенах */
+.radio {
+  flex: 0 0 18px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--text) 50%, transparent);
+  background: color-mix(in srgb, var(--bg) 15%, transparent);
+  display: grid; place-items: center;
+  transition: border-color var(--tr-fast), background var(--tr-fast), transform var(--tr-fast);
+}
+.radio::after {
+  content: "";
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  transform: scale(.75);
+  transition: background var(--tr-fast), transform var(--tr-fast);
+}
+.radioChecked {
+  border-color: var(--focus);
+  background: color-mix(in srgb, var(--primary-start) 14%, transparent);
+}
+.radioChecked::after {
+  background: var(--focus);
+  transform: scale(1);
+}
+
+.meta { display:flex; flex-direction: column; min-width: 0; }
+.name { font-size: var(--fs-md); font-weight: var(--fw-medium); line-height: var(--lh-tight); }
+.role { font-size: var(--fs-xs); color: var(--muted); line-height: var(--lh-normal); }
+
+/* активная карточка — «обводка» и легкий подсвет */
+.active {
+  border-color: color-mix(in srgb, var(--focus) 65%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 28%, transparent);
+}
+
+/* кнопки по центру */
+.actions {
+  display:flex; align-items:center; justify-content:center;
+  gap: var(--space-3); margin-top: var(--space-4); flex-wrap: wrap;
+}
+
+/* primary / secondary на токенах */
+.primary {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-brd);
+  color:#fff;
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.primary:disabled { opacity: .6; cursor: not-allowed; }
+
+.secondary {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-brd);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}

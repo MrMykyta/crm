@@ -54,7 +54,8 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 /* ---------- Static (/uploads -> public/uploads) ---------- */
 // Caddy проксирует /uploads/* на API → реально отдаём из public/uploads
@@ -76,7 +77,7 @@ app.use(
 app.get('/health', (_req, res) => res.status(200).send('OK'));
 
 /* ---------- API ---------- */
-app.use('/api', uploadRoutes);
+app.use('/api/uploads', uploadRoutes);
 app.use('/api', rootRouter);
 
 /* ---------- Errors ---------- */

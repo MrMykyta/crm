@@ -105,6 +105,7 @@ httpClient.interceptors.response.use(
 
     if (status === 401 && !isAuthRoute) {
       await logoutUser();
+      try { window.dispatchEvent(new Event('auth:logged-out')); } catch {}
       window.location.replace('/');
     }
 

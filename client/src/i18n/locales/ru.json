@@ -41,7 +41,45 @@
     "nipHint": "Для PL используйте 10 цифр без дефисов.",
     "chooseTitle": "Выберите компанию",
     "chooseSubtitle": "Выберите компанию для продолжения",
-    "createNew": "Создать новую"
+    "createNew": "Создать новую",
+    "form": {
+      "fields": {
+        "name": "Название",
+        "website": "Веб-сайт",
+        "email": "E-mail",
+        "phone": "Телефон",
+        "nip": "Налоговый номер (NIP)",
+        "regon": "REGON",
+        "krs": "KRS",
+        "bdo": "BDO",
+        "country": "Страна",
+        "city": "Город",
+        "postalCode": "Почтовый индекс",
+        "street": "Улица и дом",
+        "description": "Описание"
+      },
+
+      "placeholders": {
+        "shortName": "например, ShishaSklep",
+        "fullName": "ООО «ShishaSklep Polska»",
+        "postalCode": "00-000",
+        "website": "https://example.com"
+      },
+
+      "errors": {
+        "required": "Это поле обязательно",
+        "max": "Максимум {{max}} символов"
+      }
+    },
+
+    "tabs": {
+      "overview": "Общее",
+      "history": "История изменений"
+    },
+
+    "titles": {
+      "companyInfo": "Информация о компании"
+    }
   },
   "common": {
     "email": "Email",
@@ -112,7 +150,7 @@
     "wms": "WMS",
     "warehouse": "Склад",
     "wmsDocs": "Складские документы",
-    "settings": "Настройки",
+    "users": "Пользователи",
     "userSettings": "Настройки пользователя"
   },
   "widgets": {
@@ -146,8 +184,7 @@
     "remove": "Удалить"
   },
   "userMenu": {
-    "profile": "Профиль",
-    "settings": "Настройки",
+    "account": "Мой Аккаунт",
     "logout": "Выйти"
   },
   "settings": {
@@ -332,6 +369,17 @@
       "catalog": "Продукты / Услуги",
       "warehouse": "Склад",
       "other": "Другое"
+    }
+  },
+  "companyMenu": {
+    "info": "Информация о фирме",
+    "settings": "Настройки"
+  },
+  "user": {
+    "form": {
+      "fields":{
+        
+      }
     }
   }
 }

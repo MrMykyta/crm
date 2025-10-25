@@ -1,14 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
-import AuthPage from './pages/AuthPage';
-import VerifyEmail from './components/VerifyEmail';
-import CompanySetupPage from './pages/CompanySetupPage';
+import AuthPage from './pages/auth/AuthPage';
+import VerifyEmail from './components/auth/VerifyEmail';
+import CompanySetupPage from './pages/auth/CompanySetupPage';
 import MainLayoutPage from './pages/MainLayoutPage';
 import ThemeProvider from './Providers/ThemeProvider';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import UserSettingsPage from './pages/UserSettingsPage';
-import UserProfilePage from './pages/UserProfilePage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import UserSettingsPage from './pages/users/UserSettingsPage';
+import UserProfilePage from './pages/users/UserProfilePage';
 
 //-------------------CRM Pages----------------------------------
 import LeadsPage from './pages/CRM/LeadsPage';
@@ -16,14 +16,20 @@ import CounterpartiesPage from './pages/CRM/CounterpartiesPage';
 import CounterpartyDetailPage from './pages/CRM/CounterpartyDetailPage';
 
 //-------------------Company Pages----------------------------------
-import CompanySettings from './pages/CompanySettings';
-import CompanyModules from './pages/CompanySettings/Modules/CompanyModules';
-import CompanyDeals from './pages/CompanySettings/Modules/CompanyDeals';
+import CompanySettings from './pages/company/CompanySettings';
+import CompanyModules from './pages/company/CompanySettings/Modules/CompanyModules';
+import CompanyDeals from './pages/company/CompanySettings/Modules/CompanyDeals';
+import CompanyInfoPage from './pages/company/CompanyInfoPage';
 
+
+//-------------------Systems Pages----------------------------------
+import CompanyUsers from './pages/company/CompanyUsers';
+import InviteAcceptPage from './pages/auth/InviteAcceptPage';
 
 import Dashboard from './components/Dashboard';
 
 import './reset.css';
+// import './styles/base.css'
 
 /** Простая защита по accessToken */
 const Protected = ({ children }) => {
@@ -75,6 +81,8 @@ export default function App() {
           <Route path="/auth/company-setup" element={<CompanySetupPage setUser={setUser}/>} />
           <Route path="/auth/reset" element={<ResetPasswordPage />} />
 
+          <Route path="/invite/accept" element={<InviteAcceptPage setUser={setUser} />} />
+
           {/* приложение — защищено и получает currentUser + onLogout */}
           <Route
             path="/main"
@@ -87,10 +95,12 @@ export default function App() {
 
             <Route path="pulpit" element={<Dashboard currentUser={user} />} />
 
+            <Route path="/main/company/details" element={<CompanyInfoPage />} />
             <Route path="/main/company-settings" element={<CompanySettings />}>
               <Route index element={<Navigate to="modules" replace />} />
               <Route path="modules" element={<CompanyModules />} />
               <Route path="deals" element={<CompanyDeals />} />
+              
               {/* <Route path="lists" element={<Stub title="Списки" />} />
               
               <Route path="offers" element={<Stub title="Предложения" />} />
@@ -111,6 +121,8 @@ export default function App() {
 
             <Route path="user-settings" element={<UserSettingsPage user={user} />} />
             <Route path="user-profile" element={<UserProfilePage user={user}/>} />
+
+            <Route path="company-users" element={<CompanyUsers />} />
           </Route>
           <Route path="*" element={<div style={{ padding: 24 }}>Not found</div>} />
         </Routes>

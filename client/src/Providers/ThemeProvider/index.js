@@ -1,41 +1,55 @@
-// src/Providers/ThemeProvider.jsx
-import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react";
-import useBackgroundImage from "../../hooks/useBackgroundImage";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
+import useBrandAndBackground from "../../hooks/useBrandAndBackground";
 import { getMyPreferences, saveMyPreferences } from "../../api/user";
 
-const KEY_THEME  = "theme";           // 'dark' | 'light' | 'system'
-const KEY_APPEAR = "ui.appearance";   // { fontScale:number, backgroundPath?:string }
+const KEY_THEME = "theme"; // 'dark' | 'light' | 'system'
+const KEY_APPEAR = "ui.appearance"; // { fontScale:number, backgroundPath?:string }
 
 const ThemeCtx = createContext(null);
 export const useTheme = () => useContext(ThemeCtx);
 
 export default function ThemeProvider({ children }) {
-  // ---- init from LS ----
+  /* ------------------- локальное состояние ------------------- */
   const [mode, setModeState] = useState(() => localStorage.getItem(KEY_THEME) || "system");
   const [appearance, setAppearanceState] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(KEY_APPEAR) || "{}"); }
-    catch { return {}; }
+    try {
+      return JSON.parse(localStorage.getItem(KEY_APPEAR) || "{}");
+    } catch {
+      return {};
+    }
   });
 
-  // ---- refs с актуальным снимком (чтобы не брать старое из замыканий) ----
+  // refs для debounce-сейва
   const modeRef = useRef(mode);
-  const appRef  = useRef(appearance);
-  useEffect(()=>{ modeRef.current = mode; }, [mode]);
-  useEffect(()=>{ appRef.current  = appearance; }, [appearance]);
+  const appRef = useRef(appearance);
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+  useEffect(() => {
+    appRef.current = appearance;
+  }, [appearance]);
 
-  // системная тема
+  /* ------------------- системная тема ------------------- */
   const [system, setSystem] = useState(() =>
     matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
   );
   useEffect(() => {
     const mq = matchMedia("(prefers-color-scheme: dark)");
-    const onChange = e => setSystem(e.matches ? "dark" : "light");
+    const onChange = (e) => setSystem(e.matches ? "dark" : "light");
     mq.addEventListener?.("change", onChange);
     return () => mq.removeEventListener?.("change", onChange);
   }, []);
   const resolved = mode === "system" ? system : mode;
 
-  // применяем тему
+  /* ------------------- применение темы ------------------- */
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("data-theme", resolved);
@@ -43,105 +57,158 @@ export default function ThemeProvider({ children }) {
     if (cssBg) root.style.background = cssBg;
   }, [resolved]);
 
-  // масштаб шрифта
+  /* ------------------- типографика ------------------- */
   useEffect(() => {
     const scale = Number(appearance?.fontScale ?? 100);
-    const mult  = Math.min(200, Math.max(70, scale)) / 100; // 0.7..2.0
+    const mult = Math.min(200, Math.max(70, scale)) / 100; // 0.7..2.0
     document.documentElement.style.setProperty("--font-multiplier", mult);
   }, [appearance?.fontScale]);
 
-  // фон (строка)
-  useBackgroundImage(appearance?.backgroundPath || null);
+  /* ------------------- фон + аватары ------------------- */
+  const companyId = localStorage.getItem("companyId") || undefined;
 
-  // persist в LS
-  useEffect(() => { try { localStorage.setItem(KEY_THEME, mode); } catch {} }, [mode]);
-  useEffect(() => { try { localStorage.setItem(KEY_APPEAR, JSON.stringify(appearance)); } catch {} }, [appearance]);
+  // читаем user.avatarUrl из localStorage, если есть
+  let userAvatarUrl = "";
+  try {
+    const raw = localStorage.getItem("user");
+    if (raw) userAvatarUrl = JSON.parse(raw)?.avatarUrl || "";
+  } catch {
+    userAvatarUrl = "";
+  }
 
-  // ---- анти-гонки: гидратация и дебаунс ----
+  useBrandAndBackground(appearance?.backgroundPath || null, {
+    companyId,
+    initialAvatarUrl: undefined,
+    userAvatarUrl,
+  });
+
+  /* ------------------- persist в LS ------------------- */
+  useEffect(() => {
+    try {
+      localStorage.setItem(KEY_THEME, mode);
+    } catch {}
+  }, [mode]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(KEY_APPEAR, JSON.stringify(appearance));
+    } catch {}
+  }, [appearance]);
+
+  /* ------------------- debounce save to backend ------------------- */
   const isHydratingRef = useRef(false);
-  const didHydrateRef  = useRef(false);
-  const saveTimerRef   = useRef(null);
+  const saveTimerRef = useRef(null);
 
-  // сохраняем ВСЕГДА из ref (актуальные значения), + можно передать патч appearance
   const saveToBackend = useCallback((appearancePatch) => {
-    if (isHydratingRef.current) return; // во время гидратации НЕ шлём
+    if (isHydratingRef.current) return;
     clearTimeout(saveTimerRef.current);
 
     saveTimerRef.current = setTimeout(() => {
       const latestMode = modeRef.current;
-      const latestApp  = appRef.current;
-      const mergedApp  = { ...(latestApp || {}), ...(appearancePatch || {}) };
+      const latestApp = appRef.current;
+      const mergedApp = { ...(latestApp || {}), ...(appearancePatch || {}) };
 
       saveMyPreferences({
         themeMode: latestMode,
         appearance: mergedApp,
-      }).catch(()=>{});
+      }).catch(() => {});
     }, 300);
   }, []);
-
   useEffect(() => () => clearTimeout(saveTimerRef.current), []);
 
-  // ---- гидратация один раз (StrictMode-safe) ----
+  /* ------------------- парсинг префов ------------------- */
+  const parsePrefs = (raw) => {
+    const pref = raw?.pref ?? raw ?? {};
+    const themeMode = pref.themeMode ?? pref.theme ?? undefined;
+    const nextAppearance = { ...(pref.appearance || {}) };
+    if (!nextAppearance.backgroundPath && pref.background?.url) {
+      nextAppearance.backgroundPath = String(pref.background.url);
+    }
+    return { themeMode, appearance: nextAppearance };
+  };
+
+  /* ------------------- гидратация ------------------- */
   const hydrateFromServer = useCallback(async () => {
-    if (didHydrateRef.current) return;
-    didHydrateRef.current = true;
+    if (!localStorage.getItem("accessToken")) return;
+    if (isHydratingRef.current) return;
 
     isHydratingRef.current = true;
     try {
-      if (localStorage.getItem('accessToken')) {
-        const { pref } = await getMyPreferences().catch(()=>({}));
-        if (!pref) return;
+      const raw = await getMyPreferences().catch(() => null);
+      if (!raw) return;
 
-        if (pref.themeMode) setModeState(pref.themeMode);
-
-        // маппинг background.url → appearance.backgroundPath (если локально не задан)
-        const nextAppearance = { ...(pref.appearance || {}) };
-        if (!nextAppearance.backgroundPath && pref.background?.url) {
-          nextAppearance.backgroundPath = String(pref.background.url);
-        }
-        if (Object.keys(nextAppearance).length) {
-          setAppearanceState(prev => ({ ...prev, ...nextAppearance }));
-        }
+      const { themeMode, appearance: serverApp } = parsePrefs(raw);
+      if (themeMode) setModeState(themeMode);
+      if (serverApp && Object.keys(serverApp).length) {
+        setAppearanceState((prev) => ({ ...serverApp, ...prev }));
       }
     } finally {
       isHydratingRef.current = false;
     }
   }, []);
 
-  useEffect(() => { hydrateFromServer(); }, [hydrateFromServer]);
+  useEffect(() => {
+    hydrateFromServer();
+  }, [hydrateFromServer]);
 
-  // ---- публичные сеттеры (без старого theme) ----
+  /* ------------------- события ------------------- */
+  useEffect(() => {
+    const onLoggedIn = () => hydrateFromServer();
+    const onHydrateAppearance = (e) => {
+      const patch = e?.detail && typeof e.detail === "object" ? e.detail : null;
+      if (patch) {
+        setAppearanceState((prev) => {
+          const next = { ...prev, ...patch };
+          saveToBackend(patch);
+          return next;
+        });
+      } else {
+        hydrateFromServer();
+      }
+    };
+    window.addEventListener("auth:logged-in", onLoggedIn);
+    window.addEventListener("appearance:hydrate", onHydrateAppearance);
+    return () => {
+      window.removeEventListener("auth:logged-in", onLoggedIn);
+      window.removeEventListener("appearance:hydrate", onHydrateAppearance);
+    };
+  }, [hydrateFromServer, saveToBackend]);
+
+  /* ------------------- публичные сеттеры ------------------- */
   const setMode = (m) => {
     setModeState(m);
-    // modeRef обновится эффектом; чтобы не тащить старый theme — сохранение читает modeRef.current
     saveToBackend();
   };
 
   const setAppearance = (partial) => {
-    setAppearanceState(prev => {
+    setAppearanceState((prev) => {
       const next = { ...prev, ...(partial || {}) };
-      // сразу шлём патч; сохранение соберёт СВЕЖИЙ снимок из ref
       saveToBackend(partial);
       return next;
     });
   };
 
-  // строка или falsy → кладём в appearance.backgroundPath
   const setBackground = (urlOrNull) => {
-    setAppearanceState(prev => {
+    setAppearanceState((prev) => {
       const patch = { backgroundPath: urlOrNull || "" };
-      const next  = { ...prev, ...patch };
+      const next = { ...prev, ...patch };
       saveToBackend(patch);
       return next;
     });
   };
 
-  const value = useMemo(() => ({
-    mode, setMode, resolved,
-    appearance, setAppearance,
-    setBackground,
-    hydrateFromServer,
-  }), [mode, resolved, appearance, hydrateFromServer]);
+  /* ------------------- value ------------------- */
+  const value = useMemo(
+    () => ({
+      mode,
+      setMode,
+      resolved,
+      appearance,
+      setAppearance,
+      setBackground,
+      hydrateFromServer,
+    }),
+    [mode, resolved, appearance, hydrateFromServer]
+  );
 
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;
 }

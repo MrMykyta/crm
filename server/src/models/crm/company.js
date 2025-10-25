@@ -98,6 +98,11 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: 'SET NULL',
       field: 'owner_user_id'
     },
+    avatarUrl: {
+      type: DataTypes.STRING(512),
+      field: 'avatar_url',
+      allowNull: true
+    },
     createdAt: {
       type: DataTypes.DATE,
       field: 'created_at',

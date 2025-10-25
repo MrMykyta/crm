@@ -5,6 +5,7 @@ const { auth } = require('../middleware/auth');
 // ===================SYSTEM====================== 
 rootRouter.use('/acl', auth, require('./system/aclRouter')); 
 rootRouter.use('/attachments', auth, require('./system/attachmentRouter'));
+rootRouter.use('/invitations', require('./system/invitationsRouter'));
 
 
 //======================CRM===========================

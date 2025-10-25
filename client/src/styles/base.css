@@ -1,22 +1,27 @@
-/* базовый масштаб (ThemeProvider меняет --font-scale) */
-html { font-size: calc(16px * var(--font-scale) / 100); }
-body {
-  font: 400 var(--fs-md)/var(--lh-normal) system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  color: var(--text);
-  background:
-    var(--bg-gradient),
-    var(--bg-radial-1),
-    var(--bg-radial-2),
-    var(--bg);
-  margin: 0;
+/* ===== base.css — доп. нормализация под reset ===== */
+
+/* 1) Нормальная модель коробки везде */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* 2) Контролы держат базовую типографику и не «висят» на строке */
+:where(button, input, select, textarea) {
+  font: inherit;                 /* уже есть выше — оставляем на всякий */
+  line-height: var(--lh-normal); /* чтобы высота считалась адекватно */
+  vertical-align: middle;        /* ключ к ровной линии рядом друг с другом */
 }
 
-/* элементы формы берут типографику темы */
-button { font: inherit; }
-input, select, textarea { font: inherit; }
+/* 3) Селект без «браузерной шапки» (особенно Safari/Chrome) */
+:where(select) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: transparent; /* реальный фон задаём в модульных стилях */
+}
 
-/* утилы */
-.u-m0 { margin: 0; }
-.u-p0 { padding: 0; }
-.u-flex { display: flex; }
-.u-center { display:grid; place-items:center; }
+/* 4) Картинки и медиаконтент не ломают строки */
+img, svg, video, canvas { display: block; max-width: 100%; }
+
+/* 5) Таблицы по умолчанию растягиваются и не имеют неявных отступов */
+table { width: 100%; }
+
+/* 6) Базовые ссылки без подчёркивания (в компонентах линки стилизуем отдельно) */
+a { color: inherit; text-decoration: none; }

@@ -26,3 +26,18 @@ exports.myCompanies = async (req, res, next) => {
     res.status(500).send({ error: e.message });
   }
 };
+
+exports.lookupByEmail = async (req, res, next) => {
+  try {
+    const email = String(req.query.email || '').trim().toLowerCase();
+    console.log('lookupByEmail', email);
+    if (!email) return res.status(400).json({ error: 'email required' });
+
+    const out = await userService.findPublicByEmail(email);
+    // Ответ стандартизируем:
+    // { exists: boolean, user?: { id, email, firstName, lastName, avatarUrl } }
+    res.json(out);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+};

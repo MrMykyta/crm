@@ -47,6 +47,11 @@ module.exports = {
         defaultValue: Sequelize.NOW,
         field: 'joined_at'
       },
+      deletedAt: {
+        type: Sequelize.DATE,
+        allowNull: true,
+        field: 'deleted_at'
+      },
       createdAt: { 
         type: Sequelize.DATE, 
         allowNull:false, 
@@ -75,6 +80,10 @@ module.exports = {
       name:'uc_user_status_idx' 
     });
 
+    await queryInterface.addIndex('user_companies', ['user_id', 'deleted_at'], {
+      name: 'uc_user_deleted_idx',
+    });
+
   },
 
 
@@ -83,6 +92,7 @@ module.exports = {
     await queryInterface.removeConstraint('user_companies', 'user_company_unique');
     await queryInterface.removeIndex('user_companies', 'uc_company_role_idx');
     await queryInterface.removeIndex('user_companies', 'uc_user_status_idx');
+    await queryInterface.removeIndex('user_companies', 'uc_user_deleted_idx');
     await queryInterface.dropTable('user_companies');
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_user_companies_role";');
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_user_companies_status";');

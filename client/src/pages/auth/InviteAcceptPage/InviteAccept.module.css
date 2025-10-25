@@ -1,0 +1,116 @@
+.form { display: grid; gap: var(--space-4); }
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+@media (max-width: 720px) {
+  .grid2 { grid-template-columns: 1fr; }
+}
+
+.label { display: grid; gap: 6px; }
+.caption {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.input {
+  height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.input:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus) 30%, transparent);
+}
+
+.fieldError {
+  min-height: 16px;
+  font-size: var(--fs-xs);
+  color: var(--danger);
+}
+
+.checkboxLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  color: var(--text);
+  margin-top: -4px;
+}
+.checkboxLine input {
+  accent-color: var(--primary-start);
+  width: 16px;
+  height: 16px;
+}
+
+.info, .error, .success {
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+}
+.info {
+  border: 1px solid var(--card-brd);
+  background: color-mix(in srgb, var(--primary-start) 10%, transparent);
+}
+.error {
+  border: 1px solid color-mix(in srgb, var(--danger) 50%, transparent);
+  background: var(--danger-weak);
+  color: var(--danger);
+}
+.success {
+  border: 1px solid color-mix(in srgb, var(--success) 50%, transparent);
+  background: var(--success-weak);
+  color: var(--success);
+}
+
+.emailLine {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.email {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.btn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--primary-start) 12%, transparent);
+  border: 1px solid var(--glass-brd);
+  color: var(--text);
+  cursor: pointer;
+  align-content: center;
+}
+.primary {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  color: #fff;
+  font-weight: 600;
+  border: 0;
+  cursor: pointer;
+}
+.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.helper {
+  margin-top: var(--space-3);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}

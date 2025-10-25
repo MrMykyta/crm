@@ -1,0 +1,81 @@
+/* Карточка шапки: центрируем, стеклянный фон, отступы — как в theme.css */
+.headerCard {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+  background: var(--card-bg);
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elev-1);
+}
+
+/* Лого — квадрат со скруглением, фокус на прозрачном фоне */
+.logoWrap {
+  width: 160px;
+  height: 160px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--card-brd);
+  background: var(--input-bg);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.logoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.logoPh {
+  color: var(--muted);
+  font-weight: var(--fw-bold);
+  letter-spacing: .08em;
+  font-size: var(--fs-md);
+}
+
+/* Название/подзаголовок */
+.titleBlock {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.title {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  color: var(--text);
+}
+
+.subtitle {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+/* Кнопка загрузки файла — нейтральная с градиентом из токенов */
+.btnFile {
+  display: inline-grid;
+  justify-items: center;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-brd);
+  background: color-mix(in srgb, var(--primary-start) 12%, transparent);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: transform var(--tr-fast), box-shadow var(--tr-fast), background var(--tr-fast);
+}
+.btnFile:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elev-2);
+  background: color-mix(in srgb, var(--primary-start) 18%, transparent);
+}
+.btnFile:has(input:disabled) {
+  opacity: .6;
+  cursor: not-allowed;
+}

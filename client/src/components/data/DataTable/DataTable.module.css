@@ -1,0 +1,94 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: transparent;
+  color: var(--text);
+}
+
+/* СКРОЛЛ-КОНТЕЙНЕР: невидимая полоса */
+.tableWrap{
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -ms-overflow-style: none; /* IE/old Edge */
+  scrollbar-width: none;    /* Firefox */
+  scroll-behavior: auto;
+}
+.tableWrap::-webkit-scrollbar{
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+/* Заголовки */
+.th {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid var(--card-brd);
+  font-size: var(--fs-sm);
+  user-select: none;
+  white-space: nowrap;
+  position: relative;
+}
+.thInner { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sortBtn { all: unset; cursor: pointer; font-weight: 600; }
+
+/* Ресайзер на правой грани */
+.resizer {
+  position: absolute;
+  top: 0; right: 0;
+  width: 1px; height: 100%;
+  background: var(--sidebar-hover);
+}
+.resizer::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; left: -6px; right: -6px;
+  cursor: col-resize;
+}
+.th:hover .resizer { background: var(--focus); }
+
+/* LIVE линия: позиционируется относительно .tableWrap */
+/* пунктир внутри конкретного TH */
+.ghostLocal{
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;           /* ← всегда у правой кромки заголовка */
+  width: 0;
+  border-right: 2px dashed var(--focus);
+  pointer-events: none;
+  z-index: 2;
+}
+
+
+/* Подсветка колонки */
+.colHover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--primary-start) 18%, transparent) 0%,
+    color-mix(in srgb, var(--primary-end) 12%, transparent) 100%
+  );
+  transition: background 0.12s ease;
+}
+
+/* Строки / ячейки */
+.tr { border-bottom: 1px solid var(--card-brd); transition: background var(--tr-fast); }
+.tr:hover { background: color-mix(in srgb, var(--sidebar-hover) 22%, transparent); }
+.td { padding: 10px; font-size: var(--fs-sm); vertical-align: middle; }
+.muted { color: var(--muted); }
+
+/* Drag&Drop заголовков */
+.draggable { cursor: grab; }
+.draggable:active { cursor: grabbing; }
+.dropOver { box-shadow: inset 0 -2px 0 var(--focus); }
+
+/* Глобально выключаем выделение текста при перетаскивании/ресайзе */
+:global(.noselect) {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}

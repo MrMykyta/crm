@@ -1,0 +1,34 @@
+/* src/components/inputs/ImagePicker.module.css */
+.wrap { display:flex; flex-direction:column; gap: var(--space-3); align-items: center;}
+.preview {
+  width: 160px; height: 160px; border-radius: var(--radius-lg);
+  border:1px solid var(--glass-brd);
+  background: var(--input-bg);
+  display:grid; place-items:center; overflow:hidden;
+}
+.preview img { display:block; width:100%; height:100%; object-fit: cover; }
+.ph { color: var(--muted); font-size: var(--fs-sm); }
+
+.row { display:flex; gap: var(--space-2); align-items:center; }
+
+.primary {
+  padding: 10px 12px; border-radius: var(--radius-md);
+  border:1px solid var(--glass-brd);
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  color:#fff; font-weight:700; cursor:pointer;
+}
+.ghost {
+  padding: 10px 12px; border-radius: var(--radius-md);
+  border:1px solid var(--glass-brd); background: transparent; color: var(--text);
+  cursor:pointer;
+}
+.input {
+  flex:1;
+  min-width: 220px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-brd);
+  background: var(--input-bg);
+  color: var(--text);
+}
+.err { color: var(--danger); font-size: var(--fs-sm); }

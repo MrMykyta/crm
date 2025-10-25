@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ListPage from '../../../components/ListPage';
+import ListPage from '../../../components/data/ListPage';
 import Modal from '../../../components/Modal';
 import CounterpartyForm from '../CounterpartyForm';
 import { createResource } from '../../../api/resources';

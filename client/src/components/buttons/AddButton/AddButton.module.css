@@ -1,0 +1,39 @@
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 2.25rem; /* 36px */
+  padding: 0 var(--space-4, 1rem);
+  border-radius: var(--radius-full, 9999px);
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  color: #fff;
+  border: 0;
+  font-weight: var(--fw-medium, 600);
+  cursor: pointer;
+  transition: opacity var(--tr-med, 0.2s ease), transform var(--tr-fast, 0.1s ease);
+}
+
+.primary:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.primary:active {
+  transform: translateY(0);
+  opacity: 0.85;
+}
+
+.primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.plus {
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

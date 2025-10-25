@@ -65,6 +65,11 @@ module.exports = {
         onUpdate: 'CASCADE',
         field: 'owner_user_id'
       },
+      avatarUrl: {
+        type: Sequelize.STRING(512),
+        field: 'avatar_url',
+        allowNull: true
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

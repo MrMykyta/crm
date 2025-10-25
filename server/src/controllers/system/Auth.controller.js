@@ -48,7 +48,7 @@ exports.login = async (req, res) => {
     );
     // если требуется выбор компании — шлём список без токенов
     if (result.selectCompany) {
-      return res.status(200).send(result); // { selectCompany, companies, message }
+      return res.status(200).send({data: result}); // { selectCompany, companies, message }
     }
 
     // обычный путь — токены есть

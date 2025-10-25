@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import EntityDetailPage from "../../_scaffold/EntityDetailPage";
 import { counterpartySchema, toFormCounterparty, toApiCounterparty } from "../../../schemas/counterparty.schema";
 import { getCounterparty, updateCounterparty } from "../../../api/counterparties";
-import ContactsEditor from "../../../components/SmartForm/ContactsEditor";
+import ContactsEditor from "../../../components/forms/SmartForm/ContactsEditor";
 import { buildContactsPayload } from "../../../utils/buildContactsPayload";
 
 const TABS = [
@@ -60,7 +60,7 @@ export default function CounterpartyDetailPage(){
       save={save}
       storageKeyPrefix="counterparty"
       autosave={{ debounceMs: 500 }}
-      saveOnExit={false}          // не пишем черновик при закрытии вкладки
+      saveOnExit={true}          // не пишем черновик при закрытии вкладки
       clearDraftOnUnmount={true}  // вычищаем localStorage при выходе с карточки
       payloadDeps={[contacts]}    // автосейв реагирует на любые изменения контактов
 

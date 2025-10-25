@@ -3,6 +3,20 @@ const { sequelize, User, Company, UserCompany, ContactPoint } = require('../../m
 const { addContacts } = require('./contactPointService');
 const tokenService = require('../../utils/tokenService');
 
+
+
+function toPublic(u) {
+  if (!u) return null;
+  return {
+    id: u.id,
+    email: u.email,
+    firstName: u.firstName || '',
+    lastName: u.lastName || '',
+    avatarUrl: u.avatarUrl || null,
+  };
+}
+
+
 module.exports.register = async ({ email, password, firstName, lastName, verificationToken, expiresAt}, meta={}) => {
   const exists = await User.findOne({ where: { email } });
   if (exists) {
@@ -48,11 +62,12 @@ module.exports.login = async ({ email, password, companyId }, meta = {}) => {
       as: 'contacts'
     }]
   });
+  console.log('user', user.email);
 
   const phoneRaw = user.contacts.find(c => c.channel == 'phone' && c.isPublic)?.valueRaw || null;
   const phoneNorm = user.contacts.find(c => c.channel == 'phone' && c.isPublic)?.valueNorm || null;
-  const emailRaw = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueRaw || null;
-  const emailNorm = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueNorm || null;
+  const emailRaw = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueRaw || user.email;
+  const emailNorm = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueNorm || user.email;
   const safeUser = {
     id: user.id,
     firstName: user.firstName,
@@ -184,22 +199,22 @@ module.exports.loginFromCompany = async ({userId, companyId}) => {
 
 module.exports.getMe = async (userId) => {
   const user = await User.findByPk(userId, {
-    attributes: ['id', 'email', 'firstName', 'lastName', 'isActive', 'lastLoginAt', 'emailVerifiedAt', 'createdBy', 'createdAt'],
+    attributes: ['id', 'email', 'firstName', 'lastName', 'isActive', 'lastLoginAt', 'emailVerifiedAt','avatarUrl', 'createdBy', 'createdAt'],
     include: [{
       model: ContactPoint, 
       as: 'contacts'
     }]
   });
-  console.log(user.contacts[0])
   const phoneRaw = user.contacts.find(c => c.channel == 'phone' && c.isPublic)?.valueRaw || null;
   const phoneNorm = user.contacts.find(c => c.channel == 'phone' && c.isPublic)?.valueNorm || null;
-  const emailRaw = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueRaw || null;
-  const emailNorm = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueNorm || null;
+  const emailRaw = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueRaw || user.email || null;
+  const emailNorm = user.contacts.find(c => c.channel == 'email' && c.isPublic)?.valueNorm || user.email || null;
   const safeUser = {
     id: user.id,
     firstName: user.firstName,
     lastName: user.lastName,
     isActive: user.isActive,
+    avatarUrl: user.avatarUrl,
     phoneRaw,
     phoneNorm,
     emailRaw,
@@ -272,4 +287,13 @@ module.exports.getUserCompanies = async (userId) => {
     order: [['created_at', 'DESC']],
 
   });
+};
+
+module.exports.findPublicByEmail = async (email) => {
+  const user = await User.findOne({
+    where: { email: email.toLowerCase() },
+    attributes: ['id', 'email', 'firstName', 'lastName'],
+  });
+  if (!user) return { exists: false };
+  return { exists: true, user: toPublic(user) };
 };

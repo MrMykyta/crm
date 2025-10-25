@@ -69,6 +69,11 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: DataTypes.NOW,
       field: 'joined_at'
     },
+    deletedAt: { 
+      type: DataTypes.DATE, 
+      allowNull: true, 
+      field: 'deleted_at' 
+    },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -86,7 +91,8 @@ module.exports = (sequelize, DataTypes) => {
     modelName: 'UserCompany',
     tableName: 'user_companies',
     underscored: true,
-    timestamps: true
+    timestamps: true,
+    paranoid: true
   });
   return UserCompany;
 };

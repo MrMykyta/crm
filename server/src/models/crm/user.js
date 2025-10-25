@@ -95,6 +95,16 @@ module.exports = (sequelize, DataTypes) => {
       field: 'email_verified_at',
       allowNull: true
     },
+    avatarUrl: {
+      type: DataTypes.STRING(512),
+      field: 'avatar_url',
+      allowNull: true
+    },
+    backgroundUrl: {
+      type: DataTypes.STRING(512),
+      field: 'background_url',
+      allowNull: true
+    },
     createdBy: {
       type: DataTypes.UUID,
       field: 'created_by',

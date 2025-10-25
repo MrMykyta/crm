@@ -146,7 +146,7 @@
     "remove": "Usuń"
   },
   "userMenu": {
-    "profile": "Profil",
+    "account": "Moje konto",
     "settings": "Ustawienia",
     "logout": "Wyloguj"
   },
@@ -333,6 +333,10 @@
       "warehouse": "Magazyn",
       "other": "Inne"
     }
+  },
+  "companyMenu": {
+    "info": "Podgląd firmy",
+    "settings": "Ustawienia"
   }
   
 }

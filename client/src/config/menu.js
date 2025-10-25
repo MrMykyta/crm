@@ -52,5 +52,5 @@ export const MENU = [
   { key: "warehouse", icon: Warehouse, labelKey: "menu.warehouse", route: "/main/wms/warehouse", type: "item" },
   { key: "docs", icon: File, labelKey: "menu.wmsDocs", route: "/main/wms/docs", type: "item" },
 
-  { key: "settings", icon: Settings, labelKey: "menu.settings", route: "/main/settings", type: "item" },
+  { key: "users", icon: Users, labelKey: "menu.users", route: "/main/company-users", type: "item" },
 ];

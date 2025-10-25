@@ -1,0 +1,74 @@
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 0;
+}
+
+/* Инпут адаптивный, но с ограничением */
+.urlInput {
+  flex: 1 1 0;
+  min-width: 300px;
+  max-width: 550px;
+  min-height: 40px;
+}
+
+/* Кнопки — одинаковой высоты и не сжимаются */
+.btn,
+.btnPrimary {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 18px;
+  min-height: 40px;
+  min-width: 160px;
+  white-space: nowrap;
+}
+
+/* Подсказки / ошибки */
+.hint {
+  margin-top: var(--space-2);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+.errBox {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  background: var(--danger-weak);
+  color: var(--danger);
+  font-size: var(--fs-sm);
+}
+
+.okBox {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
+  background: var(--success-weak);
+  color: var(--success);
+  font-size: var(--fs-sm);
+}
+
+/* При узком экране переносим в столбец */
+@media (max-width: 900px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .urlInput {
+    max-width: 100%;
+  }
+
+  .btn,
+  .btnPrimary {
+    width: 100%;
+  }
+}

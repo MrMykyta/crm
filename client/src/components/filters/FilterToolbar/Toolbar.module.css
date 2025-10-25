@@ -1,0 +1,70 @@
+/* Корневой ряд тулбара: ровное выравнивание с reset.css */
+.toolbar{
+  display:flex;
+  align-items:center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
+  border-bottom:1px solid var(--card-brd);
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  flex-wrap: wrap; /* чтобы на узких не ломалось */
+}
+
+/* Общие контролы */
+.input, .select{
+  height: 2.25rem; /* 36px */
+  box-sizing:border-box;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color var(--tr-fast), box-shadow var(--tr-fast), background var(--tr-fast);
+  vertical-align: middle;
+
+  width: auto;         /* не растягивать в 100% */
+  flex: 0 0 auto;
+}
+
+.input{
+  padding: var(--space-2) var(--space-3);
+  min-width: 16.25rem;  /* ~260px */
+  flex: 1 1 20rem;      /* тянется, занимает остаток */
+  max-width: 35rem;     /* ограничим сверху, чтобы ряд не плавал */
+}
+.input::placeholder{ color: color-mix(in srgb, var(--text) 45%, transparent); }
+
+.select{
+  padding: calc(var(--space-2) - 2px) var(--space-3); /* визуальное выравнивание с инпутом */
+  min-width: 9.5rem;   /* ~152px */
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, color-mix(in srgb, var(--text) 60%, transparent) 50%),
+    linear-gradient(135deg, color-mix(in srgb, var(--text) 60%, transparent) 50%, transparent 50%);
+  background-position: calc(100% - 1.4rem) 50%, calc(100% - 1rem) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.input:hover, .select:hover{
+  border-color: color-mix(in srgb, var(--card-brd) 70%, var(--focus));
+}
+.input:focus, .select:focus{
+  border-color: var(--focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus) 32%, transparent);
+}
+
+/* Раздвигалка/правый блок */
+.spacer{ margin-left:auto; flex: 1 0 auto; }
+.extra{ display:flex; gap: var(--space-2); align-items:center; }
+
+/* Мобильная укладка */
+@media (max-width: 860px){
+  .toolbar{ gap: var(--space-2); padding: var(--space-2) var(--space-3); }
+  .input{ min-width: 12.5rem; flex: 1 1 12.5rem; max-width: none; }
+  .select{ min-width: 8.75rem; }
+}

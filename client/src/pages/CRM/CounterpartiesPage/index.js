@@ -1,14 +1,18 @@
-// src/pages/crm/counterparties/CounterpartiesPage.jsx
-import React, { useRef, useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import ListPage, { Button } from '../../../components/ListPage';
+import ListPage from '../../../components/data/ListPage';
 import Modal from '../../../components/Modal';
 import CounterpartyForm from '../CounterpartyForm';
 import { createResource } from '../../../api/resources';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getMyPreferences, saveMyPreferences } from '../../../api/user';
+import { useNavigate } from 'react-router-dom';
 
-const LS_KEY = 'grid.counterparties.colWidths';
+import useGridPrefs from '../../../hooks/useGridPrefs';
+import useOpenAsModal from '../../../hooks/useOpenAsModal';
+
+import LinkCell from '../../../components/cells/LinkCell';
+import AddressCell from '../../../components/cells/AddressCell';
+import FilterToolbar from '../../../components/filters/FilterToolbar';
+import AddButton from '../../../components/buttons/AddButton/AddButton';
 
 export default function CounterpartiesPage() {
   const listRef = useRef(null);
@@ -16,57 +20,11 @@ export default function CounterpartiesPage() {
   const [saving, setSaving] = useState(false);
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const openAsModal = params.get('modal') === '1';
+  const openAsModal = useOpenAsModal();
 
-  // === ширины колонок
-  const [colWidths, setColWidths] = useState({});
-  const saveTimer = useRef(null);
-
-  // 1) быстрый старт из localStorage
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw) setColWidths(JSON.parse(raw));
-    } catch {}
-  }, []);
-
-  // 2) догружаем prefs с сервера и МЕРЖИМ (приоритет локалки)
-  useEffect(() => {
-    (async () => {
-      try {
-        const prefs = await getMyPreferences();
-        const fromPrefs = prefs?.appearance?.grids?.counterparties?.columnWidths || {};
-        setColWidths(prev => ({ ...fromPrefs, ...prev }));
-      } catch {}
-    })();
-  }, []);
-
-  // 3) хендлер ресайза получает ВСЮ карту ширин (DataTable шлёт nextMap)
-  const handleColumnResize = useCallback((nextMap) => {
-    setColWidths(nextMap);
-    try { localStorage.setItem(LS_KEY, JSON.stringify(nextMap)); } catch {}
-
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      try {
-        const prefs = await getMyPreferences();
-        const prevAppearance = prefs?.appearance || {};
-        const nextAppearance = {
-          ...prevAppearance,
-          grids: {
-            ...(prevAppearance.grids || {}),
-            counterparties: {
-              ...(prevAppearance.grids?.counterparties || {}),
-              // сохраняем всю карту ширин
-              columnWidths: { ...(prevAppearance.grids?.counterparties?.columnWidths || {}), ...nextMap },
-            },
-          },
-        };
-        await saveMyPreferences({ appearance: nextAppearance });
-      } catch {}
-    }, 400);
-  }, []);
+  // prefs таблицы без режимов
+  const { colWidths, colOrder, onColumnResize, onColumnOrderChange } =
+    useGridPrefs('crm.counterparties');
 
   const openDetail = useCallback((id) => {
     const suffix = openAsModal ? '?modal=1' : '';
@@ -78,65 +36,38 @@ export default function CounterpartiesPage() {
       key: 'shortName',
       title: t('crm.table.columns.name'),
       sortable: true,
+      width: 280,
       render: (r) => (
-        <button
+        <LinkCell
+          primary={r.shortName || r.fullName}
+          secondary={r.fullName && r.fullName !== r.shortName ? r.fullName : null}
           onClick={() => openDetail(r.id)}
-          className="rowLinkReset"
-          style={{ display: 'flex', flexDirection: 'column', gap: 4, textAlign: 'left' }}
-          aria-label={t('crm.actions.openCounterparty', { name: r.shortName || r.fullName })}
-        >
-          <div style={{ fontWeight: 600 }}>{r.shortName || r.fullName}</div>
-          {r.fullName && r.fullName !== r.shortName && (
-            <div style={{ fontSize: 12, color: 'var(--muted)' }}>{r.fullName}</div>
-          )}
-        </button>
+          ariaLabel={t('crm.actions.openCounterparty', { name: r.shortName || r.fullName })}
+        />
       ),
     },
-    {
-      key: 'nip',
-      title: t('crm.table.columns.nip'),
-      sortable: true,
-      render: (r) => r.nip || '—',
-    },
+    { key: 'nip', title: t('crm.table.columns.nip'), sortable: true, width: 160, render: (r) => r.nip || '—' },
     {
       key: 'address',
       title: t('crm.table.columns.address'),
-      render: (r) => {
-        const parts = [r.street, r.postcode, r.city, r.country].filter(Boolean).join(', ');
-        return parts || '—';
-      },
+      width: 360,
+      render: (r) => <AddressCell street={r.street} postcode={r.postcode} city={r.city} country={r.country} />
     },
-    {
-      key: 'type',
-      title: t('crm.table.columns.type'),
-      sortable: true,
-      render: (r) => t(`crm.enums.type.${r.type}`),
-    },
-    {
-      key: 'status',
-      title: t('crm.table.columns.status'),
-      sortable: true,
-      render: (r) => t(`crm.enums.status.${r.status}`),
-    },
-    {
-      key: 'owner',
-      title: t('crm.table.columns.owner'),
-      render: (r) => r.mainResponsibleUser || '—',
-    },
+    { key: 'type',   title: t('crm.table.columns.type'),   sortable: true, width: 140, render: (r) => t(`crm.enums.type.${r.type}`) },
+    { key: 'status', title: t('crm.table.columns.status'), sortable: true, width: 140, render: (r) => t(`crm.enums.status.${r.status}`) },
+    { key: 'owner',  title: t('crm.table.columns.owner'),  width: 200, render: (r) => r.mainResponsibleUser || '—' },
   ]), [t, i18n.language, openDetail]);
 
   const defaultQuery = useMemo(() => ({ sort: 'createdAt', dir: 'DESC', limit: 25 }), []);
   const actions = useMemo(() => (
-    <Button variant="primary" onClick={() => setOpen(true)}>
+    <AddButton onClick={() => setOpen(true)} title={t('crm.actions.addCounterparty')}>
       {t('crm.actions.addCounterparty')}
-    </Button>
+    </AddButton>
   ), [t]);
 
   const footer = useMemo(() => (
     <>
-      <Modal.Button onClick={() => setOpen(false)}>
-        {t('common.cancel')}
-      </Modal.Button>
+      <Modal.Button onClick={() => setOpen(false)}>{t('common.cancel')}</Modal.Button>
       <Modal.Button variant="primary" form="cp-create-form" disabled={saving}>
         {saving ? t('common.saving') : t('common.save')}
       </Modal.Button>
@@ -145,14 +76,6 @@ export default function CounterpartiesPage() {
 
   return (
     <>
-      <style>{`
-        .rowLinkReset{
-          appearance:none; background:none; border:0; padding:0; margin:0; color:inherit; font:inherit;
-          cursor:pointer;
-        }
-        .rowLinkReset:hover div:first-child{ text-decoration: underline; }
-      `}</style>
-
       <ListPage
         ref={listRef}
         title={t('crm.titles.counterparties')}
@@ -160,8 +83,47 @@ export default function CounterpartiesPage() {
         columns={columns}
         defaultQuery={defaultQuery}
         actions={actions}
-        columnWidths={colWidths}              // ← текущие ширины
-        onColumnResize={handleColumnResize}   // ← сохраняем всю карту
+        columnWidths={colWidths}
+        onColumnResize={onColumnResize}
+        columnOrder={colOrder}
+        onColumnOrderChange={onColumnOrderChange}
+        ToolbarComponent={(props) => (
+          <FilterToolbar
+            {...props}
+            controls={[
+              {
+                type: 'search',
+                key: 'search',
+                placeholder: t('crm.filters.searchPlaceholder'),
+                debounce: 400,
+              },
+              {
+                type: 'select',
+                key: 'type',
+                label: t('crm.table.columns.type'),
+                options: [
+                  { value:'', label: t('crm.filters.allTypes') },
+                  { value:'lead', label: t('crm.enums.type.lead') },
+                  { value:'client', label: t('crm.enums.type.client') },
+                  { value:'partner', label: t('crm.enums.type.partner') },
+                  { value:'supplier', label: t('crm.enums.type.supplier') },
+                  { value:'manufacturer', label: t('crm.enums.type.manufacturer') },
+                ],
+              },
+              {
+                type: 'select',
+                key: 'status',
+                label: t('crm.table.columns.status'),
+                options: [
+                  { value:'', label: t('crm.filters.allStatuses') },
+                  { value:'potential', label: t('crm.enums.status.potential') },
+                  { value:'active', label: t('crm.enums.status.active') },
+                  { value:'inactive', label: t('crm.enums.status.inactive') },
+                ],
+              },
+            ]}
+          />
+        )}
       />
 
       <Modal

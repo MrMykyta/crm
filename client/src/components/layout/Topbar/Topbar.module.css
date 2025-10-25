@@ -1,0 +1,265 @@
+:root {
+  /* базовый квадрат для кнопок/аватара */
+  --icon-box: 40px;
+}
+
+/* ===== Topbar ===== */
+.topbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  height: var(--topbar-h, 64px);
+  display: grid;
+  grid-template-columns: 1fr minmax(520px, 860px) 1fr;
+  align-items: center;
+  gap: var(--space-4, 16px);
+  padding: var(--space-2, 10px) var(--space-4, 16px);
+  background: var(--topbar-bg, var(--card-bg));
+  color: var(--topbar-text, var(--text));
+  border-bottom: 1px solid var(--topbar-brd, var(--card-brd));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 6px));
+  backdrop-filter: blur(var(--glass-blur, 6px));
+  transition: inset-inline-start .25s ease;
+}
+
+/* ===== слева — заголовок ===== */
+.left {
+  min-width: 0;
+  padding-inline-start: var(--space-2, 6px);
+  justify-self: start;
+}
+.title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold, 800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: var(--lh-tight, 1.2);
+}
+.subtitle {
+  margin-inline-start: 10px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== центр — поиск (Grid: инпут растягивается, лупа фикс) ===== */
+.searchWrap {
+  justify-self: center;
+  width: 100%;
+  max-width: 860px;
+  min-width: 260px;
+
+  display: flex; /* ← flex вместо grid */
+  align-items: center;
+
+  height: 44px;
+  padding-left: 12px; /* отступ только слева */
+  border-radius: var(--radius-full, 999px);
+  background: var(--input-bg);
+  border: 1px solid var(--card-brd);
+  box-shadow: inset 0 8px 18px rgba(0,0,0,.25);
+  transition: box-shadow .2s ease, border-color .2s ease;
+  overflow: hidden; /* чтобы лупа не вылазила за рамку */
+}
+
+.searchWrap:focus-within {
+  border-color: var(--focus);
+  box-shadow:
+    inset 0 8px 18px rgba(0,0,0,.25),
+    0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
+}
+
+
+/* сам инпут */
+.search {
+  flex: 1;
+  height: 100%;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: var(--fs-sm);
+  color: inherit;
+  padding: 0 10px;
+}
+
+.search::placeholder {
+  color: color-mix(in srgb, var(--text) 45%, transparent);
+}
+
+.search::-webkit-search-decoration,
+.search::-webkit-search-cancel-button,
+.search::-webkit-search-results-button,
+.search::-webkit-search-results-decoration {
+  display: none;
+}
+
+/* кнопка-лупа */
+.searchBtn {
+  flex: 0 0 44px; /* ← ширина кнопки фиксирована */
+  height: 100%;
+  margin: 0; /* убрали отступ */
+  border-radius: 0 var(--radius-full, 999px) var(--radius-full, 999px) 0; /* прилипает к правому краю */
+  border-left: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-start) 35%, transparent);
+  color: #fff;
+  transition: background .2s ease, box-shadow .2s ease;
+}
+
+.searchBtn:hover {
+  background: linear-gradient(135deg, var(--primary-end), var(--primary-start));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-end) 35%, transparent);
+}
+.searchBtnIcon { pointer-events: none; }
+
+/* ===== справа ===== */
+.right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  justify-self: end;
+  min-width: 1%;
+}
+
+.iconBtn {
+  position: relative;
+  width: var(--icon-box);
+  height: var(--icon-box);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: var(--radius-md, 12px);
+  background: var(--card-bg);
+  border: 1px solid var(--card-brd);
+  cursor: pointer;
+  transition: background .2s, border-color .2s, box-shadow .2s, transform .05s;
+  color: color-mix(in srgb, var(--sidebar-text) 85%, transparent);
+}
+.iconBtn:hover {
+  background: var(--sidebar-hover);
+  border-color: var(--focus);
+  color: var(--text);
+}
+.iconBtn:active { transform: translateY(1px); }
+.iconBtn:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+.iconBtn svg {
+  width: calc(var(--icon-box) * .52);
+  height: calc(var(--icon-box) * .52);
+}
+
+/* бейдж уведомлений */
+.badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(35%,-35%);
+  min-width: calc(var(--icon-box) * .34);
+  height: calc(var(--icon-box) * .34);
+  padding: 0 calc(var(--icon-box) * .08);
+  border-radius: 50%;
+
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  color: #fff;
+  font-weight: var(--fw-bold, 800);
+  font-size: var(--fs-2xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--card-brd);
+  white-space: nowrap;
+  line-height: 1;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* аватар */
+.avatarWrap { position: relative; }
+
+.avatarBtn{
+  width: var(--icon-box, 40px);
+  height: var(--icon-box, 40px);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+
+  background: var(--card-bg);
+  border: 1px solid var(--card-brd);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--primary-start) 25%, transparent);
+}
+
+.avatarImg{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatarFallback{
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  letter-spacing: .02em;
+  font-size: clamp(10px, calc(var(--fs-lg) * .9), calc(var(--icon-box, 40px) * .42));
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+}
+
+/* вспом. стиль */
+.danger { color: color-mix(in srgb, var(--primary-end) 80%, var(--sidebar-text)); }
+.danger:hover {
+  border-color: color-mix(in srgb, var(--primary-end) 60%, var(--card-brd));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-end) 65%, transparent);
+  color: var(--primary-end);
+}
+
+/* ===== адаптив ===== */
+@media (max-width: 1280px) {
+  .topbar { grid-template-columns: auto 1fr auto; }
+  .searchWrap { justify-self: stretch; max-width: none; width: 95%; }
+}
+@media (max-width: 900px) {
+  .title { display: none; }
+  .topbar { grid-template-columns: 1fr auto; }
+  .searchWrap { justify-self: stretch; width: 100%; }
+  .right { justify-self: end; }
+}
+
+/* ===== Light theme overrides ===== */
+:root[data-theme="light"] .topbar .searchWrap {
+  background: rgba(255,255,255,.96);
+  border: 1px solid rgba(200,120,90,.35);
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,.05),
+    0 2px 6px rgba(0,0,0,.04);
+  transition: border-color .15s, box-shadow .15s;
+}
+:root[data-theme="light"] .topbar .searchWrap:focus-within {
+  border-color: #ff8c64;
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,.08),
+    0 0 0 3px rgba(255,140,100,.25);
+}
+:root[data-theme="light"] .topbar .search::placeholder {
+  color: rgba(122,91,85,.65);
+}
+

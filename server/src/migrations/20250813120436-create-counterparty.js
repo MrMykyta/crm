@@ -148,6 +148,11 @@ module.exports = {
         onDelete: 'SET NULL',
         field: 'updated_by'
       },
+      avatarUrl: {
+        type: Sequelize.STRING(512),
+        field: 'avatar_url',
+        allowNull: true
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

@@ -1,19 +1,10 @@
+// src/pages/_scaffold/EntityDetailPage.jsx
 import styles from "./detailScaffold.module.css";
-import FieldRenderer from "../../components/SmartForm";
-import TabBar from "../../components/TabBar";
-import DetailTabs from "../../components/DetailTabs";
+import FieldRenderer from "../../components/forms/SmartForm";
+import TabBar from "../../components/layout/TabBar";
+import DetailTabs from "../../components/data/DetailTabs";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState, useMemo } from "react";
-
-/**
- * Универсальная детальная страница с автосейвом, стабильным сравнением payload
- * и чисткой localStorage при размонтаже.
- *
- * Отличия от твоей версии:
- *  - makePayload теперь гарантирует, что ОЧИЩЕННЫЕ текстовые поля ('' в values)
- *    уйдут на сервер как null, даже если toApi их не выставил (undefined).
- *  - debounce автосейва по умолчанию 500 мс.
- */
 
 export default function EntityDetailPage({
   id,
@@ -21,11 +12,14 @@ export default function EntityDetailPage({
   schemaBuilder, toForm, toApi, buildPayload,
   tabs,
   leftExtras,
+  leftTop,
   storageKeyPrefix = "entity",
-  autosave = { debounceMs: 500 },          // ← было 800/10 — поставил 500 по умолчанию
+  autosave = { debounceMs: 500 },
   saveOnExit = true,
   clearDraftOnUnmount = true,
   payloadDeps = [],
+  /** 👉 новый проп: чем рисовать правую колонку; по умолчанию старый DetailTabs */
+  RightTabsComponent = DetailTabs,
 }) {
   const { t, i18n } = useTranslation();
 
@@ -45,13 +39,10 @@ export default function EntityDetailPage({
   const storageKey = `${storageKeyPrefix}:${id}`;
   const debounceMs = autosave?.debounceMs ?? 500;
 
-  // соберём схему один раз на язык (чтобы знать список полей)
   const schema = useMemo(() => schemaBuilder(i18n), [schemaBuilder, i18n]);
 
   const stamp = () => new Date().toISOString();
 
-  // stable stringify (сортируем ключи; раньше undefined-ключи отбрасывались —
-  // это ок, т.к. мы ниже конвертим '' → null, чтобы ключ точно попал в payload)
   const stableStringify = (obj) => {
     const seen = new WeakSet();
     const stringify = (o) => {
@@ -69,25 +60,17 @@ export default function EntityDetailPage({
   const writeDraft = (obj) => { try { localStorage.setItem(storageKey, JSON.stringify(obj)); } catch {} };
   const clearDraft = () => { try { localStorage.removeItem(storageKey); } catch {} };
 
-  // ГЛАВНОЕ: если пользователь очистил поле (values[name] === ''),
-  // а toApi его НЕ выставил (payload[name] === undefined), то проставляем null,
-  // чтобы сервер понял «очистить».
   const makePayload = (vals) => {
     const base = toApi(vals) || {};
     const out = { ...base };
-
-    // пройдёмся по полям схемы; где в форме пустая строка — принудительно null
     for (const f of Array.isArray(schema) ? schema : []) {
-      const name = f?.name;
-      if (!name) continue;
+      const name = f?.name; if (!name) continue;
       const v = vals[name];
-      // учитываем только текстовые/многострочные поля или те, у кого нет явного типа
       const isTextLike = !f.type || f.type === 'text' || f.type === 'textarea' || f.type === 'string';
       if (isTextLike && (v === '' || v == null)) {
-        if (out[name] == undefined) out[name] = '';
+        if (out[name] === undefined) out[name] = '';
       }
     }
-
     return buildPayload ? buildPayload(out) : out;
   };
 
@@ -151,7 +134,6 @@ export default function EntityDetailPage({
     debTimer.current = setTimeout(flushSave, debounceMs);
   };
 
-  // init
   useEffect(() => {
     unmounted.current = false;
     (async () => {
@@ -180,27 +162,12 @@ export default function EntityDetailPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // autosave: по изменениям values
-  useEffect(() => {
-    if (data == null) return;
-    scheduleSave();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values]);
+  useEffect(() => { if (data != null) scheduleSave(); /* eslint-disable-next-line */ }, [values]);
+  useEffect(() => { if (data != null) scheduleSave(); /* eslint-disable-next-line */ }, payloadDeps);
 
-  // autosave: по внешним зависимостям (например, contacts)
-  useEffect(() => {
-    if (data == null) return;
-    scheduleSave();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, payloadDeps);
-
-  // сохранять черновик при закрытии вкладки (без сети)
   useEffect(() => {
     if (!saveOnExit) return;
-    const onBeforeUnload = () => {
-      if (!dirtyRef.current) return;
-      writeDraft({ values, updatedAt: stamp(), serverUpdatedAt: data?.updatedAt || null });
-    };
+    const onBeforeUnload = () => { if (!dirtyRef.current) return; writeDraft({ values, updatedAt: stamp(), serverUpdatedAt: data?.updatedAt || null }); };
     const onVisibilityChange = () => {
       if (document.visibilityState === "hidden" && dirtyRef.current) {
         writeDraft({ values, updatedAt: stamp(), serverUpdatedAt: data?.updatedAt || null });
@@ -222,6 +189,7 @@ export default function EntityDetailPage({
   return (
     <div className={styles.wrap}>
       <div className={styles.left}>
+        {typeof leftTop === 'function' ? leftTop({ values, onChange }) : leftTop}
         <FieldRenderer
           values={values}
           errors={errors}
@@ -243,7 +211,8 @@ export default function EntityDetailPage({
           <TabBar items={tabs} activeKey={active} onChange={setActive} />
         </div>
         <div className={styles.panel}>
-          <DetailTabs tab={active} data={data} />
+          {/* 👉 теперь можно подменять реализацию правой панели */}
+          <RightTabsComponent tab={active} data={data} values={values} onChange={onChange} />
         </div>
       </div>
     </div>

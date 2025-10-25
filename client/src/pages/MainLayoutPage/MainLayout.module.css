@@ -65,6 +65,8 @@
 .content{
   position: relative;
   min-height: 100dvh;
+  min-width:0;
+  max-width: 100%;
   padding-top: calc(var(--topbar-h) + 8px);
 }
 
@@ -75,6 +77,13 @@
   overflow: auto;
   padding: 16px 20px 24px;
   box-sizing: border-box;
+}
+
+/* отключаем шары если есть класс noBlobs */
+.noBlobs::before,
+.noBlobs::after {
+  content: none !important;
+  display: none !important;
 }
 
 /* Узкий режим — всегда узкий сайдбар */

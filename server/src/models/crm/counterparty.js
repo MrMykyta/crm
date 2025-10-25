@@ -151,6 +151,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: true
     },
+    avatarUrl: {
+      type: DataTypes.STRING(512),
+      field: 'avatar_url',
+      allowNull: true
+    },
     createdBy: { 
       type: DataTypes.UUID,
       allowNull: true,
