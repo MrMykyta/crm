@@ -8,6 +8,7 @@ exports.getMyPreferences = async (req, res, next) => {
 
     const pref = await userPreferencesService.getByUserId(userId);
     // console.log("From [getMyPreferences]",pref) // зависит от твоего auth middleware
+    // console.log("From [getMyPreferences]",pref) // зависит от твоего auth middleware
     res.status(200).send({pref} || {});
   } catch (e) { next(e); }
 };
@@ -22,6 +23,7 @@ exports.upsertMyPreferences = async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid themeMode' });
     }
     const saved = await userPreferencesService.upsertByUserId(userId, body);
+
     res.status(200).send(saved);
   } catch (e) { next(e); }
 };

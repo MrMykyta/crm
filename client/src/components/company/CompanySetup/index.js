@@ -1,14 +1,57 @@
 import { Formik, Form, useField, ErrorMessage } from 'formik';
-import { getMe, updateMe } from '../../../api/user';
-import { loginFromCompany } from '../../../api/auth';
-import { refreshSession } from '../../../api/session';
 import * as Yup from 'yup';
 import { useNavigate } from 'react-router-dom';
-import { createCompany } from '../../../api/auth';
 import { useTranslation } from 'react-i18next';
 import s from '../../../styles/formGlass.module.css';
 
-// Универсальный блок: input или select, с плавающим лейблом и .filled
+// ==== fetch shims ====
+async function createCompany(values) {
+  const res = await fetch('/api/companies', {
+    method:'POST',
+    credentials:'include',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify(values),
+  });
+  if (!res.ok) throw new Error('create company failed');
+  return res.json();
+}
+async function refreshSession() {
+  const res = await fetch('/api/auth/refresh', {
+    method:'POST',
+    credentials:'include',
+    headers:{ 'Content-Type':'application/json' },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+async function getMe() {
+  const res = await fetch('/api/users/me', { credentials:'include' });
+  if (!res.ok) throw new Error('get me failed');
+  return res.json();
+}
+async function updateMeContact(contactPayload) {
+  // скорректируй url под свой бэк, если отличается
+  const res = await fetch('/api/users/me/contacts', {
+    method:'POST',
+    credentials:'include',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify(contactPayload),
+  });
+  if (!res.ok) throw new Error('contact update failed');
+  return res.json().catch(()=>({ok:true}));
+}
+async function loginFromCompany(companyId) {
+  const res = await fetch('/api/auth/login-from-company', {
+    method:'POST',
+    credentials:'include',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ companyId }),
+  });
+  if (!res.ok) throw new Error('login from company failed');
+  return res.json();
+}
+
+// Универсальный блок
 function FieldBlock({ as, name, label, children, ...props }) {
   const [field, meta] = useField(name);
   const isFilled = ((field.value ?? '') !== '');
@@ -57,10 +100,11 @@ export default function CompanySetup({setUser}) {
         setStatus(null);
         try {
           const company = await createCompany(values);
-          await refreshSession(); // ожидаем { token, user }
-          const user = await getMe(); // ожидаем { id, name, shortName, vat, domain, logoUrl,... }
+          await refreshSession();
+          const user = await getMe();
+
           const contacts = {
-            companyId: company.activeCompanyId,
+            companyId: company.activeCompanyId || company.id,
             ownerType: 'user',
             ownerId: user.id,
             channel: 'email',
@@ -68,12 +112,13 @@ export default function CompanySetup({setUser}) {
             actorUserId: user.id,
             isPrimary: true
           };
-          await updateMe(contacts);
-          const res = await loginFromCompany(company.activeCompanyId);
-          setUser(res.safeUser);
+          await updateMeContact(contacts);
+
+          const res = await loginFromCompany(company.activeCompanyId || company.id);
+          if (setUser && res?.safeUser) setUser(res.safeUser);
           navigate('/main');
         } catch (e) {
-          setStatus(e?.response?.data?.message || t('errors.createCompanyFailed'));
+          setStatus(e?.message || t('errors.createCompanyFailed'));
         } finally { setSubmitting(false); }
       }}
     >

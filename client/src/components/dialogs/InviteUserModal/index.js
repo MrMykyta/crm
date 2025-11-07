@@ -2,7 +2,15 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import Modal from "../../Modal";
 import RoleSelectCell from "../../cells/RoleSelectCell";
 import s from "../../../pages/styles/CrmUsers.module.css";
-import { lookupUserByEmail } from "../../../api/user";
+
+// fetch shim: lookup by email
+async function lookupUserByEmail(email) {
+  const res = await fetch(`/api/users/lookup?email=${encodeURIComponent(email)}`, {
+    credentials:'include'
+  });
+  if (!res.ok) return { exists:false };
+  return res.json();
+}
 
 export default function InviteUserModal({ roles, onSubmit, onClose }) {
   const [form, setForm] = useState({
@@ -15,7 +23,7 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
   const [exists, setExists] = useState(false);
-  const [emailError, setEmailError] = useState(""); // ← новое
+  const [emailError, setEmailError] = useState("");
   const [err, setErr] = useState("");
 
   const busy = sending || checking;
@@ -44,12 +52,10 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
 
   const change = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  /** === Debounced проверка email (только если валиден) === */
   useEffect(() => {
     const value = form.email.trim();
     setErr("");
 
-    // мгновенная валидация на вводе (уберём подсказку, когда станет валидным)
     if (!validateEmail(value)) {
       setExists(false);
       setChecking(false);
@@ -81,11 +87,7 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
         }
       } catch (e) {
         if (!abortRef.current.aborted) {
-          setErr(
-            e?.response?.data?.message ||
-              e?.message ||
-              "Ошибка проверки e-mail"
-          );
+          setErr(e?.message || "Ошибка проверки e-mail");
           setExists(false);
         }
       } finally {
@@ -98,13 +100,12 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
       abortRef.current.aborted = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.email]); // validateEmail уже обновляет emailError
+  }, [form.email]);
 
   const submit = async (e) => {
     e?.preventDefault();
     setErr("");
 
-    // финальная проверка
     if (!validateEmail(form.email)) return;
     if (busy) return;
 
@@ -117,7 +118,7 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
         role: form.role,
       });
     } catch (e2) {
-      setErr(e2?.response?.data?.message || e2.message || "Ошибка отправки");
+      setErr(e2?.message || "Ошибка отправки");
       setSending(false);
     }
   };
@@ -137,7 +138,7 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
     </>
   );
 
-  const formDisabled = busy || !!emailError; // блокируем остальные поля, пока e-mail не валиден
+  const formDisabled = busy || !!emailError;
 
   return (
     <Modal
@@ -157,10 +158,10 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
               placeholder="user@company.com"
               value={form.email}
               onChange={(e) => change("email", e.target.value)}
-              onBlur={(e) => validateEmail(e.target.value)}   // ← показываем ошибку при уходе с поля
+              onBlur={(e) => validateEmail(e.target.value)}
               autoFocus
               required
-              disabled={sending} // можно печатать при checking, но нельзя при отправке
+              disabled={sending}
             />
             {emailError && <div className={s.fieldError}>{emailError}</div>}
           </label>

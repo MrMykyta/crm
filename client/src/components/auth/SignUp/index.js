@@ -1,13 +1,34 @@
 import { Formik, Form, useField, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { registerUser, resendVerification } from '../../../api/auth';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import EmailVerificationModal from '../EmailVerificationModal';
 import s from '../../../styles/formGlass.module.css';
 
+// fetch shims
+async function registerUser(values) {
+  const res = await fetch('/api/auth/register', {
+    method:'POST',
+    credentials:'include',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify(values),
+  });
+  if(!res.ok) throw new Error('register failed');
+  return res.json();
+}
+async function resendVerification(email) {
+  const res = await fetch('/api/auth/resend-verification', {
+    method:'POST',
+    credentials:'include',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if(!res.ok) throw new Error('resend failed');
+  return res.json().catch(()=>({ok:true}));
+}
+
 function InputField({ name, label, type = 'text', autoComplete }) {
-  const [field, meta] = useField(name);
+  const [field] = useField(name);
   const filled = (field.value ?? '') !== '';
   return (
     <div className={`${s.field} ${filled ? s.filled : ''}`}>
@@ -40,12 +61,12 @@ export default function SignUp() {
   const onSubmit = async (values, { setSubmitting, setStatus }) => {
     setStatus(null);
     try {
-      const res = await registerUser(values); // { email } ожидается
+      const res = await registerUser(values);
       const email = res?.email || values.email;
       setEmailForVerify(email);
-      setModalOpen(true); // 👈 показываем окно
+      setModalOpen(true);
     } catch (e) {
-      setStatus(e?.response?.data?.message || t('errors.registrationFailed'));
+      setStatus(e?.message || t('errors.registrationFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -55,8 +76,6 @@ export default function SignUp() {
     if (!emailForVerify) return;
     try {
       await resendVerification(emailForVerify);
-      // можно показать toast/alert, оставлю простой вариант:
-      
     } catch {
       alert(t('auth.verificationResendFail', 'Resend failed'));
     }

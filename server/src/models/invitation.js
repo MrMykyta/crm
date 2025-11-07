@@ -45,9 +45,9 @@ module.exports = (sequelize, DataTypes) => {
       field: 'last_name' 
     },
     role:        { 
-      type: DataTypes.ENUM('owner','admin','manager','viewer'), 
+      type: DataTypes.ENUM('owner','admin','manager','user'), 
       allowNull:false, 
-      defaultValue:'viewer' 
+      defaultValue:'user' 
     },
     invitedBy:   { 
       type: DataTypes.UUID, 

@@ -1,5 +1,8 @@
 const aclService = require('../../services/system/aclService');
 
+const {UserPermission} = require('../../models');
+
+
 // ---- Roles ----
 module.exports.createRole = async (req, res) => {
     try {
@@ -169,4 +172,51 @@ module.exports.deletePermission = async (req, res) => {
     } catch (e) { 
         res.status(400).send({ error: e.message }); 
     }
+};
+
+
+module.exports.getUserPermSummary = async (req, res) => {
+  try {
+    const data = await aclService.getUserPermissionSummary({
+      companyId: req.companyId || req.user?.companyId,
+      userId: req.params.userId,
+    });
+    if (!data) return res.sendStatus(404);
+    res.json(data);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+};
+
+module.exports.allowPermForUser = async (req, res) => {
+  try {
+    await aclService.allowPermForUser({
+      userId: req.params.userId,
+      companyId: req.companyId,        // ← из токена/мидлвари
+      permId: req.params.permId,
+    });
+    res.sendStatus(204);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+};
+
+module.exports.denyPermForUser = async (req, res) => {
+  try {
+    await aclService.denyPermForUser({
+      userId: req.params.userId,
+      companyId: req.companyId,
+      permId: req.params.permId,
+    });
+    res.sendStatus(204);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+};
+
+module.exports.clearPermOverride = async (req, res) => {
+  try {
+    await aclService.clearPermOverride({
+      userId: req.params.userId,
+      companyId: req.companyId,
+      permId: req.params.permId,
+    });
+    res.sendStatus(204);
+  } catch (e) { res.status(400).json({ error: e.message }); }
 };

@@ -1,0 +1,69 @@
+.wrap { position: relative; display:flex; flex-direction:column; }
+
+.inputRow { display:flex; position:relative; }
+.input {
+  width:100%;
+  padding:10px 36px 10px 12px;
+  border-radius:12px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--input-bg, var(--card-bg)) 96%, transparent), transparent);
+  border:1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  color:var(--text);
+  font-size:14px;
+  outline:none;
+  transition:border-color .14s, box-shadow .14s, background .14s;
+}
+.input:hover{ border-color: color-mix(in srgb, var(--card-brd) 55%, var(--focus)); }
+.input:focus{
+  border-color: var(--focus);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--focus) 28%, transparent),
+             inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+}
+.input::-webkit-inner-spin-button,
+.input::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+
+.arrowBtn {
+  position:absolute;
+  right:6px; top:50%;
+  transform:translateY(-50%);
+  background:none;
+  border:0;
+  color:var(--muted);
+  cursor:pointer;
+  font-size:16px;
+  line-height:1;
+  padding:2px 4px;
+  border-radius:4px;
+  transition:color .15s, background .15s;
+}
+.arrowBtn:hover { color:var(--text); background:rgba(255,255,255,.05); }
+
+.menu {
+  position:absolute;
+  z-index:20;
+  top:calc(100% + 4px);
+  right:0;
+  min-width:100%;
+  background: color-mix(in srgb, var(--menu-bg, #0e0f15) 96%, transparent);
+  border:1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  border-radius:10px;
+  box-shadow:0 8px 28px color-mix(in srgb, var(--shadow-clr,#000) 35%, transparent);
+  overflow:hidden;
+}
+.item {
+  display:block;
+  width:100%;
+  text-align:left;
+  padding:8px 12px;
+  background:none;
+  border:0;
+  color:var(--text);
+  font-size:14px;
+  cursor:pointer;
+  transition:background .15s;
+}
+.item:hover { background: color-mix(in srgb, var(--sidebar-hover) 70%, transparent); }
+.active {
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  color:#fff;
+}

@@ -103,12 +103,13 @@
   background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
 }
 
+
 .avatarImg {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  width: 100%;
+  height: 100%;
+  display: block;          /* убирает лишние зазоры у img */
+  object-fit: cover;       /* вписываем без искажений */
+  object-position: center; /* центрируем */
 }
 
 .avatar[data-has-img="1"] .initials {

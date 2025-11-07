@@ -1,0 +1,100 @@
+.wrap { position: relative; width: 100%; }
+
+/* Триггер */
+.trigger{
+  width:100%; min-height:42px;
+  padding:10px 36px 10px 12px;
+  border-radius:12px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--input-bg, var(--card-bg)) 96%, transparent), transparent);
+  border:1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  color:var(--text);
+  text-align:left;
+  display:flex; align-items:center; gap:8px;
+  transition:border-color .14s ease, box-shadow .14s ease, background .14s ease;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
+}
+.trigger:hover{ border-color: color-mix(in srgb, var(--card-brd) 55%, var(--focus)); }
+.trigger:focus{
+  outline:none; border-color:var(--focus);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--focus) 28%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+}
+.trigger:disabled{ opacity:.6; cursor:not-allowed; }
+.triggerText{
+  flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+/* стрелка */
+.caret{
+  position:absolute; right:12px; top:50%;
+  width:0; height:0;
+  border-left:6px solid transparent; border-right:6px solid transparent; border-top:7px solid var(--text);
+  transform:translateY(-25%); opacity:.9;
+}
+
+/* Портальное меню */
+.menuFixed{
+  color:var(--text, #e8e8e8);
+  position:fixed; z-index:9999;
+  background: color-mix(in srgb, var(--menu-bg, #0e0f15) 96%, transparent);
+  border:1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  border-radius:12px; box-shadow:0 12px 32px color-mix(in srgb, var(--shadow-clr, #000) 42%, transparent);
+  overflow:hidden;
+}
+
+/* Поиск */
+.searchRow{
+  display:flex; align-items:center; gap:6px;
+  padding:8px; border-bottom:1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  background:inherit;
+}
+.searchInput{
+  flex:1; height:34px; padding:6px 8px;
+  border-radius:10px; outline:none;
+  border:1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
+  color: var(--text);
+}
+.searchInput:focus{ border-color: var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 24%, transparent); }
+.clearBtn{
+  height:34px; min-width:34px;
+  border-radius:10px; border:1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  color: var(--text); cursor:pointer;
+}
+
+/* Ряд "Выбрать всех" */
+.allRow{
+  position:sticky; top:0; z-index:1;
+  background:inherit; padding:8px;
+  border-bottom:1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+}
+.allLabel{
+  display:flex; align-items:center; gap:10px;
+  font-weight:600;
+}
+.count{
+  margin-left:auto; font-size:12px; opacity:.7;
+}
+
+/* Список */
+.list{ padding:6px 8px 8px; }
+.item{
+  display:flex; align-items:center; gap:10px;
+  padding:8px 6px; border-radius:8px; cursor:pointer;
+  border: 1px solid transparent;
+}
+.item:hover{ background: color-mix(in srgb, var(--sidebar-hover) 70%, transparent); }
+.itemText{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.empty{ opacity:.6; padding:12px; text-align:center; }
+
+/* "Добавить «…»" */
+.createItem{
+  width:100%;
+  background: transparent;
+  color: var(--text);
+  text-align:left;
+}
+.createItem:hover{
+  background: color-mix(in srgb, var(--primary-start) 14%, transparent);
+  border-color: color-mix(in srgb, var(--primary-start) 30%, transparent);
+}

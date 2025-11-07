@@ -1,23 +1,26 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import styles from "./AvatarEditable.module.css";
 
 /**
- * Кликабельная аватарка с ховером-подсказкой "Изменить".
- * По клику открывает модалку, где можно загрузить файл или вставить URL.
+ * Аватар/логотип с возможностью изменения.
  *
  * Props:
- *  - value: string (текущий url)
+ *  - value: string — URL текущего изображения
  *  - onChange: (url: string) => void
- *  - label: string ("Изменить" по умолчанию)
- *  - size: number (px, по умолчанию 128)
- *  - uploader: async (file) => { url }
- *  - urlUploader: async (url) => { url } (необязателен)
+ *  - label: string — подпись на кнопке ("Изменить" по умолчанию)
+ *  - size: number | string — ширина (по умолчанию 180)
+ *  - minHeight: number — минимальная высота (по умолчанию 72)
+ *  - fit: "contain" | "cover" (по умолчанию contain)
+ *  - uploader: async (file) => { url } | string | {data:{url}} | {path}
+ *  - urlUploader?: async (url) => { url } | string | {data:{url}} | {path}
  */
 export default function AvatarEditable({
   value = "",
   onChange,
   label = "Изменить",
-  size = 128,
+  size = 180,
+  minHeight = 72,
+  fit = "contain",
   uploader,
   urlUploader,
 }) {
@@ -25,19 +28,46 @@ export default function AvatarEditable({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [urlDraft, setUrlDraft] = useState("");
+  const [ratio, setRatio] = useState(1);
   const fileRef = useRef(null);
 
-  const openModal = () => { setErr(""); setUrlDraft(""); setOpen(true); };
-  const closeModal = () => { if (!busy) setOpen(false); };
+  // определяем соотношение сторон
+  useEffect(() => {
+    if (!value) return;
+    const img = new Image();
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) {
+        setRatio(img.naturalWidth / img.naturalHeight);
+      }
+    };
+    img.onerror = () => setRatio(1);
+    img.src = value;
+  }, [value]);
 
+  const extractUrl = (out) => {
+    if (!out) return "";
+    if (typeof out === "string") return out;
+    return out.url || out.data?.url || out.path || out.location || "";
+  };
+
+  const openModal = () => {
+    setErr("");
+    setUrlDraft("");
+    setOpen(true);
+  };
+  const closeModal = () => {
+    if (!busy) setOpen(false);
+  };
   const pickFile = () => fileRef.current?.click();
 
   const handleFile = async (f) => {
     if (!f || !uploader) return;
-    setErr(""); setBusy(true);
+    setErr("");
+    setBusy(true);
     try {
       const res = await uploader(f);
-      if (res?.url) onChange?.(res.url);
+      const url = extractUrl(res);
+      if (url) onChange?.(url);
       setOpen(false);
     } catch (e) {
       setErr(e?.message || "Не удалось загрузить файл");
@@ -49,11 +79,13 @@ export default function AvatarEditable({
   const applyUrl = async () => {
     const u = String(urlDraft || "").trim();
     if (!u) return;
-    setErr(""); setBusy(true);
+    setErr("");
+    setBusy(true);
     try {
       if (urlUploader) {
         const res = await urlUploader(u);
-        if (res?.url) onChange?.(res.url);
+        const finalUrl = extractUrl(res) || u;
+        if (finalUrl) onChange?.(finalUrl);
       } else {
         onChange?.(u);
       }
@@ -68,16 +100,24 @@ export default function AvatarEditable({
   return (
     <>
       <div
-        className={styles.avatar}
-        style={{ width: size, height: size }}
+        className={`${styles.avatar} ${
+          fit === "contain" ? styles.fitContain : styles.fitCover
+        }`}
+        style={{
+          width: typeof size === "number" ? `${size}px` : size,
+          aspectRatio: ratio,
+          minHeight,
+        }}
         onClick={openModal}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openModal()}
       >
-        {value
-          ? <img className={styles.img} src={value} alt="" />
-          : <div className={styles.ph}>LOGO</div>}
+        {value ? (
+          <img className={styles.img} src={value} alt="Логотип" />
+        ) : (
+          <div className={styles.ph}>LOGO</div>
+        )}
         <div className={styles.overlay}>
           <span className={styles.editText}>{label}</span>
         </div>
@@ -85,22 +125,21 @@ export default function AvatarEditable({
 
       {open && (
         <div className={styles.backdrop} role="dialog" aria-modal="true" onClick={closeModal}>
-          <div className={styles.modal} onClick={(e)=>e.stopPropagation()}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalTitle}>Логотип компании</div>
 
             <div className={styles.previewRow}>
               <div className={styles.previewBox}>
-                {value ? <img src={value} alt="" /> : <div className={styles.previewPh}>нет изображения</div>}
+                {value ? (
+                  <img src={value} alt="Превью" />
+                ) : (
+                  <div className={styles.previewPh}>нет изображения</div>
+                )}
               </div>
             </div>
 
             <div className={styles.row}>
-              <button
-                type="button"
-                className={styles.primary}
-                onClick={pickFile}
-                disabled={busy}
-              >
+              <button type="button" className={styles.primary} onClick={pickFile} disabled={busy}>
                 {busy ? "Загрузка…" : "Загрузить файл"}
               </button>
               <input
@@ -108,7 +147,11 @@ export default function AvatarEditable({
                 type="file"
                 accept="image/*"
                 hidden
-                onChange={(e)=>{ const f=e.target.files?.[0]; if (f) handleFile(f); e.target.value=""; }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFile(f);
+                  e.target.value = "";
+                }}
                 disabled={busy}
               />
             </div>
@@ -118,7 +161,7 @@ export default function AvatarEditable({
                 className={styles.input}
                 placeholder="или вставьте ссылку https://…"
                 value={urlDraft}
-                onChange={(e)=>setUrlDraft(e.target.value)}
+                onChange={(e) => setUrlDraft(e.target.value)}
                 disabled={busy}
               />
               <button
@@ -134,7 +177,9 @@ export default function AvatarEditable({
             {err && <div className={styles.err}>{err}</div>}
 
             <div className={styles.actions}>
-              <button className={styles.secondary} onClick={closeModal} disabled={busy}>Отмена</button>
+              <button className={styles.secondary} onClick={closeModal} disabled={busy}>
+                Отмена
+              </button>
             </div>
           </div>
         </div>

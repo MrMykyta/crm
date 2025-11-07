@@ -1,93 +1,102 @@
+// src/pages/auth/InviteAcceptPage.jsx
 import { useEffect, useMemo, useState } from "react";
+import { useDispatch } from "react-redux";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import {
-  checkInvitationByToken,
-  acceptInvitation,
-} from "../../../api/companyUsers";
-import auth from '../../../styles/AuthPage.module.css';
+
+import auth from "../../../styles/AuthPage.module.css";
 import s from "./InviteAccept.module.css";
+
+import {
+  useCheckInvitationQuery,
+  useAcceptInvitationMutation,
+} from "../../../store/rtk/companyUsersApi";
+import { setAuth } from "../../../store/slices/authSlice";
+import { setApiSession } from "../../../store/rtk/crmApi";
+import { bootstrapLoad } from "../../../store/slices/bootstrapSlice";
 
 export default function InviteAcceptPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
   const token = params.get("token") || "";
   const hasToken = !!token;
 
   const [showPwd, setShowPwd] = useState(false);
   const [serverError, setServerError] = useState("");
   const [serverOk, setServerOk] = useState("");
-  const [loading, setLoading] = useState(hasToken);
-  const [inviteInfo, setInviteInfo] = useState(null); // { email, firstName, lastName, userExists, ... }
 
-  // === Проверка токена ===
+  // Проверка инвайта через RTK Query (идёт через общий baseQueryWithReauth)
+  const {
+    data: checkData,
+    isFetching: loading,
+    error: checkError,
+  } = useCheckInvitationQuery(token, { skip: !hasToken });
+
+  // Мутация принятия инвайта
+  const [acceptMutation] = useAcceptInvitationMutation();
+
+  // Текст ошибки статуса
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!hasToken) return;
-      setLoading(true);
-      try {
-        const info = await checkInvitationByToken(token);
-        if (cancelled) return;
+    if (!hasToken) return;
 
-        if (!info || info.status !== "pending") {
-          const reason =
-            info?.status === "accepted" ? "Приглашение уже принято." :
-            info?.status === "revoked"  ? "Приглашение отозвано." :
-            info?.status === "expired"  ? "Срок действия приглашения истёк." :
-                                          "Некорректная ссылка приглашения.";
-          setServerError(reason);
-          setInviteInfo(null);
-        } else {
-          setInviteInfo({
-            firstName: info.firstName || info.existingUser?.firstName || "",
-            lastName:  info.lastName  || info.existingUser?.lastName  || "",
-            email: info.email || "",
-            userExists: !!info.userExists,
-          });
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setServerError(
-            e?.response?.data?.error || e?.response?.data?.message || "Не удалось проверить приглашение"
-          );
-          setInviteInfo(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [token, hasToken]);
+    if (checkError) {
+      const msg =
+        checkError?.data?.error ||
+        checkError?.error ||
+        "Не удалось проверить приглашение";
+      setServerError(msg);
+      return;
+    }
 
-  const userExists = !!inviteInfo?.userExists;
+    if (checkData && checkData.status && checkData.status !== "pending") {
+      const reason =
+        checkData.status === "accepted"
+          ? "Приглашение уже принято."
+          : checkData.status === "revoked"
+          ? "Приглашение отозвано."
+          : checkData.status === "expired"
+          ? "Срок действия приглашения истёк."
+          : "Некорректная ссылка приглашения.";
+      setServerError(reason);
+    } else {
+      setServerError("");
+    }
+  }, [hasToken, checkError, checkData]);
 
-  // === Валидация: если пользователь существует — пароль/confirm не требуем ===
+  const userExists = !!checkData?.userExists;
+
   const Schema = useMemo(() => {
     if (userExists) {
       return Yup.object().shape({
-        // можно позволить поправить имя/фамилию, но без обязательности
         firstName: Yup.string().max(64, "Максимум 64 символа"),
-        lastName:  Yup.string().max(64, "Максимум 64 символа"),
+        lastName: Yup.string().max(64, "Максимум 64 символа"),
       });
     }
     return Yup.object().shape({
       firstName: Yup.string().max(64, "Максимум 64 символа"),
-      lastName:  Yup.string().max(64, "Максимум 64 символа"),
-      password:  Yup.string().min(8, "Минимум 8 символов").required("Введите пароль"),
-      confirm:   Yup.string()
+      lastName: Yup.string().max(64, "Максимум 64 символа"),
+      password: Yup.string()
+        .min(8, "Минимум 8 символов")
+        .required("Введите пароль"),
+      confirm: Yup.string()
         .oneOf([Yup.ref("password")], "Пароли не совпадают")
         .required("Повторите пароль"),
     });
   }, [userExists]);
 
-  const init = useMemo(() => ({
-    firstName: inviteInfo?.firstName || "",
-    lastName:  inviteInfo?.lastName  || "",
-    password:  "",
-    confirm:   "",
-  }), [inviteInfo]);
+  const init = useMemo(
+    () => ({
+      firstName:
+        checkData?.firstName || checkData?.existingUser?.firstName || "",
+      lastName: checkData?.lastName || checkData?.existingUser?.lastName || "",
+      password: "",
+      confirm: "",
+    }),
+    [checkData]
+  );
 
   const disabled = !hasToken || loading || !!serverError;
 
@@ -99,8 +108,7 @@ export default function InviteAcceptPage() {
           <p className={auth.subtitle}>
             {userExists
               ? "Нажмите «Принять приглашение», чтобы присоединиться к рабочему пространству."
-              : "Установите пароль. Имя и фамилию можете скорректировать при необходимости."
-            }
+              : "Установите пароль. Имя и фамилию можете скорректировать при необходимости."}
           </p>
         </header>
 
@@ -109,61 +117,82 @@ export default function InviteAcceptPage() {
           enableReinitialize
           validationSchema={Schema}
           onSubmit={async (values, { setSubmitting }) => {
-            setServerError(""); setServerOk("");
+            setServerError("");
+            setServerOk("");
             try {
               const payload = { token };
-              // если новый пользователь — отправляем пароль и ФИО
               if (!userExists) {
-                payload.password  = values.password;
+                payload.password = values.password;
                 payload.firstName = values.firstName?.trim();
-                payload.lastName  = values.lastName?.trim();
+                payload.lastName = values.lastName?.trim();
               } else {
-                // существующий: можно опционально передать патч ФИО (бэк это поддерживает)
                 payload.firstName = values.firstName?.trim();
-                payload.lastName  = values.lastName?.trim();
+                payload.lastName = values.lastName?.trim();
               }
 
-              const res = await acceptInvitation(payload);
+              const res = await acceptMutation(payload).unwrap();
 
-              if (res?.accessToken) {
-                localStorage.setItem("accessToken", res.accessToken);
-                if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
-                if (res.user) localStorage.setItem("user", JSON.stringify(res.user));
-                if (res.companyId) localStorage.setItem("companyId", String(res.companyId));
+              if (res?.accessToken || res?.tokens?.accessToken) {
+                const accessToken =
+                  res.accessToken ?? res.token ?? res.tokens?.accessToken ?? null;
+                const refreshToken =
+                  res.refreshToken ?? res.tokens?.refreshToken ?? null;
+                const companyId =
+                  res.activeCompanyId ?? res.companyId ?? null;
+                const user = res.user ?? null;
+
+                // Кладём в Redux + sessionCtx, чтобы весь UI сразу «увидел» авторизацию
+                dispatch(
+                  setAuth({ accessToken, refreshToken, companyId, user })
+                );
+                setApiSession({ token: accessToken, companyId });
+                dispatch(bootstrapLoad());
+
                 navigate("/main", { replace: true });
               } else {
                 navigate("/auth", { replace: true });
               }
             } catch (e) {
-              const msg = e?.response?.data?.error || e?.response?.data?.message || e?.message;
-              setServerError(msg || "Ошибка принятия приглашения");
+              const msg =
+                e?.data?.error ||
+                e?.error ||
+                e?.message ||
+                "Ошибка принятия приглашения";
+              setServerError(msg);
               setSubmitting(false);
             }
           }}
         >
           {({ isSubmitting, isValid }) => (
             <Form className={s.form} noValidate>
-              {inviteInfo?.email && (
+              {checkData?.email && (
                 <div className={s.emailLine}>
-                  Приглашение на: <span className={s.email}>{inviteInfo.email}</span>
+                  Приглашение на:{" "}
+                  <span className={s.email}>{checkData.email}</span>
                 </div>
               )}
 
-              {/* Имя / Фамилия — показываем всегда, но не требуем, если userExists */}
               <div className={s.grid2}>
                 <label className={s.label}>
                   <span className={s.caption}>Имя</span>
                   <Field className={s.input} name="firstName" placeholder="Иван" />
-                  <ErrorMessage name="firstName" component="div" className={s.fieldError} />
+                  <ErrorMessage
+                    name="firstName"
+                    component="div"
+                    className={s.fieldError}
+                  />
                 </label>
                 <label className={s.label}>
                   <span className={s.caption}>Фамилия</span>
                   <Field className={s.input} name="lastName" placeholder="Иванов" />
-                  <ErrorMessage name="lastName" component="div" className={s.fieldError} />
+                  <ErrorMessage
+                    name="lastName"
+                    component="div"
+                    className={s.fieldError}
+                  />
                 </label>
               </div>
 
-              {/* Пароль / Подтверждение — только для НОВОГО пользователя */}
               {!userExists && (
                 <>
                   <div className={s.grid2}>
@@ -177,7 +206,11 @@ export default function InviteAcceptPage() {
                         minLength={8}
                         required
                       />
-                      <ErrorMessage name="password" component="div" className={s.fieldError} />
+                      <ErrorMessage
+                        name="password"
+                        component="div"
+                        className={s.fieldError}
+                      />
                     </label>
 
                     <label className={s.label}>
@@ -190,7 +223,11 @@ export default function InviteAcceptPage() {
                         minLength={8}
                         required
                       />
-                      <ErrorMessage name="confirm" component="div" className={s.fieldError} />
+                      <ErrorMessage
+                        name="confirm"
+                        component="div"
+                        className={s.fieldError}
+                      />
                     </label>
                   </div>
 
@@ -198,22 +235,30 @@ export default function InviteAcceptPage() {
                     <input
                       type="checkbox"
                       checked={showPwd}
-                      onChange={() => setShowPwd(v => !v)}
+                      onChange={() => setShowPwd((v) => !v)}
                     />
                     <span>Показать пароль</span>
                   </label>
                 </>
               )}
 
-              {loading && <div className={s.info}>Проверяем приглашение…</div>}
-              {serverError && !loading && <div className={s.error}>{serverError}</div>}
+              {loading && (
+                <div className={s.info}>Проверяем приглашение…</div>
+              )}
+              {serverError && !loading && (
+                <div className={s.error}>{serverError}</div>
+              )}
               {!hasToken && (
-                <div className={s.error}>Некорректная ссылка приглашения: отсутствует токен.</div>
+                <div className={s.error}>
+                  Некорректная ссылка приглашения: отсутствует токен.
+                </div>
               )}
               {serverOk && <div className={s.success}>{serverOk}</div>}
 
               <div className={s.actions}>
-                <Link to="/auth" className={`${s.btn} ${s.linkAsBtn}`}>Отмена</Link>
+                <Link to="/auth" className={`${s.btn} ${s.linkAsBtn}`}>
+                  Отмена
+                </Link>
                 <button
                   className={s.primary}
                   type="submit"
@@ -221,14 +266,18 @@ export default function InviteAcceptPage() {
                 >
                   {isSubmitting
                     ? "Сохраняем…"
-                    : (userExists ? "Принять приглашение" : "Создать аккаунт и присоединиться")}
+                    : userExists
+                    ? "Принять приглашение"
+                    : "Создать аккаунт и присоединиться"}
                 </button>
               </div>
 
               {!hasToken && (
                 <p className={s.helper}>
                   Проверьте, что перешли по полной ссылке из письма. Пример:{" "}
-                  <code>http://localhost:3000/invite/accept?token=…</code>
+                  <code>
+                    http://localhost:3000/invite/accept?token=…
+                  </code>
                 </p>
               )}
             </Form>

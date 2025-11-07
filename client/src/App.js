@@ -1,132 +1,139 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { Provider, useSelector, useDispatch } from 'react-redux';
+import store, { startRealtime } from './store';
 
 import AuthPage from './pages/auth/AuthPage';
 import VerifyEmail from './components/auth/VerifyEmail';
 import CompanySetupPage from './pages/auth/CompanySetupPage';
-import MainLayoutPage from './pages/MainLayoutPage';
+import MainLayoutPage from './pages/system/MainLayoutPage';
 import ThemeProvider from './Providers/ThemeProvider';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
-import UserSettingsPage from './pages/users/UserSettingsPage';
 import UserProfilePage from './pages/users/UserProfilePage';
+import UserEntityPage from "./pages/users/UserEntityPage";
 
-//-------------------CRM Pages----------------------------------
 import LeadsPage from './pages/CRM/LeadsPage';
 import CounterpartiesPage from './pages/CRM/CounterpartiesPage';
 import CounterpartyDetailPage from './pages/CRM/CounterpartyDetailPage';
-
-//-------------------Company Pages----------------------------------
 import CompanySettings from './pages/company/CompanySettings';
 import CompanyModules from './pages/company/CompanySettings/Modules/CompanyModules';
 import CompanyDeals from './pages/company/CompanySettings/Modules/CompanyDeals';
 import CompanyInfoPage from './pages/company/CompanyInfoPage';
-
-
-//-------------------Systems Pages----------------------------------
 import CompanyUsers from './pages/company/CompanyUsers';
 import InviteAcceptPage from './pages/auth/InviteAcceptPage';
-
+import CalendarPage from './pages/system/CalendarPage';
+import TaskPage from './pages/system/TaskPage';
+import TaskDetailPage from './pages/system/TaskPage/TaskDetailPage';
 import Dashboard from './components/Dashboard';
 
 import './reset.css';
-// import './styles/base.css'
 
-/** Простая защита по accessToken */
+import { setChecked, bootstrapLoad } from './store/slices/bootstrapSlice';
+import { setAuth } from './store/slices/authSlice';
+import { setApiSession } from './store/rtk/crmApi';
+import { sessionApi } from './store/rtk/sessionApi';
+import { sessionStorageHelpers } from './store/rtk/sessionApi';
+
+// ===== Protected
 const Protected = ({ children }) => {
-  const token = localStorage.getItem('accessToken');
-  if(token){
-    return children;
-  }else{
-    localStorage.removeItem('user');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('companyId');
-    return <Navigate to="/auth" replace />;
-  }
+  const checked = useSelector(s => s.bootstrap?.checked);
+  const token = useSelector(s => s.auth?.accessToken);
+  if (!checked) return null;
+  return token ? children : <Navigate to="/auth" replace />;
 };
 
-export default function App() {
-  const [user, setUser] = useState(() => {
-    try {
-      const raw = localStorage.getItem('user');
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  });
+function AppShell() {
+  const dispatch = useDispatch();
+  const checked    = useSelector(s => s.bootstrap?.checked);
+  const token      = useSelector(s => s.auth?.accessToken);
+  const companyId  = useSelector(s => s.auth?.companyId);
+  const currentUser = useSelector(s => s.auth?.currentUser);
 
-  // sync user <-> localStorage
+  // 1) Тихий refresh при загрузке вкладки — ЧЕРЕЗ BODY (как требует твой контроллер)
   useEffect(() => {
-    if (user) localStorage.setItem('user', JSON.stringify(user));
-    else localStorage.removeItem('user');
-  }, [user]);
+    let alive = true;
+    (async () => {
+      try {
+        const rt  = sessionStorageHelpers.loadRT();
+        const cid = sessionStorageHelpers.loadCID();
 
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('companyId');
-    localStorage.removeItem('user');
-    setUser(null);
-  };
+        if (rt) {
+          await dispatch(
+            sessionApi.endpoints.refresh.initiate(
+              { refreshToken: rt, companyId: cid, silent: true }, // <-- тело
+              { forceRefetch: true }
+            )
+          ).unwrap().catch(() => {});
+        }
+      } finally {
+        if (alive) dispatch(setChecked(true));
+      }
+    })();
+    return () => { alive = false; };
+  }, [dispatch]);
 
-  const hasToken = !!localStorage.getItem('accessToken');
+  // 2) Запуск realtime, когда токен+companyId появились
+  useEffect(() => {
+    if (token && companyId) startRealtime();
+  }, [token, companyId]);
+
+  const rootElement = checked
+    ? <Navigate to={token ? "/main" : "/auth"} replace />
+    : null;
 
   return (
-    <ThemeProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* умный редирект с корня */}
-          <Route path="/" element={<Navigate to={hasToken ? "/main" : "/auth"} replace />} />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={rootElement} />
 
-          {/* auth-стек получает setUser, чтобы SignIn мог поднять user наверх */}
-          <Route path="/auth/*" element={<AuthPage setUser={setUser} />} />
-          <Route path="/auth/verify" element={<VerifyEmail />} />
-          <Route path="/auth/company-setup" element={<CompanySetupPage setUser={setUser}/>} />
-          <Route path="/auth/reset" element={<ResetPasswordPage />} />
+        <Route path="/auth/*" element={<AuthPage />} />
+        <Route path="/auth/verify" element={<VerifyEmail />} />
+        <Route path="/auth/company-setup" element={<CompanySetupPage />} />
+        <Route path="/auth/reset" element={<ResetPasswordPage />} />
+        <Route path="/invite/accept" element={<InviteAcceptPage />} />
 
-          <Route path="/invite/accept" element={<InviteAcceptPage setUser={setUser} />} />
+        <Route
+          path="/main"
+          element={
+            <Protected>
+              <MainLayoutPage />
+            </Protected>
+          }
+        >
+          <Route path="pulpit" element={<Dashboard currentUser={currentUser} />} />
 
-          {/* приложение — защищено и получает currentUser + onLogout */}
-          <Route
-            path="/main"
-            element={
-              <Protected>
-                <MainLayoutPage currentUser={user} onLogout={handleLogout} />
-              </Protected>
-            }
-          >
-
-            <Route path="pulpit" element={<Dashboard currentUser={user} />} />
-
-            <Route path="/main/company/details" element={<CompanyInfoPage />} />
-            <Route path="/main/company-settings" element={<CompanySettings />}>
-              <Route index element={<Navigate to="modules" replace />} />
-              <Route path="modules" element={<CompanyModules />} />
-              <Route path="deals" element={<CompanyDeals />} />
-              
-              {/* <Route path="lists" element={<Stub title="Списки" />} />
-              
-              <Route path="offers" element={<Stub title="Предложения" />} />
-              <Route path="orders" element={<Stub title="Заказы" />} />
-              <Route path="invoices" element={<Stub title="Фактуры" />} />
-              <Route path="warehouse-docs" element={<Stub title="Складские документы" />} />
-              <Route path="automation" element={<Stub title="Автоматизация" />} />
-              <Route path="integrations" element={<Stub title="Интеграции" />} />
-              <Route path="catalog" element={<Stub title="Продукты/Услуги" />} />
-              <Route path="warehouse" element={<Stub title="Склад" />} />
-              <Route path="other" element={<Stub title="Прочее" />} /> */}
-            </Route>
-
-            {/* CRM */}
-            <Route path="crm/counterparties" element={<CounterpartiesPage />} />
-            <Route path="crm/counterparties/:id" element={<CounterpartyDetailPage />} />
-            <Route path="crm/leads" element={<LeadsPage />} />
-
-            <Route path="user-settings" element={<UserSettingsPage user={user} />} />
-            <Route path="user-profile" element={<UserProfilePage user={user}/>} />
-
-            <Route path="company-users" element={<CompanyUsers />} />
+          <Route path="company/details" element={<CompanyInfoPage />} />
+          <Route path="company-settings" element={<CompanySettings />}>
+            <Route index element={<Navigate to="modules" replace />} />
+            <Route path="modules" element={<CompanyModules />} />
+            <Route path="deals" element={<CompanyDeals />} />
           </Route>
-          <Route path="*" element={<div style={{ padding: 24 }}>Not found</div>} />
-        </Routes>
-      </BrowserRouter>
-    </ThemeProvider>
+
+          <Route path="crm/counterparties" element={<CounterpartiesPage />} />
+          <Route path="crm/counterparties/:id" element={<CounterpartyDetailPage />} />
+          <Route path="crm/leads" element={<LeadsPage />} />
+
+          <Route path="user-profile" element={<UserProfilePage user={currentUser} />} />
+          <Route path="company-users" element={<CompanyUsers />} />
+          <Route path="users/:userId" element={<UserEntityPage />} />
+
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="tasks" element={<TaskPage />} />
+          <Route path="tasks/:id" element={<TaskDetailPage />} />
+        </Route>
+
+        <Route path="*" element={<div style={{ padding: 24 }}>Not found</div>} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default function App() {
+  return (
+    <Provider store={store}>
+      <ThemeProvider>
+        <AppShell />
+      </ThemeProvider>
+    </Provider>
   );
 }

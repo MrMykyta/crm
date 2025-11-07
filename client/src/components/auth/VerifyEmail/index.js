@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { verifyEmail } from '../../../api/auth';
 import s from './Verify.module.css';
 
 const useQuery = () => new URLSearchParams(useLocation().search);
+
+// fetch shim
+async function verifyEmailFetch(token) {
+  const res = await fetch(`/api/auth/verify?token=${encodeURIComponent(token)}`, {
+    credentials:'include'
+  });
+  if (!res.ok) return { verified: false };
+  return res.json().catch(()=>({ verified:true }));
+}
 
 export default function VerifyEmail() {
   const q = useQuery();
@@ -16,8 +24,7 @@ export default function VerifyEmail() {
     if (!token) return;
     (async () => {
       try {
-        const res = await verifyEmail(token); // { verified, tokens? }
-        console.log('res',res); // { verified: true, tokens? }
+        const res = await verifyEmailFetch(token);
         if (res?.verified) {
           setState({ status: 'success', msg: 'Verified' });
           setTimeout(() => navigate('/auth/company-setup'), 100);
@@ -25,7 +32,7 @@ export default function VerifyEmail() {
           setState({ status: 'error', msg: 'Verification failed' });
         }
       } catch (e) {
-        setState({ status: 'error', msg: e?.response?.data?.message || 'Error' });
+        setState({ status: 'error', msg: e?.message || 'Error' });
       }
     })();
   }, [token, navigate]);

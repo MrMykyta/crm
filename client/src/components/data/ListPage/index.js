@@ -1,14 +1,66 @@
-// src/components/ListPage/index.jsx
+// src/components/data/ListPage/index.jsx
 import React, {
-  forwardRef, useImperativeHandle, useMemo, useRef, useState, useCallback, useEffect,
+  forwardRef, useImperativeHandle, useMemo, useState, useCallback,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { listResource } from '../../../api/resources';
 import DataTable from '../DataTable';
 import DefaultToolbar from '../../filters/FilterToolbar';
 import s from './ListPage.module.css';
 
-/** Локальная кнопка: variant="primary"|"secondary" */
+/* === Регистр RTK-источников === */
+import { useListCounterpartiesQuery } from '../../../store/rtk/counterpartyApi';
+import { useListTasksQuery } from '../../../store/rtk/tasksApi';
+import { useListCompanyUsersQuery, useListInvitationsQuery } from '../../../store/rtk/companyUsersApi';
+
+const REGISTRY = {
+  counterparties: {
+    useQuery: useListCounterpartiesQuery,
+    adapt: (data, _query) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      const total = Number(data?.total ?? items.length ?? 0);
+      const page  = Number(data?.page ?? 1);
+      const limit = Number(data?.limit ?? 25);
+      return { items, total, page, limit };
+    },
+  },
+  tasks: {
+    useQuery: useListTasksQuery,
+    adapt: (data, _query) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page:  Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  companyUsers: {
+    useQuery: useListCompanyUsersQuery,
+    adapt: (data, _query) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page:  Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  companyInvites: {
+    useQuery: useListInvitationsQuery,
+    adapt: (data, _query) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page:  Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+};
+
 export function Button({ variant = 'primary', children, className = '', ...props }) {
   const cls = variant === 'primary' ? s.primary : s.btn;
   return (
@@ -18,16 +70,6 @@ export function Button({ variant = 'primary', children, className = '', ...props
   );
 }
 
-// --- helpers ---
-const shallowEqualObj = (a, b) => {
-  if (a === b) return true;
-  if (!a || !b) return false;
-  const ak = Object.keys(a); const bk = Object.keys(b);
-  if (ak.length !== bk.length) return false;
-  for (const k of ak) if (a[k] !== b[k]) return false;
-  return true;
-};
-
 const normalizeQuery = (q = {}) => ({
   page: Number(q.page) > 0 ? Number(q.page) : 1,
   limit: Number(q.limit) > 0 ? Number(q.limit) : 25,
@@ -35,31 +77,42 @@ const normalizeQuery = (q = {}) => ({
   dir: q.dir === 'ASC' ? 'ASC' : 'DESC',
   search: q.search ?? undefined,
   type: q.type ?? undefined,
+  status: q.status ?? undefined,
+  from: q.from ?? undefined,
+  to: q.to ?? undefined,
   ...q,
 });
 
-// --- component ---
 const ListPage = forwardRef(function ListPage(
   {
+    /** вариант 1: внутренний RTK-режим */
+    source,
+
+    /** вариант 2: внешний режим (как в CompanyUsers) */
+    externalData,
+    externalMeta,           // { total, page, limit }
+    externalLoading,
+    onExternalRefetch,
+
+    /** Управляемый query (для внешнего режима) */
+    query: controlledQuery,
+    onQueryChange,
+
+    /** UI */
     title,
-    endpoint,
     columns = [],
     defaultQuery = {},
     actions,
     rowActions,
 
-    // сортировка и размеры уже были
+    /* таблица */
     columnWidths,
     onColumnResize,
-
-    // порядок колонок
-    columnOrder,                 // string[] | undefined
-    onColumnOrderChange,         // (next: string[]) => void
-
-    // доп: проброс кастомного ключа строки (часто удобно)
+    columnOrder,
+    onColumnOrderChange,
     rowKey = 'id',
 
-    /** внешний тулбар */
+    /** тулбар/преобразование */
     ToolbarComponent,
     toolbarExtra,
     transformItems,
@@ -68,85 +121,76 @@ const ListPage = forwardRef(function ListPage(
 ) {
   const { t } = useTranslation();
 
-  // стабильные начальные значения
+  // режимы и query — хуки вызываем всегда
+  const isExternal = typeof externalData !== 'undefined';
+
   const initQuery = useMemo(() => normalizeQuery(defaultQuery), [defaultQuery]);
+  const [internalQuery, setInternalQuery] = useState(initQuery);
+  const query = useMemo(
+    () => normalizeQuery(isExternal ? (controlledQuery || initQuery) : internalQuery),
+    [isExternal, controlledQuery, initQuery, internalQuery]
+  );
 
-  const [query, setQuery] = useState(initQuery);
-  const [data, setData] = useState({
-    items: [],
-    total: 0,
-    page: initQuery.page,
-    limit: initQuery.limit
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState(null);
-
-  // отмена гонок запросов
-  const abortRef = useRef(null);
-
-  // при смене endpoint — мягкий сброс к дефолту, один раз
-  const prevEndpointRef = useRef(endpoint);
-  useEffect(() => {
-    if (prevEndpointRef.current !== endpoint) {
-      prevEndpointRef.current = endpoint;
-      setQuery(initQuery);
+  // выбираем источник: реальный из REGISTRY или «внешний стаб»
+  const reg = useMemo(() => {
+    if (!isExternal) {
+      const r = REGISTRY[source];
+      if (!r) throw new Error(`ListPage: неизвестный source="${source}". Добавь его в REGISTRY.`);
+      return r;
     }
-  }, [endpoint, initQuery]);
+    // внешний стаб-источник — не вызывает никаких хуков внутри
+    return {
+      useQuery: () => ({
+        data: { items: externalData, total: externalMeta?.total, page: externalMeta?.page, limit: externalMeta?.limit },
+        isFetching: !!externalLoading,
+        refetch: onExternalRefetch || (() => {}),
+        error: null,
+      }),
+      adapt: (_data, q) => {
+        const items = Array.isArray(externalData) ? externalData : (externalData?.items || []);
+        const total = Number(externalMeta?.total ?? items.length ?? 0);
+        const page  = Number(externalMeta?.page ?? q.page ?? 1);
+        const limit = Number(externalMeta?.limit ?? q.limit ?? 25);
+        return { items, total, page, limit };
+      },
+    };
+  }, [isExternal, source, externalData, externalMeta, externalLoading, onExternalRefetch]);
 
-  const fetchList = useCallback(async (q = query) => {
-    // abort предыдущий
-    if (abortRef.current) abortRef.current.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
+  // единый вызов "useQuery" (hook-подобный) — без условного return
+  const r = reg.useQuery(query);
 
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await listResource(endpoint, q);
-      if (!ctrl.signal.aborted) {
-        const rawItems = res?.items || [];
-        const items = typeof transformItems === 'function' ? transformItems(rawItems, q) : rawItems;
-        setData({
-          items,
-          total: Number(res?.total || 0),
-          page: Number(res?.page || q.page || 1),
-          limit: Number(res?.limit || q.limit || 25),
-        });
-      }
-    } catch (e) {
-      if (!ctrl.signal.aborted) setError(String(e?.message || e) || 'Error');
-    } finally {
-      if (abortRef.current === ctrl) abortRef.current = null;
-      setLoading(false);
-    }
-  }, [endpoint, query]);
+  // адаптация данных + transformItems
+  const adapted = useMemo(() => {
+    const base = reg.adapt(r.data || {}, query);
+    const items = typeof transformItems === 'function' ? transformItems(base.items, query) : base.items;
+    return { ...base, items };
+  }, [r.data, reg, transformItems, query]);
 
-  // авто-загрузка при маунте и изменениях endpoint/query
-  useEffect(() => {
-    fetchList();
-    return () => abortRef.current?.abort?.();
-  }, [fetchList]);
-
-  // публичный API наружу
+  // единые коллбеки управления query
   const replaceQuery = useCallback((nextOrSetter) => {
-    setQuery((prev) => {
-      const next = normalizeQuery(typeof nextOrSetter === 'function' ? nextOrSetter(prev) : nextOrSetter);
-      return shallowEqualObj(prev, next) ? prev : next;
-    });
-  }, []);
+    const next = normalizeQuery(
+      typeof nextOrSetter === 'function' ? nextOrSetter(query) : nextOrSetter
+    );
+    if (isExternal) onQueryChange?.(next);
+    else setInternalQuery(next);
+  }, [isExternal, onQueryChange, query]);
 
-  const setPage  = useCallback((page)  => replaceQuery(q => ({ ...q, page: Math.max(1, Number(page) || 1) })), [replaceQuery]);
-  const setLimit = useCallback((limit) => replaceQuery(q => ({ ...q, limit: Math.max(1, Number(limit) || 25), page: 1 })), [replaceQuery]);
-  const setSort  = useCallback((key, dir) => replaceQuery(q => ({ ...q, sort: key, dir: dir === 'ASC' ? 'ASC' : 'DESC', page: 1 })), [replaceQuery]);
-  const refetch  = useCallback(() => fetchList(), [fetchList]);
+  const setPage  = useCallback((p)   => replaceQuery(q => ({ ...q, page: Math.max(1, Number(p) || 1) })), [replaceQuery]);
+  const setLimit = useCallback((lim) => replaceQuery(q => ({ ...q, limit: Math.max(1, Number(lim) || 25), page: 1 })), [replaceQuery]);
+  const setSort  = useCallback((k,d)=> replaceQuery(q => ({ ...q, sort: k, dir: d === 'ASC' ? 'ASC' : 'DESC', page: 1 })), [replaceQuery]);
 
+  // единый refetch
+  const refetch  = useCallback(() => r.refetch?.(), [r]);
+
+  // публичный API
   useImperativeHandle(ref, () => ({
     refetch,
     replaceQuery,
     getQuery: () => query,
   }), [refetch, replaceQuery, query]);
 
-  const total = data.total ?? 0;
+  // расчёты пагинации
+  const total = adapted.total ?? 0;
   const start = total ? (query.page - 1) * query.limit + 1 : 0;
   const end   = total ? Math.min(query.page * query.limit, total) : 0;
   const pages = Math.max(1, Math.ceil(total / (query.limit || 1)));
@@ -224,30 +268,23 @@ const ListPage = forwardRef(function ListPage(
           </div>
         </div>
 
-        {error && <div className={s.error}>{error}</div>}
+        {r.error && <div className={s.error}>{String(r.error?.data?.error || r.error?.message || 'Error')}</div>}
 
         <div className={s.scrollX}>
           <DataTable
-          /* данные и сортировка */
-          columns={columns}
-          data={data.items}
-          loading={loading}
-          rowActions={rowActions}
-          sortKey={query.sort}
-          sortDir={query.dir}
-          onSort={(key, dir) => setSort(key, dir)}
-
-          /* ключ строки (если нужно переопределить) */
-          rowKey={rowKey}
-
-          /* ширины колонок (как было) */
-          columnWidths={columnWidths}
-          onColumnResize={onColumnResize}
-
-          /* 🔹 НОВОЕ: порядок колонок */
-          columnOrder={columnOrder}
-          onColumnOrderChange={onColumnOrderChange}
-        />
+            columns={columns}
+            data={adapted.items}
+            loading={!!r.isFetching}
+            rowActions={rowActions}
+            sortKey={query.sort}
+            sortDir={query.dir}
+            onSort={(key, dir) => setSort(key, dir)}
+            rowKey={rowKey}
+            columnWidths={columnWidths}
+            onColumnResize={onColumnResize}
+            columnOrder={columnOrder}
+            onColumnOrderChange={onColumnOrderChange}
+          />
         </div>
       </div>
     </div>

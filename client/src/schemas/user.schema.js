@@ -38,16 +38,19 @@ export function userSchema(_i18n) {
 }
 
 // нормализация туда/обратно
-export const toFormUser = (d) => ({
-  firstName:  d?.firstName ?? "",
-  lastName:   d?.lastName  ?? "",
-  email:      d?.email     ?? d?.emailNorm ?? d?.emailRaw ?? "",
-  phone:      d?.phone     ?? d?.phoneNorm ?? d?.phoneRaw ?? "",
-  position:   d?.position  ?? "",
-  city:       d?.city      ?? "",
-  about:      d?.about     ?? "",
-  avatarUrl:  d?.avatarUrl ?? "",   // держим в values (как у компании)
-});
+export const toFormUser = (d) => {
+ const u = d?.user ? d.user : d || {};
+    return {
+      firstName:  u.firstName ?? "",
+      lastName:   u.lastName  ?? "",
+      email:      u.email     ?? u.emailNorm ?? u.emailRaw ?? "",
+      phone:      u.phone     ?? u.phoneNorm ?? u.phoneRaw ?? "",
+      position:   u.position  ?? "",
+      city:       u.city      ?? "",
+      about:      u.about     ?? "",
+      avatarUrl:  u.avatarUrl ?? "",
+    };
+  };
 
 export const toApiUser = (v) => ({
   firstName:  v.firstName?.trim(),

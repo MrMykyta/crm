@@ -25,6 +25,7 @@ aclRouter.delete('/users/:userId/roles/:roleId', auth, authorize('company:update
 // USERS ↔ PERMISSIONS (extra per-user)
 aclRouter.post('/users/:userId/permissions/:permId', auth, authorize('company:update'), AclController.grantPermToUser);
 aclRouter.delete('/users/:userId/permissions/:permId', auth, authorize('company:update'), AclController.revokePermFromUser);
+aclRouter.get('/users/:userId/permissions/summary', auth, authorize('company:read'), AclController.getUserPermSummary);
 
 // PERMISSIONS (global catalog, но CRUD доступен админам компании)
 aclRouter.post('/permissions', auth, authorize('company:update'), validateBody(permissionSchema.create), AclController.createPermission);
@@ -32,5 +33,12 @@ aclRouter.get('/permissions', auth, authorize('company:read'), validateQuery(per
 aclRouter.get('/permissions/:permId', auth, authorize('company:read'), AclController.getPermission);
 aclRouter.put('/permissions/:permId', auth, authorize('company:update'), validateBody(permissionSchema.update), AclController.updatePermission);
 aclRouter.delete('/permissions/:permId', auth, authorize('company:update'), AclController.deletePermission);
+
+
+// routes/system/aclRouter.js
+aclRouter.post   ('/users/:userId/permissions/:permId/allow', auth, authorize('company:update'), AclController.allowPermForUser);
+aclRouter.post   ('/users/:userId/permissions/:permId/deny',  auth, authorize('company:update'), AclController.denyPermForUser);
+aclRouter.delete ('/users/:userId/permissions/:permId',       auth, authorize('company:update'), AclController.clearPermOverride);
+
 
 module.exports = aclRouter;

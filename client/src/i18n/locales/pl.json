@@ -306,6 +306,63 @@
       "allTypes": "Wszystkie typy",
       "allStatuses": "Wszystkie statusy",
       "searchPlaceholder": "Szukaj (nazwa, NIP, REGON...)"
+    },
+    "tasks": {
+      "title": "Zadania",
+      "titles": {
+        "list": "Lista zadań",
+        "new": "Nowe zadanie",
+        "edit": "Edytuj zadanie"
+      },
+      "form": {
+        "title": "Tytuł zadania",
+        "description": "Opis",
+        "status": "Status",
+        "priority": "Priorytet",
+        "color": "Kolor",
+        "date": "Data",
+        "startAt": "Początek",
+        "endAt": "Koniec",
+        "timezone": "Strefa czasowa",
+        "allDay": "Cały dzień",
+        "assignmentType": "Przydział",
+        "userIds": "Użytkownicy"
+      },
+      "enums": {
+        "status": {
+          "todo": "Do wykonania",
+          "in_progress": "W trakcie",
+          "done": "Zakończone",
+          "blocked": "Zablokowane",
+          "canceled": "Anulowane"
+        },
+        "assignment": {
+          "none": "Bez przydziału",
+          "all": "Wszyscy użytkownicy",
+          "users": "Wybrani użytkownicy"
+        }
+      },
+      "tabs": {
+        "overview": "Opis",
+        "subtasks": "Podzadania",
+        "comments": "Komentarze",
+        "history": "Historia",
+        "files": "Pliki",
+        "relations": "Powiązania",
+        "settings": "Ustawienia"
+      },
+      "messages": {
+        "saved": "Zapisano",
+        "deleted": "Usunięto",
+        "confirmDelete": "Usunąć zadanie?",
+        "noTasks": "Brak zadań",
+        "addTask": "Dodaj zadanie"
+      },
+      "errors": {
+        "required": "Pole wymagane",
+        "max": "Maksymalnie {{max}} znaków",
+        "badPriority": "Priorytet musi być liczbą od 0 do 100"
+      }
     }
   },
   "companySettings": {

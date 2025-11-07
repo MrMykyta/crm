@@ -1,38 +1,42 @@
+// middleware/auth.js
+'use strict';
+
 const { verifyAccess } = require('../utils/tokenService');
-const { getPermissions } = require('./permissionResolver');
+const { getPermissionsAndRole } = require('./permissionResolver'); // ← берём новый резолвер
 const TokenError = require('../errors/TokenError');
 
 module.exports.auth = async (req, res, next) => {
   try {
     const hdr = req.headers.authorization || '';
     const token = hdr.startsWith('Bearer ') ? hdr.slice(7) : null;
-
-    if (!token) {
-      throw new TokenError('No token');
-    }
+    console.log('[auth] hdr', hdr,'[auth] token:', token);
+    if (!token) throw new TokenError('No token');
 
     const payload = await verifyAccess(token);
-    const userId = payload.sub;  // id пользователя
-    const companyId = payload.cid; // id компании (может быть undefined/null)
+    const userId = payload.sub;
+    const companyId = payload.cid || null;
 
-    let permissions = [];
+    // Значения по умолчанию (вне контекста компании)
+    let role = 'user';
+    let permissions = { allow: [], deny: [] };
+    let membership = null;
 
     if (userId && companyId) {
-      // пользователь в контексте компании → подтягиваем его права
-      permissions = await getPermissions({ userId, companyId });
+      const ctx = await getPermissionsAndRole({ userId, companyId });
+      role = ctx.role || 'user';
+      permissions = ctx.permissions || { allow: [], deny: [] };
+      membership = ctx.membership || null;
     }
 
-    const role = permissions.role || 'user';
+    req.user = { id: userId, role, permissions, membership };
+    req.companyId = companyId;
 
-    // если userId есть, а companyId нет — значит он просто зарегистрирован
-    // и пока без прав и компании
-    req.user = { id: userId, role, permissions };
-    req.companyId = companyId || null;
-
-    console.log('[auth]', `User ${userId} authenticated with role ${role} and company ${companyId || 'None'}  `);
+    // опционально, оставить на время отладки:
+    //  console.log('[auth]', { userId, role, companyId, allow: permissions.allow.length, deny: permissions.deny.length, permissions: permissions.allow });
 
     next();
   } catch (e) {
+    // не светим детали наружу, но не ломаем поток
     next(new TokenError('error token'));
   }
 };

@@ -32,9 +32,9 @@ module.exports = {
         field: 'company_id'
       },
       role: {
-        type: Sequelize.ENUM('owner','admin','manager','viewer'),
+        type: Sequelize.ENUM('owner','admin','manager','user'),
         allowNull:false, 
-        defaultValue: 'viewer'
+        defaultValue: 'user'
       },
       status: {
         type: Sequelize.ENUM('active','invited','suspended'),

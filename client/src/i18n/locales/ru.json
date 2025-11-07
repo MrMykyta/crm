@@ -343,7 +343,55 @@
       "allTypes": "Все типы",
       "allStatuses": "Все статусы",
       "searchPlaceholder": "Поиск (название, NIP, REGON...)"
+    },
+    "task": {
+      "sections": {
+        "main": "Основное",
+        "plan": "Планирование",
+        "participants": "Участники",
+        "relations": "Связи",
+        "logic": "Логика статуса"
+      },
+      "fields": {
+        "title": "Название",
+        "category": "Категория",
+        "status": "Статус",
+        "priority": "Приоритет",
+        "startAt": "Начало",
+        "endAt": "Окончание",
+        "description": "Описание",
+        "participantMode": "Назначение (режим)",
+        "watcherMode": "Наблюдатели (режим)",
+        "assignees": "Назначенные работники",
+        "departments": "Отделы",
+        "watchers": "Наблюдатели",
+        "counterparty": "Клиент",
+        "deal": "Сделка",
+        "contacts": "Контактные лица",
+        "statusAggregate": "Рассчитывать общий статус по исполнителям"
+      },
+      "placeholders": {
+        "title": "Например: Перезвонить клиенту"
+      },
+      "enums": {
+        "status": {
+          "todo": "К выполнению",
+          "in_progress": "В работе",
+          "done": "Готово",
+          "blocked": "Заблокировано",
+          "canceled": "Отменено"
+        },
+        "mode": {
+          "none": "Выключено",
+          "all": "Все сотрудники",
+          "lists": "Списки ниже"
+        }
+      },
+      "hints": {
+        "statusAggregate": "Задача считается выполненной только когда все назначенные работники завершат свои части"
+      }
     }
+    
   },
   "companySettings":{
     "title": "Настройки компании",
@@ -378,7 +426,6 @@
   "user": {
     "form": {
       "fields":{
-        
       }
     }
   }

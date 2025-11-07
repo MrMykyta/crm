@@ -18,7 +18,6 @@ import {
   Wrench,
   Warehouse,
   File,
-  Settings,
 } from "lucide-react";
 
 export const MENU = [
@@ -29,11 +28,11 @@ export const MENU = [
 
   { key: "crm", icon: Users, labelKey: "menu.crm", type: "section" },
   { key: "counterparties", icon: Building2, labelKey: "menu.counterparties", route: "/main/crm/counterparties", type: "item" },
-  { key: "leads", icon: Sprout, labelKey: "menu.leads", route: "/main/crm/leads", type: "item", filterFlyout: true },
-  { key: "clients", icon: Users, labelKey: "menu.clients", route: "/main/crm/clients", type: "item", filterFlyout: true },
-  { key: "deals", icon: LineChart, labelKey: "menu.deals", route: "/main/crm/deals", type: "item" },
-  { key: "tasks", icon: CheckSquare, labelKey: "menu.tasks", route: "/main/crm/tasks", type: "item" },
-  { key: "calendar", icon: Calendar, labelKey: "menu.calendar", route: "/main/crm/calendar", type: "item" },
+  { key: "leads", icon: Sprout, labelKey: "menu.leads", route: "/main/leads", type: "item", filterFlyout: true },
+  { key: "clients", icon: Users, labelKey: "menu.clients", route: "/main/clients", type: "item", filterFlyout: true },
+  { key: "deals", icon: LineChart, labelKey: "menu.deals", route: "/main/deals", type: "item" },
+  { key: "tasks", icon: CheckSquare, labelKey: "menu.tasks", route: "/main/tasks", type: "item" },
+  { key: "calendar", icon: Calendar, labelKey: "menu.calendar", route: "/main/calendar", type: "item" },
 
   { key: "oms", icon: FileText, labelKey: "menu.oms", type: "section" },
   { key: "invoices", icon: FileText, labelKey: "menu.invoices", route: "/main/oms/invoices", type: "item" },

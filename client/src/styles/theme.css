@@ -15,9 +15,9 @@
   --shadow: 0 20px 60px rgba(0,0,0,.45);
 
   /* вспомогательные */
-  --shadow-clr: #000;         /* для color-mix в модулях */
+  --shadow-clr: #000;           /* для color-mix в модулях */
   --glass-brd: var(--card-brd); /* единый бордер для “glass” */
-  
+
   --primary-start: #5b7cff;
   --primary-end:   #7a5bff;
   --focus: #85a2ff;
@@ -44,7 +44,7 @@
   --font-base: 16px;
   --font-multiplier: 1;
 
-  /* шкала */
+  /* шкала (как в sidebar) */
   --fs-2xs: calc(0.6875rem * var(--font-multiplier)); /* 11px */
   --fs-xs:  calc(0.75rem * var(--font-multiplier));   /* 12px */
   --fs-sm:  calc(0.875rem * var(--font-multiplier));  /* 14px */
@@ -74,7 +74,7 @@
   --radius-sm: 10px;
   --radius-md: 12px;
   --radius-lg: 16px;
-  --radius-xl: 20px;      /* добавлено для модалок/крупных карточек */
+  --radius-xl: 20px;
   --radius-full: 999px;
 
   /* ========= ELEVATION ========= */
@@ -83,10 +83,10 @@
   --elev-3: 0 20px 60px rgba(0,0,0,.45);
 
   /* ========= SIZES / LAYOUT ========= */
-  --sidebar-w: 15.5rem;          /* 248px */
-  --sidebar-w-collapsed: 4.75rem;/* 76px */
-  --topbar-h: 5rem;              /* 64px */
-  --icon-box: 40px;              /* базовый квадрат кнопок/аватара в topbar */
+  --sidebar-w: 15.5rem;           /* 248px */
+  --sidebar-w-collapsed: 4.75rem; /* 76px */
+  --topbar-h: 5rem;               /* 64px */
+  --icon-box: 40px;
 
   /* ========= ANIMATION ========= */
   --tr-fast: .15s ease;
@@ -96,22 +96,36 @@
   --font-scale: 100;
   --glass-blur: 20px;
 
-
-  --success:        #65f797;    /* сочный зелёный под тёмной темой */
+  --success:        #65f797;
   --success-weak:   color-mix(in srgb, var(--success) 18%, transparent);
 
-  --danger:         #ff665a;    /* мягкий красный */
+  --danger:         #ff665a;
   --danger-weak:    color-mix(in srgb, var(--danger) 18%, transparent);
 
-  /* для тумблера/индикаторов */
   --switch-track:   color-mix(in srgb, var(--card-bg) 80%, #0000);
   --switch-knob:    #ffffff;
 
+  --deal-green-h: 120;
+  --deal-green-s: 60%;
+  --deal-light-start: 50%;
+  --deal-light-end: 20%;
 
-  --deal-green-h: 120;      /* hue (0..360) — зелёный */
-  --deal-green-s: 60%;      /* saturation */
-  --deal-light-start: 50%;  /* самый светлый */
-  --deal-light-end: 20%;    /* самый тёмный */
+  /* ===== CALENDAR TOKENS (dark) ===== */
+  --cal-accent: #7a5bff;
+  --cal-accent-soft: color-mix(in srgb, #7a5bff 16%, transparent);
+  --cal-accent-line: color-mix(in srgb, #7a5bff 80%, transparent);
+
+  --cal-today-bg: rgba(122, 91, 255, 1);
+  --cal-today-text: #000;
+
+  --cal-event-violet-bg: rgba(154, 86, 255, .25);
+  --cal-event-violet-brd: rgba(154, 86, 255, .55);
+  --cal-event-red-bg: rgba(255, 91, 76, .25);
+  --cal-event-red-brd: rgba(255, 91, 76, .6);
+
+  --cal-now-line: var(--cal-accent-line);
+  --cal-now-badge-bg: #000;
+  --cal-now-badge-brd: rgba(122, 91, 255, .5);
 }
 
 /* LIGHT */
@@ -155,10 +169,30 @@
 
   --switch-track:   color-mix(in srgb, #000 6%, #fff);
   --switch-knob:    #ffffff;
+
+  /* ===== CALENDAR TOKENS (light) ===== */
+  --cal-accent: #ff8c5c;
+  --cal-accent-soft: color-mix(in srgb, #ff8c5c 16%, transparent);
+  --cal-accent-line: color-mix(in srgb, #ff8c5c 80%, transparent);
+
+  --cal-today-bg: rgba(255, 140, 92, 1);
+  --cal-today-text: #fff;
+
+  --cal-event-violet-bg: rgba(167, 123, 255, .28);
+  --cal-event-violet-brd: rgba(167, 123, 255, .5);
+  --cal-event-red-bg: rgba(255, 122, 122, .22);
+  --cal-event-red-brd: rgba(255, 122, 122, .45);
+
+  --cal-now-line: var(--cal-accent-line);
+  --cal-now-badge-bg: #fff;
+  --cal-now-badge-brd: rgba(255, 140, 92, .4);
 }
 
 /* плавная смена темы и остальные утилы остаются как были */
-html { font-size: var(--font-base); transition: background .25s ease, color .25s ease; }
+html {
+  font-size: var(--font-base);
+  transition: background .25s ease, color .25s ease;
+}
 
 /* ========= GLOBAL TYPOGRAPHY UTILS ========= */
 .u-text      { font-size: var(--fs-md); line-height: var(--lh-normal); }
@@ -171,8 +205,6 @@ html { font-size: var(--font-base); transition: background .25s ease, color .25s
 .u-btn       { font-size: var(--fs-sm); font-weight: var(--fw-medium); }
 .u-input     { font-size: var(--fs-sm); line-height: var(--lh-normal); }
 
-
-
 /* === Light override: Pastel Glow === */
 :root[data-theme="light"] .inner {
   background: linear-gradient(180deg, #fff7f2 0%, #fff 100%);
@@ -182,7 +214,6 @@ html { font-size: var(--font-base); transition: background .25s ease, color .25s
     inset 0 1px 0 rgba(255, 255, 255, .65);
 }
 
-/* header/footer остаются стеклянными */
 :root[data-theme="light"] .header,
 :root[data-theme="light"] .footer {
   background: linear-gradient(180deg, rgba(255, 247, 242, .97) 0%, rgba(255,255,255,.92) 100%);
@@ -199,7 +230,6 @@ html { font-size: var(--font-base); transition: background .25s ease, color .25s
   transition: border-color .15s, box-shadow .15s;
 }
 
-/* hover/focus: яркий персиковый акцент */
 :root[data-theme="light"] input:hover,
 :root[data-theme="light"] select:hover,
 :root[data-theme="light"] textarea:hover {
@@ -214,7 +244,6 @@ html { font-size: var(--font-base); transition: background .25s ease, color .25s
   outline: none;
 }
 
-/* label подсвечиваем сильнее */
 :root[data-theme="light"] label {
   color: #7a5b55;
 }

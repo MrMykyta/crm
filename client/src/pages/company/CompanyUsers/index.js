@@ -9,22 +9,23 @@ import StatusSelectCell from "../../../components/cells/StatusSelectCell";
 import AddButton from "../../../components/buttons/AddButton/AddButton";
 import InviteUserModal from "../../../components/dialogs/InviteUserModal";
 
-import {
-  inviteMember,
-  updateMember,
-  removeMember,
-  resendInvitation,
-  revokeInvitation,
-} from "../../../api/companyUsers";
 
-
+import { useNavigate } from "react-router-dom";
 import useGridPrefs from "../../../hooks/useGridPrefs";
+
+import {
+  useInviteUserMutation,
+  useRemoveUserMutation,
+  useUpdateUserRoleMutation,
+  useResendInvitationMutation,
+  useRevokeInvitationMutation,
+} from "../../../store/rtk/companyUsersApi";
 
 const ROLE_OPTIONS = [
   { value: "owner",   label: "Владелец" },
   { value: "admin",   label: "Админ" },
   { value: "manager", label: "Менеджер" },
-  { value: "viewer",  label: "Наблюдатель" },
+  { value: "user",    label: "Наблюдатель" },
 ];
 
 const MEMBER_STATUS_OPTIONS = [
@@ -38,7 +39,7 @@ function roleOptions() {
     { value:"owner",   label:"Владелец" },
     { value:"admin",   label:"Админ" },
     { value:"manager", label:"Менеджер" },
-    { value:"viewer",  label:"Наблюдатель" },
+    { value:"user",    label:"Наблюдатель" },
   ];
 }
 
@@ -80,131 +81,135 @@ function Avatar({ name = "", email = "", url = "" }) {
   );
 }
 
-
 export default function CompanyUsers() {
   const [mode, setMode] = useState("members"); // 'members' | 'invites'
   const listRef = useRef(null);
+  const navigate = useNavigate();
 
-  // prefs (ширины/порядок колонок) — единый хук
   const { colWidths, colOrder, onColumnResize, onColumnOrderChange } =
     useGridPrefs("companyUsers", { mode });
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [confirm, setConfirm] = useState(null); // {title, text, onYes}
 
-  const endpoint =
-    mode === "members"
-      ? "/members/{companyId}/users"
-      : "/invitations/companies/{companyId}/invitations";
+  // RTK mutations
+  const [inviteUser]       = useInviteUserMutation();
+  const [removeUser]       = useRemoveUserMutation();
+  const [updateUserRole]   = useUpdateUserRoleMutation();
+  const [resendInvitation] = useResendInvitationMutation();
+  const [revokeInvitation] = useRevokeInvitationMutation();
 
   const columns = useMemo(() => {
     if (mode === "members") {
       return [
         {
-        key: "user",
-        title: "Пользователь",
-        sortable: true,
-        render: (row) => (
-          <div className={s.userCell}>
-            <Avatar
-              name={`${row.firstName || ""} ${row.lastName || ""}`}
-              email={row.email}
-              url={row.avatarUrl}
-            />
-            <div className={s.uCol}>
-              <div className={s.name}>
-                {(row.firstName || row.lastName)
-                  ? `${row.firstName || ""} ${row.lastName || ""}`.trim()
-                  : "—"}
+          key: "user",
+          title: "Пользователь",
+          sortable: true,
+          render: (row) => (
+            <div className={s.userCell}
+              onClick={() => navigate(`/main/users/${row.userId}`)}
+              style={{ cursor: "pointer" }}
+            >
+              <Avatar
+                name={`${row.firstName || ""} ${row.lastName || ""}`}
+                email={row.email}
+                url={row.avatarUrl}
+              />
+              <div className={s.uCol}>
+                <div className={s.name}>
+                  {(row.firstName || row.lastName)
+                    ? `${row.firstName || ""} ${row.lastName || ""}`.trim()
+                    : "—"}
+                </div>
+                <div className={s.muted}>{row.email}</div>
               </div>
-              <div className={s.muted}>{row.email}</div>
             </div>
-          </div>
-        ),
-      },
-      {
-        key: "role",
-        title: "Роль",
-        render: (row) => (
-          <RoleSelectCell
-            className={s.select}
-            value={row.role}
-            options={ROLE_OPTIONS}
-            onChange={async (role) => {
-              await updateMember(row.userId, { role });
-              listRef.current?.refetch?.();
-            }}
-          />
-        ),
-      },
-      {
-        key: "status",
-        title: "Статус",
-        render: (row) => (
-          <StatusSelectCell
-            className={s.select}
-            value={row.status || "active"}
-            options={MEMBER_STATUS_OPTIONS}
-            onChange={async (status) => {
-              await updateMember(row.userId, { status });
-              listRef.current?.refetch?.();
-            }}
-          />
-        ),
-      },
-      {
-        key: "isLead",
-        title: "Лидер отдела",
-        render: (row) => (
-          <span className={row.isLead ? s.yes : s.no}>
-            {row.isLead ? "Да" : "Нет"}
-          </span>
-        ),
-      },
-      {
-        key: "lastLoginAt",
-        title: "Последний вход",
-        render: (row) =>
-          row.lastLoginAt
-            ? new Date(row.lastLoginAt).toLocaleString("ru-RU", {
-                dateStyle: "short",
-                timeStyle: "short",
-              })
-            : "—",
-      },
-      {
-        key: "createdAt",
-        title: "Добавлен",
-        render: (row) =>
-          row.createdAt
-            ? new Date(row.createdAt).toLocaleDateString("ru-RU")
-            : "—",
-      },
-      {
-        key: "actions",
-        title: "Действия",
-        sortable: false,
-        render: (row) => (
-          <button
-            className={s.linkDanger}
-            onClick={() =>
-              setConfirm({
-                title: "Удаление участника",
-                text: `Удалить пользователя ${row.email} из компании?`,
-                onYes: async () => {
-                  await removeMember(row.userId);
-                  setConfirm(null);
-                  listRef.current?.refetch?.();
-                },
-              })
-            }
-          >
-            Удалить
-          </button>
-        ),
-      },
-    ];
-  }
+          ),
+        },
+        {
+          key: "role",
+          title: "Роль",
+          render: (row) => (
+            <RoleSelectCell
+              className={s.select}
+              value={row.role}
+              options={ROLE_OPTIONS}
+              onChange={async (role) => {
+                await updateUserRole({ userId: row.userId, role }).unwrap();
+                listRef.current?.refetch?.();
+              }}
+            />
+          ),
+        },
+        {
+          key: "status",
+          title: "Статус",
+          render: (row) => (
+            <StatusSelectCell
+              className={s.select}
+              value={row.status || "active"}
+              options={MEMBER_STATUS_OPTIONS}
+              onChange={async (status) => {
+                await updateUserRole({ userId: row.userId, role: row.role, status }).unwrap().catch(()=>{});
+                listRef.current?.refetch?.();
+              }}
+            />
+          ),
+        },
+        {
+          key: "isLead",
+          title: "Лидер отдела",
+          render: (row) => (
+            <span className={row.isLead ? s.yes : s.no}>
+              {row.isLead ? "Да" : "Нет"}
+            </span>
+          ),
+        },
+        {
+          key: "lastLoginAt",
+          title: "Последний вход",
+          render: (row) =>
+            row.lastLoginAt
+              ? new Date(row.lastLoginAt).toLocaleString("ru-RU", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                })
+              : "—",
+        },
+        {
+          key: "createdAt",
+          title: "Добавлен",
+          render: (row) =>
+            row.createdAt
+              ? new Date(row.createdAt).toLocaleDateString("ru-RU")
+              : "—",
+        },
+        {
+          key: "actions",
+          title: "Действия",
+          sortable: false,
+          render: (row) => (
+            <button
+              className={s.linkDanger}
+              onClick={() =>
+                setConfirm({
+                  title: "Удаление участника",
+                  text: `Удалить пользователя ${row.email} из компании?`,
+                  onYes: async () => {
+                    await removeUser(row.userId).unwrap();
+                    setConfirm(null);
+                    listRef.current?.refetch?.();
+                  },
+                })
+              }
+            >
+              Удалить
+            </button>
+          ),
+        },
+      ];
+    }
 
     // === INVITES ===
     return [
@@ -222,20 +227,15 @@ export default function CompanyUsers() {
       {
         key: "role",
         title: "Роль",
-        // здесь роль информативно, редактирование роли для инвайта оставим на форму создания
         render: (row) =>
           ROLE_OPTIONS.find((r) => r.value === row.role)?.label || row.role,
       },
-      { 
-        key: "status", 
-        title: "Статус" 
-      },
+      { key: "status", title: "Статус" },
       {
         key: "actions",
         title: "Действие",
         sortable: false,
         render: (row) => {
-          // действия доступны ТОЛЬКО пока статус pending
           if (row.status !== "pending") {
             return <span className={s.muted}>—</span>;
           }
@@ -244,7 +244,7 @@ export default function CompanyUsers() {
               <button
                 className={s.link}
                 onClick={async () => {
-                  await resendInvitation(row.id);
+                  await resendInvitation(row.id).unwrap();
                   alert("Письмо повторно отправлено");
                 }}
               >
@@ -258,7 +258,7 @@ export default function CompanyUsers() {
                     title: "Отзыв приглашения",
                     text: `Отозвать приглашение для ${row.email}?`,
                     onYes: async () => {
-                      await revokeInvitation(row.id);
+                      await revokeInvitation(row.id).unwrap();
                       setConfirm(null);
                       listRef.current?.refetch?.();
                     },
@@ -272,7 +272,7 @@ export default function CompanyUsers() {
         },
       },
     ];
-  }, [mode]);
+  }, [mode, navigate, updateUserRole, removeUser, resendInvitation, revokeInvitation]);
 
   const actions = (
     <div className={s.actions}>
@@ -284,21 +284,27 @@ export default function CompanyUsers() {
     </div>
   );
 
+  // Источник для ListPage:
+  const source = mode === 'members' ? 'companyUsers' : 'companyInvites';
+
   return (
     <div className={s.wrap}>
       <ListPage
         ref={listRef}
+        source={source}
         title={mode === "members" ? "Пользователи" : "Приглашения"}
-        endpoint={endpoint}
-        columns={columns}
         defaultQuery={{ sort: "createdAt", dir: "DESC", limit: 25 }}
+
+        columns={columns}
         actions={actions}
+
         ToolbarComponent={(props) => (
           <FilterToolbar
             {...props}
             mode={mode}
             onModeChange={(nextMode) => {
               setMode(nextMode);
+              // Сбросим фильтры и с первой страницы — ListPage сам перерендерит/рефетчнет:
               props.onChange((q) => ({
                 ...q,
                 page: 1,
@@ -330,22 +336,18 @@ export default function CompanyUsers() {
             ]}
           />
         )}
+
         columnWidths={colWidths}
         onColumnResize={onColumnResize}
         columnOrder={colOrder}
         onColumnOrderChange={onColumnOrderChange}
-        transformItems={(items) => {
-          if (mode !== 'members' || !Array.isArray(items) || items.length < 2) return items;
-          const pr = (s) => (s === 'suspended' ? 1 : 0); // active=0, suspended=1
-          return items.map((it, idx) => ({ it, idx })).sort((a, b) => pr(a.it.status) - pr(b.it.status) || a.idx - b.idx).map(({ it }) => it);
-        }}
       />
 
       {inviteOpen && (
         <InviteUserModal
           roles={ROLE_OPTIONS}
           onSubmit={async (payload) => {
-            await inviteMember(payload);
+            await inviteUser(payload).unwrap();
             setInviteOpen(false);
             setMode("invites");
             setTimeout(() => listRef.current?.refetch?.(), 0);

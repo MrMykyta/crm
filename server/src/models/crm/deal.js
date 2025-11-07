@@ -25,9 +25,9 @@ module.exports = (sequelize, DataTypes) => {
       });
 
 
-      Deal.hasMany(models.Task, { 
-        foreignKey: 'dealId', 
-        as: 'tasks' 
+      Deal.hasMany(models.Task, {
+        foreignKey: { name: 'dealId', field: 'deal_id' },
+        as: 'tasks',
       });
     }
   }

@@ -1,56 +1,56 @@
-// src/pages/user/UserEntityPage/index.jsx
-import { useEffect, useState } from "react";
+// src/pages/users/UserProfilePage/index.jsx
+import { useMemo } from "react";
 import EntityDetailPage from "../../_scaffold/EntityDetailPage";
 import { userSchema, toFormUser, toApiUser } from "../../../schemas/user.schema";
 import UserAvatarHeader from "../../../components/user/UserAvatarHeader";
-import UserDetailTabs from "../UserDetailPage";
+import UserDetailTabs from "../UserDetailTabs";
+import { useGetMeQuery, useUpdateMeMutation } from "../../../store/rtk/userApi";
 
-// предполагаю, что у тебя есть такие API:
-import { getMe, updateMe } from "../../../api/user"; // если другие — замени
+export default function UserProfilePage() {
+  const { data: me, isFetching } = useGetMeQuery();
+  const [updateMe, { isLoading: saving }] = useUpdateMeMutation();
 
-export default function UserEntityPage() {
-  const [base, setBase] = useState(null);
+  // вкладки справа — хук должен вызываться до любых ранних return
+  const tabs = useMemo(
+    () => [
+      { key: "security",      label: "Безопасность" },
+      { key: "appearance",    label: "Внешний вид" },
+      { key: "notifications", label: "Уведомления" },
+      { key: "preferences",   label: "Предпочтения" },
+    ],
+    []
+  );
 
-  useEffect(() => {
-    (async () => {
-      const me = await getMe();
-      setBase(me);
-    })().catch(console.error);
-  }, []);
-
-  if (!base) return null;
-
+  const base = me || null;
   const load = async () => base;
 
   const save = async (_id, payload) => {
-    const saved = await updateMe(payload); // сервер вернёт свежий user
-    setBase(saved);
+    const body = toApiUser(payload);
+    const saved = await updateMe(body).unwrap();
     return saved;
   };
 
+  // ранние возвраты — ТОЛЬКО после всех хуков
+  if (!base && isFetching) return null;
+  if (!base) return null;
+
   return (
     <EntityDetailPage
-    id={"me"}
-    tabs={[
-      { key: "security", label: "Безопасность" },
-      { key: "appearance", label: "Внешний вид" },
-      { key: "notifications", label: "Уведомления" },
-      { key: "preferences", label: "Предпочтения" },
-      
-    ]}
-    schemaBuilder={userSchema}
-    toForm={toFormUser}
-    toApi={toApiUser}
-    load={load}
-    save={save}
-    storageKeyPrefix="user"
-    autosave={{ debounceMs: 500 }}
-    clearDraftOnUnmount
-    leftTop={({ values, onChange }) => (
-      <UserAvatarHeader values={values} onChange={onChange} />
-    )}
-    // 👇 вот это главное
-    RightTabsComponent={UserDetailTabs}
-  />
+      id="me"
+      tabs={tabs}
+      schemaBuilder={userSchema}
+      toForm={toFormUser}
+      toApi={toApiUser}
+      load={load}
+      save={save}
+      storageKeyPrefix="user"
+      autosave={{ debounceMs: 500 }}
+      clearDraftOnUnmount
+      isSaving={saving}
+      leftTop={({ values, onChange }) => (
+        <UserAvatarHeader values={values} onChange={onChange} />
+      )}
+      RightTabsComponent={UserDetailTabs}
+    />
   );
 }

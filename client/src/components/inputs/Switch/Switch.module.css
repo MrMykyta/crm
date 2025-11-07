@@ -1,0 +1,44 @@
+.switch{
+  --w: 50px; --h: 26px;
+  width: var(--w);
+  height: var(--h);
+  border-radius: var(--h);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.15);
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.sm { --w: 50px; --h: 26px; }
+
+.knob{
+  position: absolute;
+  top: 50%;
+  width: calc(var(--h) - 6px);
+  height: calc(var(--h) - 6px);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  transform: translateY(-50%);
+  transition: left .2s ease;
+}
+
+.knobLeft  { left: 3px; }
+.knobRight { left: calc(var(--w) - var(--h) + 3px); }
+
+/* состояния дорожки */
+.allow {
+  background: color-mix(in srgb, var(--success) 35%, var(--card-bg));
+  border-color: color-mix(in srgb, var(--success) 55%, var(--card-brd));
+}
+.deny {
+  background: color-mix(in srgb, var(--danger) 35%, var(--card-bg));
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--card-brd));
+}
+
+.disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  filter: grayscale(25%);
+}

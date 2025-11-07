@@ -29,9 +29,9 @@ module.exports = {
         field: 'last_name'
       },
       role: {
-        type: Sequelize.ENUM('owner','admin','manager','viewer'),
+        type: Sequelize.ENUM('owner','admin','manager','user'),
         allowNull: false,
-        defaultValue: 'viewer'
+        defaultValue: 'user'
       },
       token: {
         type: Sequelize.STRING(200),

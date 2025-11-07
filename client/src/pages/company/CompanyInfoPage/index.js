@@ -1,21 +1,39 @@
-import { useEffect, useState } from 'react';
-import EntityDetailPage from '../../_scaffold/EntityDetailPage';
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
+import EntityDetailPage from "../../_scaffold/EntityDetailPage";
 import AvatarEditable from "../../../components/media/AvatarEditable";
-import { companySchema, toFormCompany, toApiCompany } from '../../../schemas/company.schema';
-import { getCompanyById, updateCompanyById } from '../../../api/company';
-import { uploadFile, attachFromUrl } from '../../../api/uploads';
+import { companySchema, toFormCompany, toApiCompany } from "../../../schemas/company.schema";
+import { useGetCompanyQuery, useUpdateCompanyMutation } from "../../../store/rtk/companyApi";
+import { useUploadFileMutation, useAttachFromUrlMutation } from "../../../store/rtk/uploadApi";
 import { useTopbar } from "../../../Providers/TopbarProvider";
-import styles from './CompanyInfoPage.module.css';
+import styles from "./CompanyInfoPage.module.css";
 
-function useCompanyId() {
-  return localStorage.getItem('companyId');
-}
+function CompanyLogoHeader({ values, onChange, companyId, uploadFile, attachFromUrl, currentUserId }) {
+  const uploader = async (file) => {
+    const res = await uploadFile({
+      ownerType: "company",
+      ownerId: companyId,
+      file,
+      purpose: "avatar",
+      companyId,
+      uploadedBy: currentUserId,
+    }).unwrap();
+    const url = res?.url || res?.data?.url || res?.path || "";
+    return { url };
+  };
 
-function CompanyLogoHeader({ values, onChange, companyId }) {
-  const uploader = (file) =>
-    uploadFile("companies", companyId, file, { purpose: "avatar", companyId });
-  const urlUploader = (url) =>
-    attachFromUrl("companies", companyId, url, { purpose: "avatar", companyId });
+  const urlUploader = async (url) => {
+    const res = await attachFromUrl({
+      ownerType: "company",
+      ownerId: companyId,
+      remoteUrl: url,
+      purpose: "avatar",
+      companyId,
+      uploadedBy: currentUserId,
+    }).unwrap();
+    const out = res?.url || res?.data?.url || res?.path || "";
+    return { url: out };
+  };
 
   return (
     <div className={styles.headerCard}>
@@ -38,34 +56,34 @@ function CompanyLogoHeader({ values, onChange, companyId }) {
 }
 
 const TABS = [
-  { key: 'overview', label: 'Общее' },
-  { key: 'history',  label: 'История изменений' },
+  { key: "overview", label: "Общее" },
+  { key: "history", label: "История изменений" },
 ];
 
 export default function CompanyInfoPage() {
-  const companyId = useCompanyId();
-  const [base, setBase] = useState(null);
-  const { setTitle, setSubtitle, reset } = useTopbar();
+  const { setTitle, reset } = useTopbar();
+  const companyId = useSelector((s) => s.auth.companyId);
+  const currentUserId = useSelector((s) => s.auth.currentUser?.id);
 
+  // ❗️Меняем useMemo -> useEffect, чтобы не сеттить стейт во время рендера
   useEffect(() => {
-    setTitle("Информация о компании");  // можно ключ перевода: 'company.settings'
-    return () => reset();            // при выходе вернуть дефолтное значение
-  }, [setTitle, setSubtitle, reset]);
+    setTitle("Информация о компании");
+    return () => reset();
+    // setTitle/reset приходят из контекста, их достаточно в deps
+  }, [setTitle, reset]);
 
-  useEffect(() => {
-    (async () => {
-      const d = await getCompanyById(companyId);
-      setBase(d);
-    })().catch(console.error);
-  }, [companyId]);
+  const { data: company, isFetching } = useGetCompanyQuery(undefined, { skip: !companyId });
+  const [updateCompany, { isLoading: saving }] = useUpdateCompanyMutation();
+  const [uploadFile] = useUploadFileMutation();
+  const [attachFromUrl] = useAttachFromUrlMutation();
 
-  if (!base) return null;
+  if (!companyId) return null;
+  if (!company && isFetching) return null;
+  if (!company) return null;
 
-  const load = async () => base;
-
+  const load = async () => company;
   const save = async (_id, payload) => {
-    const saved = await updateCompanyById(companyId, payload);
-    setBase(saved);
+    const saved = await updateCompany(payload).unwrap();
     return saved;
   };
 
@@ -73,19 +91,24 @@ export default function CompanyInfoPage() {
     <EntityDetailPage
       id={companyId}
       tabs={TABS}
+      tabsNamespace="company.info"
       schemaBuilder={companySchema}
       toForm={toFormCompany}
       toApi={toApiCompany}
       load={load}
       save={save}
+      isSaving={saving}
       storageKeyPrefix="company"
       autosave={{ debounceMs: 500 }}
       clearDraftOnUnmount
       leftTop={({ values, onChange }) => (
         <CompanyLogoHeader
           companyId={companyId}
-          values={values}        // ← живые значения формы
-          onChange={onChange}    // ← обновляет форму напрямую
+          currentUserId={currentUserId}
+          values={values}
+          onChange={onChange}
+          uploadFile={uploadFile}
+          attachFromUrl={attachFromUrl}
         />
       )}
     />

@@ -5,6 +5,7 @@ import TabBar from "../../components/layout/TabBar";
 import DetailTabs from "../../components/data/DetailTabs";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState, useMemo } from "react";
+import useTabsPrefs from "../../hooks/useTabsPrefs";
 
 export default function EntityDetailPage({
   id,
@@ -18,17 +19,42 @@ export default function EntityDetailPage({
   saveOnExit = true,
   clearDraftOnUnmount = true,
   payloadDeps = [],
-  /** 👉 новый проп: чем рисовать правую колонку; по умолчанию старый DetailTabs */
   RightTabsComponent = DetailTabs,
+
+  /** 👇 уникальный namespace для prefs табов (по странице) */
+  tabsNamespace = "entity.detail",
 }) {
   const { t, i18n } = useTranslation();
 
   const [data, setData] = useState(null);
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
-  const [active, setActive] = useState(tabs?.[0]?.key ?? "overview");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+
+  // prefs табов: порядок+разворачивание
+  const {
+    orderedItems: tabsOrdered,
+    orderKeys,
+    setOrderKeys,
+    expanded,
+    setExpanded,
+  } = useTabsPrefs(tabsNamespace, {
+    items: tabs,
+    defaultExpanded: false,
+    saveDebounceMs: 0, // <-- сразу после DnD шлём на сервер
+    // можно не указывать: дефолт сам прочитает ui.appearance.tabs или appearance.tabs
+    // serverPath: (prefs) => prefs?.ui?.appearance?.tabs?.[tabsNamespace] || prefs?.appearance?.tabs?.[tabsNamespace] || {},
+    // serverMerge: кастом не нужен, дефолт кладёт обратно туда же (ui.appearance или appearance)
+  });
+
+
+  // активный таб — из текущего упорядоченного набора
+  const [active, setActive] = useState(tabsOrdered?.[0]?.key ?? (tabs?.[0]?.key ?? "overview"));
+  useEffect(() => {
+    const exists = tabsOrdered.some(t => t.key === active);
+    if (!exists && tabsOrdered[0]?.key) setActive(tabsOrdered[0].key);
+  }, [tabsOrdered, active]);
 
   const debTimer = useRef(null);
   const inFlight = useRef(false);
@@ -40,7 +66,6 @@ export default function EntityDetailPage({
   const debounceMs = autosave?.debounceMs ?? 500;
 
   const schema = useMemo(() => schemaBuilder(i18n), [schemaBuilder, i18n]);
-
   const stamp = () => new Date().toISOString();
 
   const stableStringify = (obj) => {
@@ -208,10 +233,19 @@ export default function EntityDetailPage({
 
       <div className={styles.right}>
         <div className={styles.tabsSticky}>
-          <TabBar items={tabs} activeKey={active} onChange={setActive} />
+          <TabBar
+            items={tabsOrdered}
+            activeKey={active}
+            onChange={setActive}
+            onReorder={(next) => setOrderKeys(next.map(i => i.key))}
+            expanded={expanded}
+            onExpandedChange={setExpanded}
+            collapsedHeight={40}
+            reserveButtonWidth={44}
+            animationMs={260}
+          />
         </div>
         <div className={styles.panel}>
-          {/* 👉 теперь можно подменять реализацию правой панели */}
           <RightTabsComponent tab={active} data={data} values={values} onChange={onChange} />
         </div>
       </div>

@@ -1,5 +1,10 @@
 const bcrypt = require('bcrypt');
-const { sequelize, User, Company, UserCompany, ContactPoint } = require('../../models');
+const {
+  sequelize,
+  User, Company, UserCompany, CompanyDepartment,
+  ContactPoint,
+  Role, Permission, RolePermission, UserRole, UserPermission
+} = require('../../models');
 const { addContacts } = require('./contactPointService');
 const tokenService = require('../../utils/tokenService');
 
@@ -56,13 +61,12 @@ module.exports.login = async ({ email, password, companyId }, meta = {}) => {
   await user.update({ lastLoginAt: new Date() });
 
   user = await User.findByPk(user.id, {
-    attributes: ['id', 'email', 'firstName', 'lastName', 'isActive', 'lastLoginAt', 'emailVerifiedAt', 'createdAt'],
+    attributes: ['id', 'email', 'firstName', 'lastName', 'isActive', 'lastLoginAt', 'emailVerifiedAt', 'avatarUrl', 'createdAt'],
     include: [{
       model: ContactPoint, 
       as: 'contacts'
     }]
   });
-  console.log('user', user.email);
 
   const phoneRaw = user.contacts.find(c => c.channel == 'phone' && c.isPublic)?.valueRaw || null;
   const phoneNorm = user.contacts.find(c => c.channel == 'phone' && c.isPublic)?.valueNorm || null;
@@ -74,6 +78,7 @@ module.exports.login = async ({ email, password, companyId }, meta = {}) => {
     lastName: user.lastName,
     isActive: user.isActive,
     phoneRaw,
+    avatarUrl: user.avatarUrl,
     phoneNorm,
     emailRaw,
     emailNorm,
@@ -296,4 +301,99 @@ module.exports.findPublicByEmail = async (email) => {
   });
   if (!user) return { exists: false };
   return { exists: true, user: toPublic(user) };
+};
+
+
+/** =========== НОВОЕ: получить пользователя по id (с контекстом компании) =========== */
+exports.getById = async (userId, companyId) => {
+  const user = await User.findByPk(userId, {
+    attributes: ['id','email','firstName','lastName','avatarUrl','isActive','lastLoginAt','createdAt','emailVerifiedAt'],
+    include: [{ model: ContactPoint, as: 'contacts' }],
+  });
+  if (!user) return null;
+
+  // членство
+  const membership = companyId ? await UserCompany.findOne({
+    where: { userId, companyId },
+    include: [{ model: CompanyDepartment, as: 'department', attributes: ['id','name'] }],
+  }) : null;
+
+  // роли из user_roles
+  let rolesRows = companyId ? await UserRole.findAll({
+    where: { userId, companyId },
+    include: [{ model: Role, as: 'role', attributes: ['id','name','description'] }],
+  }) : [];
+
+  // фолбэк по membership.role
+  if (!rolesRows.length && companyId && membership?.role) {
+    const r = await Role.findOne({ where: { companyId, name: membership.role }, attributes: ['id','name','description'] });
+    if (r) rolesRows = [{ role: r }];
+  }
+
+  const roles = rolesRows
+    .map(r => r.role)
+    .filter(Boolean)
+    .map(r => ({ id: r.id, name: r.name, description: r.description || null }));
+
+  // остальное (пермишены) можешь оставить как есть, либо убрать дубли здесь,
+  // так как для прав мы уже даём отдельный summary-эндпоинт.
+
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      avatarUrl: user.avatarUrl || null,
+      isActive: user.isActive,
+      lastLoginAt: user.lastLoginAt,
+      createdAt: user.createdAt,
+      emailVerifiedAt: user.emailVerifiedAt,
+      contacts: user.contacts || [],
+    },
+    membership: membership ? {
+      role: membership.role,
+      status: membership.status,
+      isLead: !!membership.isLead,
+      department: membership.department ? { id: membership.department.id, name: membership.department.name } : null,
+      createdAt: membership.createdAt,
+    } : null,
+    roles,
+  };
+};
+
+/** =========== НОВОЕ: обновить пользователя по id (частичный) =========== */
+exports.updateById = async (userId, companyId, payload = {}) => {
+  const t = await sequelize.transaction();
+  try {
+    const user = await User.findByPk(userId, { transaction: t });
+    if (!user) return null;
+
+    const patch = {};
+    if (payload.firstName !== undefined) patch.firstName = payload.firstName;
+    if (payload.lastName  !== undefined) patch.lastName  = payload.lastName;
+    if (payload.isActive  !== undefined) patch.isActive  = !!payload.isActive;
+    if (payload.password) patch.passwordHash = await bcrypt.hash(payload.password, 10);
+    if (payload.avatarUrl !== undefined) patch.avatarUrl = payload.avatarUrl || null;
+
+    await user.update(patch, { transaction: t });
+
+    // контакты (создание простым путём; при необходимости расширь до upsert)
+    if (companyId && Array.isArray(payload.contacts) && payload.contacts.length) {
+      await addContacts({
+        companyId,
+        ownerType: 'user',
+        ownerId: user.id,
+        contacts: payload.contacts,
+        userId: /* оператор */ null,
+        t,
+      });
+    }
+
+    await t.commit();
+    return this.getById(userId, companyId); // вернём свежее состояние
+  } catch (e) {
+    await t.rollback();
+    throw e;
+  }
 };

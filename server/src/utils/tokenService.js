@@ -88,7 +88,7 @@ async function rotateRefresh(oldToken, companyId, meta = {}) {
   });
   const newAccess = signAccessToken({ userId: payload.sub, activeCompanyId: companyId });
 
-  return { accessToken: newAccess, refreshToken: newRefresh, expiresAt };
+  return { accessToken: newAccess, refreshToken: newRefresh, expiresAt, userId: payload.sub };
 }
 
 module.exports.revokeRefresh = async (tokenOrJti) => {

@@ -6,14 +6,14 @@ import LanguageSwitcher from '../../../components/LanguageSwitcher';
 import ThemeSwitcher from '../../../components/layout/ThemeSwitcher';
 import s from '../../../styles/AuthPage.module.css';
 
-export default function AuthPage({ setUser }) {
+export default function AuthPage() {
   const [tab, setTab] = useState('signin');
   const { t } = useTranslation();
 
   return (
     <div className={s.wrap}>
       <div className={s.card}>
-        <div style={{ display:'flex', justifyContent:'flex-end' }}>
+        <div style={{ display:'flex', justifyContent:'flex-end', gap: 8 }}>
           <LanguageSwitcher />
           <ThemeSwitcher />
         </div>
@@ -35,8 +35,8 @@ export default function AuthPage({ setUser }) {
 
         <div className={s.body}>
           {tab === 'signup'
-            ? <SignUp onLogin={setUser} /> 
-            : <SignIn onSwitch={() => setTab('signup')} onLogin={setUser} />}
+            ? <SignUp />
+            : <SignIn onSwitch={() => setTab('signup')} />}
         </div>
       </div>
     </div>

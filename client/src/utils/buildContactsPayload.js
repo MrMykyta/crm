@@ -1,4 +1,4 @@
-// Стабильная сборка contacts для payload (очистка, сортировка, 1 primary на канал)
+//buildContactsPayload
 export function buildContactsPayload(list = []) {
   const clean = list
     .map(c => ({

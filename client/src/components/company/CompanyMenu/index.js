@@ -1,16 +1,29 @@
 // src/components/company/CompanyMenu/index.jsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Settings, Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { useGetCompanyQuery } from "../../../store/rtk/companyApi";
 import s from "./CompanyMenu.module.css";
 
-export default function CompanyMenu({ company, onClose }) {
+export default function CompanyMenu({ company: companyProp, onClose }) {
   const ref = useRef(null);
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  // быстрый фолбэк: пробуем вытащить --company-avatar-url, если уже прогрето хуком
+  // companyId из Redux
+  const companyId = useSelector((s) => s.auth.companyId);
+  const { data: companyRtk } = useGetCompanyQuery(undefined, {
+    // если companyId ещё не установлен — хук сам пропустит запрос (prepareHeaders не поставит X-Company-Id)
+    // и сделает его, как только setApiSession получит companyId после логина/refresh.
+    skip: !companyId,
+  });
+
+  // итоговый источник данных
+  const company = useMemo(() => companyRtk || companyProp || null, [companyRtk, companyProp]);
+
+  // быстрый фолбэк: CSS-переменная из useBrandAndBackground
   const [cssAvatar, setCssAvatar] = useState(() => {
     try {
       const raw = getComputedStyle(document.documentElement)
@@ -31,7 +44,6 @@ export default function CompanyMenu({ company, onClose }) {
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onEsc);
 
-    // слушаем событие от useBrandAndBackground, чтобы обновить аватар моментально
     const onAvatarReady = (e) => setCssAvatar(e?.detail?.url || "");
     window.addEventListener("company:avatar-ready", onAvatarReady);
 
@@ -50,7 +62,6 @@ export default function CompanyMenu({ company, onClose }) {
   const initials = (name || "")
     .split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join("");
 
-  // порядок фолбэков на случай, если чего-то нет
   const avatar =
     company?.avatarUrl ||
     company?.logoUrl ||

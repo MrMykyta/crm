@@ -1,0 +1,196 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.6vw, 16px);
+}
+
+.row2 {
+  --gap: clamp(14px, 1.8vw, 20px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+}
+.row3 {
+  --gap: clamp(14px, 1.8vw, 20px);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--gap);
+}
+.full {
+  width: 100%;
+}
+
+/* Field */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  color: color-mix(in srgb, var(--muted) 90%, transparent);
+}
+.counter {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: color-mix(in srgb, var(--muted) 80%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 60%, transparent);
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+/* Inputs */
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--input-bg, var(--card-bg)) 96%, transparent),
+    transparent
+  );
+  border: 1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.14s, box-shadow 0.14s, background 0.14s, transform 0.06s;
+  font-size: 14px;
+  line-height: 1.35;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
+}
+.input:hover {
+  border-color: color-mix(in srgb, var(--card-brd) 55%, var(--focus));
+}
+.input:focus {
+  border-color: var(--focus);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--focus) 28%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+}
+.invalid {
+  border-color: #ff7a7a !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #ff7a7a 35%, transparent) !important;
+}
+textarea.input {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.rel {
+  position: relative;
+}
+.padForDot {
+  padding-right: 40px;
+}
+.absDot {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+}
+
+/* Dot switches */
+.dotSwitch {
+  --size: 18px;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, #000 25%, transparent);
+  color: currentColor;
+  cursor: pointer;
+  transition: transform 0.06s, filter 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.dotSwitch:hover {
+  filter: brightness(1.12);
+}
+.dotSwitch:active {
+  transform: translateY(1px);
+}
+.dotInner {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.dotGreen {
+  color: #2bd673;
+}
+.dotGreen[data-on='0'] {
+  opacity: 0.45;
+}
+.dotRed {
+  color: #ff5b5b;
+}
+.dotRed[data-on='0'] {
+  opacity: 0.45;
+}
+
+/* Buttons */
+.btn,
+.btnDel {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.06s;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--shadow-clr, #000) 12%, transparent);
+}
+.btn:hover {
+  background: color-mix(in srgb, var(--sidebar-hover) 80%, transparent);
+  border-color: var(--focus);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btnDel {
+  color: #ff6b6b;
+}
+
+.primary {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  box-shadow:
+    0 8px 24px color-mix(in srgb, var(--primary-start) 24%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.06s;
+}
+.primary:hover {
+  filter: brightness(1.04);
+}
+.primary:active {
+  transform: translateY(1px);
+}
+
+.actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

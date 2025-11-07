@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Bell, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTopbarOptional } from "../../../Providers/TopbarProvider";
+import DebugBadge  from "../../debug/DebugBadge";
 import styles from "./Topbar.module.css";
 import UserMenu from "../UserMenu";
 
@@ -27,17 +28,14 @@ export default function Topbar({
   const inputRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // начальное состояние из CSS var (hook уже успел подгрузить)
   const [avatarUrl, setAvatarUrl] = useState(() =>
     user?.avatarUrl || readCssVarUrl("--user-avatar-url")
   );
 
-  // обновляем, если пользователь сменился
   useEffect(() => {
     if (user?.avatarUrl) setAvatarUrl(user.avatarUrl);
   }, [user?.avatarUrl]);
 
-  // слушаем событие от hook'а
   useEffect(() => {
     const onUserAvatar = (e) => {
       const next = e?.detail?.url;
@@ -47,7 +45,6 @@ export default function Topbar({
     return () => window.removeEventListener("user:avatar-ready", onUserAvatar);
   }, []);
 
-  // сочетание клавиш для поиска
   useEffect(() => {
     const h = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -80,12 +77,9 @@ export default function Topbar({
     <header
       className={styles.topbar}
       style={{
-        insetInlineStart: `var(${
-          collapsed ? "--sidebar-w-collapsed" : "--sidebar-w"
-        })`,
+        insetInlineStart: `var(${collapsed ? "--sidebar-w-collapsed" : "--sidebar-w"})`,
       }}
     >
-      {/* ===== LEFT ===== */}
       <div className={styles.left}>
         <span className={styles.title}>{t(titleToShow)}</span>
         {subtitleToShow && (
@@ -93,7 +87,6 @@ export default function Topbar({
         )}
       </div>
 
-      {/* ===== SEARCH ===== */}
       <div className={styles.searchWrap}>
         <input
           ref={inputRef}
@@ -106,8 +99,8 @@ export default function Topbar({
         </button>
       </div>
 
-      {/* ===== RIGHT ===== */}
       <div className={styles.right}>
+        <DebugBadge />
         <button
           className={styles.iconBtn}
           onClick={onChat}

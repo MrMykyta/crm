@@ -1,9 +1,20 @@
 import { Formik, Form, useField, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { resetPassword } from '../../../api/auth';
 import { useTranslation } from 'react-i18next';
 import s from '../../../styles/formGlass.module.css';
+
+// fetch shim
+async function resetPassword(token, password) {
+  const res = await fetch('/api/auth/reset', {
+    method:'POST',
+    credentials:'include',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ token, password }),
+  });
+  if (!res.ok) throw new Error('reset failed');
+  return res.json().catch(()=>({ ok:true }));
+}
 
 function InputField({ name, label, type='text', autoComplete }) {
   const [field] = useField(name);

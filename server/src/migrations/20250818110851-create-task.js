@@ -1,4 +1,5 @@
 'use strict';
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -7,156 +8,154 @@ module.exports = {
         type: Sequelize.UUID,
         allowNull: false,
         primaryKey: true,
-        defaultValue: Sequelize.UUIDV4
+        defaultValue: Sequelize.UUIDV4,
       },
+
+      // multitenant
       companyId: {
         type: Sequelize.UUID,
         allowNull: false,
         field: 'company_id',
-        references: { 
-          model: 'companies', 
-          key: 'id' 
-        },
+        references: { model: 'companies', key: 'id' },
         onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        onDelete: 'CASCADE',
       },
-      // связь с клиентом (опционально)
-      counterpartyId: {
-        type: Sequelize.UUID,
-        allowNull: true,
-        field: 'counterparty_id',
-        references: { 
-          model: 'counterparties', 
-          key: 'id' 
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
-      },
-      // связь со сделкой (опционально)
-      dealId: {
-        type: Sequelize.UUID,
-        allowNull: true,
-        field: 'deal_id',
-        references: { 
-          model: 'deals', 
-          key: 'id' 
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
-      },
-      title: { 
-        type: Sequelize.STRING(256), 
-        allowNull: false 
-      },
-      description: { 
-        type: Sequelize.TEXT, 
-        allowNull: true 
-      },
-      status: {
-        type: Sequelize.ENUM('pending', 'in_progress', 'done', 'cancelled'),
-        allowNull: false,
-        defaultValue: 'pending'
-      },
-      priority: {
-        type: Sequelize.ENUM('low', 'medium', 'high'),
-        allowNull: false,
-        defaultValue: 'medium'
-      },
-      dueDate: { 
-        type: Sequelize.DATE, 
-        allowNull: true, 
-        field: 'due_date' 
-      },
-      // кто создал
+
+      // автор
       createdBy: {
         type: Sequelize.UUID,
-        allowNull: true,
-        field: 'created_id',
-        references: { 
-          model: 'users', 
-          key: 'id' 
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
-      },
-      // на ком висит задача
-      assigneeId: {
-        type: Sequelize.UUID,
-        allowNull: true,
-        field: 'assignee_id',
-        references: { 
-          model: 'users', 
-          key: 'id' 
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
-      },
-      updatedBy: {
-        type: Sequelize.UUID,
-        allowNull: true,
-        field: 'updated_by',
-        references: { 
-          model: 'users', 
-          key: 'id' 
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
-      },
-      // универсальный владелец (user/department) как у contact_points
-      ownerType: {
-        type: Sequelize.ENUM('user', 'department'),
         allowNull: false,
-        defaultValue: 'user',
-        field: 'owner_type'
+        field: 'created_by',
+        references: { model: 'users', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT',
       },
-      ownerId: {
-        type: Sequelize.UUID,
+
+      // контент
+      title: {
+        type: Sequelize.STRING(300),
+        allowNull: false,
+      },
+      category: {
+        type: Sequelize.STRING(64),        // простая категория-лейбл (потом можно вынести в справочник)
         allowNull: true,
-        field: 'owner_id'
-        // без FK, чтобы не зависеть от точного имени таблицы департаментов
       },
-      createdAt: { 
-        type: Sequelize.DATE, 
-        allowNull: false, 
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
+
+      // статусы
+      status: {
+        type: Sequelize.ENUM('todo', 'in_progress', 'done', 'blocked', 'canceled'),
+        allowNull: false,
+        defaultValue: 'todo',
+      },
+
+      // приоритет 0..100
+      priority: {
+        type: Sequelize.SMALLINT,
+        allowNull: false,
+        defaultValue: 50,
+      },
+
+      // планирование (all-day = если время не задано — дата на весь день)
+      startAt: {
+        type: Sequelize.DATE, // timestamptz
+        allowNull: true,
+        field: 'start_at',
+      },
+      endAt: {
+        type: Sequelize.DATE, // timestamptz
+        allowNull: true,
+        field: 'end_at',
+      },
+      timezone: {
+        type: Sequelize.STRING(64), // 'Europe/Warsaw'
+        allowNull: true,
+      },
+
+      // режимы назначения/наблюдения
+      participantMode: {
+        type: Sequelize.ENUM('none', 'all', 'lists'), // lists = смотрим pivot (users/departments)
+        allowNull: false,
+        defaultValue: 'none',
+        field: 'participant_mode',
+      },
+      watcherMode: {
+        type: Sequelize.ENUM('none', 'all', 'lists'),
+        allowNull: false,
+        defaultValue: 'none',
+        field: 'watcher_mode',
+      },
+
+      // агрегировать общий статус по исполнителям
+      statusAggregate: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'status_aggregate',
+      },
+
+      // связи CRM
+      counterpartyId: {
+        type: Sequelize.UUID,
+        field: 'counterparty_id',
+        allowNull: true,
+        references: { model: 'counterparties', key: 'id' },
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
+      },
+      dealId: {
+        type: Sequelize.UUID,
+        field: 'deal_id',
+        allowNull: true,
+        references: { model: 'deals', key: 'id' },
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
+      },
+
+      // system
+      createdAt: {
+        type: Sequelize.DATE,
+        allowNull: false,
         field: 'created_at',
-        defaultValue: Sequelize.NOW
+        defaultValue: Sequelize.fn('NOW'),
       },
-      updatedAt: { 
-        type: Sequelize.DATE, 
-        allowNull: false, 
+      updatedAt: {
+        type: Sequelize.DATE,
+        allowNull: false,
         field: 'updated_at',
-        defaultValue: Sequelize.NOW
-      }
+        defaultValue: Sequelize.fn('NOW'),
+      },
+      deletedAt: {
+        type: Sequelize.DATE,
+        field: 'deleted_at',
+        allowNull: true,
+      },
     });
 
+    await queryInterface.addIndex('tasks', ['company_id', 'status'], { name: 'tasks_company_status_idx' });
+    await queryInterface.addIndex('tasks', ['company_id', 'created_at'], { name: 'tasks_company_created_idx' });
+    await queryInterface.addIndex('tasks', ['company_id', 'start_at'], { name: 'tasks_company_start_idx' });
+    await queryInterface.addIndex('tasks', ['company_id', 'end_at'], { name: 'tasks_company_end_idx' });
 
-    await queryInterface.addConstraint('tasks', {
-      fields: ['company_id','counterparty_id'],
-      type: 'unique',
-      name: 'uniq_tasks_company'
+    // partial index на активные (не done и не удалённые)
+    await queryInterface.addIndex('tasks', ['company_id', 'start_at'], {
+      name: 'tasks_company_active_partial_idx',
+      where: {
+        deleted_at: null,
+        status: { [Sequelize.Op.ne]: 'done' },
+      },
     });
-    await queryInterface.addIndex('tasks', ['company_id']);
-    await queryInterface.addIndex('tasks', ['counterparty_id']);
-    await queryInterface.addIndex('tasks', ['deal_id']);
-    await queryInterface.addIndex('tasks', ['assignee_id']);
-    await queryInterface.addIndex('tasks', ['status']);
-    await queryInterface.addIndex('tasks', ['priority']);
-    await queryInterface.addIndex('tasks', ['due_date']);
-    await queryInterface.addIndex('tasks', ['created_at']);
   },
 
-  async down(queryInterface, Sequelize) {
-    await queryInterface.removeIndex('tasks', ['created_at']);
-    await queryInterface.removeIndex('tasks', ['due_date']);
-    await queryInterface.removeIndex('tasks', ['priority']);
-    await queryInterface.removeIndex('tasks', ['status']);
-    await queryInterface.removeIndex('tasks', ['assignee_id']);
-    await queryInterface.removeIndex('tasks', ['deal_id']);
-    await queryInterface.removeIndex('tasks', ['counterparty_id']);
-    await queryInterface.removeIndex('tasks', ['company_id']);
+  async down(queryInterface /*, Sequelize */) {
+    await queryInterface.removeIndex('tasks', 'tasks_company_active_partial_idx');
+    await queryInterface.removeIndex('tasks', 'tasks_company_end_idx');
+    await queryInterface.removeIndex('tasks', 'tasks_company_start_idx');
+    await queryInterface.removeIndex('tasks', 'tasks_company_created_idx');
+    await queryInterface.removeIndex('tasks', 'tasks_company_status_idx');
     await queryInterface.dropTable('tasks');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_tasks_status";');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_tasks_priority";');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_tasks_owner_type";');
-  }
+  },
 };

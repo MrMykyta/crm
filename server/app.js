@@ -21,7 +21,14 @@ app.use(
     // crossOriginEmbedderPolicy: false, // раскомментируй, если ломаются воркеры/канвас
   })
 );
-app.use(compression());
+app.use(compression({
+  filter: (req, res) => {
+    // для SSE — НЕЛЬЗЯ сжимать
+    const type = req.headers.accept || '';
+    if (type.includes('text/event-stream')) return false;
+    return compression.filter(req, res);
+  }
+}));
 
 // Небольшой rate-limit для анонимных POST/PUT/DEL (регистрация/логин/верификация)
 app.use(

@@ -1,0 +1,99 @@
+/* Фон на весь экран */
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background:
+    var(--bg-radial-1),
+    var(--bg-radial-2),
+    var(--bg-gradient);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* слой пользовательского фона из ThemeProvider (url) */
+.bg{
+  background-image: var(--custom-bg-layer, none), var(--bg-radial-1), var(--bg-radial-2), var(--bg-gradient);
+}
+
+.bg::before,
+.bg::after {
+  content: "";
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: .35;
+  animation: float 16s ease-in-out infinite;
+}
+.bg::before {
+  background: var(--blob-1);
+  left: -120px;
+  top: -120px;
+}
+@keyframes float {
+  0%   { transform: translateY(0) translateX(0) scale(1); }
+  50%  { transform: translateY(-20px) translateX(10px) scale(1.03); }
+  100% { transform: translateY(0) translateX(0) scale(1); }
+}
+
+.bg::after {
+  background: var(--blob-2);
+  right: -120px;
+  bottom: -120px;
+}
+
+/* ====== Сетка приложения поверх фона ====== */
+.shell {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  transition: grid-template-columns .25s ease;
+  min-height: 100dvh;       /* это норм — каркас всего приложения */
+  width: 100%;
+  color: var(--text);
+}
+.shell.collapsed {
+  grid-template-columns: var(--sidebar-w-collapsed) 1fr;
+}
+
+/* Правая часть (контентная область) */
+.content {
+  position: relative;
+  /* ВАЖНО: не заставляем её быть 100dvh ещё раз */
+  min-height: 0;            /* ← чтобы потомкам можно было overflow'иться */
+  min-width: 0;
+  max-width: 100%;
+  padding-top: calc(var(--topbar-h) + 8px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Внутренняя область страниц */
+.body {
+  width: 100%;
+  /* вот это и тянуло — делаем height, а не min-height */
+  height: calc(100dvh - var(--topbar-h) - 8px);
+  overflow: auto;
+  padding: 16px 20px 24px;
+  box-sizing: border-box;
+
+  /* делаем фон прозрачным, чтобы стекло детей было видно */
+  background: transparent;
+}
+
+/* отключаем шары если есть класс noBlobs */
+.noBlobs::before,
+.noBlobs::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Узкий режим — всегда узкий сайдбар */
+@media (max-width: 1024px){
+  .shell{ grid-template-columns: var(--sidebar-w-collapsed) 1fr; }
+}

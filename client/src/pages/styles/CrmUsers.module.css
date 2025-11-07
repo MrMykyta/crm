@@ -185,3 +185,16 @@
 @media (max-width: 820px){
   .row2{ grid-template-columns:1fr; }
 }
+
+
+
+/* узкая ширина ячейки селекта */
+.cellSelect { width: 180px; }
+
+/* на всякий: точечное давление на триггер внутри */
+.cellSelect :global(.ssd-trigger){
+  min-height:32px;
+  padding:6px 28px 6px 10px;
+  border-radius:10px;
+  background-clip: padding-box; /* убирает артефакт двойного фона */
+}

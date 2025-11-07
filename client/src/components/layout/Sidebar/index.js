@@ -1,15 +1,26 @@
-// src/components/layout/Sidebar.jsx
 import { NavLink, useLocation } from "react-router-dom";
 import { useMemo, useState, useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
 import { MENU } from "../../../config/menu";
-import { getCompanyById } from "../../../api/company";
-import { getActiveCompanyId } from "../../../utils/company";
 import SidebarTooltip from "../SidebarTooltip";
 import CompanyMenu from "../../company/CompanyMenu";
 import styles from "./Sidebar.module.css";
 
-export default function Sidebar({ collapsed = false, onToggle, t }) {
+// RTK Query — данные компании
+import { useGetCompanyQuery } from "../../../store/rtk/companyApi";
+
+export default function Sidebar({ collapsed = false, onToggle, onNavigate, t }) {
   const { pathname } = useLocation();
+  const brandWrapRef = useRef(null);
+
+  // из Redux
+  const companyId = useSelector(s => s.auth?.companyId);
+
+  // подгружаем компанию через RTK Query
+  const { data: company, isFetching: loadingCompany } = useGetCompanyQuery(companyId, {
+    skip: !companyId,
+  });
+
   const [preAvatar, setPreAvatar] = useState(() => {
     try {
       const css = getComputedStyle(document.documentElement)
@@ -20,32 +31,12 @@ export default function Sidebar({ collapsed = false, onToggle, t }) {
     } catch { return ""; }
   });
 
-  // ---- company
-  const [company, setCompany] = useState(null);
-  const [loadingCompany, setLoadingCompany] = useState(true);
-  const [menuCompanyOpen, setMenuCompanyOpen] = useState(false); // <— исправлено/добавлено
-  const brandWrapRef = useRef(null);
+  const [menuCompanyOpen, setMenuCompanyOpen] = useState(false);
 
   useEffect(() => {
     const onReady = (e) => setPreAvatar(e?.detail?.url || "");
     window.addEventListener("company:avatar-ready", onReady);
     return () => window.removeEventListener("company:avatar-ready", onReady);
-  }, []);
-
-  useEffect(() => {
-    const id = getActiveCompanyId();
-    if (!id) {
-      setLoadingCompany(false);
-      return;
-    }
-    (async () => {
-      try {
-        const c = await getCompanyById(id);
-        setCompany(c);
-      } finally {
-        setLoadingCompany(false);
-      }
-    })();
   }, []);
 
   const companyName = company?.shortName || company?.name || "Workspace";
@@ -57,7 +48,6 @@ export default function Sidebar({ collapsed = false, onToggle, t }) {
     .map((w) => w[0]?.toUpperCase())
     .join("");
 
-  // ---- меню сгруппированное
   const sections = useMemo(() => {
     const res = [];
     let current = null;
@@ -99,13 +89,13 @@ export default function Sidebar({ collapsed = false, onToggle, t }) {
             <button
               type="button"
               className={styles.brandBtn}
-              onClick={() => setMenuCompanyOpen((v) => !v)} // <— открываем меню компании
+              onClick={() => setMenuCompanyOpen((v) => !v)}
               title={companyName}
               aria-haspopup="menu"
               aria-expanded={menuCompanyOpen}
             >
               <div className={styles.mark}>
-                { (company?.avatarUrl || preAvatar) ? (
+                {(company?.avatarUrl || preAvatar) ? (
                   <img
                     className={styles.logoImg}
                     src={company?.avatarUrl || preAvatar}
@@ -124,7 +114,6 @@ export default function Sidebar({ collapsed = false, onToggle, t }) {
               )}
             </button>
 
-            {/* Выпадающее меню компании */}
             {menuCompanyOpen && (
               <CompanyMenu
                 company={company}
@@ -157,6 +146,7 @@ export default function Sidebar({ collapsed = false, onToggle, t }) {
                   }
                   onMouseEnter={(e) => showTip(label, e.currentTarget)}
                   onMouseLeave={hideTip}
+                  onClick={() => onNavigate?.(sec.route)}
                 >
                   {Icon ? (
                     <Icon className={styles.icon} size={18} />
@@ -193,6 +183,7 @@ export default function Sidebar({ collapsed = false, onToggle, t }) {
                         }
                         onMouseEnter={(e) => showTip(label, e.currentTarget)}
                         onMouseLeave={hideTip}
+                        onClick={() => onNavigate?.(it.route)}
                       >
                         {Icon ? (
                           <Icon className={styles.icon} size={18} />

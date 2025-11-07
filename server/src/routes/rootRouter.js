@@ -1,12 +1,14 @@
 // src/routes/index.js
 const rootRouter = require('express').Router();
 const { auth } = require('../middleware/auth');
+const { sseRouter } = require('./system/sseRouter');
 
 // ===================SYSTEM====================== 
 rootRouter.use('/acl', auth, require('./system/aclRouter')); 
 rootRouter.use('/attachments', auth, require('./system/attachmentRouter'));
 rootRouter.use('/invitations', require('./system/invitationsRouter'));
-
+rootRouter.use('/system', auth, require('./system/userPreferencesRouter'));
+rootRouter.use('/', sseRouter);
 
 //======================CRM===========================
 rootRouter.use('/users', auth, require('./crm/userRouter')); 
@@ -16,6 +18,7 @@ rootRouter.use('/auth', require('./system/authRouter'));
 rootRouter.use('/departments', auth, require('./crm/departmentRouter')); 
 rootRouter.use('/counterparties', auth, require('./crm/counterpartyRouter')); 
 rootRouter.use('/contact-points', auth, require('./crm/contactPointRouter')); 
+rootRouter.use('/contact', auth, require('./crm/contactRouter')); 
 rootRouter.use('/deals', auth, require('./crm/dealRouter')); 
 rootRouter.use('/tasks', auth, require('./crm/taskRouter')); 
 rootRouter.use('/notes', auth, require('./crm/noteRouter')); 
@@ -93,7 +96,6 @@ rootRouter.use('/wms/picks',         auth, require('./wms/pick.commands.router')
 rootRouter.use('/wms/shipments',     auth, require('./wms/shipment.commands.router'));   // ship item(s), close shipment
 rootRouter.use('/wms/transfers',     auth, require('./wms/transfer.commands.router'));   // execute/complete transfer
 rootRouter.use('/wms/adjustments',   auth, require('./wms/adjustment.commands.router')); // +/- adjust
-rootRouter.use('/system',            auth, require('./system/userPreferencesRouter'));
 
 module.exports = rootRouter;
 

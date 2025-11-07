@@ -20,8 +20,8 @@ module.exports = (sequelize, DataTypes) => {
         as:'company' 
       });
       UserCompany.belongsTo(models.CompanyDepartment, {
-        foreignKey: 'departmentId',
-        as: 'department'
+        foreignKey: { name: 'departmentId', field: 'department_id' },
+        as: 'department',
       });
     }
   }
@@ -43,9 +43,9 @@ module.exports = (sequelize, DataTypes) => {
       field: 'company_id'
     },
     role: {
-      type: DataTypes.ENUM('owner','admin','manager','viewer'),
+      type: DataTypes.ENUM('owner','admin','manager','user'),
       allowNull: false,
-      defaultValue: 'viewer'
+      defaultValue: 'user'
     },
     status: {
       type: DataTypes.ENUM('active', 'invited', 'suspended'),

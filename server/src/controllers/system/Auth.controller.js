@@ -94,11 +94,12 @@ exports.refresh = async (req, res) => {
   try {
     const ref = req.body.refreshToken;
     const companyId = req.body.companyId;
-    const { accessToken, refreshToken } = await tokenService.rotateRefresh(ref, companyId, {
+    const { accessToken, refreshToken, userId } = await tokenService.rotateRefresh(ref, companyId, {
       userAgent: req.headers['user-agent'],
       ip: req.ip
     });
-    res.status(200).send({accessToken, refreshToken}); // { accessToken, refreshToken, expiresAt }
+    const user = await userService.getMe(userId);
+    res.status(200).send({accessToken, refreshToken, user}); // { accessToken, refreshToken, expiresAt }
   } catch (e) { 
     res.status(401).send({ error: e.message }); 
 }};

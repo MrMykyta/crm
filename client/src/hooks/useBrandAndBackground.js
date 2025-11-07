@@ -1,8 +1,9 @@
-// hooks/useBrandAndBackground.js
 import { useEffect, useRef } from "react";
-import { getCompanyById } from "../api/company";
-import { getMe } from "../api/user"; // нужен лёгкий /me
 
+/**
+ * Без axios и без RTK-хуков: берём токен/компанию из window.__AUTH_TOKEN__/__COMPANY_ID__,
+ * которые устанавливаются в setApiSession(). Делаем fetch напрямую.
+ */
 export default function useBrandAndBackground(
   bgUrl,
   { companyId, initialAvatarUrl, initialUserAvatarUrl } = {}
@@ -29,7 +30,6 @@ export default function useBrandAndBackground(
     };
   }, [bgUrl]);
 
-  // helper — загрузить картинку и выставить css var + событие
   const ensureImage = (url, cssVar, eventName, refHolder) =>
     new Promise((resolve) => {
       if (!url) return resolve(false);
@@ -52,16 +52,22 @@ export default function useBrandAndBackground(
     (async () => {
       if (stopped) return;
 
-      // приоритет: явный initialAvatarUrl → companyId.fetch
       if (initialAvatarUrl) {
         await ensureImage(initialAvatarUrl, "--company-avatar-url", "company:avatar-ready", companyAvatarImgRef);
         return;
       }
-      if (companyId) {
+      const cid = companyId || window.__COMPANY_ID__;
+      const token = window.__AUTH_TOKEN__;
+      if (cid && token) {
         try {
-          const c = await getCompanyById(companyId);
-          if (!stopped && c?.avatarUrl) {
-            await ensureImage(c.avatarUrl, "--company-avatar-url", "company:avatar-ready", companyAvatarImgRef);
+          const res = await fetch(
+            `${(process.env.REACT_APP_API_URL?.replace(/\/+$/, '') || 'http://localhost:5001')}/api/companies/${encodeURIComponent(cid)}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const c = await res.json().catch(() => null);
+          const url = c?.avatarUrl || c?.data?.avatarUrl;
+          if (!stopped && url) {
+            await ensureImage(url, "--company-avatar-url", "company:avatar-ready", companyAvatarImgRef);
           }
         } catch {}
       }
@@ -74,19 +80,16 @@ export default function useBrandAndBackground(
     };
   }, [companyId, initialAvatarUrl]);
 
-  // ---------- Аватар пользователя (НОВОЕ) ----------
+  // ---------- Аватар пользователя ----------
   useEffect(() => {
     let stopped = false;
     (async () => {
       if (stopped) return;
 
-      // 1) берём из пропса, если передали
       if (initialUserAvatarUrl) {
         await ensureImage(initialUserAvatarUrl, "--user-avatar-url", "user:avatar-ready", userAvatarImgRef);
         return;
       }
-
-      // 2) попробуем из localStorage (быстро и без сети)
       try {
         const raw = localStorage.getItem("user");
         const u = raw ? JSON.parse(raw) : null;
@@ -97,9 +100,15 @@ export default function useBrandAndBackground(
         }
       } catch {}
 
-      // 3) как fallback — лёгкий запрос /me
+      // Лёгкий /me при наличии токена
       try {
-        const me = await getMe().catch(() => null);
+        const token = window.__AUTH_TOKEN__;
+        if (!token) return;
+        const res = await fetch(
+          `${(process.env.REACT_APP_API_URL?.replace(/\/+$/, '') || 'http://localhost:5001')}/api/users/me`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const me = await res.json().catch(() => null);
         const apiUrl = me?.avatarUrl || me?.avatar || null;
         if (apiUrl) {
           await ensureImage(apiUrl, "--user-avatar-url", "user:avatar-ready", userAvatarImgRef);

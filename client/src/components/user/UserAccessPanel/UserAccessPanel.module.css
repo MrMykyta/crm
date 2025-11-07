@@ -1,0 +1,86 @@
+.panel { display:flex; flex-direction:column; gap:16px; }
+
+/* Заголовки/блоки */
+.h3 { margin:0 0 4px; font-size:18px; font-weight:800; }
+.block { border:1px solid var(--card-brd); border-radius:12px; padding:12px;
+         background: color-mix(in srgb,var(--card-bg) 92%, transparent); }
+.blockHead { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
+.blockTitle { font-weight:700; }
+.input { min-width:200px; padding:8px 10px; border:1px solid var(--card-brd);
+         border-radius:10px; background:var(--input-bg); color:var(--text); }
+
+/* Роли */
+.roles { display:flex; flex-wrap:wrap; gap:8px; }
+.roleChip { padding:6px 10px; border-radius:999px; border:1px solid var(--card-brd);
+            background:var(--card-bg); color:var(--text); cursor:pointer; }
+.roleActive { background: color-mix(in srgb, var(--primary-start) 22%, transparent);
+              border-color: var(--focus); }
+
+/* Аккордеон */
+.acc { border:1px dashed var(--card-brd); border-radius:12px; margin-top:8px; }
+.accHead { width:100%; display:flex; align-items:center; gap:10px; justify-content:space-between;
+           padding:10px 12px; border:none; background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+           color:var(--text); border-radius:12px; cursor:pointer; }
+.caret { margin-right:8px; opacity:.7; }
+.accTitle { flex:1; text-align:center; font-weight:700; }
+.accCount { padding:2px 8px; border-radius:999px; border:1px solid var(--card-brd);
+            background: color-mix(in srgb, var(--primary-start) 18%, transparent); }
+.accBody { padding:10px 8px 12px; }
+
+/* Пермишены */
+.permList { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.permRow  { display:grid; grid-template-columns: 1fr auto auto; gap:12px; align-items:center;
+            padding:8px 10px; border:1px dashed var(--card-brd); border-radius:10px; }
+.permName { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* Бейджи */
+.badges { display:flex; gap:6px; align-items:center; }
+.badge { font-size:11px; padding:2px 6px; border-radius:999px; border:1px solid var(--card-brd);
+         background: color-mix(in srgb, var(--card-bg) 90%, transparent); color: var(--text); }
+.badgeRole { background: color-mix(in srgb, #37457a 35%, var(--card-bg)); }
+.badgeUser { background: color-mix(in srgb, #2d7a45 35%, var(--card-bg)); }
+.badgeDeny { background: color-mix(in srgb, #7a2d2d 35%, var(--card-bg)); }
+
+/* Тумблер */
+/* двухпозиционный переключатель */
+.sw {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s ease, border-color .2s ease;
+  cursor: pointer;
+}
+.knob {
+  position: absolute;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,.35);
+  transition: transform .2s ease;
+}
+
+/* состояния */
+.allow {
+  background: #3f6b47;                 /* зелёный фон */
+  border-color: color-mix(in srgb, var(--success) 60%, var(--card-brd));
+}
+.allow .knob {
+  transform: translateX(20px);         /* вправо */
+}
+
+.deny {
+  background: #6b3d3d;                 /* красный фон */
+  border-color: color-mix(in srgb, var(--danger) 60%, var(--card-brd));
+}
+.deny .knob {
+  transform: translateX(-20px);        /* влево */
+}
+/* Прочее */
+.empty { padding:8px 10px; color:var(--muted); }

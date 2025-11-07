@@ -2,24 +2,41 @@ const taskService = require('../../services/crm/taskService');
 
 module.exports.list = async (req, res) => {
   try {
+    const companyId = req.params.companyId;
     const { rows, count, page, limit } = await taskService.list({
       query: req.query,
+      companyId,
       user: req.user,
     });
-    res.status(200).send({ data: rows, meta: { count, page, limit } });
+    res.status(200).send({ items: rows, meta: { count, page, limit } });
   } catch (e) {
     console.error('[TaskController.list]', e);
     res.status(400).send({ error: e.message });
   }
 };
 
+module.exports.listCalendar = async (req, res) => {
+  try {
+    const companyId = req.params.companyId;
+    const data = await taskService.listCalendar({
+      query: req.query,
+      companyId,
+      user: req.user,
+    });
+    res.status(200).send({ data });
+  } catch (e) {
+    console.error('[TaskController.listCalendar]', e);
+    res.status(400).send({ error: e.message });
+  }
+};
+
 module.exports.getById = async (req, res) => {
   try {
-    const item = await taskService.getById(req.params.id);
-    if (!item) {
-        return res.status(404);
-    }
-    res.status(200).send(item);
+    const companyId = req.params.companyId;
+    const id = req.params.id;
+    const item = await taskService.getById({ id, companyId, user: req.user });
+    if (!item) return res.status(404).send({ error: 'Task not found' });
+    res.status(200).send({ data: item });
   } catch (e) {
     console.error('[TaskController.getById]', e);
     res.status(400).send({ error: e.message });
@@ -28,12 +45,13 @@ module.exports.getById = async (req, res) => {
 
 module.exports.create = async (req, res) => {
   try {
-    const payload = { ...req.body };
-    if (req.user?.companyId && !payload.companyId) {
-      payload.companyId = req.user.companyId;
-    }
-    const created = await taskService.create(payload);
-    res.status(201).send(created);
+    const companyId = req.params.companyId;
+    const item = await taskService.create({
+      payload: req.body,
+      companyId,
+      user: req.user,
+    });
+    res.status(201).send({ data: item });
   } catch (e) {
     console.error('[TaskController.create]', e);
     res.status(400).send({ error: e.message });
@@ -42,11 +60,15 @@ module.exports.create = async (req, res) => {
 
 module.exports.update = async (req, res) => {
   try {
-    const updated = await taskService.update(req.params.id, req.body);
-    if (!updated) {
-        return res.sendStatus(404);
-    }
-    res.status(200).send(updated);
+    const companyId = req.params.companyId;
+    const id = req.params.id;
+    const item = await taskService.update({
+      id,
+      payload: req.body,
+      companyId,
+      user: req.user,
+    });
+    res.status(200).send({ data: item });
   } catch (e) {
     console.error('[TaskController.update]', e);
     res.status(400).send({ error: e.message });
@@ -55,13 +77,25 @@ module.exports.update = async (req, res) => {
 
 module.exports.remove = async (req, res) => {
   try {
-    const n = await taskService.remove(req.params.id);
-    if (!n) {
-        return res.sendStatus(404);
-    }
-    res.status(204).send({ deleted: n });
+    const companyId = req.params.companyId;
+    const id = req.params.id;
+    await taskService.remove({ id, companyId, user: req.user });
+    res.status(204).send();
   } catch (e) {
     console.error('[TaskController.remove]', e);
+    res.status(400).send({ error: e.message });
+  }
+};
+
+module.exports.restore = async (req, res) => {
+  try {
+    const companyId = req.params.companyId;
+    const id = req.params.id;
+    const item = await taskService.restore({ id, companyId, user: req.user });
+    if (!item) return res.status(404).send({ error: 'Task not found' });
+    res.status(200).send({ data: item });
+  } catch (e) {
+    console.error('[TaskController.restore]', e);
     res.status(400).send({ error: e.message });
   }
 };

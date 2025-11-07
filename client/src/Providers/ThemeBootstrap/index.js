@@ -1,4 +1,3 @@
-// Вызвать САМЫМ ПЕРВЫМ в index.js до ReactDOM.render
 export function bootstrapThemeFromLocalStorage() {
   try {
     const mode = localStorage.getItem('theme') || 'auto';
@@ -25,7 +24,7 @@ export function bootstrapThemeFromLocalStorage() {
     const bg = localStorage.getItem('ui.background');
     if (bg) {
       const { url } = JSON.parse(bg);
-      if (url) document.body.style.setProperty('--custom-bg-url', `url("${url}")`);
+      if (url) document.documentElement.style.setProperty('--custom-bg-layer', `url("${url}")`);
     }
   } catch {}
 }

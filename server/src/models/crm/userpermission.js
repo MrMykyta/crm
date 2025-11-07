@@ -15,10 +15,14 @@ module.exports = (sequelize, DataTypes) => {
         as: 'user',       
         foreignKey: 'userId' 
       });
+      UserPermission.belongsTo(models.Company, { 
+        as: 'company', 
+        foreignKey: 'companyId' 
+      });
       UserPermission.belongsTo(models.Permission, { 
         as: 'permission', 
         foreignKey: 'permissionId' 
-      }); // 👈 ВАЖНО
+      });
     }
   }
   UserPermission.init({
@@ -31,6 +35,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       allowNull: false,
       field: 'permission_id'
+    },
+    companyId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: 'company_id'
+    },
+    effect: {
+      type: DataTypes.ENUM('allow', 'deny'),
+      defaultValue: 'allow',
+      allowNull: false
     }
   }, {
     sequelize,
