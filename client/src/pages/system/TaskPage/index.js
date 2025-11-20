@@ -43,7 +43,7 @@ export default function TasksPage(){
 
   const columns = useMemo(()=>[
     {
-      key:'title', title:t('crm.task.table.title'), sortable:true, width:360,
+      key:'title', title:t('crm.task.fields.title'), sortable:true, width:360,
       render:(r)=> (
         <LinkCell
           primary={r.title}
@@ -53,9 +53,9 @@ export default function TasksPage(){
         />
       )
     },
-    { key:'status', title:t('crm.task.table.status'), sortable:true, width:160, render:(r)=> t(`crm.task.enums.status.${r.status}`) },
-    { key:'priority', title:t('crm.task.table.priority'), sortable:true, width:120 },
-    { key:'schedule', title:t('crm.task.table.schedule'), width:260, render:(r)=>{
+    { key:'status', title:t('crm.task.fields.status'), sortable:true, width:160, render:(r)=> t(`crm.task.enums.status.${r.status}`) },
+    { key:'priority', title:t('crm.task.fields.priority'), sortable:true, width:120 },
+    { key:'schedule', title:t('crm.task.fields.schedule'), width:260, render:(r)=>{
         const s = r.startAt ? new Date(r.startAt) : null;
         const e = r.endAt ? new Date(r.endAt) : null;
         if(!s && !e) return '—';
@@ -63,7 +63,7 @@ export default function TasksPage(){
         return e ? `${fmt(s)} — ${fmt(e)}` : fmt(s);
       }
     },
-    { key:'assignees', title:t('crm.task.table.assignees'), width:200, render:(r)=>{
+    { key:'assignees', title:t('crm.task.fields.assignees'), width:200, render:(r)=>{
         const users = Array.isArray(r.userParticipants) ? r.userParticipants.filter(u=>u?.TaskUserParticipant?.role==='assignee') : [];
         if (!users.length) return '—';
         const names = users
@@ -76,8 +76,8 @@ export default function TasksPage(){
 
   const defaultQuery = useMemo(()=>({ sort:'createdAt', dir:'DESC', limit:25 }), []);
   const actions = useMemo(()=> (
-    <AddButton onClick={()=>setOpen(true)} title={t('crm.task.actions.addTask')}>
-      {t('crm.task.actions.addTask')}
+    <AddButton onClick={()=>setOpen(true)} title={t('crm.task.addTask')}>
+      {t('crm.task.addTask')}
     </AddButton>
   ), [t]);
 
@@ -94,7 +94,7 @@ export default function TasksPage(){
     <>
       <ListPage
         ref={listRef}
-        title={t('crm.task.titles.tasks')}
+        title={t('crm.task.title')}
         source="tasks"
         columns={columns}
         defaultQuery={defaultQuery}
@@ -107,9 +107,9 @@ export default function TasksPage(){
           <FilterToolbar
             {...props}
             controls={[
-              { type:'search', key:'search', placeholder: t('crm.task.filters.searchPlaceholder'), debounce:400 },
+              { type:'search', key:'search', placeholder: t('crm.task.searchPlaceholder'), debounce:400 },
               { type:'select', key:'status', label:t('crm.task.fields.status'), options:[
-                { value:'', label:t('common.all') },
+                { value:'', label:t('common.selectAll') },
                 ...TASK_STATUS.map(v=>({ value:v, label:t(`crm.task.enums.status.${v}`) }))
               ]},
               { type:'dateRange', key:'range', fromKey:'from', toKey:'to', label:t('crm.task.filters.range') },
@@ -118,7 +118,7 @@ export default function TasksPage(){
         )}
       />
 
-      <Modal open={open} onClose={()=>setOpen(false)} title={t('crm.task.dialogs.newTask')} size="lg" footer={footer}>
+      <Modal open={open} onClose={()=>setOpen(false)} title={t('crm.task.newTask')} size="lg" footer={footer}>
         <TaskForm
           id="task-create-form"
           loading={saving}

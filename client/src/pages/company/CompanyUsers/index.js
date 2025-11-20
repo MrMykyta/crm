@@ -4,11 +4,9 @@ import ListPage from "../../../components/data/ListPage";
 import s from "../../styles/CrmUsers.module.css";
 import FilterToolbar from "../../../components/filters/FilterToolbar";
 import ConfirmDialog from "../../../components/dialogs/ConfirmDialog";
-import RoleSelectCell from "../../../components/cells/RoleSelectCell";
-import StatusSelectCell from "../../../components/cells/StatusSelectCell";
 import AddButton from "../../../components/buttons/AddButton/AddButton";
 import InviteUserModal from "../../../components/dialogs/InviteUserModal";
-
+import RadixSelect from "../../../components/inputs/RadixSelect"; // ← новый простой select
 
 import { useNavigate } from "react-router-dom";
 import useGridPrefs from "../../../hooks/useGridPrefs";
@@ -131,10 +129,11 @@ export default function CompanyUsers() {
           key: "role",
           title: "Роль",
           render: (row) => (
-            <RoleSelectCell
+            <RadixSelect
               className={s.select}
               value={row.role}
               options={ROLE_OPTIONS}
+              placeholder="Роль"
               onChange={async (role) => {
                 await updateUserRole({ userId: row.userId, role }).unwrap();
                 listRef.current?.refetch?.();
@@ -146,10 +145,11 @@ export default function CompanyUsers() {
           key: "status",
           title: "Статус",
           render: (row) => (
-            <StatusSelectCell
+            <RadixSelect
               className={s.select}
               value={row.status || "active"}
               options={MEMBER_STATUS_OPTIONS}
+              placeholder="Статус"
               onChange={async (status) => {
                 await updateUserRole({ userId: row.userId, role: row.role, status }).unwrap().catch(()=>{});
                 listRef.current?.refetch?.();
@@ -304,7 +304,6 @@ export default function CompanyUsers() {
             mode={mode}
             onModeChange={(nextMode) => {
               setMode(nextMode);
-              // Сбросим фильтры и с первой страницы — ListPage сам перерендерит/рефетчнет:
               props.onChange((q) => ({
                 ...q,
                 page: 1,

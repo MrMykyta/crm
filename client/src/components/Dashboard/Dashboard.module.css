@@ -15,7 +15,7 @@
 
 /* карточка */
 .card{
-  height: calc(100% - 12px * 2); /* высота карточки с учетом отступов */
+  height: 100%; /* высота карточки с учетом отступов */
   position: relative;
   background: var(--card-bg);
   border: 1px solid var(--card-brd);

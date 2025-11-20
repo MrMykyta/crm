@@ -1,16 +1,9 @@
+// src/components/modals/InviteUserModal/index.jsx
 import { useEffect, useRef, useState, useMemo } from "react";
 import Modal from "../../Modal";
-import RoleSelectCell from "../../cells/RoleSelectCell";
+import RadixSelect from "../../../components/inputs/RadixSelect";
 import s from "../../../pages/styles/CrmUsers.module.css";
-
-// fetch shim: lookup by email
-async function lookupUserByEmail(email) {
-  const res = await fetch(`/api/users/lookup?email=${encodeURIComponent(email)}`, {
-    credentials:'include'
-  });
-  if (!res.ok) return { exists:false };
-  return res.json();
-}
+import { useLazyLookupUserByEmailQuery } from "../../../store/rtk/userApi";
 
 export default function InviteUserModal({ roles, onSubmit, onClose }) {
   const [form, setForm] = useState({
@@ -30,6 +23,9 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
 
   const timerRef = useRef(null);
   const abortRef = useRef({ aborted: false });
+
+  // lazy-lookup через RTK Query → уйдёт на /api/users/lookup?email=...
+  const [triggerLookup] = useLazyLookupUserByEmailQuery();
 
   const isEmail = useMemo(() => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
@@ -70,7 +66,7 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
     timerRef.current = setTimeout(async () => {
       setChecking(true);
       try {
-        const res = await lookupUserByEmail(value);
+        const res = await triggerLookup(value).unwrap(); // { exists, user? }
         if (abortRef.current.aborted) return;
 
         const found = !!res?.exists;
@@ -87,7 +83,7 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
         }
       } catch (e) {
         if (!abortRef.current.aborted) {
-          setErr(e?.message || "Ошибка проверки e-mail");
+          setErr(e?.data?.error || e?.message || "Ошибка проверки e-mail");
           setExists(false);
         }
       } finally {
@@ -191,7 +187,7 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
 
           <label className={s.label}>
             Роль
-            <RoleSelectCell
+            <RadixSelect
               className={s.select}
               value={form.role}
               options={roles}

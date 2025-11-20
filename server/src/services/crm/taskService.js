@@ -1,13 +1,24 @@
 // services/crm/taskService.js
-'use strict';
+"use strict";
 
-const { Op, fn, col, literal, Sequelize } = require('sequelize');
-const { Task, User, CompanyDepartment, TaskUserParticipant, TaskDepartmentParticipant, TaskContact, Contact, Counterparty, Deal } = require('../../models');
+const { Op } = require("sequelize");
+const {
+  Task,
+  User,
+  CompanyDepartment,
+  TaskUserParticipant,
+  TaskDepartmentParticipant,
+  TaskContact,
+  Contact,
+  Counterparty,
+  Deal,
+} = require("../../models");
+const notificationService = require("../system/notificationService");
 
 const PAGE = 1;
 const LIMIT = 20;
 
-const STATUS_VALUES = ['todo','in_progress','done','blocked','canceled'];
+const STATUS_VALUES = ["todo", "in_progress", "done", "blocked", "canceled"];
 const MEMBER_STATUS_VALUES = STATUS_VALUES;
 
 function parsePagination(query) {
@@ -26,19 +37,20 @@ function buildListWhere({ companyId, query }) {
   // по дате (пересечение с интервалом)
   // ?date=2025-11-05  или ?from=...&to=...
   const from = query.from ? new Date(query.from) : null;
-  const to   = query.to   ? new Date(query.to)   : null;
+  const to = query.to ? new Date(query.to) : null;
   if (from && to) {
     // (start < to) AND (end > from) — пересечение интервалов
     where[Op.and] = [
       { [Op.or]: [{ startAt: null }, { startAt: { [Op.lt]: to } }] },
-      { [Op.or]: [{ endAt: null },   { endAt: { [Op.gt]: from } }] },
+      { [Op.or]: [{ endAt: null }, { endAt: { [Op.gt]: from } }] },
     ];
   } else if (query.date) {
     const d = new Date(query.date);
-    const next = new Date(d); next.setDate(d.getDate() + 1);
+    const next = new Date(d);
+    next.setDate(d.getDate() + 1);
     where[Op.and] = [
-      { [Op.or]: [{ startAt: null }, { startAt: { [Op] : { lt: next } } }] },
-      { [Op.or]: [{ endAt: null },   { endAt: { [Op] : { gt: d } } }] },
+      { [Op.or]: [{ startAt: null }, { startAt: { [Op]: { lt: next } } }] },
+      { [Op.or]: [{ endAt: null }, { endAt: { [Op]: { gt: d } } }] },
     ];
   }
 
@@ -46,51 +58,59 @@ function buildListWhere({ companyId, query }) {
 }
 
 function pickAssigneeIds(payload) {
-  const ids = Array.isArray(payload.assigneeIds) ? payload.assigneeIds.filter(Boolean) : [];
+  const ids = Array.isArray(payload.assigneeIds)
+    ? payload.assigneeIds.filter(Boolean)
+    : [];
   return [...new Set(ids)];
 }
 function pickWatcherIds(payload) {
-  const ids = Array.isArray(payload.watcherIds) ? payload.watcherIds.filter(Boolean) : [];
+  const ids = Array.isArray(payload.watcherIds)
+    ? payload.watcherIds.filter(Boolean)
+    : [];
   return [...new Set(ids)];
 }
 function pickDepartmentIds(payload) {
-  const ids = Array.isArray(payload.departmentIds) ? payload.departmentIds.filter(Boolean) : [];
+  const ids = Array.isArray(payload.departmentIds)
+    ? payload.departmentIds.filter(Boolean)
+    : [];
   return [...new Set(ids)];
 }
 function pickContactIds(payload) {
-  const ids = Array.isArray(payload.contactIds) ? payload.contactIds.filter(Boolean) : [];
+  const ids = Array.isArray(payload.contactIds)
+    ? payload.contactIds.filter(Boolean)
+    : [];
   return [...new Set(ids)];
 }
 
 async function expandAllUsersForCompany(companyId) {
   // можно ограничить активными/сотрудниками компании
   const rows = await User.findAll({
-    attributes: ['id'],
+    attributes: ["id"],
     where: { companyId, isActive: true },
     raw: true,
   });
-  return rows.map(r => r.id);
+  return rows.map((r) => r.id);
 }
 
-async function ensureParticipants({ task, companyId, payload, isUpdate }) {
+async function ensureParticipants({ task, companyId, payload }) {
   // participantMode: 'none' | 'all' | 'lists'
   // watcherMode:     'none' | 'all' | 'lists'
   const { participantMode, watcherMode } = task;
 
   let assigneeIds = [];
-  let watcherIds  = [];
+  let watcherIds = [];
   let departmentIds = [];
 
-  if (participantMode === 'all') {
+  if (participantMode === "all") {
     assigneeIds = await expandAllUsersForCompany(companyId);
-  } else if (participantMode === 'lists') {
+  } else if (participantMode === "lists") {
     assigneeIds = pickAssigneeIds(payload);
     departmentIds = pickDepartmentIds(payload);
   } // none → пусто
 
-  if (watcherMode === 'all') {
+  if (watcherMode === "all") {
     watcherIds = await expandAllUsersForCompany(companyId);
-  } else if (watcherMode === 'lists') {
+  } else if (watcherMode === "lists") {
     watcherIds = pickWatcherIds(payload);
   }
 
@@ -100,10 +120,20 @@ async function ensureParticipants({ task, companyId, payload, isUpdate }) {
 
   // users
   const userRows = [
-    ...assigneeIds.map(uid => ({ taskId: task.id, userId: uid, role: 'assignee', memberStatus: 'todo' })),
+    ...assigneeIds.map((uid) => ({
+      taskId: task.id,
+      userId: uid,
+      role: "assignee",
+      memberStatus: "todo",
+    })),
     ...watcherIds
-      .filter(uid => !assigneeIds.includes(uid))
-      .map(uid => ({ taskId: task.id, userId: uid, role: 'watcher', memberStatus: 'todo' })),
+      .filter((uid) => !assigneeIds.includes(uid))
+      .map((uid) => ({
+        taskId: task.id,
+        userId: uid,
+        role: "watcher",
+        memberStatus: "todo",
+      })),
   ];
   if (userRows.length) {
     await TaskUserParticipant.bulkCreate(userRows, { ignoreDuplicates: true });
@@ -111,8 +141,14 @@ async function ensureParticipants({ task, companyId, payload, isUpdate }) {
 
   // departments
   if (departmentIds.length) {
-    const depRows = departmentIds.map(did => ({ taskId: task.id, departmentId: did, role: 'assignee' }));
-    await TaskDepartmentParticipant.bulkCreate(depRows, { ignoreDuplicates: true });
+    const depRows = departmentIds.map((did) => ({
+      taskId: task.id,
+      departmentId: did,
+      role: "assignee",
+    }));
+    await TaskDepartmentParticipant.bulkCreate(depRows, {
+      ignoreDuplicates: true,
+    });
   }
 }
 
@@ -121,7 +157,7 @@ async function ensureContacts({ task, payload }) {
   await TaskContact.destroy({ where: { taskId: task.id } });
   if (contactIds.length) {
     await TaskContact.bulkCreate(
-      contactIds.map(id => ({ taskId: task.id, contactId: id })),
+      contactIds.map((id) => ({ taskId: task.id, contactId: id })),
       { ignoreDuplicates: true }
     );
   }
@@ -132,27 +168,29 @@ function computeAggregatedStatus(memberStatuses, aggregateFlag) {
 
   if (aggregateFlag) {
     // ВСЕ должны быть 'done'
-    const allDone = memberStatuses.every(s => s === 'done');
-    return allDone ? 'done' : 'in_progress';
+    const allDone = memberStatuses.every((s) => s === "done");
+    return allDone ? "done" : "in_progress";
   } else {
     // ДОСТАТОЧНО хотя бы одного 'done'
-    const anyDone = memberStatuses.some(s => s === 'done');
-    return anyDone ? 'done' : 'in_progress';
+    const anyDone = memberStatuses.some((s) => s === "done");
+    return anyDone ? "done" : "in_progress";
   }
 }
 
 async function recomputeTaskStatusIfNeeded(taskId) {
-  const task = await Task.findByPk(taskId, { attributes: ['id','status','statusAggregate'] });
+  const task = await Task.findByPk(taskId, {
+    attributes: ["id", "status", "statusAggregate"],
+  });
   if (!task) return;
 
-  if (!task.statusAggregate) return; // правила «любой done» применяем только при изменении статусов исполнителей через update()
+  if (!task.statusAggregate) return;
 
   const members = await TaskUserParticipant.findAll({
-    attributes: ['memberStatus'],
-    where: { taskId, role: 'assignee' },
+    attributes: ["memberStatus"],
+    where: { taskId, role: "assignee" },
     raw: true,
   });
-  const memberStatuses = members.map(m => m.memberStatus);
+  const memberStatuses = members.map((m) => m.memberStatus);
   if (!memberStatuses.length) return;
 
   const next = computeAggregatedStatus(memberStatuses, true);
@@ -164,24 +202,32 @@ async function recomputeTaskStatusIfNeeded(taskId) {
 
 module.exports = {
   // ---------- LIST ----------
-  async list({ query, companyId, user }) {
+  async list({ query, companyId /*, user*/ }) {
     const { page, limit, offset } = parsePagination(query);
     const where = buildListWhere({ companyId, query });
 
     const { rows, count } = await Task.findAndCountAll({
       where,
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
       limit,
       offset,
       include: [
-        { model: User, as: 'creator', attributes: ['id','firstName','lastName','email'] },
-        { model: Counterparty, as: 'counterparty', attributes: ['id','shortName','fullName'] },
-        { model: Deal, as: 'deal', attributes: ['id','title','status'] },
         {
           model: User,
-          as: 'userParticipants',
-          attributes: ['id','firstName','lastName','email'],
-          through: { attributes: ['role','memberStatus'] }
+          as: "creator",
+          attributes: ["id", "firstName", "lastName", "email"],
+        },
+        {
+          model: Counterparty,
+          as: "counterparty",
+          attributes: ["id", "shortName", "fullName"],
+        },
+        { model: Deal, as: "deal", attributes: ["id", "title", "status"] },
+        {
+          model: User,
+          as: "userParticipants",
+          attributes: ["id", "firstName", "lastName", "email"],
+          through: { attributes: ["role", "memberStatus"] },
         },
       ],
     });
@@ -190,34 +236,50 @@ module.exports = {
   },
 
   // ---------- CALENDAR ----------
-  async listCalendar({ query, companyId, user }) {
+  async listCalendar({ query, companyId /*, user*/ }) {
     // обязательный диапазон
     const start = query.from ? new Date(query.from) : null;
-    const end   = query.to   ? new Date(query.to)   : null;
+    const end = query.to ? new Date(query.to) : null;
     if (!start || !end) {
-      throw new Error('Calendar requires from/to (ISO date).');
+      throw new Error("Calendar requires from/to (ISO date).");
     }
 
     const where = {
       companyId,
       [Op.and]: [
-        { [Op.or]: [{ startAt: null }, { startAt: { [Op.lt]: end   } }] },
-        { [Op.or]: [{ endAt:   null }, { endAt:   { [Op.gt]: start } }] },
+        { [Op.or]: [{ startAt: null }, { startAt: { [Op.lt]: end } }] },
+        { [Op.or]: [{ endAt: null }, { endAt: { [Op.gt]: start } }] },
       ],
     };
 
     const items = await Task.findAll({
       where,
-      attributes: ['id','title','startAt','endAt','timezone','status','priority','category','createdBy'],
-      order: [['startAt','ASC'], ['createdAt','DESC']],
+      attributes: [
+        "id",
+        "title",
+        "startAt",
+        "endAt",
+        "timezone",
+        "status",
+        "priority",
+        "category",
+        "createdBy",
+      ],
+      order: [
+        ["startAt", "ASC"],
+        ["createdAt", "DESC"],
+      ],
     });
 
     // ответ для календаря
-    const data = items.map(t => {
+    const data = items.map((t) => {
       const isAllDay = !!(
-        t.startAt && t.endAt &&
-        new Date(t.endAt).getTime() - new Date(t.startAt).getTime() === 24*3600*1000 &&
-        new Date(t.startAt).getHours()===0 && new Date(t.startAt).getMinutes()===0
+        t.startAt &&
+        t.endAt &&
+        new Date(t.endAt).getTime() - new Date(t.startAt).getTime() ===
+          24 * 3600 * 1000 &&
+        new Date(t.startAt).getHours() === 0 &&
+        new Date(t.startAt).getMinutes() === 0
       );
       return {
         id: t.id,
@@ -240,24 +302,38 @@ module.exports = {
     const item = await Task.findOne({
       where: { id, companyId },
       include: [
-        { model: User, as: 'creator', attributes: ['id','firstName','lastName','email'] },
-        { model: Counterparty, as: 'counterparty', attributes: ['id','shortName','fullName'] },
-        { model: Deal, as: 'deal', attributes: ['id','title','status'] },
         {
           model: User,
-          as: 'userParticipants',
-          attributes: ['id','firstName','lastName','email'],
-          through: { attributes: ['role','memberStatus'] },
+          as: "creator",
+          attributes: ["id", "firstName", "lastName", "email"],
+        },
+        {
+          model: Counterparty,
+          as: "counterparty",
+          attributes: ["id", "shortName", "fullName"],
+        },
+        { model: Deal, as: "deal", attributes: ["id", "title", "status"] },
+        {
+          model: User,
+          as: "userParticipants",
+          attributes: ["id", "firstName", "lastName", "email"],
+          through: { attributes: ["role", "memberStatus"] },
         },
         {
           model: CompanyDepartment,
-          as: 'departmentParticipants',
-          attributes: ['id','name'],
+          as: "departmentParticipants",
+          attributes: ["id", "name"],
         },
         {
           model: Contact,
-          as: 'contacts',
-          attributes: ['id','firstName','lastName','displayName','jobTitle'],
+          as: "contacts",
+          attributes: [
+            "id",
+            "firstName",
+            "lastName",
+            "displayName",
+            "jobTitle",
+          ],
           through: { attributes: [] },
         },
       ],
@@ -273,8 +349,13 @@ module.exports = {
     if (!createdBy) throw new Error('"createdBy" is required');
 
     // нормализуем моды
-    const participantMode = payload.participantMode || (payload.assigneeIds?.length || payload.departmentIds?.length ? 'lists' : 'none');
-    const watcherMode     = payload.watcherMode     || (payload.watcherIds?.length ? 'lists' : 'none');
+    const participantMode =
+      payload.participantMode ||
+      (payload.assigneeIds?.length || payload.departmentIds?.length
+        ? "lists"
+        : "none");
+    const watcherMode =
+      payload.watcherMode || (payload.watcherIds?.length ? "lists" : "none");
 
     // создаём
     const task = await Task.create({
@@ -283,8 +364,13 @@ module.exports = {
       title: payload.title,
       category: payload.category || null,
       description: payload.description || null,
-      status: payload.status && STATUS_VALUES.includes(payload.status) ? payload.status : 'todo',
-      priority: Number.isInteger(payload.priority) ? Math.min(100, Math.max(0, payload.priority)) : 50,
+      status:
+        payload.status && STATUS_VALUES.includes(payload.status)
+          ? payload.status
+          : "todo",
+      priority: Number.isInteger(payload.priority)
+        ? Math.min(100, Math.max(0, payload.priority))
+        : 50,
       startAt: payload.startAt || null,
       endAt: payload.endAt || null,
       timezone: payload.timezone || null,
@@ -295,11 +381,54 @@ module.exports = {
       dealId: payload.dealId || null,
     });
 
-    await ensureParticipants({ task, companyId, payload, isUpdate: false });
+    await ensureParticipants({ task, companyId, payload });
     await ensureContacts({ task, payload });
 
-    // если включено агрегирование — сразу пересчитаем (все исполнители сейчас 'todo' → статус останется 'in_progress' только если уже был выставлен)
     await recomputeTaskStatusIfNeeded(task.id);
+
+    // 🔔 уведомления участникам/наблюдателям
+    try {
+      let assigneeIds = [];
+      let watcherIds = [];
+
+      if ((task.participantMode || payload.participantMode) === "all") {
+        assigneeIds = await expandAllUsersForCompany(companyId);
+      } else {
+        assigneeIds = pickAssigneeIds(payload);
+      }
+
+      if ((task.watcherMode || payload.watcherMode) === "all") {
+        watcherIds = await expandAllUsersForCompany(companyId);
+      } else {
+        watcherIds = pickWatcherIds(payload);
+      }
+
+      const actorId = user?.id || payload.createdBy;
+      const recipients = [...new Set([...assigneeIds, ...watcherIds])].filter(
+        (id) => id && id !== actorId
+      );
+
+      if (recipients.length) {
+        await notificationService.notifyManyUsers({
+          companyId,
+          userIds: recipients,
+          type: "task.created",
+          title: "Task created",
+          body: null,
+          entityType: "task",
+          entityId: task.id,
+          meta: {
+            title: task.title,
+            description: payload.description || null,
+            priority: task.priority,
+            status: task.status,
+            category: task.category,
+          },
+        });
+      }
+    } catch (e) {
+      console.error("[taskService.create] notify error", e);
+    }
 
     return await this.getById({ id: task.id, companyId });
   },
@@ -307,36 +436,49 @@ module.exports = {
   // ---------- UPDATE ----------
   async update({ id, payload, companyId, user }) {
     const task = await Task.findOne({ where: { id, companyId } });
-    if (!task) throw new Error('Task not found');
+    if (!task) throw new Error("Task not found");
 
-    // автор/админ может менять общий статус всегда.
+    const originalStatus = task.status; // запоминаем старый статус
+
     const next = {};
-    if (payload.title !== undefined)       next.title = payload.title || '';
-    if (payload.category !== undefined)    next.category = payload.category || null;
-    if (payload.description !== undefined) next.description = payload.description || null;
-    if (payload.priority !== undefined)    next.priority = Math.min(100, Math.max(0, parseInt(payload.priority,10) || 0));
-    if (payload.startAt !== undefined)     next.startAt = payload.startAt || null;
-    if (payload.endAt !== undefined)       next.endAt   = payload.endAt || null;
-    if (payload.timezone !== undefined)    next.timezone = payload.timezone || null;
-    if (payload.statusAggregate !== undefined) next.statusAggregate = !!payload.statusAggregate;
-    if (payload.counterpartyId !== undefined)  next.counterpartyId = payload.counterpartyId || null;
-    if (payload.dealId !== undefined)          next.dealId = payload.dealId || null;
+    if (payload.title !== undefined) next.title = payload.title || "";
+    if (payload.category !== undefined)
+      next.category = payload.category || null;
+    if (payload.description !== undefined)
+      next.description = payload.description || null;
+    if (payload.priority !== undefined)
+      next.priority = Math.min(
+        100,
+        Math.max(0, parseInt(payload.priority, 10) || 0)
+      );
+    if (payload.startAt !== undefined) next.startAt = payload.startAt || null;
+    if (payload.endAt !== undefined) next.endAt = payload.endAt || null;
+    if (payload.timezone !== undefined)
+      next.timezone = payload.timezone || null;
+    if (payload.statusAggregate !== undefined)
+      next.statusAggregate = !!payload.statusAggregate;
+    if (payload.counterpartyId !== undefined)
+      next.counterpartyId = payload.counterpartyId || null;
+    if (payload.dealId !== undefined) next.dealId = payload.dealId || null;
 
     if (payload.status && STATUS_VALUES.includes(payload.status)) {
       next.status = payload.status;
     }
 
     if (payload.participantMode) next.participantMode = payload.participantMode;
-    if (payload.watcherMode)     next.watcherMode     = payload.watcherMode;
+    if (payload.watcherMode) next.watcherMode = payload.watcherMode;
 
     await task.update(next);
 
     // пересоберём участники/наблюдатели/контакты, если они пришли (или поменялись режимы)
     if (
-      payload.assigneeIds !== undefined || payload.departmentIds !== undefined ||
-      payload.watcherIds !== undefined  || payload.participantMode || payload.watcherMode
+      payload.assigneeIds !== undefined ||
+      payload.departmentIds !== undefined ||
+      payload.watcherIds !== undefined ||
+      payload.participantMode ||
+      payload.watcherMode
     ) {
-      await ensureParticipants({ task, companyId, payload, isUpdate: true });
+      await ensureParticipants({ task, companyId, payload });
     }
     if (payload.contactIds !== undefined) {
       await ensureContacts({ task, payload });
@@ -345,13 +487,14 @@ module.exports = {
     // обновление индивидуальных статусов исполнителей
     if (Array.isArray(payload.memberStatuses)) {
       // массив объектов { userId, memberStatus }
-      const patch = payload.memberStatuses
-        .filter(x => x && x.userId && MEMBER_STATUS_VALUES.includes(x.memberStatus));
+      const patch = payload.memberStatuses.filter(
+        (x) => x && x.userId && MEMBER_STATUS_VALUES.includes(x.memberStatus)
+      );
 
       for (const m of patch) {
         await TaskUserParticipant.update(
           { memberStatus: m.memberStatus },
-          { where: { taskId: task.id, userId: m.userId, role: 'assignee' } }
+          { where: { taskId: task.id, userId: m.userId, role: "assignee" } }
         );
       }
     }
@@ -359,13 +502,56 @@ module.exports = {
     // если флаг агрегирования включён — пересчитать общий статус
     await recomputeTaskStatusIfNeeded(task.id);
 
-    return await this.getById({ id: task.id, companyId });
+    try {
+      const updated = await this.getById({ id: task.id, companyId });
+
+      // если статус поменяли — уведомим всех
+      if (
+        payload.status &&
+        STATUS_VALUES.includes(payload.status) &&
+        payload.status !== originalStatus
+      ) {
+        const assignees = (updated.userParticipants || [])
+          .filter((u) => u.TaskUserParticipant?.role === "assignee")
+          .map((u) => u.id);
+        const watchers = (updated.userParticipants || [])
+          .filter((u) => u.TaskUserParticipant?.role === "watcher")
+          .map((u) => u.id);
+
+        const actorId = user?.id || null;
+        const recipients = [...new Set([...assignees, ...watchers])].filter(
+          (uid) => uid && uid !== actorId
+        );
+
+        if (recipients.length) {
+          await notificationService.notifyManyUsers({
+            companyId,
+            userIds: recipients,
+            type: "task.statusChanged",
+            title: "Task status changed",
+            body: null,
+            entityType: "task",
+            entityId: updated.id,
+            meta: {
+              title: updated.title || "",
+              oldStatus: originalStatus,
+              newStatus: payload.status,
+            },
+          });
+        }
+      }
+
+      return updated;
+    } catch (e) {
+      console.error("[taskService.update] notify error", e);
+      return await this.getById({ id: task.id, companyId });
+    }
   },
 
   // ---------- REMOVE (soft) ----------
   async remove({ id, companyId }) {
     const task = await Task.findOne({ where: { id, companyId } });
-    if (!task) throw new Error('Task not found');
+    if (!task) throw new Error("Task not found");
     await task.destroy();
   },
 

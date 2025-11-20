@@ -17,7 +17,7 @@ i18n
       pl: { translation: pl },
       ua: { translation: ua },
     },
-    fallbackLng: 'en',
+    fallbackLng: 'pl',
     supportedLngs: ['en', 'ru', 'pl', 'ua'],
     detection: {
       order: ['localStorage', 'querystring', 'navigator', 'htmlTag'],

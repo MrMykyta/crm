@@ -1,68 +1,40 @@
-import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import EntityDetailPage from '../../_scaffold/EntityDetailPage';
 import { userSchema, toFormUser, toApiUser } from '../../../schemas/user.schema';
 import UserAvatarHeader from '../../../components/user/UserAvatarHeader';
 import UserAccessPanel from '../../../components/user/UserAccessPanel';
-
-// fetch shims
-async function getUserById(userId) {
-  const res = await fetch(`/api/users/${encodeURIComponent(userId)}`, { credentials:'include' });
-  if (!res.ok) throw new Error('load user failed');
-  return res.json();
-}
-async function updateUserById(userId, payload) {
-  const res = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
-    method:'PATCH',
-    credentials:'include',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error('update user failed');
-  return res.json();
-}
+import {
+  useGetCompanyUserQuery,
+  useUpdateCompanyUserMutation,
+} from '../../../store/rtk/companyUsersApi';
 
 export default function UserEntityPage() {
   const { userId } = useParams();
-  const [base, setBase] = useState(null);
-  const [err, setErr]   = useState('');
 
-  useEffect(() => {
-    if (!userId) { setErr('No userId in URL'); return; }
-    let ignore = false;
-    (async () => {
-      try {
-        setErr('');
-        const data = await getUserById(userId);
-        if (!ignore) setBase(data);
-      } catch (e) { if (!ignore) setErr(e?.message || 'Failed to load user'); }
-    })();
-    return () => { ignore = true; };
-  }, [userId]);
+  const { data: base, isFetching, error } = useGetCompanyUserQuery(userId, { skip: !userId });
+  const [updateUser, { isLoading: saving }] = useUpdateCompanyUserMutation();
 
-  if (!userId) return <div style={{padding:16,color:'var(--danger)'}}>userId отсутствует в URL</div>;
-  if (err)      return <div style={{padding:16,color:'var(--danger)'}}>{err}</div>;
-  if (!base)    return null;
+  if (!userId) return <div style={{ padding:16, color:'var(--danger)' }}>userId отсутствует в URL</div>;
+  if (error)   return <div style={{ padding:16, color:'var(--danger)' }}>Не удалось загрузить пользователя</div>;
+  if (isFetching || !base) return null;
 
   const load = async () => base;
   const save = async (_id, payload) => {
-    const saved = await updateUserById(userId, payload);
-    setBase(saved);
+    const saved = await updateUser({ userId, body: payload }).unwrap();
     return saved;
   };
 
   return (
     <EntityDetailPage
       id={userId}
-      tabs={[
-        { key: 'access', label: 'Права доступа' },
-      ]}
+      tabs={[ { key:'access', label:'Права доступа' } ]}
       tabsNamespace="admin.user.detail"
       schemaBuilder={userSchema}
       toForm={toFormUser}
       toApi={toApiUser}
       load={load}
       save={save}
+      isSaving={saving}
       storageKeyPrefix="user"
       autosave={{ debounceMs: 500 }}
       clearDraftOnUnmount

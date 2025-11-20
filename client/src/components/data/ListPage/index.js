@@ -1,4 +1,3 @@
-// src/components/data/ListPage/index.jsx
 import React, {
   forwardRef, useImperativeHandle, useMemo, useState, useCallback,
 } from 'react';
@@ -6,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import DataTable from '../DataTable';
 import DefaultToolbar from '../../filters/FilterToolbar';
 import s from './ListPage.module.css';
+import ThemedSelect from '../../inputs/RadixSelect'; // 👈 добавили
 
 /* === Регистр RTK-источников === */
 import { useListCounterpartiesQuery } from '../../../store/rtk/counterpartyApi';
@@ -15,7 +15,7 @@ import { useListCompanyUsersQuery, useListInvitationsQuery } from '../../../stor
 const REGISTRY = {
   counterparties: {
     useQuery: useListCounterpartiesQuery,
-    adapt: (data, _query) => {
+    adapt: (data) => {
       const items = Array.isArray(data) ? data : (data?.items || []);
       const total = Number(data?.total ?? items.length ?? 0);
       const page  = Number(data?.page ?? 1);
@@ -25,7 +25,7 @@ const REGISTRY = {
   },
   tasks: {
     useQuery: useListTasksQuery,
-    adapt: (data, _query) => {
+    adapt: (data) => {
       const items = Array.isArray(data) ? data : (data?.items || []);
       return {
         items,
@@ -37,7 +37,7 @@ const REGISTRY = {
   },
   companyUsers: {
     useQuery: useListCompanyUsersQuery,
-    adapt: (data, _query) => {
+    adapt: (data) => {
       const items = Array.isArray(data) ? data : (data?.items || []);
       return {
         items,
@@ -49,7 +49,7 @@ const REGISTRY = {
   },
   companyInvites: {
     useQuery: useListInvitationsQuery,
-    adapt: (data, _query) => {
+    adapt: (data) => {
       const items = Array.isArray(data) ? data : (data?.items || []);
       return {
         items,
@@ -85,34 +85,23 @@ const normalizeQuery = (q = {}) => ({
 
 const ListPage = forwardRef(function ListPage(
   {
-    /** вариант 1: внутренний RTK-режим */
     source,
-
-    /** вариант 2: внешний режим (как в CompanyUsers) */
     externalData,
-    externalMeta,           // { total, page, limit }
+    externalMeta,
     externalLoading,
     onExternalRefetch,
-
-    /** Управляемый query (для внешнего режима) */
     query: controlledQuery,
     onQueryChange,
-
-    /** UI */
     title,
     columns = [],
     defaultQuery = {},
     actions,
     rowActions,
-
-    /* таблица */
     columnWidths,
     onColumnResize,
     columnOrder,
     onColumnOrderChange,
     rowKey = 'id',
-
-    /** тулбар/преобразование */
     ToolbarComponent,
     toolbarExtra,
     transformItems,
@@ -121,7 +110,6 @@ const ListPage = forwardRef(function ListPage(
 ) {
   const { t } = useTranslation();
 
-  // режимы и query — хуки вызываем всегда
   const isExternal = typeof externalData !== 'undefined';
 
   const initQuery = useMemo(() => normalizeQuery(defaultQuery), [defaultQuery]);
@@ -131,14 +119,12 @@ const ListPage = forwardRef(function ListPage(
     [isExternal, controlledQuery, initQuery, internalQuery]
   );
 
-  // выбираем источник: реальный из REGISTRY или «внешний стаб»
   const reg = useMemo(() => {
     if (!isExternal) {
       const r = REGISTRY[source];
-      if (!r) throw new Error(`ListPage: неизвестный source="${source}". Добавь его в REGISTRY.`);
+      if (!r) throw new Error(`ListPage: неизвестный source="${source}"`);
       return r;
     }
-    // внешний стаб-источник — не вызывает никаких хуков внутри
     return {
       useQuery: () => ({
         data: { items: externalData, total: externalMeta?.total, page: externalMeta?.page, limit: externalMeta?.limit },
@@ -156,21 +142,16 @@ const ListPage = forwardRef(function ListPage(
     };
   }, [isExternal, source, externalData, externalMeta, externalLoading, onExternalRefetch]);
 
-  // единый вызов "useQuery" (hook-подобный) — без условного return
   const r = reg.useQuery(query);
 
-  // адаптация данных + transformItems
   const adapted = useMemo(() => {
     const base = reg.adapt(r.data || {}, query);
     const items = typeof transformItems === 'function' ? transformItems(base.items, query) : base.items;
     return { ...base, items };
   }, [r.data, reg, transformItems, query]);
 
-  // единые коллбеки управления query
   const replaceQuery = useCallback((nextOrSetter) => {
-    const next = normalizeQuery(
-      typeof nextOrSetter === 'function' ? nextOrSetter(query) : nextOrSetter
-    );
+    const next = normalizeQuery(typeof nextOrSetter === 'function' ? nextOrSetter(query) : nextOrSetter);
     if (isExternal) onQueryChange?.(next);
     else setInternalQuery(next);
   }, [isExternal, onQueryChange, query]);
@@ -178,24 +159,22 @@ const ListPage = forwardRef(function ListPage(
   const setPage  = useCallback((p)   => replaceQuery(q => ({ ...q, page: Math.max(1, Number(p) || 1) })), [replaceQuery]);
   const setLimit = useCallback((lim) => replaceQuery(q => ({ ...q, limit: Math.max(1, Number(lim) || 25), page: 1 })), [replaceQuery]);
   const setSort  = useCallback((k,d)=> replaceQuery(q => ({ ...q, sort: k, dir: d === 'ASC' ? 'ASC' : 'DESC', page: 1 })), [replaceQuery]);
-
-  // единый refetch
   const refetch  = useCallback(() => r.refetch?.(), [r]);
 
-  // публичный API
   useImperativeHandle(ref, () => ({
     refetch,
     replaceQuery,
     getQuery: () => query,
   }), [refetch, replaceQuery, query]);
 
-  // расчёты пагинации
   const total = adapted.total ?? 0;
   const start = total ? (query.page - 1) * query.limit + 1 : 0;
   const end   = total ? Math.min(query.page * query.limit, total) : 0;
   const pages = Math.max(1, Math.ceil(total / (query.limit || 1)));
 
   const ToolbarToRender = ToolbarComponent || DefaultToolbar;
+
+  const limitOptions = [10, 25, 50, 100].map((n) => ({ value: n, label: String(n) }));
 
   return (
     <div className={s.wrap}>
@@ -227,14 +206,16 @@ const ListPage = forwardRef(function ListPage(
               {t('list.rangeOfTotal', { start, end, total })}
             </span>
 
+            {/* заменённый select */}
             <label className={s.perPage} aria-label={t('list.perPageAria') || 'На странице'}>
-              <select
+              <ThemedSelect
                 className={s.pageSize}
                 value={query.limit}
-                onChange={(e)=> setLimit(Number(e.target.value))}
-              >
-                {[10,25,50,100].map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
+                onChange={(val) => setLimit(Number(val))}
+                options={limitOptions}
+                placeholder="стр."
+                size="sm"
+              />
               <span className={s.muted}>стр.</span>
             </label>
 

@@ -1,31 +1,14 @@
+// src/components/auth/SignUp/index.jsx
+import React, { useState } from 'react';
 import { Formik, Form, useField, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
 import EmailVerificationModal from '../EmailVerificationModal';
 import s from '../../../styles/formGlass.module.css';
-
-// fetch shims
-async function registerUser(values) {
-  const res = await fetch('/api/auth/register', {
-    method:'POST',
-    credentials:'include',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify(values),
-  });
-  if(!res.ok) throw new Error('register failed');
-  return res.json();
-}
-async function resendVerification(email) {
-  const res = await fetch('/api/auth/resend-verification', {
-    method:'POST',
-    credentials:'include',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify({ email }),
-  });
-  if(!res.ok) throw new Error('resend failed');
-  return res.json().catch(()=>({ok:true}));
-}
+import {
+  useRegisterUserMutation,
+  useResendVerificationMutation,
+} from '../../../store/rtk/authApi';
 
 function InputField({ name, label, type = 'text', autoComplete }) {
   const [field] = useField(name);
@@ -44,6 +27,9 @@ export default function SignUp() {
   const [modalOpen, setModalOpen] = useState(false);
   const [emailForVerify, setEmailForVerify] = useState('');
 
+  const [registerUser, { isLoading: isRegistering }] = useRegisterUserMutation();
+  const [resendVerification] = useResendVerificationMutation();
+
   const schema = Yup.object({
     firstName: Yup.string().max(50).required(t('common.required')),
     lastName:  Yup.string().max(50).required(t('common.required')),
@@ -61,12 +47,19 @@ export default function SignUp() {
   const onSubmit = async (values, { setSubmitting, setStatus }) => {
     setStatus(null);
     try {
-      const res = await registerUser(values);
-      const email = res?.email || values.email;
+      const data = await registerUser(values).unwrap();
+      const email = data?.email || values.email;
       setEmailForVerify(email);
       setModalOpen(true);
     } catch (e) {
-      setStatus(e?.message || t('errors.registrationFailed'));
+      // Пытаемся вытащить сообщение бэка
+      const msg =
+        e?.data?.error ||
+        e?.data?.message ||
+        e?.error ||
+        e?.message ||
+        t('errors.registrationFailed');
+      setStatus(msg);
     } finally {
       setSubmitting(false);
     }
@@ -75,7 +68,9 @@ export default function SignUp() {
   const handleResend = async () => {
     if (!emailForVerify) return;
     try {
-      await resendVerification(emailForVerify);
+      await resendVerification(emailForVerify).unwrap();
+      // Можно дать небольшой UI-тинт: тост/alert
+      // alert(t('auth.verificationResent', 'Письмо отправлено ещё раз'));
     } catch {
       alert(t('auth.verificationResendFail', 'Resend failed'));
     }
@@ -86,15 +81,33 @@ export default function SignUp() {
       <Formik initialValues={initialValues} validationSchema={schema} onSubmit={onSubmit}>
         {({ isSubmitting, status }) => (
           <Form className={s.form}>
-            <InputField name="firstName" label={t('auth.firstName') || 'First name'} autoComplete="given-name" />
-            <InputField name="lastName"  label={t('auth.lastName')  || 'Last name'}  autoComplete="family-name" />
-            <InputField name="email"     label={t('common.email')}   type="email" autoComplete="email" />
-            <InputField name="password"  label={t('common.password')} type="password" autoComplete="new-password" />
+            <InputField
+              name="firstName"
+              label={t('auth.firstName') || 'First name'}
+              autoComplete="given-name"
+            />
+            <InputField
+              name="lastName"
+              label={t('auth.lastName') || 'Last name'}
+              autoComplete="family-name"
+            />
+            <InputField
+              name="email"
+              label={t('common.email')}
+              type="email"
+              autoComplete="email"
+            />
+            <InputField
+              name="password"
+              label={t('common.password')}
+              type="password"
+              autoComplete="new-password"
+            />
 
             {status && <div className={s.err}>{status}</div>}
 
-            <button className={s.btn} type="submit" disabled={isSubmitting}>
-              {isSubmitting ? t('common.creating') : t('auth.createAccount')}
+            <button className={s.btn} type="submit" disabled={isSubmitting || isRegistering}>
+              {(isSubmitting || isRegistering) ? t('common.creating') : t('auth.createAccount')}
             </button>
           </Form>
         )}

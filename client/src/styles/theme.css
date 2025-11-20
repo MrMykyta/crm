@@ -126,6 +126,13 @@
   --cal-now-line: var(--cal-accent-line);
   --cal-now-badge-bg: #000;
   --cal-now-badge-brd: rgba(122, 91, 255, .5);
+
+
+  --editor-bg:    var(--card-bg);
+  --editor-text:  var(--text);
+  --editor-link:  color-mix(in srgb, var(--primary-start) 85%, var(--primary-end) 15%);
+  --editor-border: var(--card-brd);
+  --editor-surface: color-mix(in srgb, var(--card-bg) 88%, transparent);
 }
 
 /* LIGHT */
@@ -186,6 +193,13 @@
   --cal-now-line: var(--cal-accent-line);
   --cal-now-badge-bg: #fff;
   --cal-now-badge-brd: rgba(255, 140, 92, .4);
+
+  --editor-bg:    var(--card-bg);
+  --editor-text:  var(--text);
+  --editor-link:  color-mix(in srgb, var(--primary-start) 85%, var(--primary-end) 15%);
+  --editor-border: var(--card-brd);
+  --editor-surface: color-mix(in srgb, var(--card-bg) 92%, #fff 0%);
+
 }
 
 /* плавная смена темы и остальные утилы остаются как были */

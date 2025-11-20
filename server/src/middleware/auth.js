@@ -9,7 +9,7 @@ module.exports.auth = async (req, res, next) => {
   try {
     const hdr = req.headers.authorization || '';
     const token = hdr.startsWith('Bearer ') ? hdr.slice(7) : null;
-    console.log('[auth] hdr', hdr,'[auth] token:', token);
+    // console.log('[auth] hdr', hdr,'[auth] token:', token);
     if (!token) throw new TokenError('No token');
 
     const payload = await verifyAccess(token);

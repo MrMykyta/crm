@@ -1,5 +1,7 @@
+// src/components/filters/FilterToolbar/index.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import s from './Toolbar.module.css';
+import ThemedSelect from '../../inputs/RadixSelect';
 
 // — утилиты нормализации
 const norm = (v) => (v ?? '').trim();
@@ -64,9 +66,9 @@ export default function FilterToolbar({
   // — helpers для select
   const handleSelect = (key, v, emptyAsUndefined = true) => {
     onChange(q => {
-      const next = { ...q, [key]: emptyAsUndefined ? (v || undefined) : v, page: 1 };
+      const nextVal = emptyAsUndefined ? (v || undefined) : v;
       if ((q[key] || '') === (v || '')) return q;
-      return next;
+      return { ...q, [key]: nextVal, page: 1 };
     });
   };
 
@@ -76,15 +78,15 @@ export default function FilterToolbar({
       case 'mode': {
         const opts = typeof c.options === 'function' ? c.options(mode) : c.options;
         return (
-          <select
+          <ThemedSelect
             key={`m-${idx}`}
             className={s.select}
             value={mode ?? ''}
-            onChange={(e) => onModeChange?.(e.target.value)}
-            title={c.label || 'Режим'}
-          >
-            {opts?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+            options={opts || []}
+            placeholder={c.label || 'Режим'}
+            size="sm"
+            onChange={(val) => onModeChange?.(val)}
+          />
         );
       }
 
@@ -103,17 +105,17 @@ export default function FilterToolbar({
 
       case 'select': {
         const opts = typeof c.options === 'function' ? c.options(mode) : c.options;
-        const val = query?.[c.key] || '';
+        const val = query?.[c.key] ?? '';
         return (
-          <select
+          <ThemedSelect
             key={`f-${c.key}-${idx}`}
             className={s.select}
             value={val}
-            onChange={(e) => handleSelect(c.key, e.target.value, c.emptyAsUndefined !== false)}
-            title={c.label}
-          >
-            {opts?.map(o => <option key={`${c.key}-${o.value}`} value={o.value}>{o.label}</option>)}
-          </select>
+            options={opts || []}
+            placeholder={c.label || 'Выбор'}
+            size="sm"
+            onChange={(v) => handleSelect(c.key, v, c.emptyAsUndefined !== false)}
+          />
         );
       }
 

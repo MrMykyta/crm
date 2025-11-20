@@ -1,32 +1,80 @@
-// SSE → инвалидируем RTK-теги
+// src/store/rtk/realtime.js
+import { crmApi } from './crmApi';
+
 const API_ROOT =
   (process.env.REACT_APP_API_URL?.replace(/\/+$/, '') || 'http://localhost:5001') + '/api';
 
-const mapTypeToTags = (evtType, ids = []) => {
-  const low = String(evtType || '').toLowerCase();
+let currentES = null;
 
-  if (low.startsWith('counterparty.')) {
-    return [{ type: 'Counterparty', id: 'LIST' }, ...ids.map(id => ({ type: 'Counterparty', id }))];
+function normIds(raw) {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) return raw.map(String);
+  return [String(raw)];
+}
+
+function mapEventToTags(msg) {
+  const ids = normIds(msg.ids ?? msg.id);
+
+  if (msg?.entity) {
+    const e = String(msg.entity).toLowerCase();
+    if (e === 'counterparty') {
+      return [
+        { type: 'Counterparty', id: 'LIST' },
+        ...ids.map(id => ({ type: 'Counterparty', id })),
+      ];
+    }
+    if (e === 'task') {
+      return [
+        { type: 'TaskList', id: 'LIST' },
+        ...ids.map(id => ({ type: 'Task', id })),
+      ];
+    }
+    if (e === 'user' || e === 'companyuser') {
+      return [
+        { type: 'CompanyUser', id: 'LIST' },
+        ...ids.map(id => ({ type: 'User', id })),
+      ];
+    }
+    if (e === 'acl') {
+      return [{ type: 'ACL', id: 'ROLES' }];
+    }
+    if (e === 'company') {
+      return [{ type: 'Company' }];
+    }
+    return [];
   }
-  if (low.startsWith('task.')) {
-    return [{ type: 'TaskList', id: 'LIST' }, ...ids.map(id => ({ type: 'Task', id }))];
+
+  const t = String(msg?.type || '').toLowerCase();
+  if (t.startsWith('counterparty.')) {
+    return [
+      { type: 'Counterparty', id: 'LIST' },
+      ...ids.map(id => ({ type: 'Counterparty', id })),
+    ];
   }
-  if (low.startsWith('user.') || low.startsWith('companyuser.')) {
-    return [{ type: 'CompanyUser', id: 'LIST' }, ...ids.map(id => ({ type: 'User', id }))];
+  if (t.startsWith('task.')) {
+    return [
+      { type: 'TaskList', id: 'LIST' },
+      ...ids.map(id => ({ type: 'Task', id })),
+    ];
   }
-  if (low.startsWith('acl.')) {
+  if (t.startsWith('user.') || t.startsWith('companyuser.')) {
+    return [
+      { type: 'CompanyUser', id: 'LIST' },
+      ...ids.map(id => ({ type: 'User', id })),
+    ];
+  }
+  if (t.startsWith('acl.')) {
     return [{ type: 'ACL', id: 'ROLES' }];
   }
-  if (low.startsWith('company.')) {
+  if (t.startsWith('company.')) {
     return [{ type: 'Company' }];
   }
   return [];
-};
-
-let currentES = null;
+}
 
 export function initRealtime(store, { url = `${API_ROOT}/sse` } = {}) {
   try { currentES?.close(); } catch {}
+  currentES = null;
 
   const state = store.getState();
   const token = state.auth?.accessToken || null;
@@ -39,22 +87,39 @@ export function initRealtime(store, { url = `${API_ROOT}/sse` } = {}) {
   const es = new EventSource(sseUrl);
   currentES = es;
 
-  es.onmessage = (e) => {
-    try {
-      const payload = JSON.parse(e.data);
-      const tags = mapTypeToTags(payload?.type, payload?.ids);
-      if (tags.length) {
-        store.dispatch({ type: 'crmApi/util/invalidateTags', payload: tags });
-      }
-    } catch {}
+  // 👇 публикуем глобально и шлём событие "готово"
+  if (typeof window !== 'undefined') {
+    window.__SUNSET_SSE__ = es;
+    window.dispatchEvent(new CustomEvent('realtime:ready', { detail: { es } }));
+  }
+
+  const handle = (raw) => {
+    let msg = null;
+    try { msg = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return; }
+    if (!msg || typeof msg !== 'object') return;
+
+    if (msg.companyId && String(msg.companyId) !== String(companyId)) return;
+
+    const tags = mapEventToTags(msg);
+    if (tags.length) {
+      store.dispatch(crmApi.util.invalidateTags(tags));
+    }
   };
 
+  es.onmessage = (e) => handle(e.data);
+  es.addEventListener('entity', (e) => handle(e.data));
+  es.addEventListener('ready', () => {});
+  es.addEventListener('ping', () => {});
+
   es.onerror = () => {
-    // браузер попробует переподключиться
+    // тут можно залогировать если надо
   };
 
   return () => {
     try { es.close(); } catch {}
     if (currentES === es) currentES = null;
+    if (typeof window !== 'undefined' && window.__SUNSET_SSE__ === es) {
+      window.__SUNSET_SSE__ = null;
+    }
   };
 }

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+// src/pages/CompanyDeals/index.jsx
+import React, { useState, useEffect } from "react";
 import s from "./CompanyDeals.module.css";
 
 import {
@@ -16,6 +17,8 @@ import {
 } from "@dnd-kit/sortable";
 import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
+
+import ThemedSelect from "../../../../../components/inputs/RadixSelect";
 
 /* ===== helpers ===== */
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -269,17 +272,18 @@ export default function CompanyDeals() {
               <div className={`${s.details} ${f.expanded ? s.show : ""}`}>
                 <div className={s.controls}>
                   <label className={s.ctrlLabel}>Этап</label>
-                  <select
-                    className={s.select}
-                    value={selectedStage?.id || ""}
-                    onChange={(e) =>
-                      setSelectedStageByFunnel(m => ({ ...m, [f.id]: e.target.value }))
-                    }
-                  >
-                    {f.stages.map((st) => (
-                      <option key={st.id} value={st.id}>{st.name}</option>
-                    ))}
-                  </select>
+
+                  <div style={{ minWidth: 220, maxWidth: 300 }}>
+                    <ThemedSelect
+                      className={s.select}
+                      value={selectedStage ? selectedStage.id : undefined}
+                      options={f.stages.map(st => ({ value: st.id, label: st.name }))}
+                      onChange={(val) =>
+                        setSelectedStageByFunnel((m) => ({ ...m, [f.id]: val }))
+                      }
+                      placeholder="Выберите этап"
+                    />
+                  </div>
 
                   <label className={s.ctrlLabel}>Цвет</label>
                   <div className={s.colorPicker}>

@@ -14,6 +14,7 @@ export const authApi = crmApi.injectEndpoints({
       async onQueryStarted(_arg, { queryFulfilled, dispatch }) {
         try {
           const { data } = await queryFulfilled;
+          console.log(data);
           const accessToken = data?.tokens?.accessToken ?? data?.accessToken ?? null;
           const refreshToken = data?.tokens?.refreshToken ?? data?.refreshToken ?? null;
           const companyId = data?.activeCompanyId ?? data?.companyId ?? null;
@@ -50,6 +51,7 @@ export const authApi = crmApi.injectEndpoints({
       async onQueryStarted(_arg, { queryFulfilled, dispatch }) {
         try {
           const { data } = await queryFulfilled;
+          console.log(data);
           const accessToken = data?.tokens?.accessToken ?? data?.accessToken ?? null;
           const refreshToken = data?.tokens?.refreshToken ?? data?.refreshToken ?? null;
           const companyId = data?.activeCompanyId ?? data?.companyId ?? null;

@@ -33,6 +33,7 @@
   user-select: none;
   white-space: nowrap;
   position: relative;
+  background-clip: padding-box; /* важно для прозрачных фонов */
 }
 .thInner { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .sortBtn { all: unset; cursor: pointer; font-weight: 600; }
@@ -58,29 +59,55 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  right: 0;           /* ← всегда у правой кромки заголовка */
+  right: 0;
   width: 0;
   border-right: 2px dashed var(--focus);
   pointer-events: none;
   z-index: 2;
 }
 
-
-/* Подсветка колонки */
-.colHover {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--primary-start) 18%, transparent) 0%,
-    color-mix(in srgb, var(--primary-end) 12%, transparent) 100%
-  );
-  transition: background 0.12s ease;
+/* Подсветка колонки (исправленный вариант без овала) */
+.th, .td {
+  position: relative;
+  background-clip: padding-box;
 }
+.colHover {
+  isolation: isolate;
+}
+.colHover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--sidebar-hover) 22%, transparent);
+  border-radius: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 1;
+  transition: opacity .12s ease;
+}
+/* плавное затухание при уходе */
+.td:not(.colHover)::before,
+.th:not(.colHover)::before {
+  opacity: 0;
+}
+.th * , .td * { position: relative; z-index: 1; } /* контент над overlay */
 
 /* Строки / ячейки */
-.tr { border-bottom: 1px solid var(--card-brd); transition: background var(--tr-fast); }
-.tr:hover { background: color-mix(in srgb, var(--sidebar-hover) 22%, transparent); }
-.td { padding: 10px; font-size: var(--fs-sm); vertical-align: middle; }
-.muted { color: var(--muted); }
+.tr {
+  border-bottom: 1px solid var(--card-brd);
+  transition: background var(--tr-fast);
+}
+.tr:hover {
+  background: color-mix(in srgb, var(--sidebar-hover) 22%, transparent);
+}
+.td {
+  padding: 10px;
+  font-size: var(--fs-sm);
+  vertical-align: middle;
+}
+.muted {
+  color: var(--muted);
+}
 
 /* Drag&Drop заголовков */
 .draggable { cursor: grab; }

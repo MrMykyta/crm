@@ -1,3 +1,4 @@
+// utils/tokenService.js
 const jwt = require('jsonwebtoken');
 const { randomBytes } = require('crypto');
 const dayjs = require('dayjs');
@@ -5,13 +6,14 @@ const { RefreshToken } = require('../models');
 
 const ACCESS_TTL = process.env.JWT_ACCESS_TTL || '15m';
 
-// приоритет часов, fallback — дни (для обратной совместимости)
 const REFRESH_TTL_HOURS = Number(process.env.JWT_REFRESH_TTL_HOURS || 0);
 const REFRESH_TTL_DAYS  = Number(process.env.JWT_REFRESH_TTL_DAYS  || 0);
 const REFRESH_TTL_MS =
   REFRESH_TTL_HOURS > 0
     ? REFRESH_TTL_HOURS * 60 * 60 * 1000
-    : (REFRESH_TTL_DAYS  > 0 ? REFRESH_TTL_DAYS  * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000); // по умолчанию 30 дней
+    : (REFRESH_TTL_DAYS  > 0
+        ? REFRESH_TTL_DAYS  * 24 * 60 * 60 * 1000
+        : 30 * 24 * 60 * 60 * 1000);
 
 const REFRESH_EXPIRES_IN_STR =
   REFRESH_TTL_HOURS > 0
@@ -31,7 +33,6 @@ async function verifyRefresh(token) {
   if (!row) throw new Error('Refresh token not found');
   if (row.revoked_at) throw new Error('Refresh token revoked');
 
-  // учитываем snake/camel поля — берём, что есть
   const expiresAt = row.expires_at || row.expiresAt;
   if (dayjs(expiresAt).isBefore(dayjs())) {
     throw new Error('Refresh token expired');
@@ -51,13 +52,16 @@ async function issueRefreshToken({ userId, userAgent, ip }) {
   await RefreshToken.create({
     userId,
     jti,
-    expiresAt,                // если модель с underscored: Sequelize сам сохранит в expires_at
+    expiresAt,
     userAgent: userAgent || null,
     ip: ip || null,
   });
 
   const payload = { sub: userId, jti };
-  const token = jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: REFRESH_EXPIRES_IN_STR });
+  const token = jwt.sign(payload, JWT_REFRESH_SECRET, {
+    expiresIn: REFRESH_EXPIRES_IN_STR,
+  });
+
   return { token, jti, expiresAt };
 }
 
@@ -72,7 +76,6 @@ async function rotateRefresh(oldToken, companyId, meta = {}) {
 
   const newId = newJti();
   const expiresAt = new Date(Date.now() + REFRESH_TTL_MS);
-  console.log('Refresh token expires:', expiresAt)
   await current.update({ revoked_at: new Date(), replaced_by: newId });
 
   await RefreshToken.create({
@@ -88,30 +91,41 @@ async function rotateRefresh(oldToken, companyId, meta = {}) {
   });
   const newAccess = signAccessToken({ userId: payload.sub, activeCompanyId: companyId });
 
-  return { accessToken: newAccess, refreshToken: newRefresh, expiresAt, userId: payload.sub };
+  return {
+    accessToken: newAccess,
+    refreshToken: newRefresh,
+    expiresAt,
+    userId: payload.sub,
+  };
 }
 
-module.exports.revokeRefresh = async (tokenOrJti) => {
+async function revokeRefresh(tokenOrJti) {
+  if (!tokenOrJti) return false;
+
   const jti =
     tokenOrJti.length > 40
       ? jwt.verify(tokenOrJti, JWT_REFRESH_SECRET).jti
       : tokenOrJti;
+
   const row = await RefreshToken.findOne({ where: { jti } });
   if (!row) return false;
   await row.update({ revoked_at: new Date() });
   return true;
-};
+}
 
-module.exports.revokeAllUserRefresh = async (userId) => {
+async function revokeAllUserRefresh(userId) {
   await RefreshToken.update(
     { revoked_at: new Date() },
     { where: { user_id: userId, revoked_at: null } }
   );
-};
+}
 
 module.exports = {
   signAccessToken,
   issueRefreshToken,
   rotateRefresh,
   verifyAccess,
+  verifyRefresh,
+  revokeRefresh,
+  revokeAllUserRefresh,
 };

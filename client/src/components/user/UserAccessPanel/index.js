@@ -1,53 +1,18 @@
+// src/components/user/UserAccessPanel/index.jsx
 import { useEffect, useMemo, useState } from 'react';
-import Switch from '../../../components/inputs/Switch';
+import Switch from '../../inputs/Switch';
 import s from './UserAccessPanel.module.css';
 
-// ===== fetch shims (скорректируй пути под свой API, если отличаются)
-async function fetchUserPermSummary(userId) {
-  const res = await fetch(`/api/acl/users/${encodeURIComponent(userId)}/summary`, { credentials:'include' });
-  if (!res.ok) throw new Error('summary failed');
-  return res.json();
-}
-async function listRoles(params) {
-  const q = params?.q ? `?q=${encodeURIComponent(params.q)}` : '';
-  const res = await fetch(`/api/acl/roles${q}`, { credentials:'include' });
-  if (!res.ok) throw new Error('roles failed');
-  return res.json();
-}
-async function assignRoleToUser(userId, roleId) {
-  const res = await fetch(`/api/acl/users/${encodeURIComponent(userId)}/roles/${encodeURIComponent(roleId)}`, {
-    method:'POST', credentials:'include'
-  });
-  if (!res.ok) throw new Error('assign failed');
-  return res.json().catch(()=>({ok:true}));
-}
-async function removeRoleFromUser(userId, roleId) {
-  const res = await fetch(`/api/acl/users/${encodeURIComponent(userId)}/roles/${encodeURIComponent(roleId)}`, {
-    method:'DELETE', credentials:'include'
-  });
-  if (!res.ok) throw new Error('remove failed');
-  return res.json().catch(()=>({ok:true}));
-}
-async function allowPermForUser(userId, permId) {
-  const res = await fetch(`/api/acl/users/${encodeURIComponent(userId)}/permissions/${encodeURIComponent(permId)}`, {
-    method:'POST', credentials:'include',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify({ action:'allow' }),
-  });
-  if (!res.ok) throw new Error('allow failed');
-  return res.json().catch(()=>({ok:true}));
-}
-async function denyPermForUser(userId, permId) {
-  const res = await fetch(`/api/acl/users/${encodeURIComponent(userId)}/permissions/${encodeURIComponent(permId)}`, {
-    method:'POST', credentials:'include',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify({ action:'deny' }),
-  });
-  if (!res.ok) throw new Error('deny failed');
-  return res.json().catch(()=>({ok:true}));
-}
+import {
+  useListRolesQuery,
+  useUserPermSummaryQuery,
+  useAssignRoleToUserMutation,
+  useRemoveRoleFromUserMutation,
+  useAllowPermForUserMutation,
+  useDenyPermForUserMutation,
+  useClearPermOverrideMutation, // на будущее (не используем прямо сейчас)
+} from '../../../store/rtk/aclApi';
 
-/** Простой аккордеон */
 function Accordion({ title, count, children, defaultOpen=false }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -63,25 +28,64 @@ function Accordion({ title, count, children, defaultOpen=false }) {
 }
 
 export default function UserAccessPanel({ userId }) {
-  const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState(null);
-  const [allRoles, setAllRoles] = useState([]);
+  // поисковые строки
   const [qRole, setQRole] = useState('');
   const [qPerm, setQPerm] = useState('');
 
-  const refetch = async () => {
-    setLoading(true);
-    try {
-      const [s, roles] = await Promise.all([
-        fetchUserPermSummary(userId),
-        listRoles(qRole ? { q: qRole } : undefined),
-      ]);
-      setSummary(s);
-      setAllRoles(roles);
-    } finally { setLoading(false); }
-  };
+  // --- data (RTK Query)
+  const { data: rolesRaw = [], isFetching: rolesLoading, refetch: refetchRoles } = useListRolesQuery();
+  const { data: summary, isFetching: summaryLoading, refetch: refetchSummary } = useUserPermSummaryQuery(userId, { skip: !userId });
 
-  useEffect(() => { refetch(); /* eslint-disable-line */ }, [userId, qRole]);
+  // --- mutations
+  const [assignRoleToUser] = useAssignRoleToUserMutation();
+  const [removeRoleFromUser] = useRemoveRoleFromUserMutation();
+  const [allowPermForUser]  = useAllowPermForUserMutation();
+  const [denyPermForUser]   = useDenyPermForUserMutation();
+  const [clearPermOverride] = useClearPermOverrideMutation(); // не используется в UI, но оставлен
+
+  const loading = rolesLoading || summaryLoading;
+
+  // client-side фильтр ролей (т.к. listRoles без params)
+  const allRoles = useMemo(() => {
+    const term = qRole.trim().toLowerCase();
+    const arr  = Array.isArray(rolesRaw) ? rolesRaw : [];
+    if (!term) return arr;
+    return arr.filter(r =>
+      `${r.name ?? ''} ${r.description ?? ''}`.toLowerCase().includes(term)
+    );
+  }, [rolesRaw, qRole]);
+
+  // рефетч при смене userId
+  useEffect(() => {
+    if (userId) refetchSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  const hasRole = (roleId) => Array.isArray(summary?.roles) && summary.roles.some(r => String(r.id) === String(roleId));
+
+  const toggleRole = async (role) => {
+    const active = hasRole(role.id);
+
+    // оптимистичное обновление
+    const prev = summary;
+    const next = prev ? {
+      ...prev,
+      roles: active ? prev.roles.filter(r => String(r.id) !== String(role.id))
+                    : [...prev.roles, role],
+    } : prev;
+
+    // локально патчим
+    // тут можно useState для summary, но summary — из RTK. Без локального set оставим только refetch ниже.
+    try {
+      if (active) await removeRoleFromUser({ userId, roleId: role.id }).unwrap();
+      else        await assignRoleToUser({ userId, roleId: role.id }).unwrap();
+    } catch (e) {
+      console.error('toggleRole failed', e);
+    } finally {
+      // точный серверный снимок
+      await Promise.all([refetchSummary(), refetchRoles()]);
+    }
+  };
 
   const groups = useMemo(() => {
     if (!summary?.permissions) return [];
@@ -98,55 +102,25 @@ export default function UserAccessPanel({ userId }) {
       .sort((a,b)=>a.cat.localeCompare(b.cat));
   }, [summary, qPerm]);
 
-  if (loading) return <div className={s.panel}>Загрузка…</div>;
-  if (!summary) return <div className={s.panel}>Нет данных</div>;
-
-  const hasRole = (roleId) => summary.roles?.some(r => r.id === roleId);
-
-  const toggleRole = async (role) => {
-    const active = hasRole(role.id);
-    setSummary(prev => prev ? { ...prev,
-      roles: active ? prev.roles.filter(r => r.id !== role.id) : [...prev.roles, role]
-    } : prev);
-    try {
-      if (active) await removeRoleFromUser(userId, role.id);
-      else        await assignRoleToUser(userId, role.id);
-      await refetch();
-    } catch (e) {
-      await refetch();
-      console.error('toggleRole failed', e);
-    }
-  };
-
   const patchPermLocal = (permId, patch) => {
-    setSummary(prev => {
-      if (!prev) return prev;
-      const next = prev.permissions.map(p => p.id === permId ? { ...p, ...patch } : p);
-      return { ...prev, permissions: next };
-    });
+    // так как summary управляется RTK Query, лучше не мутировать напрямую.
+    // В простоте — ничего локально не патчим, а показываем оптимизм через элемент Switch.
+    // Но если хочешь — можно хранить локальную карту overrides по id.
   };
 
   const togglePerm = async (p, nextChecked) => {
-    const prevState = {
-      viaUserAllow: !!p.viaUserAllow,
-      viaUserDeny : !!p.viaUserDeny,
-      effective   : !!p.effective,
-    };
-
-    if (nextChecked) {
-      patchPermLocal(p.id, { viaUserAllow: true, viaUserDeny: false, effective: true });
-    } else {
-      patchPermLocal(p.id, { viaUserAllow: false, viaUserDeny: true, effective: false });
-    }
-
     try {
-      if (nextChecked) await allowPermForUser(userId, p.id);
-      else             await denyPermForUser(userId, p.id);
+      if (nextChecked) await allowPermForUser({ userId, permId: p.id }).unwrap();
+      else             await denyPermForUser({ userId, permId: p.id }).unwrap();
     } catch (e) {
-      patchPermLocal(p.id, prevState);
       console.error('togglePerm failed', e);
+    } finally {
+      await refetchSummary();
     }
   };
+
+  if (loading) return <div className={s.panel}>Загрузка…</div>;
+  if (!summary) return <div className={s.panel}>Нет данных</div>;
 
   return (
     <div className={s.panel}>

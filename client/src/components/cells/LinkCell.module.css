@@ -1,0 +1,55 @@
+.rowLink{
+  appearance:none;
+  background:none !important;
+  border:0; padding:0; margin:0;
+  text-align:left; color:inherit; font:inherit; cursor:pointer;
+  display:flex; flex-direction:column; gap:4px; min-width:0;
+  outline:none;
+  -webkit-tap-highlight-color: transparent;
+}
+.rowLink:active{
+  background:none !important;
+  box-shadow:none !important;
+}
+
+.primaryWrap{
+  display:flex; align-items:center; gap:6px; min-width:0;
+}
+
+.primary{
+  font-weight:600; display:inline-block;
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  transition: color .14s ease, background-size .14s ease;
+}
+
+.rowLink:hover .primary{
+  color: color-mix(in srgb, var(--text) 86%, var(--primary) 14%);
+  background-size: 100% 1px;
+}
+
+.rowLink:focus-visible{
+  outline:none;
+  box-shadow:none;
+  background:none !important;
+}
+.rowLink:focus-visible .primary{
+  background-size: 100% 1px;
+  color: color-mix(in srgb, var(--primary) 90%, var(--text) 10%);
+}
+
+.secondary{
+  font-size:12px; color: var(--muted);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+.chevron{
+  opacity:0; transform: translateX(-2px);
+  transition: opacity .14s ease, transform .14s ease;
+  font-size:16px; line-height:1;
+  color: color-mix(in srgb, var(--text) 70%, var(--primary) 10%);
+}
+.rowLink:hover .chevron{ opacity:.9; transform: translateX(0); }

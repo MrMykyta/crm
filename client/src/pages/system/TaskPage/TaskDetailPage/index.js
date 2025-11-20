@@ -1,40 +1,44 @@
-// src/pages/system/TaskPage/TaskDetailPage/index.js
+// src/pages/system/TaskPage/TaskDetailPage/index.jsx
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
 import EntityDetailPage from '../../../_scaffold/EntityDetailPage';
 import { buildTaskSchema, toFormTask, toApiTask } from '../../../../schemas/task.schema';
 import { useGetTaskQuery, useUpdateTaskMutation } from '../../../../store/rtk/tasksApi';
-
-// опционально: ParticipantsEditor, если используешь левую панель участников
-// import ParticipantsEditor from '../../../../components/forms/SmartForm/ParticipantsEditor';
+import { filterSchema } from '../../../../utils/filterSchema';
+import TaskDetailTabs from '../TaskDetailTabs';
 
 const TABS = [
-  { key:'overview',   label:'Описание' },
-  { key:'notes',      label:'Заметки' },
-  { key:'files',      label:'Файлы' },
-  { key:'relations',  label:'Связи' },
-  { key:'history',    label:'История' },
-  { key:'reminders',  label:'Напоминания' },
-  { key:'settings',   label:'Настройки' },
+  { key:'overview',  label:'Описание' },
+  { key:'files',     label:'Файлы' },
+  { key:'tasks',     label:'Задачи' },
+  { key:'offers',    label:'Предложения' },
+  { key:'orders',    label:'Заказы' },
+  { key:'invoices',  label:'Счета' },
+  { key:'documents', label:'Документы' },
+  { key:'email',     label:'Имейл' },
+];
+
+const TASK_FORM_FIELDS = [
+  'title','category','status','priority', 'creator',
+  'startAt','endAt',
+  'assigneeIds','watcherIds',
+  'counterpartyId','dealId','contactIds',
+  'statusAggregate',
 ];
 
 export default function TaskDetailPage(){
   const { id } = useParams();
-
   const { data: base, isFetching } = useGetTaskQuery(id);
   const [updateTask, { isLoading: saving }] = useUpdateTaskMutation();
 
-  // если есть отдельная ручка lookups — подтяни здесь через RTK в будущем
-  const lookups = useMemo(() => ({
-    userOptions: [], departmentOptions: [],
-    contactOptions: [], counterpartyOptions: [], dealOptions: [],
-  }), []);
-
-  const schemaBuilder = useMemo(() => (i18n) => buildTaskSchema(i18n, lookups), [lookups]);
+  const schemaBuilder = useMemo(() => (i18n) => {
+    const full = buildTaskSchema(i18n);
+    return filterSchema(full, TASK_FORM_FIELDS);
+  }, []);
 
   const save = async (entityId, payload) => {
     const saved = await updateTask({ id: entityId, payload }).unwrap();
-    return saved; // EntityDetailPage возьмёт saved для дальнейшей работы
+    return saved;
   };
 
   if (!base && isFetching) return null;
@@ -53,9 +57,9 @@ export default function TaskDetailPage(){
       save={save}
       storageKeyPrefix="task"
       autosave={{ debounceMs: 500 }}
-      saveOnExit={true}
-      clearDraftOnUnmount={true}
-      // leftExtras={<ParticipantsEditor .../>}
+      saveOnExit
+      clearDraftOnUnmount
+      RightTabsComponent={TaskDetailTabs}
     />
   );
 }

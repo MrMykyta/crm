@@ -1,41 +1,39 @@
+// src/pages/Auth/VerifyEmail.jsx
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useVerifyEmailMutation } from '../../../store/rtk/authApi';
 import s from './Verify.module.css';
 
-const useQuery = () => new URLSearchParams(useLocation().search);
-
-// fetch shim
-async function verifyEmailFetch(token) {
-  const res = await fetch(`/api/auth/verify?token=${encodeURIComponent(token)}`, {
-    credentials:'include'
-  });
-  if (!res.ok) return { verified: false };
-  return res.json().catch(()=>({ verified:true }));
-}
-
 export default function VerifyEmail() {
-  const q = useQuery();
-  const token = q.get('token');
-  const email = q.get('email');
+  const [sp] = useSearchParams();
+  const token = sp.get('token');
+  const email = sp.get('email');
   const navigate = useNavigate();
+
+  const [verifyEmail, { isLoading }] = useVerifyEmailMutation();
   const [state, setState] = useState({ status: token ? 'verifying' : 'idle', msg: '' });
 
   useEffect(() => {
     if (!token) return;
     (async () => {
       try {
-        const res = await verifyEmailFetch(token);
-        if (res?.verified) {
+        // ВАЖНО: вызываем RTK-мутацию — onQueryStarted положит токены в Redux
+        const data = await verifyEmail(token).unwrap();
+
+        // На всякий случай проверим флаг
+        if (data?.verified !== false) {
           setState({ status: 'success', msg: 'Verified' });
-          setTimeout(() => navigate('/auth/company-setup'), 100);
+          // Навигацию делаем уже после того, как токены попали в стор
+          navigate('/auth/company-setup', { replace: true });
         } else {
           setState({ status: 'error', msg: 'Verification failed' });
         }
       } catch (e) {
-        setState({ status: 'error', msg: e?.message || 'Error' });
+        const msg = e?.data?.error || e?.data?.message || e?.message || 'Error';
+        setState({ status: 'error', msg });
       }
     })();
-  }, [token, navigate]);
+  }, [token, verifyEmail, navigate]);
 
   if (!token) {
     return (
@@ -48,7 +46,7 @@ export default function VerifyEmail() {
 
   return (
     <div className={s.box}>
-      {state.status === 'verifying' && <h2>Verifying…</h2>}
+      {(state.status === 'verifying' || isLoading) && <h2>Verifying…</h2>}
       {state.status === 'success' && <h2>Verified ✅ Redirecting…</h2>}
       {state.status === 'error' && (<><h2>Verification error</h2><p>{state.msg}</p></>)}
     </div>

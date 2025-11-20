@@ -79,7 +79,7 @@
   /* вот это и тянуло — делаем height, а не min-height */
   height: calc(100dvh - var(--topbar-h) - 8px);
   overflow: auto;
-  padding: 16px 20px 24px;
+  padding: 0px 20px 20px;
   box-sizing: border-box;
 
   /* делаем фон прозрачным, чтобы стекло детей было видно */

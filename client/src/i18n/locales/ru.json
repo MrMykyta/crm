@@ -107,7 +107,11 @@
     "cancel": "Отмена",
     "primary": "Основной",
     "saved": "Сохранено",
-    "unsaved": "Есть несохранённые изменения"
+    "unsaved": "Есть несохранённые изменения",
+    "noneSelected": "Не выбрано",
+    "selectAll": "Выбрать всех",
+    "clear": "Очистить",
+    "select": "Выбрать"
   },
   "countries": {
     "PL": "PL — Польша",
@@ -135,6 +139,8 @@
     "clients": "Клиенты",
     "deals": "Сделки",
     "tasks": "Задачи",
+    "notes": "Заметки",
+    "contactsperson": "Контактные лица",
     "calendar": "Календарь",
     "oms": "OMS",
     "invoices": "Счета",
@@ -168,6 +174,10 @@
   "topbar": {
     "searchPlaceholder": "Поиск…",
     "notifications": "Уведомления",
+    "notificationsTitle": "Уведомления",
+    "notificationsClear": "Очистить",
+    "notificationsEmpty": "Пока нет уведомлений",
+    "notificationsAll": "Показать все",
     "userMenu": "Меню пользователя",
     "find": "Найти",
     "logout": "Выйти"
@@ -345,53 +355,46 @@
       "searchPlaceholder": "Поиск (название, NIP, REGON...)"
     },
     "task": {
+      "title": "Задачи",
+      "addTask":"Добавить задачу",
+      "searchPlaceholder": "Поиск...",
+      "newTask":"Новая задача",
       "sections": {
-        "main": "Основное",
-        "plan": "Планирование",
+        "basic": "Основное",
+        "schedule": "Планирование",
+        "description": "Описание",
         "participants": "Участники",
-        "relations": "Связи",
+        "links": "Связи",
+        "contacts": "Контакты",
         "logic": "Логика статуса"
+      },
+      "enums": {
+        "status": {
+          "todo": "К выполнению",
+          "in_progress": "В процессе",
+          "done": "Выполнено",
+          "blocked": "Заблокривано",
+          "canceled": "Отменено"
+        }
       },
       "fields": {
         "title": "Название",
         "category": "Категория",
         "status": "Статус",
+        "creator": "Автор",
         "priority": "Приоритет",
-        "startAt": "Начало",
-        "endAt": "Окончание",
+        "startAt": "Планируемое начало",
+        "endAt": "Планируемое окончание",
         "description": "Описание",
-        "participantMode": "Назначение (режим)",
-        "watcherMode": "Наблюдатели (режим)",
         "assignees": "Назначенные работники",
-        "departments": "Отделы",
         "watchers": "Наблюдатели",
         "counterparty": "Клиент",
         "deal": "Сделка",
         "contacts": "Контактные лица",
+        "schedule": "Планирование",
         "statusAggregate": "Рассчитывать общий статус по исполнителям"
-      },
-      "placeholders": {
-        "title": "Например: Перезвонить клиенту"
-      },
-      "enums": {
-        "status": {
-          "todo": "К выполнению",
-          "in_progress": "В работе",
-          "done": "Готово",
-          "blocked": "Заблокировано",
-          "canceled": "Отменено"
-        },
-        "mode": {
-          "none": "Выключено",
-          "all": "Все сотрудники",
-          "lists": "Списки ниже"
-        }
-      },
-      "hints": {
-        "statusAggregate": "Задача считается выполненной только когда все назначенные работники завершат свои части"
       }
     }
-    
   },
   "companySettings":{
     "title": "Настройки компании",
@@ -422,6 +425,63 @@
   "companyMenu": {
     "info": "Информация о фирме",
     "settings": "Настройки"
+  },
+
+  "notifications": {
+    "title": "Уведомления",
+
+    "entity": {
+      "task": "Задача",
+      "deal": "Сделка",
+      "counterparty": "Контрагент",
+      "lead": "Лид",
+      "client": "Клиент",
+      "contact": "Контакт",
+      "user": "Пользователь"
+    },
+
+    "new": "НОВОЕ",
+    "read": "прочитано",
+
+    "unreadCount": "Непрочитанных: {{count}}",
+    "noUnread": "Все уведомления прочитаны — красота ✨",
+
+    "filterAll": "Все",
+    "filterUnread": "Непрочитанные",
+    "typeAll": "Все типы",
+
+    "markAll": "Отметить все как прочитанные",
+    "empty": "У вас пока нет уведомлений",
+    "page": "Страница {{page}}",
+    "updating": "Обновляем список…",
+
+    "task": {
+      "created": {
+        "title": "Новая задача",
+        "body": "Приоритет: {{priority}}, статус: {{status}}"
+      },
+      "statusChanged": {
+        "title": "Изменён статус задачи",
+        "body": "Статус: {{old}} → {{next}}"
+      }
+    },
+
+    "counterparty": {
+      "created": {
+        "title": "Создан контрагент",
+        "body": "Тип: {{type}}, статус: {{status}}"
+      },
+      "updated": {
+        "title": "Обновлён контрагент",
+        "bodyStatus": "Статус: {{old}} → {{next}}",
+        "bodyType": "Тип: {{old}} → {{next}}",
+        "bodyGeneric": "Данные контрагента обновлены"
+      },
+      "converted": {
+        "title": "Лид стал клиентом",
+        "body": "Статус: {{status}}"
+      }
+    }
   },
   "user": {
     "form": {

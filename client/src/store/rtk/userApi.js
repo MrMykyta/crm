@@ -7,7 +7,6 @@ const normalizePrefs = (raw) => {
   const themeMode = pref.themeMode ?? pref.theme ?? undefined;
   const lang      = pref.language ?? pref.lang ?? pref.locale ?? undefined;
 
-  // appearance + подтягиваем legacy background.url -> backgroundPath
   const appearance = { ...(pref.appearance || {}) };
   if (!appearance.backgroundPath && pref?.background?.url) {
     appearance.backgroundPath = String(pref.background.url);
@@ -15,26 +14,21 @@ const normalizePrefs = (raw) => {
   return { themeMode, lang, appearance };
 };
 
-/** Готовим тело для PUT с совместимостью по полям */
 const buildSaveBody = ({ themeMode, lang, appearance } = {}) => {
   const body = {};
 
   if (typeof themeMode !== 'undefined') body.themeMode = themeMode;
-  // Бэкенд ждёт language (не lang)
   if (typeof lang !== 'undefined' && lang !== null) body.language = lang;
 
-  // appearance — чистим undefined
   const outApp = {};
   Object.entries(appearance || {}).forEach(([k, v]) => {
     if (typeof v !== 'undefined') outApp[k] = v;
   });
 
-  // Дублируем backgroundPath в legacy-поле background.url
   const bgPath = outApp.backgroundPath ?? null;
   if (bgPath) {
-    body.background = { url: bgPath };   // сервер whitelist пропустит
+    body.background = { url: bgPath };
   } else if ('backgroundPath' in outApp) {
-    // Если явно очищаем фон, то чистим и legacy
     body.background = null;
   }
 
@@ -63,32 +57,65 @@ export const userApi = crmApi.injectEndpoints({
       ],
     }),
 
-    // + остальное, если нужно здесь же
     getMe: build.query({
       query: () => ({ url: '/users/me', method: 'GET' }),
       providesTags: [{ type: 'User', id: 'me' }],
     }),
+
     updateMe: build.mutation({
       query: (body) => ({ url: '/users/me', method: 'PATCH', body }),
       invalidatesTags: [{ type: 'User', id: 'me' }],
     }),
+
     getUserById: build.query({
-      query: (userId) => ({ url: `/users/${encodeURIComponent(userId)}`, method: 'GET' }),
-      providesTags: (_r,_e,id)=>[{ type:'User', id }],
-    }),
-    updateUserById: build.mutation({
-      query: ({ userId, body }) => ({ url: `/users/${encodeURIComponent(userId)}`, method: 'PATCH', body }),
-      invalidatesTags: (_r,_e,{userId})=>[{ type:'User', id:userId }],
+      query: (userId) => ({
+        url: `/users/${encodeURIComponent(userId)}`,
+        method: 'GET',
+      }),
+      providesTags: (_r, _e, id) => [{ type: 'User', id }],
     }),
 
+    updateUserById: build.mutation({
+      query: ({ userId, body }) => ({
+        url: `/users/${encodeURIComponent(userId)}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (_r, _e, { userId }) => [{ type: 'User', id: userId }],
+    }),
+
+    addMyContact: build.mutation({
+      query: (body) => ({
+        url: '/users/me/contacts',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: [{ type: 'User', id: 'me' }],
+    }),
+
+    /** 👇 НОВОЕ: lookup по email */
+    lookupUserByEmail: build.query({
+      query: (email) => ({
+        url: '/users/lookup',
+        method: 'GET',
+        params: { email },      // crmApi сам подставит ?email=
+      }),
+      // на сервере ожидаем ответ вида { exists, user? }
+    }),
   }),
+  overrideExisting: false,
 });
 
 export const {
   useGetMyPreferencesQuery,
   useSaveMyPreferencesMutation,
   useGetMeQuery,
+  useLazyGetMeQuery,
   useUpdateMeMutation,
   useGetUserByIdQuery,
   useUpdateUserByIdMutation,
+  useAddMyContactMutation,
+  // 👇 хук для lookup
+  useLookupUserByEmailQuery,
+  useLazyLookupUserByEmailQuery,
 } = userApi;

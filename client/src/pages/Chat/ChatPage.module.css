@@ -1,0 +1,1038 @@
+/* ChatPage.module.css */
+/* ===== ROOT LAYOUT ===== */
+
+.wrap {
+  position: relative;
+  display: flex;
+  height: calc(97vh - var(--topbar-h) - 2 * var(--space-3));
+  margin: var(--space-3);
+  border-radius: var(--radius-lg);
+  /* background: var(--bg-gradient), var(--bg-radial-1), var(--bg-radial-2); */
+  background: var(--sidebar-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  background-blend-mode: normal, screen, screen;
+
+  box-shadow: var(--elev-3);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
+  overflow: hidden;
+}
+
+/* ===== SIDEBAR ===== */
+
+.sidebar {
+  width: 25rem;
+  min-width: 16.5rem;
+  max-width: 25rem;
+  display: flex;
+  flex-direction: column;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-brd);
+  color: var(--sidebar-text);
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+/* HEADER (Чаты + иконка) */
+
+.sidebarHeader {
+  padding: var(--space-4) var(--space-3) var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebarTitle {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+}
+
+.sidebarHeaderRight {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* кнопка "новый чат" */
+
+.newChatBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, #ffffff 35%, transparent);
+  cursor: pointer;
+  transition: background var(--tr-fast), border-color var(--tr-fast),
+    opacity var(--tr-fast);
+  box-shadow: none;
+  padding: 0;
+}
+
+.newChatBtnIcon {
+  color: #fff;
+}
+
+.newChatBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.newChatBtnActive {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* DROPDOWN */
+
+.newChatMenu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  min-width: 230px;
+  background: radial-gradient(
+    circle at top right,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(15, 17, 25, 0.95) 40%
+  );
+  backdrop-filter: blur(20px);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 90%, transparent);
+  border-radius: 14px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.65);
+  padding: 6px;
+  z-index: 20;
+}
+
+.newChatItem {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background var(--tr-fast);
+}
+
+.newChatItem:first-child {
+  margin-bottom: 2px;
+}
+
+.newChatItem:last-child {
+  margin-top: 2px;
+}
+
+.newChatItem:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== SEARCH ===== */
+
+.headerSearchWrap {
+  padding: 0 var(--space-3) var(--space-3);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--sidebar-brd) 80%, transparent);
+}
+
+.searchInputHeader {
+  width: 100%;
+  padding: var(--space-3) var(--space-3);
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: var(--fs-sm);
+  color: var(--text);
+  outline: none;
+  transition: border-color var(--tr-fast), background var(--tr-fast),
+    box-shadow var(--tr-fast);
+}
+
+.searchInputHeader::placeholder {
+  color: var(--muted);
+}
+
+.searchInputHeader:focus {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--primary-start);
+  box-shadow: var(--elev-1);
+}
+
+/* ===== ROOMS LIST ===== */
+
+.roomsList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 var(--space-2) var(--space-2);
+}
+
+.roomsEmpty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+.room,
+.roomActive {
+  position: relative;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  margin-bottom: var(--space-2);
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background var(--tr-fast), border-color var(--tr-fast),
+    transform var(--tr-fast), box-shadow var(--tr-fast);
+}
+
+.room:hover {
+  background: var(--sidebar-hover);
+  border-color: color-mix(in srgb, var(--primary-start) 35%, transparent);
+  transform: translateY(-1px);
+  box-shadow: var(--elev-1);
+}
+
+.roomActive {
+  background: var(--sidebar-active);
+  border-color: color-mix(in srgb, var(--primary-start) 60%, transparent);
+  box-shadow: var(--elev-1);
+}
+
+.roomTitle {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  margin-bottom: 2px;
+}
+
+.roomPreview {
+  font-size: var(--fs-2xs);
+  color: var(--muted);
+  max-height: 2.6em;
+  overflow: hidden;
+}
+
+/* ===== MAIN CHAT WINDOW ===== */
+
+.window {
+  position: relative; /* нужно для абсолютной плавающей даты */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(
+      1000px 700px at 110% 110%,
+      color-mix(in srgb, var(--primary-end) 26%, transparent) 0%,
+      transparent 60%
+    ),
+    transparent;
+  color: var(--text);
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-md);
+  color: var(--muted);
+}
+
+/* ===== CHAT HEADER ===== */
+
+.chatHeader {
+  height: 64px;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.chatHeaderMain {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.chatAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: #fff;
+}
+
+.chatHeaderTexts {
+  display: flex;
+  flex-direction: column;
+}
+
+.chatTitle {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+}
+
+.chatSubtitle {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+.chatHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chatHeaderBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--tr-fast), border-color var(--tr-fast),
+    transform var(--tr-fast);
+}
+
+.chatHeaderBtn:hover {
+  background: var(--sidebar-hover);
+  border-color: var(--primary-start);
+  transform: translateY(-1px);
+}
+
+/* ===== FLOATING DAY LABEL (плавающая дата под хедером) ===== */
+
+.floatingDayLabel {
+  position: absolute;
+  top: 64px; /* ровно под .chatHeader */
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.floatingDayLabelInner {
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 90%, transparent);
+  color: color-mix(in srgb, var(--muted) 96%, transparent);
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+}
+
+/* ===== MESSAGES ===== */
+
+.messages {
+  flex: 1;
+  padding: var(--space-4);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.messagesScrollable {}
+.messagesScrolled {}
+
+/* статичный разделитель даты в ленте */
+.dayDivider {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0 12px;
+}
+
+.dayDivider > span {
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 90%, transparent);
+  color: color-mix(in srgb, var(--muted) 96%, transparent);
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+/* общий пузырь */
+.message {
+  max-width: 70%;
+  background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
+  box-shadow: var(--elev-1);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) var(--space-3);
+}
+
+/* === TELEGRAM-LIKE MESSAGE ROWS === */
+
+.messageWrap {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 8px;
+  max-width: 80%;
+}
+
+/* мои сообщения — справа */
+.meWrap {
+  margin-left: auto;
+  flex-direction: row-reverse;
+}
+
+/* чужие — слева */
+.otherWrap {
+  margin-right: auto;
+}
+
+/* аватар слева от пузыря */
+.msgAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7d5fff, #4a33d4);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+/* у моих сообщений аватар не нужен */
+.meWrap .msgAvatar {
+  display: none;
+}
+
+/* сам пузырь */
+.msgBubble {
+  position: relative;
+  background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+  padding: 8px 10px 6px 10px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  box-shadow: var(--elev-1);
+  max-width: 420px;
+  word-break: break-word;
+}
+
+/* мои пузыри — градиент как раньше */
+.meWrap .msgBubble {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-start) 85%, transparent),
+    color-mix(in srgb, var(--primary-end) 85%, transparent)
+  );
+  border-color: transparent;
+  color: #fff;
+}
+
+/* имя автора в группе над текстом */
+.messageAuthorRow {
+  margin-bottom: 2px;
+}
+
+.messageAuthorName {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  opacity: 0.9;
+}
+
+/* текст */
+.msgText {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: var(--fs-sm);
+}
+
+/* время справа внизу — как в телеге */
+.msgTime {
+  font-size: var(--fs-3xs, 10px);
+  opacity: 0.75;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* ===== ХВОСТИКИ У ПУЗЫРЕЙ ===== */
+
+.otherWrap .msgBubble {
+  border-bottom-left-radius: 4px;
+}
+
+.otherWrap .msgBubble::after {
+  content: "";
+  position: absolute;
+  left: -6px;
+  bottom: 0;
+  width: 12px;
+  height: 16px;
+  background: inherit;
+  border-bottom-left-radius: 10px;
+  transform: translateY(1px);
+  clip-path: polygon(0 100%, 100% 0, 100% 100%);
+}
+
+.meWrap .msgBubble {
+  border-bottom-right-radius: 4px;
+}
+
+.meWrap .msgBubble::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  bottom: 0;
+  width: 12px;
+  height: 16px;
+  background: color-mix(in srgb, #6753dd 85%, transparent);
+  border-bottom-right-radius: 10px;
+  transform: translateY(1px);
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+/* ===== INPUT AREA ===== */
+
+.input {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.inputTextWrap {
+  flex: 1;
+  display: flex;
+}
+
+/* textarea как в Telegram: растёт вверх, без resize-ручки */
+.textbox {
+  width: 100%;
+  min-height: 38px;
+  max-height: 35vh;
+  padding: 8px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--card-brd);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+  outline: none;
+  resize: none;
+  overflow-y: hidden;
+  transition: border-color var(--tr-fast), box-shadow var(--tr-fast),
+    background var(--tr-fast);
+}
+
+.textbox:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 80%, transparent);
+  background: color-mix(in srgb, var(--input-bg) 90%, transparent);
+}
+
+/* маленькие круглые иконки слева/справа от инпута */
+.inputIconBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--tr-fast), border-color var(--tr-fast),
+    transform var(--tr-fast), color var(--tr-fast), opacity var(--tr-fast);
+}
+
+.inputIconBtn:hover {
+  background: color-mix(in srgb, var(--sidebar-hover) 80%, transparent);
+  border-color: var(--primary-start);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+/* круглая кнопка отправки, как в телеге */
+.sendIconBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  color: #fff;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: var(--elev-2);
+  transition: transform var(--tr-fast), box-shadow var(--tr-fast),
+    opacity var(--tr-fast), filter var(--tr-fast);
+}
+
+.sendIconBtn:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+  cursor: default;
+}
+
+.sendIconBtn:not(:disabled):hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.sendIconBtn:not(:disabled):active {
+  transform: translateY(0);
+  box-shadow: var(--elev-1);
+}
+
+/* ------------------------------- */
+/*      CREATE DIRECT / GROUP      */
+/* ------------------------------- */
+
+.createWrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+
+.createHeader {
+  margin-bottom: 20px;
+}
+
+.createTitle {
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.createSubtitle {
+  font-size: 14px;
+  color: #b2b4bd;
+}
+
+/* SEARCH INPUT */
+.createSearch {
+  margin-bottom: 16px;
+}
+
+.createSearchInput {
+  width: 100%;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  outline: none;
+  color: #fff;
+  font-size: 15px;
+  transition: 0.2s;
+}
+
+.createSearchInput::placeholder {
+  color: #6e7080;
+}
+
+.createSearchInput:focus {
+  border-color: rgba(113, 108, 247, 0.7);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ERROR */
+.createError {
+  padding: 12px;
+  background: rgba(255, 70, 70, 0.15);
+  border: 1px solid rgba(255, 70, 70, 0.25);
+  border-radius: 10px;
+  color: #ff6b6b;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+/* USER LIST */
+.userList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.userList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.userList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+/* ОДНА СТРОКА ПОЛЬЗОВАТЕЛЯ */
+.userRow {
+  width: calc(100% - 24px);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.userRow:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* выбрана (для группы) */
+.userRowSelected {
+  background: rgba(123, 97, 255, 0.35);
+  border-color: rgba(147, 124, 255, 0.9);
+}
+
+/* AVATAR */
+.userAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #7d5fff, #4a33d4);
+  font-size: 17px;
+}
+
+.userInitials {
+  pointer-events: none;
+}
+
+/* Имя + email */
+.userMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.userName {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.userEmail {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* Кружок выбора справа */
+.userCheckWrap {
+  margin-left: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.userCheckCircle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userBusyDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #6b5cff;
+}
+
+/* FOOTER ДЛЯ ГРУППЫ */
+.createFooter {
+  padding-top: 16px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  gap: 12px;
+}
+
+.groupTitleInput {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+}
+
+.groupTitleInput::placeholder {
+  color: #7b7d8a;
+}
+
+.groupTitleInput:focus {
+  border-color: rgba(123, 97, 255, 0.9);
+}
+
+.groupCreateBtn {
+  padding: 0 20px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #7c5cff, #4a32d4);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.18s ease;
+}
+
+.groupCreateBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.groupCreateBtn:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+/* BACK BUTTON */
+
+.backBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  color: var(--muted);
+  border: 1px solid var(--glass-brd);
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.backBtn:hover {
+  background: color-mix(in srgb, var(--bg) 40%, transparent);
+  color: var(--text);
+}
+
+
+
+/* ===== SEARCH BAR IN CHAT HEADER ===== */
+
+.chatSearchBar {
+  padding: 4px var(--space-4) 6px;
+  border-bottom: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.chatSearchInput {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: var(--fs-xs);
+  color: var(--text);
+  outline: none;
+  transition: border-color var(--tr-fast), background var(--tr-fast),
+    box-shadow var(--tr-fast);
+}
+
+.chatSearchInput::placeholder {
+  color: var(--muted);
+}
+
+.chatSearchInput:focus {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--primary-start);
+  box-shadow: var(--elev-1);
+}
+
+.chatSearchCounter {
+  min-width: 52px;
+  text-align: center;
+  font-size: var(--fs-2xs);
+  color: var(--muted);
+}
+
+.chatSearchNavBtn {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--tr-fast), border-color var(--tr-fast),
+    transform var(--tr-fast), opacity var(--tr-fast);
+}
+
+.chatSearchNavBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.chatSearchNavBtn:not(:disabled):hover {
+  background: var(--sidebar-hover);
+  border-color: var(--primary-start);
+  transform: translateY(-1px);
+}
+
+/* подсветка совпадений в тексте сообщения */
+.msgHighlight {
+  background: color-mix(in srgb, var(--danger) 80%, transparent);
+  border-radius: 4px;
+  padding: 0 1px;
+}
+
+.chatSearchCloseBtn {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: background var(--tr-fast), border-color var(--tr-fast),
+    transform var(--tr-fast), opacity var(--tr-fast);
+}
+
+.chatSearchCloseBtn:hover {
+  background: var(--sidebar-hover);
+  color: var(--text);
+  border-color: var(--primary-start);
+  transform: translateY(-1px);
+}
+
+
+/* ===== МЕТА-СТРОКА: ВРЕМЯ + ГАЛОЧКИ ===== */
+
+.msgMetaRow {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* внутри общей мета-строки время без extra-отступа сверху */
+.msgMetaRow .msgTime {
+  margin-top: 0;
+}
+
+/* контейнер под статус (галочки) */
+.msgStatus {
+  display: flex;
+  align-items: center;
+  font-size: 0; /* чтобы не было странных промежутков */
+}
+
+/* базовый вид чеков */
+.msgCheckIcon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* один слой галочки */
+.msgCheckLayer {
+  position: relative;
+  display: inline-block;
+  font-size: 11px;
+}
+
+/* двойная галка — слегка сдвигаем вторую поверх первой */
+.msgCheckLayer + .msgCheckLayer {
+  margin-left: -3px;
+}
+
+/* СОСТОЯНИЯ:
+   sent      – одна бледная галка
+   readSome  – две серенькие
+   readAll   – две синие (как в WA)
+*/
+
+.msgCheckSent {
+  color: rgba(255, 255, 255, 0.7);
+  opacity: 0.7;
+}
+
+.msgCheckPartial {
+  color: rgba(255, 255, 255, 0.9);
+  opacity: 0.9;
+}
+
+/* тут делаем прям синенькие, чтобы в личках было видно */
+.msgCheckRead {
+  color: #4fc3ff;
+  opacity: 1;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
+}
+
+/* на всякий — только у моих сообщений показываем статус в одну линию с временем */
+.meWrap .msgMetaRow {
+  justify-content: flex-end;
+}

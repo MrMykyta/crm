@@ -263,3 +263,9 @@
   color: rgba(122,91,85,.65);
 }
 
+.notifWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

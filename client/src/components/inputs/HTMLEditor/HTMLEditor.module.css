@@ -1,0 +1,133 @@
+.wrap{ display:flex; flex-direction:column; gap:10px; width:100%; }
+
+/* toolbar */
+.toolbar{
+  position: relative;
+  display:flex; align-items:center; gap:8px;
+  overflow-x:auto; overflow-y:visible;
+  white-space:nowrap; scrollbar-width: thin;
+  padding:8px;
+  border:1px solid var(--card-brd);
+  border-radius:12px;
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
+  backdrop-filter: blur(var(--glass-blur, 8px));
+  z-index: 0;
+}
+
+.btn{
+  height:32px; min-width:32px;
+  padding:0 10px; border-radius:10px; font-size:14px;
+  color: var(--text);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--card-bg) 92%, transparent),
+    color-mix(in srgb, var(--card-bg) 98%, transparent));
+  border:1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent);
+  cursor:pointer; user-select:none;
+  transition: transform .05s, background .15s, border-color .15s, box-shadow .15s;
+}
+.btn:hover{ background: color-mix(in srgb, var(--sidebar-hover, #2a2f3b) 60%, transparent); }
+.btn:active{ transform: translateY(1px); }
+.btnIcon{ display:inline-flex; align-items:center; justify-content:center; padding:0 6px; }
+.disabled{ opacity:.45; pointer-events:none; }
+.active{ outline: 2px solid color-mix(in srgb, var(--focus) 55%, transparent); outline-offset:0; }
+
+.group{ display:inline-flex; gap:6px; align-items:center; }
+
+.select{
+  height:32px;
+  padding:0 10px; border-radius:10px; font-size:13px;
+  color: var(--text); background: var(--input-bg);
+  border:1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
+}
+.selectWide{ min-width:180px; }
+.selectAlign{ min-width:150px; }
+
+.icon { width:18px; height:18px; fill:none; stroke:currentColor; display:block; }
+
+/* size combobox (anchor), портал сам по себе */
+.sizeCombo{
+  position:relative; display:inline-flex; align-items:center;
+  background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+  border:1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  border-radius:12px; padding:0 4px;
+  height:32px; min-width:60px;
+  z-index: 1;
+}
+.sizeOpen{ outline: 2px solid color-mix(in srgb, var(--focus) 55%, transparent); }
+.sizeInput{
+  width:56px; height:28px;
+  text-align:center; padding:0 2px;
+  border:0; background:transparent; color:var(--text); font-size:13px; outline:none;
+}
+
+/* dropdown menu (portal) — СПЛОШНОЙ ФОН */
+.menu{
+  background: #151a23;                /* без прозрачности */
+  border:1px solid var(--card-brd);
+  border-radius:10px;
+  box-shadow: var(--elev-2);
+  padding:6px;
+  display:flex; flex-direction:column; gap:4px;
+  max-height:240px; overflow:auto; min-width:64px;
+  z-index: 10000;
+}
+.menuItem{
+  padding:6px 10px;
+  background: transparent;
+  color: var(--text);
+  border:1px solid transparent;
+  border-radius:8px;
+  text-align:center; cursor:pointer;
+}
+.menuItem:hover{
+  background: color-mix(in srgb, var(--primary-start) 14%, transparent);
+  border-color: color-mix(in srgb, var(--primary-start) 24%, transparent);
+}
+.menuItemActive{
+  background: color-mix(in srgb, var(--primary-start) 20%, transparent);
+  border-color: color-mix(in srgb, var(--primary-start) 30%, transparent);
+}
+
+/* swatches */
+.swatch{ display:inline-flex; align-items:center; gap:6px; padding:0 6px; }
+.swatchA{ display:inline-flex; align-items:flex-end; height:18px; font-weight:700; font-size:14px; line-height:1; }
+.marker{ width:16px; height:16px; display:inline-flex; align-items:center; }
+.swatchLine{ display:inline-block; width:22px; height:4px; border-radius:2px; outline:1px solid color-mix(in srgb, var(--card-brd) 70%, transparent); }
+.color{
+  width:36px; height:32px; padding:0; border-radius:10px;
+  border:1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
+  cursor:pointer; outline:0;
+}
+.btnTiny{ min-width:24px; height:28px; padding:0 6px; margin-left:2px; }
+
+/* editor surface */
+.editorWrap{
+  border:1px solid var(--card-brd);
+  border-radius:12px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--card-bg) 84%, transparent),
+    color-mix(in srgb, var(--card-bg) 94%, transparent));
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-clr, #000) 30%), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent);
+}
+
+/* ограничение высоты и скролл внутри */
+.editor{
+  width:100%; padding:12px 14px; border-radius:12px;
+  color: var(--text);
+  line-height:1.65; font-size:14px; outline:none;
+  max-height: 60dvh; overflow: auto;
+}
+.editor:empty::before{ content: attr(data-placeholder); color: color-mix(in srgb, var(--text) 45%, #fff 0%); }
+
+/* lists */
+.editor ul{ list-style: disc outside; padding-left:22px; margin:.4em 0 .6em; }
+.editor ol{ list-style: decimal outside; padding-left:24px; margin:.4em 0 .6em; }
+.editor li + li{ margin-top:.25em; }
+
+/* links & images */
+.editor a{ color: var(--primary-start); text-decoration: underline; }
+.editor a:hover{ text-decoration:none; background: color-mix(in srgb, var(--primary-start) 14%, transparent); border-radius:6px; }
+.editor img{ max-width:100%; height:auto; display:block; border-radius:10px; margin:.35em 0; box-shadow: 0 6px 16px color-mix(in srgb, var(--shadow-clr, #000) 28%); }

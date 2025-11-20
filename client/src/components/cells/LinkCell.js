@@ -1,19 +1,27 @@
-export default function LinkCell({ primary, secondary, onClick, ariaLabel }) {
+import React from 'react';
+import clsx from 'clsx';
+import s from './LinkCell.module.css';
+
+export default function LinkCell({
+  primary,
+  secondary,
+  onClick,
+  ariaLabel,
+  showChevron = true,
+  className,
+}) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="rowLinkReset"
       aria-label={ariaLabel}
-      style={{ display: 'flex', flexDirection: 'column', gap: 4, textAlign: 'left' }}
+      className={clsx(s.rowLink, className)}
     >
-      <div style={{ fontWeight: 600 }}>{primary}</div>
-      {secondary ? (
-        <div style={{ fontSize: 12, color: 'var(--muted)' }}>{secondary}</div>
-      ) : null}
-      <style>{`
-        .rowLinkReset{appearance:none;background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;cursor:pointer;}
-        .rowLinkReset:hover div:first-child{text-decoration:underline;}
-      `}</style>
+      <div className={s.primaryWrap}>
+        <span className={s.primary}>{primary}</span>
+        {showChevron && <span className={s.chevron} aria-hidden>›</span>}
+      </div>
+      {secondary ? <div className={s.secondary}>{secondary}</div> : null}
     </button>
   );
 }

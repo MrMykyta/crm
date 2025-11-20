@@ -39,17 +39,22 @@
 .input::placeholder{ color: color-mix(in srgb, var(--text) 45%, transparent); }
 
 .select{
-  padding: calc(var(--space-2) - 2px) var(--space-3); /* визуальное выравнивание с инпутом */
-  min-width: 9.5rem;   /* ~152px */
+  padding: calc(var(--space-2) - 2px) var(--space-3);
+  min-width: 9.5rem;
+  /* убираем псевдо-стрелки и нативный вид */
+  background-image: none !important;
   appearance: none;
-  background-image:
-    linear-gradient(45deg, transparent 50%, color-mix(in srgb, var(--text) 60%, transparent) 50%),
-    linear-gradient(135deg, color-mix(in srgb, var(--text) 60%, transparent) 50%, transparent 50%);
-  background-position: calc(100% - 1.4rem) 50%, calc(100% - 1rem) 50%;
-  background-size: 6px 6px, 6px 6px;
-  background-repeat: no-repeat;
+  /* чтобы текст не наезжал на иконку Radix */
+  padding-right: 2.2rem;
+  position: relative;
 }
 
+.select::after{ content: none !important; }
+
+/* подправим позицию radix-иконки */
+.select :global(.icon){ right: 10px; }
+
+/* hover/focus остаются как были */
 .input:hover, .select:hover{
   border-color: color-mix(in srgb, var(--card-brd) 70%, var(--focus));
 }

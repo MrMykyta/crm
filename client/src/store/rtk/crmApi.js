@@ -1,3 +1,4 @@
+// src/store/rtk/crmApi.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { setAuth, logout } from '../slices/authSlice';
 
@@ -22,14 +23,50 @@ export const getToken = () => sessionCtx.token || null;
 export const getCompanyId = () => sessionCtx.companyId || null;
 
 /** ==============================================================
+ *  LOCALSTORAGE HELPERS (прямо здесь, чтобы не было циклов)
+ *  ============================================================== */
+
+const LS_RT = 'rt';
+const LS_CID = 'cid';
+
+const saveRT = (rt) => {
+  try {
+    rt ? localStorage.setItem(LS_RT, rt) : localStorage.removeItem(LS_RT);
+  } catch {}
+};
+const loadRT = () => {
+  try {
+    return localStorage.getItem(LS_RT) || null;
+  } catch {
+    return null;
+  }
+};
+
+const saveCID = (cid) => {
+  try {
+    cid
+      ? localStorage.setItem(LS_CID, String(cid))
+      : localStorage.removeItem(LS_CID);
+  } catch {}
+};
+const loadCID = () => {
+  try {
+    return localStorage.getItem(LS_CID) || null;
+  } catch {
+    return null;
+  }
+};
+
+/** ==============================================================
  *  BASE QUERY (fetch)
  *  ============================================================== */
 const baseUrl =
-  (process.env.REACT_APP_API_URL?.replace(/\/+$/, '') || 'http://localhost:5001') + '/api';
+  (process.env.REACT_APP_API_URL?.replace(/\/+$/, '') ||
+    'http://localhost:5001') + '/api';
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl,
-  credentials: 'include', // важен для refresh по cookie
+  credentials: 'include',
   prepareHeaders: (headers) => {
     const token = getToken();
     const companyId = getCompanyId();
@@ -41,74 +78,107 @@ const rawBaseQuery = fetchBaseQuery({
 
 /** ==============================================================
  *  REAUTH WRAPPER с «мьютексом»
- *  - при 401/408/419/440 → один общий refresh для всех запросов
- *  - если refresh ок → повторяем исходный запрос
- *  - если нет → чистый logout
  *  ============================================================== */
 
-// общий промис «идет рефреш»
 let refreshingPromise = null;
 
-// функция запуска/ожидания рефреша
 const ensureRefreshed = async (api, extraOptions) => {
-  // если уже идёт refresh — просто дождёмся его завершения
   if (refreshingPromise) return refreshingPromise;
 
-  // запускаем новый refresh (cookie-based)
   refreshingPromise = (async () => {
     try {
+      const state = api.getState();
+
+      const reduxRT = state?.auth?.refreshToken ?? null;
+      const reduxCID = state?.auth?.companyId ?? null;
+
+      const refreshToken = reduxRT || loadRT();
+      const companyId = reduxCID || loadCID() || getCompanyId();
+
+      if (!refreshToken) {
+        api.dispatch(logout());
+        setApiSession({ token: null, companyId: null });
+        saveRT(null);
+        saveCID(null);
+        throw new Error('NO_REFRESH_TOKEN');
+      }
+
       const refreshResp = await rawBaseQuery(
-        { url: '/auth/refresh', method: 'POST' },
+        {
+          url: '/auth/refresh',
+          method: 'POST',
+          body: { refreshToken, companyId },
+        },
         api,
         extraOptions
       );
 
-      const data = refreshResp?.data;
-      const nextToken =
-        data?.accessToken || data?.tokens?.accessToken || data?.token || null;
-
-      if (!nextToken) {
-        // не удалось обновиться
-        setApiSession({ token: null, companyId: null });
+      if (refreshResp.error) {
         api.dispatch(logout());
+        setApiSession({ token: null, companyId: null });
+        saveRT(null);
+        saveCID(null);
         throw new Error('REFRESH_FAILED');
       }
 
-      const nextCompany = data?.activeCompanyId ?? data?.companyId ?? getCompanyId();
-      const user        = data?.user ?? null;
+      const data = refreshResp.data || {};
 
-      // обновляем контексты
-      setApiSession({ token: nextToken, companyId: nextCompany });
-      api.dispatch(setAuth({ accessToken: nextToken, companyId: nextCompany, user }));
+      const nextAccess =
+        data.accessToken ??
+        data.token ??
+        data.tokens?.accessToken ??
+        null;
+      const nextRefresh =
+        data.refreshToken ?? data.tokens?.refreshToken ?? refreshToken;
+      const nextCompany =
+        data.activeCompanyId ?? data.companyId ?? companyId;
+      const user = data.user ?? state?.auth?.user ?? null;
+
+      if (!nextAccess) {
+        api.dispatch(logout());
+        setApiSession({ token: null, companyId: null });
+        saveRT(null);
+        saveCID(null);
+        throw new Error('REFRESH_NO_ACCESS');
+      }
+
+      saveRT(nextRefresh);
+      saveCID(nextCompany);
+
+      api.dispatch(
+        setAuth({
+          accessToken: nextAccess,
+          refreshToken: nextRefresh,
+          companyId: nextCompany,
+          user,
+        })
+      );
+      setApiSession({ token: nextAccess, companyId: nextCompany });
 
       return true;
     } finally {
-      // сбрасываем «мьютекс» после завершения любого исхода
-      setTimeout(() => { refreshingPromise = null; }, 0);
+      setTimeout(() => {
+        refreshingPromise = null;
+      }, 0);
     }
   })();
 
   return refreshingPromise;
 };
 
-// статусы, при которых пробуем refresh
 const SHOULD_REFRESH = new Set([401, 408, 419, 440]);
 
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await rawBaseQuery(args, api, extraOptions);
 
-  // требуем рефреш?
   if (result?.error && SHOULD_REFRESH.has(result.error.status)) {
     try {
-      // 1) гарантируем один refresh для всех
       await ensureRefreshed(api, extraOptions);
-
-      // 2) повторяем исходный запрос уже с новым токеном
       result = await rawBaseQuery(args, api, extraOptions);
-    } catch (e) {
-      // refresh провалился → logout уже сделан в ensureRefreshed
-      // возвращаем ту же ошибку, но без дополнительного «шума»
-      return { error: { status: 401, data: { message: 'Unauthenticated' } } };
+    } catch {
+      return {
+        error: { status: 401, data: { message: 'Unauthenticated' } },
+      };
     }
   }
 
@@ -126,6 +196,7 @@ export const crmApi = createApi({
     'Preferences',
     'Company',
     'CompanyUser',
+    'Notification',
     'ACL',
     'Task',
     'TaskList',

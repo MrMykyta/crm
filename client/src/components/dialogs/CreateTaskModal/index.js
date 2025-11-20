@@ -1,8 +1,8 @@
-// components/dialogs/CreateTaskModal.jsx
 import { useState, useMemo } from "react";
 import Modal from "../../Modal";
 import s from "../../../pages/styles/CrmUsers.module.css";
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from "../../../config/taskOptions";
+import ThemedSelect from "../../inputs/RadixSelect"; // ← новый селект
 
 export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
   const [form, setForm] = useState({
@@ -14,14 +14,13 @@ export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
     assigneeId: "",        // опционально
     counterpartyId: "",
     dealId: "",
-
-    // Планирование (опционально)
     planOpen: false,
-    isAllDay: false,       // null будет, если пользователь ничего не трогал (см. ниже)
-    eventDate: "",         // YYYY-MM-DD (для allDay)
-    startAt: "",           // YYYY-MM-DDTHH:mm
-    endAt: "",             // YYYY-MM-DDTHH:mm
+    isAllDay: false,
+    eventDate: "",
+    startAt: "",
+    endAt: "",
   });
+
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState("");
   const [titleError, setTitleError] = useState("");
@@ -37,6 +36,7 @@ export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
     if (val.length > 300) { setTitleError("Название слишком длинное (макс. 300)"); return false; }
     setTitleError(""); return true;
   };
+
   const validateDesc = (v) => {
     const val = String(v ?? "").trim();
     if (!val) { setDescError("Описание обязательно"); return false; }
@@ -44,30 +44,22 @@ export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
   };
 
   const buildPayload = () => {
-    // приоритет — число
     const priority = Number(form.priority) || 3;
-
-    // дедлайн как DATEONLY
     const dueDate = form.dueDate || null;
 
-    // планирование
     let isAllDay = null, eventDate = null, startAt = null, endAt = null;
-    // если юзер раскрыл секцию — считаем, что хочет что-то запланировать
     if (form.planOpen) {
       if (form.isAllDay) {
         isAllDay = true;
-        eventDate = form.eventDate || null; // YYYY-MM-DD
+        eventDate = form.eventDate || null;
       } else if (form.startAt || form.endAt) {
         isAllDay = false;
-        // datetime-local -> ISO
         if (form.startAt) startAt = new Date(form.startAt).toISOString();
         if (form.endAt)   endAt   = new Date(form.endAt).toISOString();
       } else {
-        // пользователь открыл, но ничего не задал — оставим полностью незапланированной
         isAllDay = null;
       }
     } else {
-      // полностью незапланированная
       isAllDay = null;
     }
 
@@ -80,7 +72,6 @@ export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
       assigneeId: form.assigneeId || null,
       counterpartyId: form.counterpartyId || null,
       dealId: form.dealId || null,
-      // планирование
       isAllDay,
       eventDate,
       startAt,
@@ -153,30 +144,28 @@ export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
         <div className={s.row2}>
           <label className={s.label}>
             Приоритет
-            <select
+            <ThemedSelect
               className={s.select}
               value={form.priority}
-              onChange={(e) => change("priority", Number(e.target.value))}
+              options={PRIORITY_OPTIONS}
+              onChange={(val) => change("priority", Number(val))}
+              placeholder="Выбрать приоритет"
+              size="md"
               disabled={busy}
-            >
-              {PRIORITY_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            />
           </label>
 
           <label className={s.label}>
             Статус
-            <select
+            <ThemedSelect
               className={s.select}
               value={form.status}
-              onChange={(e) => change("status", e.target.value)}
+              options={STATUS_OPTIONS}
+              onChange={(val) => change("status", String(val))}
+              placeholder="Выбрать статус"
+              size="md"
               disabled={busy}
-            >
-              {STATUS_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            />
           </label>
         </div>
 

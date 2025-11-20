@@ -1,7 +1,9 @@
+// src/components/counterparty/CounterpartyForm/index.jsx
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import s from './CounterpartyForm.module.css';
 import { getCountryOptions } from '../../../utils/countries';
+import ThemedSelect from '../../../components/inputs/RadixSelect';
 
 const TYPES = ['lead','client','partner','supplier','manufacturer'];
 const STATUSES = ['potential','active','inactive'];
@@ -18,7 +20,8 @@ function onlyDigits(s){ return /^\d+$/.test(s); }
 const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 const phoneRx = /^[+()\d\-.\s]{5,}$/;
 
-function validate(values, contacts, t){
+// 🔧 теперь валидатор умеет работать с ограниченным списком типов/статусов
+function validate(values, contacts, t, { allowedTypes = TYPES, allowedStatuses = STATUSES } = {}) {
   const e = {};
   if (!values.shortName?.trim()) e.shortName = t('crm.form.errors.requiredShort');
   if (!values.fullName?.trim())  e.fullName  = t('crm.form.errors.requiredFull');
@@ -27,8 +30,12 @@ function validate(values, contacts, t){
     if (values[k]!=null && String(values[k]).length>max) e[k]=t('crm.form.errors.max', { max });
   });
 
-  if (!TYPES.includes(values.type))   e.type   = t('crm.form.errors.badType');
-  if (!STATUSES.includes(values.status)) e.status = t('crm.form.errors.badStatus');
+  if (!allowedTypes.includes(values.type)) {
+    e.type = t('crm.form.errors.badType');
+  }
+  if (!allowedStatuses.includes(values.status)) {
+    e.status = t('crm.form.errors.badStatus');
+  }
 
   if (values.nip){
     if (!onlyDigits(values.nip)) e.nip = t('crm.form.errors.digitsOnly');
@@ -54,45 +61,77 @@ function validate(values, contacts, t){
 
 export default function CounterpartyForm({
   id,
-  defaultType='client',
+  defaultType = 'client',
   defaultStatus,
   onSubmit,
   onCancel,
-  loading=false,
-  withButtons=true,
-  initial={},
+  loading = false,
+  withButtons = true,
+  initial = {},
+
+  // 🔧 новые универсальные настройки
+  allowedTypes = TYPES,
+  allowedStatuses = STATUSES,
+  lockType = false,
+  lockStatus = false,
 }) {
   const { t, i18n } = useTranslation();
 
-  const initialState = useMemo(()=>({
-    shortName:'', fullName:'', nip:'', regon:'', krs:'', bdo:'',
-    country:'', city:'', postalCode:'', street:'', description:'',
-    type: defaultType,
-    status: defaultStatus ?? (defaultType==='lead' ? 'potential' : 'active'),
-    isCompany: true,
-    ...initial,
-  }), [defaultType, defaultStatus, initial]);
+  const countryOptions = useMemo(
+    () => getCountryOptions(i18n.language),
+    [i18n.language]
+  );
+
+  const initialState = useMemo(() => {
+    let base = {
+      shortName:'', fullName:'', nip:'', regon:'', krs:'', bdo:'',
+      country:'', city:'', postalCode:'', street:'', description:'',
+      type: defaultType,
+      status: defaultStatus ?? (defaultType === 'lead' ? 'potential' : 'active'),
+      isCompany: true,
+      ...initial,
+    };
+
+    // если пришёл initial.type, который не входит в allowedTypes — принудительно чиним
+    if (!allowedTypes.includes(base.type)) {
+      base.type = allowedTypes[0] || 'lead';
+    }
+    if (!allowedStatuses.includes(base.status)) {
+      base.status = allowedStatuses[0] || (base.type === 'lead' ? 'potential' : 'active');
+    }
+
+    return base;
+  }, [defaultType, defaultStatus, initial, allowedTypes, allowedStatuses]);
 
   const [values, setValues] = useState(initialState);
   const [contacts, setContacts] = useState(initial.contacts || []);
   const [errors, setErrors] = useState({});
 
-  const countryOptions = useMemo(() => getCountryOptions(i18n.language), [i18n.language]);
-
   const set = (name, value) => {
-    if (name==='country') value = value.toUpperCase().slice(0, MAX.country);
-    if (typeof value==='string' && MAX[name]) value = value.slice(0, MAX[name]);
+    if (name === 'country') value = (value || '').toUpperCase().slice(0, MAX.country);
+    if (typeof value === 'string' && MAX[name]) value = value.slice(0, MAX[name]);
     setValues(v => ({ ...v, [name]: value }));
   };
 
-  const addContact = () => setContacts(list => [...list, { channel:'email', value:'', isPrimary: list.length===0 }]);
-  const updContact = (idx, patch) => setContacts(list => list.map((c,i)=> i===idx ? { ...c, ...patch } : c));
-  const delContact = (idx) => setContacts(list => list.filter((_,i)=> i!==idx));
-  const setPrimary = (idx) => setContacts(list => list.map((c,i)=> ({ ...c, isPrimary: i===idx })));
+  const addContact = () =>
+    setContacts(list => [
+      ...list,
+      { channel: 'email', value: '', isPrimary: list.length === 0 },
+    ]);
+
+  const updContact = (idx, patch) =>
+    setContacts(list => list.map((c, i) => (i === idx ? { ...c, ...patch } : c)));
+
+  const delContact = (idx) =>
+    setContacts(list => list.filter((_, i) => i !== idx));
+
+  const setPrimary = (idx) =>
+    setContacts(list => list.map((c, i) => ({ ...c, isPrimary: i === idx })));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const next = {
+
+    const nextRaw = {
       ...values,
       shortName: values.shortName?.trim(),
       fullName:  values.fullName?.trim(),
@@ -106,11 +145,26 @@ export default function CounterpartyForm({
       street:     trimOrNull(values.street),
       description:trimOrNull(values.description),
     };
+
+    // если форма заблокировала тип/статус — поверх текущих значений аккуратно ставим дефолт
+    const next = {
+      ...nextRaw,
+      type:   lockType   ? (allowedTypes.includes(defaultType) ? defaultType : allowedTypes[0]) : nextRaw.type,
+      status: lockStatus ? (allowedStatuses.includes(defaultStatus)
+                  ? defaultStatus
+                  : (allowedStatuses[0] || (nextRaw.type === 'lead' ? 'potential' : 'active')))
+                        : nextRaw.status,
+    };
+
     const cleanContacts = contacts
-      .map(c => ({ channel:c.channel, value:String(c.value||'').trim(), isPrimary: !!c.isPrimary }))
+      .map(c => ({
+        channel: c.channel,
+        value: String(c.value || '').trim(),
+        isPrimary: !!c.isPrimary,
+      }))
       .filter(c => c.value);
 
-    const v = validate(next, cleanContacts, t);
+    const v = validate(next, cleanContacts, t, { allowedTypes, allowedStatuses });
     setErrors(v);
     if (Object.keys(v).length) return;
 
@@ -161,25 +215,27 @@ export default function CounterpartyForm({
         {/* Тип/Статус */}
         <div className={s.field}>
           <label className={s.label}>{t('crm.form.fields.type')}</label>
-          <select
-            className={`${s.input} ${errors.type ? s.invalid : ''}`}
-            value={values.type}
-            onChange={(e)=>set('type', e.target.value)}
-          >
-            {TYPES.map(v => <option key={v} value={v}>{t(`crm.enums.type.${v}`)}</option>)}
-          </select>
+          <ThemedSelect
+            className={s.input}
+            value={values.type || undefined}
+            onChange={(val)=>!lockType && set('type', val)}
+            options={allowedTypes.map(v => ({ value: v, label: t(`crm.enums.type.${v}`) }))}
+            placeholder={t('common.select')}
+            disabled={lockType}
+          />
           {errors.type && <div className={s.err}>{errors.type}</div>}
         </div>
 
         <div className={s.field}>
           <label className={s.label}>{t('crm.form.fields.status')}</label>
-          <select
-            className={`${s.input} ${errors.status ? s.invalid : ''}`}
-            value={values.status}
-            onChange={(e)=>set('status', e.target.value)}
-          >
-            {STATUSES.map(v => <option key={v} value={v}>{t(`crm.enums.status.${v}`)}</option>)}
-          </select>
+          <ThemedSelect
+            className={s.input}
+            value={values.status || undefined}
+            onChange={(val)=>!lockStatus && set('status', val)}
+            options={allowedStatuses.map(v => ({ value: v, label: t(`crm.enums.status.${v}`) }))}
+            placeholder={t('common.select')}
+            disabled={lockStatus}
+          />
           {errors.status && <div className={s.err}>{errors.status}</div>}
         </div>
 
@@ -243,16 +299,14 @@ export default function CounterpartyForm({
         {/* Адрес */}
         <div className={s.field}>
           <label className={s.label}>{t('crm.form.fields.country')}</label>
-          <select
-            className={`${s.input} ${errors.country ? s.invalid : ''}`}
-            value={values.country || ''}
-            onChange={(e)=>set('country', e.target.value)}
-          >
-            <option value="">{t('common.none')}</option>
-            {countryOptions.map(c => (
-              <option key={c.code} value={c.code}>{c.label}</option>
-            ))}
-          </select>
+          <ThemedSelect
+            className={s.input}
+            value={values.country || undefined}
+            onChange={(val)=>set('country', val || '')}
+            options={countryOptions.map(c => ({ value: c.code, label: c.label }))}
+            placeholder={t('common.none')}
+            searchable
+          />
           {errors.country && <div className={s.err}>{errors.country}</div>}
         </div>
 
@@ -328,30 +382,42 @@ export default function CounterpartyForm({
           const rowErr = Array.isArray(errors.contacts) ? errors.contacts[idx] : null;
           return (
             <div key={idx} className={s.contactRow}>
-              <select
-                className={`${s.input} ${rowErr?.channel ? s.invalid:''}`}
-                value={c.channel}
-                onChange={(e)=>updContact(idx, { channel: e.target.value })}
-                style={{minWidth:140}}
-              >
-                {CONTACT_CHANNELS.map(v => (
-                  <option key={v} value={v}>{t(`crm.channels.${v}`)}</option>
-                ))}
-              </select>
+              <div style={{ minWidth: 160, maxWidth: 220 }}>
+                <ThemedSelect
+                  className={`${s.input} ${rowErr?.channel ? s.invalid : ''}`}
+                  value={c.channel || undefined}
+                  onChange={(val)=>updContact(idx, { channel: val })}
+                  options={CONTACT_CHANNELS.map(v => ({
+                    value: v,
+                    label: t(`crm.channels.${v}`),
+                  }))}
+                  placeholder={t('crm.form.placeholders.channel')}
+                  searchable
+                />
+              </div>
 
               <input
-                className={`${s.input} ${rowErr?.value ? s.invalid:''}`}
+                className={`${s.input} ${rowErr?.value ? s.invalid : ''}`}
                 value={c.value}
                 onChange={(e)=>updContact(idx, { value: e.target.value })}
                 placeholder={t('crm.form.placeholders.contactValue')}
               />
 
               <label className={s.chkPrimary}>
-                <input type="radio" name="primaryContact" checked={!!c.isPrimary} onChange={()=>setPrimary(idx)} />
+                <input
+                  type="radio"
+                  name="primaryContact"
+                  checked={!!c.isPrimary}
+                  onChange={()=>setPrimary(idx)}
+                />
                 <span>{t('crm.form.fields.primary')}</span>
               </label>
 
-              <button type="button" className={s.btnDel} onClick={()=>delContact(idx)}>
+              <button
+                type="button"
+                className={s.btnDel}
+                onClick={()=>delContact(idx)}
+              >
                 {t('crm.form.actions.remove')}
               </button>
 
@@ -364,8 +430,18 @@ export default function CounterpartyForm({
 
       {withButtons && (
         <div className={s.actions}>
-          <button type="button" className={s.btn} onClick={onCancel}>{t('common.cancel')}</button>
-          <button type="submit" className={s.primary} disabled={loading}>
+          <button
+            type="button"
+            className={s.btn}
+            onClick={onCancel}
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            type="submit"
+            className={s.primary}
+            disabled={loading}
+          >
             {loading ? t('common.saving') : t('common.save')}
           </button>
         </div>

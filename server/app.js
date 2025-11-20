@@ -13,6 +13,19 @@ const uploadRoutes = require('./src/routes/system/uploadRouter');
 const errorHandler = require('./src/middleware/errorHandler');
 const { initCron } = require('./boot/cron');
 
+// 🔹 MongoDB
+const { connectMongo } = require('./src/db/mongo');
+
+// Подключаем Mongo один раз при старте приложения
+(async () => {
+  try {
+    await connectMongo();
+  } catch (e) {
+    console.error('[Mongo] Failed to connect:', e);
+    process.exit(1);
+  }
+})();
+
 /* ---------- Security / misc ---------- */
 app.set('trust proxy', 1);
 app.use(

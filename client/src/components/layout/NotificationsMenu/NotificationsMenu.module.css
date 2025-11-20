@@ -1,0 +1,338 @@
+/* src/components/layout/NotificationsMenu/NotificationsMenu.module.css */
+
+.menu {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 8px);
+
+  width: 560px;
+  max-height: 68vh;
+
+  display: flex;
+  flex-direction: column;
+
+  background: rgba(6, 10, 25, 0.96);
+  border-radius: 20px;
+  border: 1px solid rgba(124, 130, 255, 0.35);
+  box-shadow:
+    0 18px 55px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.02);
+
+  overflow: hidden;
+  backdrop-filter: blur(18px);
+  z-index: 40;
+}
+
+/* ─── HEADER ─── */
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.headLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-strong, #f8f6ff);
+}
+
+.counter {
+  min-width: 26px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(98, 101, 255, 0.95);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.clearBtn {
+  border: none;
+  background: transparent;
+  color: #b9beff;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.08s ease;
+}
+
+.clearBtn:hover {
+  background: rgba(124, 130, 255, 0.12);
+  color: #e0e3ff;
+}
+
+.clearBtn:active {
+  transform: translateY(1px);
+}
+
+/* ─── LIST ─── */
+
+.list {
+  flex: 1;
+  padding: 8px 12px 10px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.empty {
+  padding: 28px 12px 30px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ─── ITEM / CARD ─── */
+
+.item {
+  position: relative;
+  width: 100%;
+
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+
+  padding: 8px 12px 8px 8px;
+
+  border-radius: 16px;
+  border: 1px solid transparent;
+  background: radial-gradient(
+      circle at top left,
+      rgba(124, 130, 255, 0.12),
+      rgba(14, 17, 40, 0.96)
+    );
+
+  cursor: pointer;
+  text-align: left;
+
+  /* авто-высота под контент */
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  white-space: normal;
+
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+
+.item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(149, 157, 255, 0.7);
+  box-shadow:
+    0 8px 26px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.item:active {
+  transform: translateY(0);
+}
+
+.read {
+  opacity: 0.75;
+  background: rgba(9, 12, 32, 0.96);
+}
+
+.read:hover {
+  opacity: 0.9;
+}
+
+/* цветная полоска слева */
+.leftStripe {
+  flex-shrink: 0;
+  width: 3px;
+  border-radius: 999px;
+  margin-inline-end: 8px;
+  background: linear-gradient(
+    180deg,
+    #ff7ac0 0%,
+    #ffd56e 50%,
+    #72f5a7 100%
+  );
+  box-shadow: 0 0 8px rgba(255, 173, 225, 0.45);
+}
+
+/* контент карточки */
+.itemContent {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  height: auto;
+}
+
+/* верх: заголовок + время */
+.itemHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.itemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong, #f8f6ff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.time {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* тело уведомления */
+.itemBody {
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(233, 235, 252, 0.9);
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* низ: тип сущности + NEW/прочитано */
+.itemFooter {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+.tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(115, 129, 255, 0.14);
+  color: rgba(221, 226, 255, 0.9);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.unreadDot,
+.readDot {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.unreadDot {
+  background: rgba(80, 200, 120, 0.22);
+  color: #d9ffe5;
+}
+
+.readDot {
+  background: rgba(135, 142, 170, 0.18);
+  color: rgba(190, 196, 230, 0.95);
+}
+
+/* ─── FOOTER ─── */
+
+.footer {
+  padding: 10px 18px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.allBtn {
+  border: none;
+  background: rgba(16, 20, 52, 0.9);
+  color: #d6daff;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.65);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.08s ease,
+    box-shadow 0.15s ease;
+}
+
+.allBtn:hover {
+  background: rgba(98, 104, 255, 0.9);
+  color: #ffffff;
+  box-shadow:
+    0 10px 34px rgba(0, 0, 0, 0.7),
+    0 0 18px rgba(92, 104, 255, 0.6);
+}
+
+.allBtn:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 5px 18px rgba(0, 0, 0, 0.6),
+    0 0 10px rgba(92, 104, 255, 0.5);
+}
+
+/* скролл */
+.list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.list::-webkit-scrollbar-thumb {
+  background: rgba(120, 130, 180, 0.5);
+  border-radius: 999px;
+}
+
+
+.markBtn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+
+  background: rgba(80, 200, 120, 0.18);
+  color: #caffdd;
+  border: 1px solid rgba(80, 200, 120, 0.35);
+
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.markBtn:hover {
+  background: rgba(80, 200, 120, 0.28);
+}
+
+.markBtn:active {
+  transform: scale(0.92);
+}

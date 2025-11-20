@@ -1,7 +1,9 @@
+// src/pages/.../TaskForm/index.jsx
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import MultiSelectDropdown from '../../../../components/inputs/MultiSelectDropdown';
 import PriorityInput from '../../../../components/inputs/PriorityInput';
+import ThemedSelect from '../../../../components/inputs/RadixSelect';
 
 import st from './TaskForm.module.css';
 
@@ -132,17 +134,16 @@ export default function TaskForm({
           <div className={st.field}>
             <label className={st.label}>{t('crm.task.fields.status', 'Статус')}</label>
             <div className={st.rel}>
-              <select
+              <ThemedSelect
                 className={`${st.input} ${st.padForDot}`}
-                value={values.status}
-                onChange={(e) => set('status', e.target.value)}
-              >
-                {TASK_STATUS.map((v) => (
-                  <option key={v} value={v}>
-                    {t(`crm.task.enums.status.${v}`, v)}
-                  </option>
-                ))}
-              </select>
+                value={values.status || undefined}
+                onChange={(val) => set('status', val)}
+                options={TASK_STATUS.map((v) => ({
+                  value: v,
+                  label: t(`crm.task.enums.status.${v}`, v),
+                }))}
+                placeholder={t('common.select', 'Выбрать…')}
+              />
               <button
                 type="button"
                 className={`${st.dotSwitch} ${st.dotGreen} ${st.absDot}`}
@@ -233,20 +234,19 @@ export default function TaskForm({
           </div>
         </div>
 
-        {/* Клиент + Контактные лица (dropdown вместо чекбоксов) */}
+        {/* Клиент + Контактные лица */}
         <div className={st.row2}>
           <div className={st.field}>
             <label className={st.label}>{t('crm.task.fields.counterparty', 'Клиент')}</label>
-            <select
+            <ThemedSelect
               className={st.input}
-              value={values.counterpartyId || ''}
-              onChange={(e) => set('counterpartyId', e.target.value || null)}
-            >
-              <option value="">{t('common.none', '—')}</option>
-              {counterpartyOptions.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+              value={values.counterpartyId || undefined}
+              onChange={(val) => set('counterpartyId', val || null)}
+              options={counterpartyOptions}
+              placeholder={t('common.none', '—')}
+              searchable
+              clearable
+            />
           </div>
 
           <div className={st.field}>
