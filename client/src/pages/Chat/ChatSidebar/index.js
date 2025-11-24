@@ -193,6 +193,7 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
               className={isActive ? s.roomActive : s.room}
               onClick={() => dispatch(setActiveRoom(idStr))}
             >
+              
               <div className={s.roomTitle}>{room.displayName}</div>
               <div className={s.roomPreview}>
                 {room.lastMessagePreview || 'Нет сообщений'}

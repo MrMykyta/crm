@@ -397,17 +397,19 @@
   align-items: flex-end;
   margin-bottom: 8px;
   max-width: 80%;
+  gap: 8px; /* расстояние между аватаром / пузырём / кнопкой */
 }
 
 /* мои сообщения — справа */
 .meWrap {
   margin-left: auto;
-  flex-direction: row-reverse;
+  justify-content: flex-end;
 }
 
 /* чужие — слева */
 .otherWrap {
   margin-right: auto;
+  justify-content: flex-start;
 }
 
 /* аватар слева от пузыря */
@@ -422,9 +424,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 10px;
   flex-shrink: 0;
 }
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  display: block;          /* убирает лишние зазоры у img */
+  object-fit: cover;       /* вписываем без искажений */
+  object-position: center; /* центрируем */
+  border-radius: 50%;
+}
+
 
 /* у моих сообщений аватар не нужен */
 .meWrap .msgAvatar {
@@ -441,6 +452,64 @@
   box-shadow: var(--elev-1);
   max-width: 420px;
   word-break: break-word;
+}
+
+/* кнопка ⋯ рядом с сообщением */
+.msgActionsBtn {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  background: rgba(10, 12, 22, 0.35);
+  color: var(--muted);
+  font-size: 0;
+  line-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+
+  transition:
+    opacity 0.12s ease,
+    background 0.12s ease,
+    transform 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+/* сам икон-три-точки рисуем псевдоэлементом */
+.msgActionsBtn::before {
+  content: "⋮"; /* вертикальные точки */
+  font-size: 16px;
+  line-height: 1;
+  color: inherit;
+}
+
+/* показываем кнопку при наведении на строку сообщения */
+.messageWrap:hover .msgActionsBtn {
+  opacity: 1;
+}
+
+
+.msgActionsBtn:hover {
+  background: color-mix(in srgb, var(--sidebar-hover) 90%, transparent);
+  border-color: var(--primary-start);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
+}
+
+/* чуть аккуратнее отступы: мои – справа, чужие – слева */
+.meWrap .msgActionsBtn {
+  margin-right: 4px;
+}
+
+.otherWrap .msgActionsBtn {
+  margin-left: 4px;
 }
 
 /* мои пузыри — градиент как раньше */
@@ -863,8 +932,6 @@
   color: var(--text);
 }
 
-
-
 /* ===== SEARCH BAR IN CHAT HEADER ===== */
 
 .chatSearchBar {
@@ -965,7 +1032,6 @@
   transform: translateY(-1px);
 }
 
-
 /* ===== МЕТА-СТРОКА: ВРЕМЯ + ГАЛОЧКИ ===== */
 
 .msgMetaRow {
@@ -1035,4 +1101,97 @@
 /* на всякий — только у моих сообщений показываем статус в одну линию с временем */
 .meWrap .msgMetaRow {
   justify-content: flex-end;
+}
+
+.ctxOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: auto;
+  background: transparent;
+}
+
+.ctxMenu {
+  position: fixed;
+  min-width: 220px;
+  max-width: 260px;
+  background: linear-gradient(
+    135deg,
+    rgba(16, 20, 35, 0.98),
+    rgba(22, 30, 52, 0.98)
+  );
+  color: #fff;
+  border-radius: 16px;
+  padding: 6px 0;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  font-size: 14px;
+
+  /* анимация */
+  animation: ctxMenuFadeIn 0.14s ease-out;
+  transform-origin: 50% 50%;
+}
+
+/* чтобы меню красиво «раскрывалось» от стороны сообщения */
+.ctxMenu[data-side="me"] {
+  transform-origin: 100% 50%;
+}
+
+.ctxMenu[data-side="other"] {
+  transform-origin: 0% 50%;
+}
+
+.ctxMenuItem {
+  width: 100%;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  outline: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ctxMenuItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ctxMenuItemDanger {
+  color: #ff6b6b;
+}
+
+.ctxMenuItemDanger:hover {
+  background: rgba(255, 107, 107, 0.12);
+}
+
+.ctxMenuSeparator {
+  margin: 4px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ctxMenuIcon {
+  width: 18px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0.9;
+  font-size: 14px;
+}
+
+
+@keyframes ctxMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
