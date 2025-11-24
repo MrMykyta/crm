@@ -190,6 +190,31 @@
   border: 1px solid transparent;
   transition: background var(--tr-fast), border-color var(--tr-fast),
     transform var(--tr-fast), box-shadow var(--tr-fast);
+
+  display: flex;
+  align-items: center;
+  gap: 10px; /* расстояние между аватаром и текстом */
+}
+
+.roomAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7d5fff, #4a33d4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.roomText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .room:hover {
@@ -214,8 +239,10 @@
 .roomPreview {
   font-size: var(--fs-2xs);
   color: var(--muted);
-  max-height: 2.6em;
+
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ===== MAIN CHAT WINDOW ===== */
@@ -232,6 +259,7 @@
     ),
     transparent;
   color: var(--text);
+  min-width: 0; /* 🔥 чтобы не раздвигался от инпута / reply */
 }
 
 .empty {
@@ -354,9 +382,6 @@
   gap: var(--space-2);
 }
 
-.messagesScrollable {}
-.messagesScrolled {}
-
 /* статичный разделитель даты в ленте */
 .dayDivider {
   display: flex;
@@ -430,12 +455,11 @@
 .avatarImg {
   width: 100%;
   height: 100%;
-  display: block;          /* убирает лишние зазоры у img */
-  object-fit: cover;       /* вписываем без искажений */
-  object-position: center; /* центрируем */
+  display: block;
+  object-fit: cover;
+  object-position: center;
   border-radius: 50%;
 }
-
 
 /* у моих сообщений аватар не нужен */
 .meWrap .msgAvatar {
@@ -472,18 +496,13 @@
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
 
-  transition:
-    opacity 0.12s ease,
-    background 0.12s ease,
-    transform 0.12s ease,
-    border-color 0.12s ease,
-    color 0.12s ease,
-    box-shadow 0.12s ease;
+  transition: opacity 0.12s ease, background 0.12s ease, transform 0.12s ease,
+    border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
 }
 
 /* сам икон-три-точки рисуем псевдоэлементом */
 .msgActionsBtn::before {
-  content: "⋮"; /* вертикальные точки */
+  content: "⋮";
   font-size: 16px;
   line-height: 1;
   color: inherit;
@@ -493,7 +512,6 @@
 .messageWrap:hover .msgActionsBtn {
   opacity: 1;
 }
-
 
 .msgActionsBtn:hover {
   background: color-mix(in srgb, var(--sidebar-hover) 90%, transparent);
@@ -595,6 +613,7 @@
   border-top: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
   background: color-mix(in srgb, var(--card-bg) 95%, transparent);
   backdrop-filter: blur(var(--glass-blur));
+  min-width: 0; /* 🔥 не растягиваем .window */
 }
 
 .inputRow {
@@ -608,11 +627,13 @@
   display: flex;
   flex-direction: column;
   gap: 6px; /* расстояние между баннером и полем ввода */
+  min-width: 0; /* 🔥 позволяет сжиматься при длинном reply */
 }
 
 .inputTextWrap {
   flex: 1;
   display: flex;
+  min-width: 0; /* 🔥 не тянем всё окно из-за textarea */
 }
 
 /* textarea как в Telegram: растёт вверх, без resize-ручки */
@@ -1064,7 +1085,7 @@
 .msgStatus {
   display: flex;
   align-items: center;
-  font-size: 0; /* чтобы не было странных промежутков */
+  font-size: 0;
 }
 
 /* базовый вид чеков */
@@ -1122,6 +1143,9 @@
   z-index: 2000;
   pointer-events: auto;
   background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ctxMenu {
@@ -1142,7 +1166,6 @@
   overflow: hidden;
   font-size: 14px;
 
-  /* анимация */
   animation: ctxMenuFadeIn 0.14s ease-out;
   transform-origin: 50% 50%;
 }
@@ -1197,7 +1220,6 @@
   font-size: 14px;
 }
 
-
 @keyframes ctxMenuFadeIn {
   from {
     opacity: 0;
@@ -1220,6 +1242,9 @@
   border-radius: 12px;
   background: color-mix(in srgb, var(--card-bg) 96%, transparent);
   border: 1px solid color-mix(in srgb, var(--card-brd) 85%, transparent);
+  max-width: 100%;
+  min-width: 0;      /* 🔥 можно сжимать */
+  overflow: hidden;
 }
 
 .replyLeft {
@@ -1246,6 +1271,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  max-width: 100%;
 }
 
 .replyTitle {
@@ -1253,7 +1279,7 @@
   font-weight: var(--fw-medium);
   color: #508cff;
   margin-bottom: 2px;
-  white-space: nowrap;
+  white-space: normal;   /* ✅ даём перенестись */
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -1261,7 +1287,7 @@
 .replyText {
   font-size: var(--fs-2xs);
   color: var(--muted);
-  white-space: nowrap;
+  white-space: normal;   /* ✅ тоже перенос */
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -1290,10 +1316,8 @@
   transform: translateY(-1px);
 }
 
-
 /* ===== ОТОБРАЖЕНИЕ REPLY / FORWARD ВНУТРИ ПУЗЫРЯ ===== */
 
-/* "Переслано от ..." над реплаем/текстом */
 .msgForwardLabel {
   font-size: var(--fs-2xs);
   color: var(--muted);
@@ -1306,7 +1330,7 @@
   align-items: flex-start;
   gap: 6px;
   padding: 4px 6px;
-  margin: -2px -4px 4px -4px; /* чуть растянуть внутри пузыря */
+  margin: -2px -4px 4px -4px;
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.14);
 }
@@ -1359,4 +1383,182 @@
 
 .meWrap .msgReplyPreviewTitle {
   color: #ffffff;
+}
+
+/* ===== MODAL: ПЕРЕСЛАТЬ СООБЩЕНИЕ ===== */
+
+.forwardModal {
+  position: relative;
+  width: 420px;
+  max-width: 90vw;
+  max-height: 520px;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 12px 14px 14px;
+  border-radius: 18px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(16, 20, 35, 0.98),
+    rgba(27, 34, 63, 0.98)
+  );
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(22px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  color: #f5f6ff;
+  font-size: 14px;
+
+  animation: forwardModalFadeIn 0.18s ease-out;
+}
+
+@keyframes forwardModalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.forwardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 2px 2px 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.forwardTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.forwardCloseBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: #b0b4c8;
+  font-size: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.forwardCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+}
+
+/* список чатов */
+
+.forwardList {
+  margin-top: 4px;
+  padding: 2px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* скроллбар поаккуратнее */
+.forwardList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.forwardList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+}
+
+/* строка чата */
+
+.forwardItem {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: none;
+
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+
+  transition:
+    background 0.15s ease,
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.forwardItem:hover {
+  background: rgba(255, 255, 255, 0.07);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
+}
+
+.forwardItemCurrent {
+  background: linear-gradient(
+    135deg,
+    rgba(124, 92, 255, 0.35),
+    rgba(102, 76, 235, 0.16)
+  );
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* аватарка комнаты */
+
+.forwardItemAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7d5fff, #4a33d4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+/* текст справа от аватарки */
+
+.forwardItemTexts {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.forwardItemTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #f5f6ff;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forwardItemSub {
+  font-size: 11px;
+  color: #a5a8c4;
+  margin-top: 2px;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

@@ -8,7 +8,12 @@ import {
 
 import { useChatSocket } from "../../../sockets/useChatSocket";
 import { getSocket } from "../../../sockets/io";
-import { setMessages, setActiveRoom } from "../../../store/slices/chatSlice";
+import {
+  setMessages,
+  setActiveRoom,
+  setComposerDraft,
+  clearComposerDraft,
+} from "../../../store/slices/chatSlice";
 
 import ChatCreateDirect from "../ChatCreateDirect";
 import ChatInput from "../ChatInput";
@@ -23,6 +28,7 @@ import ChatHeader from "../components/ChatHeader";
 import ChatSearchBar from "../components/ChatSearchBar";
 import ChatMessages from "../components/ChatMessages";
 import MessageContextMenu from "../components/MessageContextMenu";
+import ForwardDialog from "../components/ForwardDialog";
 import { getAuthorInfo } from "../utils/chatMessageUtils";
 
 // ================= ОБЁРТКА =================
@@ -56,6 +62,9 @@ function ChatRoomWindow({ roomId }) {
   const currentUser = useSelector((st) => st.auth.user || st.auth.currentUser);
   const rooms = useSelector((st) => st.chat.rooms);
   const companyUsers = useSelector((st) => st.bootstrap.companyUsers || []);
+  const composerDraft = useSelector(
+    (st) => st.chat.composerDrafts?.[String(roomId)] || null
+  );
 
   const meId = currentUser
     ? String(currentUser.userId || currentUser.id)
@@ -69,18 +78,15 @@ function ChatRoomWindow({ roomId }) {
   const [markRead] = useMarkReadMutation();
 
   const [text, setText] = useState("");
+  const [composerContext, setComposerContext] = useState(null);
+  // composerContext: { type: 'reply' | 'forward', id, authorId, authorName, text }
+
   const listRef = useRef(null);
   const lastReadIdRef = useRef(null);
 
-  // контекст ввода (ответ / пересылка)
-  const [composerContext, setComposerContext] = useState(null);
-  // composerContext: {
-  //   type: 'reply' | 'forward',
-  //   id,
-  //   authorId,
-  //   authorName,
-  //   text
-  // }
+  // пересылка: источник + модалка выбора комнаты
+  const [forwardSource, setForwardSource] = useState(null);
+  const [forwardDialogOpen, setForwardDialogOpen] = useState(false);
 
   // сообщения из Redux
   const messages = useSelector((st) => st.chat.messages[String(roomId)] || []);
@@ -110,6 +116,19 @@ function ChatRoomWindow({ roomId }) {
 
     dispatch(setMessages({ roomId, messages: base }));
   }, [data, roomId, dispatch]);
+
+  // ===== начальный черновик для комнаты =====
+  useEffect(() => {
+    // при смене комнаты / первым заходом подтягиваем черновик
+    if (!composerDraft) {
+      setText("");
+      setComposerContext(null);
+      return;
+    }
+
+    setText(composerDraft.text || "");
+    setComposerContext(composerDraft.context || null);
+  }, [roomId, composerDraft]);
 
   // ===== ХЕДЕР =====
   const headerInfo = useMemo(() => {
@@ -165,16 +184,12 @@ function ChatRoomWindow({ roomId }) {
   const subtitleToShow = typingLabel || headerInfo.subtitle;
 
   // ===== скролл + плавающая дата =====
-  const {
-    scrollState,
-    floatingDay,
-    isUserScrolling,
-    handleInputHeightChange,
-  } = useChatScrollFloatingDay({
-    listRef,
-    groupedMessages,
-    searchOpenDepsKey: roomId,
-  });
+  const { scrollState, floatingDay, isUserScrolling, handleInputHeightChange } =
+    useChatScrollFloatingDay({
+      listRef,
+      groupedMessages,
+      searchOpenDepsKey: roomId,
+    });
 
   // ===== markRead =====
   useEffect(() => {
@@ -260,25 +275,33 @@ function ChatRoomWindow({ roomId }) {
     }
   };
 
+  const syncDraft = (nextText, nextContext) => {
+    dispatch(
+      setComposerDraft({
+        roomId,
+        text: nextText || "",
+        context: nextContext || null,
+      })
+    );
+  };
+
   const handleReply = (msg) => {
-    setComposerContext({
+    const ctx = {
       type: "reply",
       id: msg._id,
       authorId: msg.authorId,
       authorName: makeAuthorName(msg),
       text: msg.text || "",
-    });
+    };
+    setComposerContext(ctx);
+    syncDraft(text, ctx);
     closeMenu();
   };
 
+  // здесь только запускаем модалку пересылки
   const handleForward = (msg) => {
-    setComposerContext({
-      type: "forward",
-      id: msg._id,
-      authorId: msg.authorId,
-      authorName: makeAuthorName(msg),
-      text: msg.text || "",
-    });
+    setForwardSource(msg);
+    setForwardDialogOpen(true);
     closeMenu();
   };
 
@@ -311,15 +334,57 @@ function ChatRoomWindow({ roomId }) {
     closeMenu();
   };
 
-  const cancelComposerContext = () => setComposerContext(null);
+  const cancelComposerContext = () => {
+    setComposerContext(null);
+    syncDraft(text, null);
+  };
+
+  // ===== выбор комнаты для пересылки =====
+  const handleForwardSelectRoom = (targetRoomId) => {
+    if (!forwardSource) return;
+
+    const ctx = {
+      type: "forward",
+      id: forwardSource._id,
+      authorId: forwardSource.authorId,
+      authorName: makeAuthorName(forwardSource),
+      text: forwardSource.text || "",
+    };
+
+    // создаём черновик в целевой комнате: пустой текст + контекст пересылки
+    dispatch(
+      setComposerDraft({
+        roomId: targetRoomId,
+        text: "",
+        context: ctx,
+      })
+    );
+
+    setForwardDialogOpen(false);
+    setForwardSource(null);
+
+    // переключаемся в выбранную комнату
+    dispatch(setActiveRoom(targetRoomId));
+  };
 
   // ===== отправка через socket =====
   const handleSend = () => {
-    const value = text.trim();
-    if (!value) return;
-
     const socket = getSocket();
     if (!socket) return;
+
+    const raw = text || "";
+    const trimmed = raw.trim();
+
+    const isReply = composerContext?.type === "reply";
+    const isForward = composerContext?.type === "forward";
+
+    const hasText = trimmed.length > 0;
+
+    // НЕЛЬЗЯ отправлять совсем пустое сообщение,
+    // но для forward текст можно не писать
+    if (!hasText && !isForward) {
+      return;
+    }
 
     if (meId) {
       socket.emit("chat:typing", {
@@ -331,14 +396,14 @@ function ChatRoomWindow({ roomId }) {
 
     const payload = {
       roomId,
-      text: value,
+      text: hasText ? trimmed : "", // для forward без текста уйдёт пустая строка
     };
 
-    if (composerContext?.type === "reply") {
+    if (isReply) {
       payload.replyTo = composerContext.id;
     }
-    if (composerContext?.type === "forward") {
-      payload.forwardFrom = composerContext.id;
+    if (isForward) {
+      payload.forwardFrom = composerContext.id; // 👈 ключ, который теперь понимает сервер
     }
 
     socket.emit("chat:send", payload, (res) => {
@@ -359,7 +424,9 @@ function ChatRoomWindow({ roomId }) {
   };
 
   const onChangeText = (e) => {
-    setText(e.target.value);
+    const next = e.target.value;
+    setText(next);
+    syncDraft(next, composerContext);
     notifyTyping();
   };
 
@@ -390,6 +457,8 @@ function ChatRoomWindow({ roomId }) {
   const handleBack = () => {
     dispatch(setActiveRoom(null));
   };
+
+  const canSend = text.trim().length > 0 || composerContext?.type === "forward";
 
   return (
     <div className={s.window}>
@@ -434,7 +503,7 @@ function ChatRoomWindow({ roomId }) {
         room={room}
         companyUsers={companyUsers}
         searchQuery={searchQuery}
-        onMessageActionsClick={openMessageMenu}
+        onMessageActionsClick={openMessageMenu} // двойной клик / что ты там повесил
       />
 
       {/* МЕНЮ ДЛЯ СООБЩЕНИЯ */}
@@ -455,13 +524,28 @@ function ChatRoomWindow({ roomId }) {
         onDelete={handleDelete}
       />
 
+      {/* МОДАЛКА ПЕРЕСЫЛКИ */}
+      <ForwardDialog
+        open={forwardDialogOpen}
+        onClose={() => {
+          setForwardDialogOpen(false);
+          setForwardSource(null);
+        }}
+        rooms={rooms}
+        currentRoomId={roomId}
+        meId={meId}
+        companyUsers={companyUsers}
+        onSelectRoom={handleForwardSelectRoom}
+      />
+
       {/* INPUT */}
+
       <ChatInput
         text={text}
         onChangeText={onChangeText}
         onKeyDown={onKeyDown}
         onSend={handleSend}
-        disabled={!text.trim()}
+        disabled={!canSend}
         onHeightChange={handleInputHeightChange}
         replyTo={composerContext}
         onCancelReply={cancelComposerContext}

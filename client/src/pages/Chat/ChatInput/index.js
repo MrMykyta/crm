@@ -10,8 +10,8 @@ export default function ChatInput({
   disabled,
   onHeightChange, // delta px: >0 выросло, <0 сжалось
 
-  // НОВОЕ
-  replyTo,        // { id, authorName, text } | null
+  // контекст: reply / forward
+  replyTo,        // { type, id, authorName, text } | null
   onCancelReply,  // () => void
 }) {
   const textareaRef = useRef(null);
@@ -23,13 +23,6 @@ export default function ChatInput({
     onSend && onSend();
   };
 
-  /**
-   * autoResize
-   * - меряем высоту
-   * - ограничиваем 35vh
-   * - считаем delta относительно прошлой высоты
-   * - если возвращаемся к baseHeight (1 строка) — delta НЕ шлём
-   */
   const autoResize = (silent = false) => {
     const el = textareaRef.current;
     if (!el) return;
@@ -80,17 +73,22 @@ export default function ChatInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
-  const replyTitle =
-    replyTo?.authorName ? `В ответ ${replyTo.authorName}` : "Ответ на сообщение";
+  const isForward = replyTo?.type === "forward";
+
+  const headerTitle = isForward
+    ? replyTo?.authorName
+      ? `Переслать от ${replyTo.authorName}`
+      : "Переслать сообщение"
+    : replyTo?.authorName
+    ? `В ответ ${replyTo.authorName}`
+    : "Ответ на сообщение";
+
+  const iconSymbol = isForward ? "↪︎" : "↩︎";
 
   return (
     <div className={s.input}>
       {/* слева иконка вложений */}
-      <button
-        type="button"
-        className={s.inputIconBtn}
-        onClick={() => {}}
-      >
+      <button type="button" className={s.inputIconBtn} onClick={() => {}}>
         📎
       </button>
 
@@ -99,9 +97,9 @@ export default function ChatInput({
         {replyTo && (
           <div className={s.replyWrap}>
             <div className={s.replyLeft}>
-              <div className={s.replyIcon}>↩︎</div>
+              <div className={s.replyIcon}>{iconSymbol}</div>
               <div className={s.replyTexts}>
-                <div className={s.replyTitle}>{replyTitle}</div>
+                <div className={s.replyTitle}>{headerTitle}</div>
                 {replyTo.text && (
                   <div className={s.replyText}>{replyTo.text}</div>
                 )}

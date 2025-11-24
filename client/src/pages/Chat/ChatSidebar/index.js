@@ -1,10 +1,21 @@
 // src/pages/Chat/ChatSidebar.jsx
-import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { setActiveRoom } from '../../../store/slices/chatSlice';
-import { MessageSquarePlus, Users, MessageSquare } from 'lucide-react';
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { setActiveRoom } from "../../../store/slices/chatSlice";
+import { MessageSquarePlus, Users, MessageSquare } from "lucide-react";
 
-import s from '../ChatPage.module.css';
+import s from "../ChatPage.module.css";
+
+function getInitials(name = "") {
+  const trimmed = name.trim();
+  if (!trimmed) return "C";
+
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 1) {
+    return trimmed.slice(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + (parts[1][0] || "")).toUpperCase();
+}
 
 export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
   const rooms = useSelector((state) => state.chat.rooms);
@@ -25,7 +36,7 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
 
   const dispatch = useDispatch();
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const btnRef = useRef(null);
@@ -44,11 +55,14 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
     return map;
   }, [companyUsers]);
 
+  // обогащаем комнаты: displayName + initials
   const decoratedRooms = useMemo(() => {
     if (!Array.isArray(rooms)) return [];
 
     return rooms.map((room) => {
-      if (room.type === 'direct') {
+      let displayName = "Чат";
+
+      if (room.type === "direct") {
         const participants = room.participants || [];
         const other =
           participants.find(
@@ -58,23 +72,24 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
                 String(p.userId) !== String(currentUserId))
           ) || participants[0];
 
-        let displayName = 'Чат';
-
         if (other) {
           const u = userMap[String(other.userId)] || other;
           const fullName = [u.firstName, u.lastName]
             .filter(Boolean)
-            .join(' ');
+            .join(" ");
           displayName =
-            fullName || u.email || u.userId || 'Пользователь';
+            fullName || u.email || u.userId || "Пользователь";
         }
-
-        return { ...room, displayName };
+      } else {
+        displayName = room.title || "Группа";
       }
+
+      const avatarInitials = getInitials(displayName);
 
       return {
         ...room,
-        displayName: room.title || 'Группа',
+        displayName,
+        avatarInitials,
       };
     });
   }, [rooms, userMap, currentUserId]);
@@ -84,8 +99,8 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
     if (!q) return decoratedRooms;
 
     return decoratedRooms.filter((room) => {
-      const title = (room.displayName || '').toLowerCase();
-      const preview = (room.lastMessagePreview || '').toLowerCase();
+      const title = (room.displayName || "").toLowerCase();
+      const preview = (room.lastMessagePreview || "").toLowerCase();
       return title.includes(q) || preview.includes(q);
     });
   }, [decoratedRooms, search]);
@@ -118,14 +133,14 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
     };
 
     const onKey = (e) => {
-      if (e.key === 'Escape') closeMenu();
+      if (e.key === "Escape") closeMenu();
     };
 
-    document.addEventListener('mousedown', onClick);
-    document.addEventListener('keydown', onKey);
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener('mousedown', onClick);
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
     };
   }, [menuOpen]);
 
@@ -193,10 +208,15 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
               className={isActive ? s.roomActive : s.room}
               onClick={() => dispatch(setActiveRoom(idStr))}
             >
-              
-              <div className={s.roomTitle}>{room.displayName}</div>
-              <div className={s.roomPreview}>
-                {room.lastMessagePreview || 'Нет сообщений'}
+              <div className={s.roomAvatar}>
+                <span>{room.avatarInitials}</span>
+              </div>
+
+              <div className={s.roomText}>
+                <div className={s.roomTitle}>{room.displayName}</div>
+                <div className={s.roomPreview}>
+                  {room.lastMessagePreview || "Нет сообщений"}
+                </div>
               </div>
             </div>
           );

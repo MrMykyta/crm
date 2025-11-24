@@ -55,9 +55,41 @@ async function sendMessage({
   text,
   attachments = [],
   replyTo,
+  forwardFrom, // 👈 НОВОЕ
 }) {
   const room = await ChatRoom.findOne({ _id: roomId, companyId });
   if (!room) throw new Error("Room not found");
+
+  let forwardFromMessageId = null;
+  let meta = {};
+
+  // если пересылаем сообщение
+  if (forwardFrom && mongoose.isValidObjectId(forwardFrom)) {
+    const orig = await ChatMessage.findOne({
+      _id: forwardFrom,
+      companyId,
+    });
+
+    if (orig) {
+      forwardFromMessageId = orig._id;
+
+      const rawSnippet = (orig.text || "").trim();
+      const snippet =
+        rawSnippet.length > 300 ? rawSnippet.slice(0, 300) + "…" : rawSnippet;
+
+      meta.forward = {
+        fromMessageId: String(orig._id),
+        fromRoomId: String(orig.roomId),
+        authorId: orig.authorId,
+        textSnippet: snippet,
+      };
+
+      // если пользователь не написал свой текст — подставим текст оригинала
+      if ((!text || !text.trim()) && orig.text) {
+        text = orig.text;
+      }
+    }
+  }
 
   const msg = await ChatMessage.create({
     companyId,
@@ -66,10 +98,19 @@ async function sendMessage({
     text,
     attachments,
     replyToMessageId: replyTo || null,
+    forwardFromMessageId,
+    meta,
   });
 
   room.lastMessageAt = msg.createdAt;
-  room.lastMessagePreview = text || attachments[0]?.name || "Attachment";
+
+  const previewText =
+    (text && text.trim()) ||
+    meta.forward?.textSnippet ||
+    attachments[0]?.name ||
+    "Attachment";
+
+  room.lastMessagePreview = previewText;
   await room.save();
 
   // 👉 BROADCAST ДЛЯ ВСЕХ УЧАСТНИКОВ ЧАТА, ЧЕРЕЗ "ЛИЧНЫЕ" КОМНАТЫ user:{id}
@@ -120,9 +161,7 @@ async function markAsRead({ companyId, roomId, userId, messageId }) {
   const room = await ChatRoom.findOne({ _id: roomId, companyId });
   if (!room) throw new Error("Room not found");
 
-  const p = room.participants.find(
-    (x) => String(x.userId) === String(userId)
-  );
+  const p = room.participants.find((x) => String(x.userId) === String(userId));
   if (!p) throw new Error("User not in this room");
 
   p.lastReadAt = new Date();
@@ -147,7 +186,7 @@ async function markAsRead({ companyId, roomId, userId, messageId }) {
         io.to(`user:${uid}`).emit("chat:message:read", {
           roomId: String(roomId),
           userId: String(userId),
-          messageId: storedMessageId,      // может быть null, если temp-id
+          messageId: storedMessageId, // может быть null, если temp-id
           lastReadAt: p.lastReadAt.toISOString(),
         });
       }

@@ -135,10 +135,38 @@ export default function ChatMessages({
                 {/* ПУЗЫРЬ */}
                 <div className={s.msgBubble} data-role="msg-bubble">
                   {/* Переслано от ... */}
-                  {forwardMsg && (
-                    <div className={s.msgForwardLabel}>
-                      Переслано от {forwardAuthorName}
-                    </div>
+                  {m.meta?.forward && (
+                    <>
+                      <div className={s.msgForwardLabel}>
+                        Переслано от{" "}
+                        {
+                          getAuthorInfo(
+                            { authorId: m.meta.forward.authorId },
+                            companyUsers
+                          ).name
+                        }
+                      </div>
+
+                      <div className={s.msgReplyPreview}>
+                        <div className={s.msgReplyPreviewBar} />
+                        <div className={s.msgReplyPreviewContent}>
+                          <div className={s.msgReplyPreviewTitle}>
+                            {
+                              getAuthorInfo(
+                                { authorId: m.meta.forward.authorId },
+                                companyUsers
+                              ).name
+                            }
+                          </div>
+
+                          {m.meta.forward.textSnippet && (
+                            <div className={s.msgReplyPreviewText}>
+                              {m.meta.forward.textSnippet}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   {/* Превью ответа */}

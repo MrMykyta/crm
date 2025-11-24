@@ -1,4 +1,3 @@
-// src/mongoModels/chat/ChatMessage.js
 const { mongoose } = require('../../db/mongo');
 const { Schema } = mongoose;
 
@@ -23,18 +22,30 @@ const ChatMessageSchema = new Schema(
     text: { type: String, default: '' },
     attachments: { type: [AttachmentSchema], default: [] },
 
-    replyToMessageId: { type: Schema.Types.ObjectId, ref: 'ChatMessage', default: null },
+    replyToMessageId: {
+      type: Schema.Types.ObjectId,
+      ref: 'ChatMessage',
+      default: null,
+    },
+
+    // 👇 НОВОЕ: переслано с другого сообщения
+    forwardFromMessageId: {
+      type: Schema.Types.ObjectId,
+      ref: 'ChatMessage',
+      default: null,
+    },
 
     editedAt: { type: Date, default: null },
     deletedAt: { type: Date, default: null },
 
     isSystem: { type: Boolean, default: false },
 
+    // сюда будем класть snapshot исходного сообщения при пересылке
     meta: { type: Schema.Types.Mixed, default: {} },
   },
   {
     timestamps: true,
-    collection: 'chat_messages', // 👈 фиксируем имя коллекции
+    collection: 'chat_messages',
   }
 );
 

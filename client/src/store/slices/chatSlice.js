@@ -3,8 +3,11 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   activeRoomId: null,
-  rooms: [],      // список комнат
-  messages: {},   // messages[roomId] = []
+  rooms: [],          // список комнат
+  messages: {},       // messages[roomId] = [] (можно будет ограничивать длину)
+  composerDrafts: {}, // drafts[roomId] = { text, context }
+  // context: { type: 'reply' | null, id, authorId, authorName, text }
+  forwardDraft: null, // { messageId, fromRoomId, toRoomId, authorId, authorName, text }
 };
 
 const chatSlice = createSlice({
@@ -76,6 +79,65 @@ const chatSlice = createSlice({
       p.lastReadAt = lastReadAt || p.lastReadAt || new Date().toISOString();
     },
 
+    // ================= ЧЕРНОВИКИ И КОНТЕКСТ ВВОДА =================
+
+    // сохранить/обновить черновик для комнаты
+    setComposerDraft(state, action) {
+      const { roomId, text = '', context = null } = action.payload || {};
+      if (!roomId) return;
+
+      const key = String(roomId);
+
+      // если вообще ничего нет — чистим
+      if (!text && !context) {
+        delete state.composerDrafts[key];
+        return;
+      }
+
+      state.composerDrafts[key] = {
+        text,
+        context, // { type: 'reply' | null, id, authorId, authorName, text }
+        updatedAt: new Date().toISOString(),
+      };
+    },
+
+    // удалить черновик конкретной комнаты (после успешной отправки, например)
+    clearComposerDraft(state, action) {
+      const roomId = action.payload;
+      if (!roomId) return;
+      delete state.composerDrafts[String(roomId)];
+    },
+
+    // ================= ЧЕРНОВИК ПЕРЕСЫЛКИ МЕЖДУ ЧАТАМИ =============
+
+    setForwardDraft(state, action) {
+      // либо объект, либо null
+      const payload = action.payload || null;
+      if (!payload) {
+        state.forwardDraft = null;
+        return;
+      }
+
+      const {
+        messageId,
+        fromRoomId,
+        toRoomId,
+        authorId,
+        authorName,
+        text = '',
+      } = payload;
+
+      state.forwardDraft = {
+        messageId,
+        fromRoomId,
+        toRoomId,
+        authorId,
+        authorName,
+        text,
+        createdAt: new Date().toISOString(),
+      };
+    },
+
     // на всякий — локальный ресет чата (если вдруг захочешь дергать)
     resetChat() {
       return initialState;
@@ -89,7 +151,10 @@ export const {
   setMessages,
   addMessage,
   updateRoomFromMessage,
-  updateRoomRead,      // 👈 экспортируем новый редьюсер
+  updateRoomRead,
+  setComposerDraft,
+  clearComposerDraft,
+  setForwardDraft,
   resetChat,
 } = chatSlice.actions;
 
