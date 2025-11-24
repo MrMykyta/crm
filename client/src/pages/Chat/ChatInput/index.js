@@ -9,6 +9,10 @@ export default function ChatInput({
   onSend,
   disabled,
   onHeightChange, // delta px: >0 выросло, <0 сжалось
+
+  // НОВОЕ
+  replyTo,        // { id, authorName, text } | null
+  onCancelReply,  // () => void
 }) {
   const textareaRef = useRef(null);
   const prevTextHeightRef = useRef(0);
@@ -24,7 +28,7 @@ export default function ChatInput({
    * - меряем высоту
    * - ограничиваем 35vh
    * - считаем delta относительно прошлой высоты
-   * - НО: если возвращаемся к baseHeight (1 строка) — delta НЕ шлём
+   * - если возвращаемся к baseHeight (1 строка) — delta НЕ шлём
    */
   const autoResize = (silent = false) => {
     const el = textareaRef.current;
@@ -32,36 +36,28 @@ export default function ChatInput({
 
     const prevH = prevTextHeightRef.current || el.offsetHeight || 0;
 
-    // сбрасываем высоту, чтобы scrollHeight был честным
     el.style.height = "0px";
 
     const vh = typeof window !== "undefined" ? window.innerHeight : 0;
-    const maxH = vh ? vh * 0.35 : 280; // 35% окна
+    const maxH = vh ? vh * 0.35 : 280;
     const rawScrollH = el.scrollHeight;
     const nextH = Math.min(rawScrollH, maxH);
 
-    // если ещё не знаем базовую высоту — считаем её по первой отрисовке
     if (!baseHeightRef.current) {
-      baseHeightRef.current = nextH; // высота одной строки
+      baseHeightRef.current = nextH;
     }
 
     el.style.height = `${nextH}px`;
     el.style.overflowY = rawScrollH > maxH ? "auto" : "hidden";
 
     const base = baseHeightRef.current || 0;
-    const prevAboveBase = prevH > base + 1; // был многострочный
-    const nextAboveBase = nextH > base + 1; // стал многострочным
+    const prevAboveBase = prevH > base + 1;
+    const nextAboveBase = nextH > base + 1;
 
     prevTextHeightRef.current = nextH;
 
     if (silent || !onHeightChange) return;
-
-    // КЕЙС БАГА:
-    // если мы были многострочными и вернулись к одной строке —
-    // не трогаем scroll (не шлём delta), чтобы чат не "подъезжал".
-    if (prevAboveBase && !nextAboveBase) {
-      return;
-    }
+    if (prevAboveBase && !nextAboveBase) return;
 
     const delta = nextH - prevH;
     if (delta !== 0) {
@@ -74,20 +70,22 @@ export default function ChatInput({
     // высоту пересчитает useEffect по text
   };
 
-  // первый расчёт (фиксируем baseHeight, но без дёргания scroll)
   useEffect(() => {
     autoResize(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // при каждом изменении текста пересчёт высоты
   useEffect(() => {
     autoResize(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
+  const replyTitle =
+    replyTo?.authorName ? `В ответ ${replyTo.authorName}` : "Ответ на сообщение";
+
   return (
     <div className={s.input}>
+      {/* слева иконка вложений */}
       <button
         type="button"
         className={s.inputIconBtn}
@@ -96,26 +94,53 @@ export default function ChatInput({
         📎
       </button>
 
-      <div className={s.inputTextWrap}>
-        <textarea
-          ref={textareaRef}
-          className={s.textbox}
-          rows={1}
-          value={text}
-          placeholder="Сообщение…"
-          onChange={handleChange}
-          onKeyDown={onKeyDown}
-        />
-      </div>
+      {/* правая часть: баннер + инпут в колонку */}
+      <div className={s.inputMain}>
+        {replyTo && (
+          <div className={s.replyWrap}>
+            <div className={s.replyLeft}>
+              <div className={s.replyIcon}>↩︎</div>
+              <div className={s.replyTexts}>
+                <div className={s.replyTitle}>{replyTitle}</div>
+                {replyTo.text && (
+                  <div className={s.replyText}>{replyTo.text}</div>
+                )}
+              </div>
+            </div>
 
-      <button
-        className={s.sendIconBtn}
-        onClick={handleSendClick}
-        disabled={disabled}
-        type="button"
-      >
-        ➤
-      </button>
+            <button
+              type="button"
+              className={s.replyCloseBtn}
+              onClick={onCancelReply}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        <div className={s.inputRow}>
+          <div className={s.inputTextWrap}>
+            <textarea
+              ref={textareaRef}
+              className={s.textbox}
+              rows={1}
+              value={text}
+              placeholder="Сообщение…"
+              onChange={handleChange}
+              onKeyDown={onKeyDown}
+            />
+          </div>
+
+          <button
+            className={s.sendIconBtn}
+            onClick={handleSendClick}
+            disabled={disabled}
+            type="button"
+          >
+            ➤
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

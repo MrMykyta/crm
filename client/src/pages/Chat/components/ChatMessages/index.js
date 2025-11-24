@@ -1,5 +1,5 @@
-// src/pages/Chat/components/ChatMessages.jsx
-import React from "react";
+// src/pages/Chat/ChatWindow/components/ChatMessages.jsx
+import React, { useMemo } from "react";
 import s from "../../ChatPage.module.css";
 import {
   getAuthorInfo,
@@ -21,6 +21,17 @@ export default function ChatMessages({
   searchQuery,
   onMessageActionsClick,
 }) {
+  // карта для быстрого поиска сообщения по id
+  const byId = useMemo(() => {
+    const map = new Map();
+    (messages || []).forEach((msg) => {
+      if (msg && msg._id) {
+        map.set(String(msg._id), msg);
+      }
+    });
+    return map;
+  }, [messages]);
+
   return (
     <div ref={listRef} className={messagesClass}>
       {isLoading && !messages.length && (
@@ -40,8 +51,11 @@ export default function ChatMessages({
           {group.items.map((m) => {
             const isMe = meId && String(m.authorId) === meId;
 
-            const { name: authorName, initials, color: authorColor } =
-              getAuthorInfo(m, companyUsers);
+            const {
+              name: authorName,
+              initials,
+              color: authorColor,
+            } = getAuthorInfo(m, companyUsers);
 
             const showAuthorName = isGroup && !isMe;
 
@@ -64,29 +78,87 @@ export default function ChatMessages({
                 : "Прочитано"
               : "";
 
+            // ---------- reply / forward контекст ----------
+
+            // достаём replyMsg: сначала объект, если нет — ищем по id
+            let replyMsg = null;
+            if (m.replyToMessageId) {
+              replyMsg = byId.get(String(m.replyToMessageId)) || null;
+            }
+
+            let forwardMsg = null;
+            if (m.forwardFrom) {
+              if (typeof m.forwardFrom === "object") {
+                forwardMsg = m.forwardFrom;
+              } else {
+                forwardMsg = byId.get(String(m.forwardFrom)) || null;
+              }
+            } else if (m.forwardFromMessage) {
+              if (typeof m.forwardFromMessage === "object") {
+                forwardMsg = m.forwardFromMessage;
+              } else {
+                forwardMsg = byId.get(String(m.forwardFromMessage)) || null;
+              }
+            }
+
+            const replyInfo = replyMsg
+              ? getAuthorInfo(replyMsg, companyUsers)
+              : null;
+            const forwardInfo = forwardMsg
+              ? getAuthorInfo(forwardMsg, companyUsers)
+              : null;
+
+            const replyAuthorName = replyInfo?.name || "Пользователь";
+            const forwardAuthorName = forwardInfo?.name || "Пользователь";
+
+            const replyText =
+              (replyMsg?.text || "").length > 140
+                ? `${replyMsg.text.slice(0, 140)}…`
+                : replyMsg?.text || "";
+
             return (
               <div
                 key={m._id}
                 id={`msg-${m._id}`}
-                className={`${s.messageWrap} ${
-                  isMe ? s.meWrap : s.otherWrap
-                }`}
+                className={`${s.messageWrap} ${isMe ? s.meWrap : s.otherWrap}`}
                 onDoubleClick={(e) =>
                   onMessageActionsClick && onMessageActionsClick(m, e)
                 }
               >
-                {/* собеседник – аватар слева */}
+                {/* СОБЕСЕДНИК: аватар слева */}
                 {!isMe && (
                   <div className={s.msgAvatar}>
                     <span>{initials || "U"}</span>
                   </div>
                 )}
 
-                {/* пузырь сообщения */}
-                <div
-                  className={s.msgBubble}
-                  data-role="msg-bubble" // <<< ВАЖНО: якорь для меню
-                >
+                {/* ПУЗЫРЬ */}
+                <div className={s.msgBubble} data-role="msg-bubble">
+                  {/* Переслано от ... */}
+                  {forwardMsg && (
+                    <div className={s.msgForwardLabel}>
+                      Переслано от {forwardAuthorName}
+                    </div>
+                  )}
+
+                  {/* Превью ответа */}
+                  {replyMsg && (
+                    <div className={s.msgReplyPreview}>
+                      <div className={s.msgReplyPreviewBar} />
+                      <div className={s.msgReplyPreviewContent}>
+                        <div className={s.msgReplyPreviewTitle}>
+                          {replyAuthorName}
+                        </div>
+                        {replyText && (
+                          <div className={s.msgReplyPreviewText}>
+                            {replyText}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Имя автора в группе */}
                   {showAuthorName && (
                     <div className={s.messageAuthorRow}>
                       <span
@@ -98,6 +170,7 @@ export default function ChatMessages({
                     </div>
                   )}
 
+                  {/* Текст сообщения */}
                   <div className={s.msgText}>
                     {renderHighlightedText(
                       m.text || "",
@@ -106,6 +179,7 @@ export default function ChatMessages({
                     )}
                   </div>
 
+                  {/* Время + галочки */}
                   <div className={s.msgMetaRow}>
                     {m.createdAt && (
                       <div className={s.msgTime}>

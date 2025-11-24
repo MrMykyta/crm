@@ -1,3 +1,4 @@
+// src/pages/Chat/ChatWindow/index.jsx
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -22,6 +23,7 @@ import ChatHeader from "../components/ChatHeader";
 import ChatSearchBar from "../components/ChatSearchBar";
 import ChatMessages from "../components/ChatMessages";
 import MessageContextMenu from "../components/MessageContextMenu";
+import { getAuthorInfo } from "../utils/chatMessageUtils";
 
 // ================= ОБЁРТКА =================
 export default function ChatWindow({ roomId, mode = "room", onExitCreate }) {
@@ -69,6 +71,16 @@ function ChatRoomWindow({ roomId }) {
   const [text, setText] = useState("");
   const listRef = useRef(null);
   const lastReadIdRef = useRef(null);
+
+  // контекст ввода (ответ / пересылка)
+  const [composerContext, setComposerContext] = useState(null);
+  // composerContext: {
+  //   type: 'reply' | 'forward',
+  //   id,
+  //   authorId,
+  //   authorName,
+  //   text
+  // }
 
   // сообщения из Redux
   const messages = useSelector((st) => st.chat.messages[String(roomId)] || []);
@@ -139,7 +151,6 @@ function ChatRoomWindow({ roomId }) {
     return {
       title: t,
       subtitle: "был(а) недавно",
-      avatar: user.avatarUrl,
       initials: init,
     };
   }, [room, companyUsers, meId]);
@@ -154,12 +165,16 @@ function ChatRoomWindow({ roomId }) {
   const subtitleToShow = typingLabel || headerInfo.subtitle;
 
   // ===== скролл + плавающая дата =====
-  const { scrollState, floatingDay, isUserScrolling, handleInputHeightChange } =
-    useChatScrollFloatingDay({
-      listRef,
-      groupedMessages,
-      searchOpenDepsKey: roomId,
-    });
+  const {
+    scrollState,
+    floatingDay,
+    isUserScrolling,
+    handleInputHeightChange,
+  } = useChatScrollFloatingDay({
+    listRef,
+    groupedMessages,
+    searchOpenDepsKey: roomId,
+  });
 
   // ===== markRead =====
   useEffect(() => {
@@ -180,7 +195,7 @@ function ChatRoomWindow({ roomId }) {
     anchorRect: null, // DOMRect пузыря
     boundsRect: null, // DOMRect зоны сообщений (listRef)
     side: "other", // 'me' | 'other'
-    clickY: null, // clientY клика
+    clickY: null,
     message: null,
   });
 
@@ -234,9 +249,36 @@ function ChatRoomWindow({ roomId }) {
       open: false,
     }));
 
-  // экшены (пока заглушки)
+  // ====== ДЕЙСТВИЯ ИЗ МЕНЮ ======
+
+  const makeAuthorName = (msg) => {
+    try {
+      const { name } = getAuthorInfo(msg, companyUsers);
+      return name || "Пользователь";
+    } catch {
+      return "Пользователь";
+    }
+  };
+
   const handleReply = (msg) => {
-    console.log("Reply", msg);
+    setComposerContext({
+      type: "reply",
+      id: msg._id,
+      authorId: msg.authorId,
+      authorName: makeAuthorName(msg),
+      text: msg.text || "",
+    });
+    closeMenu();
+  };
+
+  const handleForward = (msg) => {
+    setComposerContext({
+      type: "forward",
+      id: msg._id,
+      authorId: msg.authorId,
+      authorName: makeAuthorName(msg),
+      text: msg.text || "",
+    });
     closeMenu();
   };
 
@@ -259,11 +301,6 @@ function ChatRoomWindow({ roomId }) {
     closeMenu();
   };
 
-  const handleForward = (msg) => {
-    console.log("Forward", msg);
-    closeMenu();
-  };
-
   const handleSelect = (msg) => {
     console.log("Select", msg);
     closeMenu();
@@ -273,6 +310,8 @@ function ChatRoomWindow({ roomId }) {
     console.log("Delete", msg);
     closeMenu();
   };
+
+  const cancelComposerContext = () => setComposerContext(null);
 
   // ===== отправка через socket =====
   const handleSend = () => {
@@ -290,9 +329,22 @@ function ChatRoomWindow({ roomId }) {
       });
     }
 
-    socket.emit("chat:send", { roomId, text: value }, (res) => {
+    const payload = {
+      roomId,
+      text: value,
+    };
+
+    if (composerContext?.type === "reply") {
+      payload.replyTo = composerContext.id;
+    }
+    if (composerContext?.type === "forward") {
+      payload.forwardFrom = composerContext.id;
+    }
+
+    socket.emit("chat:send", payload, (res) => {
       if (res?.ok) {
         setText("");
+        setComposerContext(null);
       } else {
         console.error("[ChatRoomWindow] send error", res);
       }
@@ -344,7 +396,6 @@ function ChatRoomWindow({ roomId }) {
       {/* HEADER */}
       <ChatHeader
         initials={headerInfo.initials}
-        avatar={headerInfo.avatar}
         title={headerInfo.title}
         subtitle={subtitleToShow}
         onBack={handleBack}
@@ -390,6 +441,7 @@ function ChatRoomWindow({ roomId }) {
       <MessageContextMenu
         open={menuState.open}
         anchorRect={menuState.anchorRect}
+        boundsRect={menuState.boundsRect}
         side={menuState.side}
         clickY={menuState.clickY}
         message={menuState.message}
@@ -411,6 +463,8 @@ function ChatRoomWindow({ roomId }) {
         onSend={handleSend}
         disabled={!text.trim()}
         onHeightChange={handleInputHeightChange}
+        replyTo={composerContext}
+        onCancelReply={cancelComposerContext}
       />
     </div>
   );
