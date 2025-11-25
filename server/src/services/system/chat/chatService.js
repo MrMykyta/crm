@@ -45,6 +45,94 @@ async function createGroupRoom({
   });
 }
 
+// ======================
+// ФУНКЦИЯ: getDeepOriginal
+// ======================
+async function getDeepOriginal(msg) {
+  let current = msg;
+  let hops = 0;
+
+  while (
+    current.forward &&
+    current.forward.originalMessageId &&
+    hops < 10
+  ) {
+    const next = await ChatMessage.findOne({
+      _id: current.forward.originalMessageId,
+      companyId: msg.companyId,
+    });
+
+    if (!next) break;
+
+    current = next;
+    hops += 1;
+  }
+
+  return current;
+}
+
+async function pinMessage({ companyId, roomId, messageId, userId }) {
+  const room = await ChatRoom.findOne({ _id: roomId, companyId });
+  if (!room) throw new Error("Room not found");
+
+  const msg = await ChatMessage.findOne({ _id: messageId, roomId, companyId });
+  if (!msg) throw new Error("Message not found");
+
+  if (!msg.isPinned) {
+    msg.isPinned = true;
+    msg.pinnedAt = new Date();
+    msg.pinnedBy = userId;
+    await msg.save();
+  }
+
+  // рассылаем обновление
+  const io = global.io;
+  if (io) {
+    const participants = room.participants || [];
+    const users = participants.map((p) => String(p.userId));
+    const msgObj = msg.toObject ? msg.toObject() : msg;
+
+    for (const uid of users) {
+      io.to(`user:${uid}`).emit("chat:message:pinned", {
+        roomId,
+        message: msgObj,
+      });
+    }
+  }
+
+  return msg;
+}
+
+async function unpinMessage({ companyId, roomId, messageId, userId }) {
+  const room = await ChatRoom.findOne({ _id: roomId, companyId });
+  if (!room) throw new Error("Room not found");
+
+  const msg = await ChatMessage.findOne({ _id: messageId, roomId, companyId });
+  if (!msg) throw new Error("Message not found");
+
+  if (msg.isPinned) {
+    msg.isPinned = false;
+    msg.pinnedAt = null;
+    msg.pinnedBy = null;
+    await msg.save();
+  }
+
+  const io = global.io;
+  if (io) {
+    const participants = room.participants || [];
+    const users = participants.map((p) => String(p.userId));
+
+    for (const uid of users) {
+      io.to(`user:${uid}`).emit("chat:message:unpinned", {
+        roomId,
+        messageId: String(messageId),
+      });
+    }
+  }
+
+  return msg;
+}
+
 /**
  * Отправка сообщения + обновление комнаты + broadcast по socket.io
  */
@@ -55,15 +143,18 @@ async function sendMessage({
   text,
   attachments = [],
   replyTo,
-  forwardFrom, // 👈 НОВОЕ
+  forwardFrom,
+  forwardBatchId = null,
+  forwardBatchSeq = null,
 }) {
   const room = await ChatRoom.findOne({ _id: roomId, companyId });
-  if (!room) throw new Error("Room not found");
+  if (!room) {
+    throw new Error("Room not found");
+  }
 
-  let forwardFromMessageId = null;
-  let meta = {};
+  let forward = null;
 
-  // если пересылаем сообщение
+  // ======== ПЕРЕСЫЛКА ========
   if (forwardFrom && mongoose.isValidObjectId(forwardFrom)) {
     const orig = await ChatMessage.findOne({
       _id: forwardFrom,
@@ -71,22 +162,22 @@ async function sendMessage({
     });
 
     if (orig) {
-      forwardFromMessageId = orig._id;
+      const deep = await getDeepOriginal(orig);
 
-      const rawSnippet = (orig.text || "").trim();
+      const rawSnippet = (deep.text || "").trim();
       const snippet =
         rawSnippet.length > 300 ? rawSnippet.slice(0, 300) + "…" : rawSnippet;
 
-      meta.forward = {
-        fromMessageId: String(orig._id),
-        fromRoomId: String(orig.roomId),
-        authorId: orig.authorId,
+      forward = {
+        sourceMessageId: orig._id,
+        originalMessageId: deep._id,
+        originalAuthorId: deep.authorId,
+        originalAuthorName: deep?.forward?.originalAuthorName || null,
         textSnippet: snippet,
       };
 
-      // если пользователь не написал свой текст — подставим текст оригинала
-      if ((!text || !text.trim()) && orig.text) {
-        text = orig.text;
+      if ((!text || !text.trim()) && deep.text) {
+        text = deep.text;
       }
     }
   }
@@ -98,22 +189,23 @@ async function sendMessage({
     text,
     attachments,
     replyToMessageId: replyTo || null,
-    forwardFromMessageId,
-    meta,
+    forward,
+    forwardBatchId,
+    forwardBatchSeq,
+    meta: {},
   });
 
   room.lastMessageAt = msg.createdAt;
 
   const previewText =
     (text && text.trim()) ||
-    meta.forward?.textSnippet ||
+    (forward && forward.textSnippet) ||
     attachments[0]?.name ||
     "Attachment";
 
   room.lastMessagePreview = previewText;
   await room.save();
 
-  // 👉 BROADCAST ДЛЯ ВСЕХ УЧАСТНИКОВ ЧАТА, ЧЕРЕЗ "ЛИЧНЫЕ" КОМНАТЫ user:{id}
   try {
     const io = global.io;
     if (io) {
@@ -122,22 +214,12 @@ async function sendMessage({
       const participants = room.participants || [];
       const users = participants.map((p) => String(p.userId));
 
-      console.log(
-        "[chatService.sendMessage] broadcast chat:message:new",
-        "roomId=",
-        roomId,
-        "users=",
-        users
-      );
-
       for (const uid of users) {
         io.to(`user:${uid}`).emit("chat:message:new", {
           roomId,
           message: msgObj,
         });
       }
-    } else {
-      console.warn("[chatService.sendMessage] global.io is not set");
     }
   } catch (err) {
     console.error("[chatService.sendMessage] socket broadcast error", err);
@@ -151,7 +233,12 @@ async function getMessages({ companyId, roomId, limit = 50, before }) {
   if (before) query.createdAt = { $lt: new Date(before) };
 
   const items = await ChatMessage.find(query)
-    .sort({ createdAt: -1 })
+    .sort({
+      createdAt: -1,
+      forwardBatchId: 1,
+      forwardBatchSeq: 1,
+      _id: -1,
+    })
     .limit(limit);
 
   return items.reverse();
@@ -175,7 +262,6 @@ async function markAsRead({ companyId, roomId, userId, messageId }) {
 
   await room.save();
 
-  // 🔔 BROADCAST "chat:message:read" ВСЕМ УЧАСТНИКАМ КОМНАТЫ
   try {
     const io = global.io;
     if (io) {
@@ -186,12 +272,10 @@ async function markAsRead({ companyId, roomId, userId, messageId }) {
         io.to(`user:${uid}`).emit("chat:message:read", {
           roomId: String(roomId),
           userId: String(userId),
-          messageId: storedMessageId, // может быть null, если temp-id
+          messageId: storedMessageId,
           lastReadAt: p.lastReadAt.toISOString(),
         });
       }
-    } else {
-      console.warn("[chatService.markAsRead] global.io is not set");
     }
   } catch (err) {
     console.error("[chatService.markAsRead] socket broadcast error", err);
@@ -204,4 +288,6 @@ module.exports = {
   sendMessage,
   getMessages,
   markAsRead,
+  pinMessage,
+  unpinMessage,
 };

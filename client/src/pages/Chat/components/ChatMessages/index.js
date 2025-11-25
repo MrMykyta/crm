@@ -1,5 +1,5 @@
-// src/pages/Chat/ChatWindow/components/ChatMessages.jsx
-import React, { useMemo } from "react";
+// src/pages/Chat/components/ChatMessages/index.jsx
+import React, { useMemo, useState, useEffect } from "react";
 import s from "../../ChatPage.module.css";
 import {
   getAuthorInfo,
@@ -20,8 +20,12 @@ export default function ChatMessages({
   companyUsers,
   searchQuery,
   onMessageActionsClick,
+
+  // новый функционал выбора
+  selectMode,
+  selectedIds,
+  onToggleSelect,
 }) {
-  // карта для быстрого поиска сообщения по id
   const byId = useMemo(() => {
     const map = new Map();
     (messages || []).forEach((msg) => {
@@ -31,6 +35,47 @@ export default function ChatMessages({
     });
     return map;
   }, [messages]);
+
+  // id сообщения, которое подсвечиваем после прыжка
+  const [jumpHighlightId, setJumpHighlightId] = useState(null);
+
+  // авто-сброс подсветки
+  useEffect(() => {
+    if (!jumpHighlightId) return;
+    const t = setTimeout(() => setJumpHighlightId(null), 900);
+    return () => clearTimeout(t);
+  }, [jumpHighlightId]);
+
+  // скролл к сообщению + подсветка
+  const handleJumpToMessage = (targetMsg, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!targetMsg || !listRef?.current) return;
+
+    const container = listRef.current;
+    const el = document.getElementById(`msg-${targetMsg._id}`);
+    if (!el) return;
+
+    const cRect = container.getBoundingClientRect();
+    const mRect = el.getBoundingClientRect();
+
+    // позиция с небольшим отступом сверху
+    const offset =
+      mRect.top - cRect.top + container.scrollTop - 32;
+
+    try {
+      container.scrollTo({
+        top: offset,
+        behavior: "smooth",
+      });
+    } catch {
+      container.scrollTop = offset;
+    }
+
+    setJumpHighlightId(String(targetMsg._id));
+  };
 
   return (
     <div ref={listRef} className={messagesClass}>
@@ -78,52 +123,118 @@ export default function ChatMessages({
                 : "Прочитано"
               : "";
 
-            // ---------- reply / forward контекст ----------
-
-            // достаём replyMsg: сначала объект, если нет — ищем по id
+            // ---------- reply контекст ----------
             let replyMsg = null;
             if (m.replyToMessageId) {
               replyMsg = byId.get(String(m.replyToMessageId)) || null;
             }
 
-            let forwardMsg = null;
-            if (m.forwardFrom) {
-              if (typeof m.forwardFrom === "object") {
-                forwardMsg = m.forwardFrom;
-              } else {
-                forwardMsg = byId.get(String(m.forwardFrom)) || null;
-              }
-            } else if (m.forwardFromMessage) {
-              if (typeof m.forwardFromMessage === "object") {
-                forwardMsg = m.forwardFromMessage;
-              } else {
-                forwardMsg = byId.get(String(m.forwardFromMessage)) || null;
-              }
-            }
-
             const replyInfo = replyMsg
               ? getAuthorInfo(replyMsg, companyUsers)
               : null;
-            const forwardInfo = forwardMsg
-              ? getAuthorInfo(forwardMsg, companyUsers)
-              : null;
 
             const replyAuthorName = replyInfo?.name || "Пользователь";
-            const forwardAuthorName = forwardInfo?.name || "Пользователь";
 
             const replyText =
               (replyMsg?.text || "").length > 140
                 ? `${replyMsg.text.slice(0, 140)}…`
                 : replyMsg?.text || "";
 
+            // ---------- forward контекст ----------
+            let forwardMsg = null;
+
+            if (m.forwardFrom) {
+              forwardMsg = byId.get(String(m.forwardFrom)) || null;
+            } else if (m.forwardFromMessage) {
+              forwardMsg = byId.get(String(m.forwardFromMessage)) || null;
+            }
+
+            const hasForwardMeta = !!m.meta?.forward;
+
+            const forwardAuthorName = (() => {
+              const mf = m.meta?.forward;
+              if (mf?.originalAuthorName) return mf.originalAuthorName;
+              if (mf?.authorName) return mf.authorName;
+
+              if (mf?.originalAuthorId) {
+                const { name } = getAuthorInfo(
+                  { authorId: mf.originalAuthorId },
+                  companyUsers
+                );
+                if (name) return name;
+              }
+              if (mf?.authorId) {
+                const { name } = getAuthorInfo(
+                  { authorId: mf.authorId },
+                  companyUsers
+                );
+                if (name) return name;
+              }
+
+              if (forwardMsg?.meta?.forward) {
+                const fm = forwardMsg.meta.forward;
+                if (fm.originalAuthorName) return fm.originalAuthorName;
+                if (fm.authorName) return fm.authorName;
+
+                if (fm.originalAuthorId) {
+                  const { name } = getAuthorInfo(
+                    { authorId: fm.originalAuthorId },
+                    companyUsers
+                  );
+                  if (name) return name;
+                }
+                if (fm.authorId) {
+                  const { name } = getAuthorInfo(
+                    { authorId: fm.authorId },
+                    companyUsers
+                  );
+                  if (name) return name;
+                }
+              }
+
+              if (forwardMsg) {
+                const { name } = getAuthorInfo(forwardMsg, companyUsers);
+                if (name) return name;
+              }
+
+              return "Пользователь";
+            })();
+
+            const hasForward = hasForwardMeta || !!forwardMsg;
+
+            // выбор сообщений (режим "Выбрано N сообщений")
+            const isSelected =
+              selectMode && selectedIds.includes(String(m._id));
+
+            const wrapClass = [
+              s.messageWrap,
+              isMe ? s.meWrap : s.otherWrap,
+              isSelected ? s.messageWrapSelected : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
+            const bubbleClass = [
+              s.msgBubble,
+              jumpHighlightId === String(m._id) ? s.msgBubbleHighlight : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
             return (
               <div
                 key={m._id}
                 id={`msg-${m._id}`}
-                className={`${s.messageWrap} ${isMe ? s.meWrap : s.otherWrap}`}
+                className={wrapClass}
                 onDoubleClick={(e) =>
                   onMessageActionsClick && onMessageActionsClick(m, e)
                 }
+                onClick={(e) => {
+                  if (!selectMode) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleSelect && onToggleSelect(m);
+                }}
               >
                 {/* СОБЕСЕДНИК: аватар слева */}
                 {!isMe && (
@@ -133,45 +244,20 @@ export default function ChatMessages({
                 )}
 
                 {/* ПУЗЫРЬ */}
-                <div className={s.msgBubble} data-role="msg-bubble">
-                  {/* Переслано от ... */}
-                  {m.meta?.forward && (
-                    <>
-                      <div className={s.msgForwardLabel}>
-                        Переслано от{" "}
-                        {
-                          getAuthorInfo(
-                            { authorId: m.meta.forward.authorId },
-                            companyUsers
-                          ).name
-                        }
-                      </div>
-
-                      <div className={s.msgReplyPreview}>
-                        <div className={s.msgReplyPreviewBar} />
-                        <div className={s.msgReplyPreviewContent}>
-                          <div className={s.msgReplyPreviewTitle}>
-                            {
-                              getAuthorInfo(
-                                { authorId: m.meta.forward.authorId },
-                                companyUsers
-                              ).name
-                            }
-                          </div>
-
-                          {m.meta.forward.textSnippet && (
-                            <div className={s.msgReplyPreviewText}>
-                              {m.meta.forward.textSnippet}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </>
+                <div className={bubbleClass} data-role="msg-bubble">
+                  {/* Переслано от ... (БЕЗ превью) */}
+                  {hasForward && (
+                    <div className={s.msgForwardLabel}>
+                      Переслано от {forwardAuthorName}
+                    </div>
                   )}
 
-                  {/* Превью ответа */}
+                  {/* Превью ответа (кликабельное: прыгаем к сообщению) */}
                   {replyMsg && (
-                    <div className={s.msgReplyPreview}>
+                    <div
+                      className={s.msgReplyPreview}
+                      onClick={(e) => handleJumpToMessage(replyMsg, e)}
+                    >
                       <div className={s.msgReplyPreviewBar} />
                       <div className={s.msgReplyPreviewContent}>
                         <div className={s.msgReplyPreviewTitle}>
@@ -191,7 +277,9 @@ export default function ChatMessages({
                     <div className={s.messageAuthorRow}>
                       <span
                         className={s.messageAuthorName}
-                        style={authorColor ? { color: authorColor } : undefined}
+                        style={
+                          authorColor ? { color: authorColor } : undefined
+                        }
                       >
                         {authorName}
                       </span>

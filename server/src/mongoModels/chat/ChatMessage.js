@@ -1,9 +1,14 @@
-const { mongoose } = require('../../db/mongo');
+// mongoModels/chat/ChatMessage.js
+const { mongoose } = require("../../db/mongo");
 const { Schema } = mongoose;
 
 const AttachmentSchema = new Schema(
   {
-    type: { type: String, enum: ['file', 'image', 'audio', 'video'], default: 'file' },
+    type: {
+      type: String,
+      enum: ["file", "image", "audio", "video"],
+      default: "file",
+    },
     url: { type: String, required: true },
     name: { type: String, default: null },
     size: { type: Number, default: null },
@@ -12,26 +17,51 @@ const AttachmentSchema = new Schema(
   { _id: false }
 );
 
+// простая forward-структура: Mixed, чтобы не ебаться с миграциями,
+// и по умолчанию = null → !!m.forward === false, если не переслано
 const ChatMessageSchema = new Schema(
   {
-    roomId: { type: Schema.Types.ObjectId, ref: 'ChatRoom', required: true, index: true },
+    roomId: {
+      type: Schema.Types.ObjectId,
+      ref: "ChatRoom",
+      required: true,
+      index: true,
+    },
     companyId: { type: String, required: true },
 
     authorId: { type: String, required: true },
 
-    text: { type: String, default: '' },
+    text: { type: String, default: "" },
     attachments: { type: [AttachmentSchema], default: [] },
 
     replyToMessageId: {
       type: Schema.Types.ObjectId,
-      ref: 'ChatMessage',
+      ref: "ChatMessage",
       default: null,
     },
 
-    // 👇 НОВОЕ: переслано с другого сообщения
-    forwardFromMessageId: {
-      type: Schema.Types.ObjectId,
-      ref: 'ChatMessage',
+    // 👇 переслано (snapshot)
+    // forward = null → НЕ пересланное
+    // forward = {
+    //   sourceMessageId,     // сообщение, которое пересылали (может само быть forward)
+    //   originalMessageId,   // самый первый оригинал в цепочке
+    //   originalAuthorId,
+    //   originalAuthorName,  // можно не заполнять, фронт добьёт по users
+    //   textSnippet          // обрезанный текст оригинала (для превью / lastMessage)
+    // }
+    forward: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+
+    // 👇 для сохранения порядка внутри пачки пересылки
+    forwardBatchId: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    forwardBatchSeq: {
+      type: Number,
       default: null,
     },
 
@@ -40,18 +70,33 @@ const ChatMessageSchema = new Schema(
 
     isSystem: { type: Boolean, default: false },
 
-    // сюда будем класть snapshot исходного сообщения при пересылке
     meta: { type: Schema.Types.Mixed, default: {} },
+    isPinned: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    pinnedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+    pinnedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   {
     timestamps: true,
-    collection: 'chat_messages',
+    collection: "chat_messages",
   }
 );
 
 // Индексы
 ChatMessageSchema.index({ roomId: 1, createdAt: -1 });
-ChatMessageSchema.index({ companyId: 1, text: 'text' });
+ChatMessageSchema.index({ companyId: 1, text: "text" });
 
 module.exports =
-  mongoose.models.ChatMessage || mongoose.model('ChatMessage', ChatMessageSchema);
+  mongoose.models.ChatMessage ||
+  mongoose.model("ChatMessage", ChatMessageSchema);

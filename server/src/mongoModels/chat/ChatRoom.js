@@ -1,13 +1,17 @@
 // src/mongoModels/chat/ChatRoom.js
-const { mongoose } = require('../../db/mongo');
+const { mongoose } = require("../../db/mongo");
 const { Schema } = mongoose;
 
 const ParticipantSchema = new Schema(
   {
     userId: { type: String, required: true },
-    role: { type: String, enum: ['member', 'admin'], default: 'member' },
+    role: { type: String, enum: ["member", "admin"], default: "member" },
 
-    lastReadMessageId: { type: Schema.Types.ObjectId, ref: 'ChatMessage', default: null },
+    lastReadMessageId: {
+      type: Schema.Types.ObjectId,
+      ref: "ChatMessage",
+      default: null,
+    },
     lastReadAt: { type: Date, default: null },
     mutedUntil: { type: Date, default: null },
   },
@@ -17,13 +21,13 @@ const ParticipantSchema = new Schema(
 const ChatRoomSchema = new Schema(
   {
     companyId: { type: String, required: true },
-    type: { type: String, enum: ['direct', 'group'], required: true },
+    type: { type: String, enum: ["direct", "group"], required: true },
 
     participants: {
       type: [ParticipantSchema],
       validate: {
-        validator: v => Array.isArray(v) && v.length >= 2,
-        message: 'ChatRoom must have at least 2 participants',
+        validator: (v) => Array.isArray(v) && v.length >= 2,
+        message: "ChatRoom must have at least 2 participants",
       },
     },
 
@@ -32,6 +36,15 @@ const ChatRoomSchema = new Schema(
 
     lastMessageAt: { type: Date, default: null },
     lastMessagePreview: { type: String, default: null },
+    lastPinnedMessageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ChatMessage",
+      default: null,
+    },
+    lastPinnedAt: {
+      type: Date,
+      default: null,
+    },
 
     createdBy: { type: String, required: true },
     isArchived: { type: Boolean, default: false },
@@ -39,16 +52,16 @@ const ChatRoomSchema = new Schema(
   },
   {
     timestamps: true,
-    collection: 'chat_rooms', // 👈 фиксируем название коллекции
+    collection: "chat_rooms", // 👈 фиксируем название коллекции
   }
 );
 
 ChatRoomSchema.index({ companyId: 1, updatedAt: -1 });
 
 ChatRoomSchema.index(
-  { companyId: 1, type: 1, 'participants.userId': 1 },
-  { name: 'direct_room_by_company_and_users' }
+  { companyId: 1, type: 1, "participants.userId": 1 },
+  { name: "direct_room_by_company_and_users" }
 );
 
 module.exports =
-  mongoose.models.ChatRoom || mongoose.model('ChatRoom', ChatRoomSchema);
+  mongoose.models.ChatRoom || mongoose.model("ChatRoom", ChatRoomSchema);

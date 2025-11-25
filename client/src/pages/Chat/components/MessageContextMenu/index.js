@@ -5,10 +5,10 @@ import s from "../../ChatPage.module.css";
 
 export default function MessageContextMenu({
   open,
-  anchorRect,            // DOMRect пузыря
-  boundsRect,            // DOMRect зоны сообщений (listRef)
-  side = "other",        // 'me' | 'other'
-  clickY,                // clientY клика
+  anchorRect, // DOMRect пузыря
+  boundsRect, // DOMRect зоны сообщений (listRef)
+  side = "other", // 'me' | 'other'
+  clickY, // clientY клика
   message,
   onClose,
   onReply,
@@ -40,7 +40,7 @@ export default function MessageContextMenu({
       const menuW = menuRect.width || 220;
       const menuH = menuRect.height || 260;
 
-      // ===== Y: вокруг клика, но внутри boundsRect (между header и input) =====
+      // ===== Y =====
       const baseY =
         typeof clickY === "number"
           ? clickY
@@ -48,7 +48,6 @@ export default function MessageContextMenu({
 
       let y = baseY - menuH / 2;
 
-      // границы по Y
       let topLimit = margin;
       let bottomLimit = vh - menuH - margin;
 
@@ -64,15 +63,13 @@ export default function MessageContextMenu({
       if (y < topLimit) y = topLimit;
       if (y > bottomLimit) y = bottomLimit;
 
-      // ===== X: жёстко относительно пузыря =====
+      // ===== X =====
       let x;
       if (side === "me") {
-        // мои: слева от пузыря
         x = anchorRect.left - gap - menuW;
         if (x < margin) x = margin;
         if (x + menuW + margin > vw) x = vw - menuW - margin;
       } else {
-        // собеседник: справа от пузыря
         x = anchorRect.right + gap;
         if (x + menuW + margin > vw) x = vw - menuW - margin;
         if (x < margin) x = margin;

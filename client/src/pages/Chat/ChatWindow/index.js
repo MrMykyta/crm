@@ -78,14 +78,19 @@ function ChatRoomWindow({ roomId }) {
   const [markRead] = useMarkReadMutation();
 
   const [text, setText] = useState("");
+  // composerContext теперь ТОЛЬКО для reply
+  // { type: 'reply', id, authorId, authorName, text }
   const [composerContext, setComposerContext] = useState(null);
-  // composerContext: { type: 'reply' | 'forward', id, authorId, authorName, text }
 
   const listRef = useRef(null);
   const lastReadIdRef = useRef(null);
 
-  // пересылка: источник + модалка выбора комнаты
-  const [forwardSource, setForwardSource] = useState(null);
+  // ===== режим выбора сообщений (как в Telegram) =====
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]); // строки _id
+
+  // какие сообщения пересылаем (массив)
+  const [forwardMessages, setForwardMessages] = useState([]);
   const [forwardDialogOpen, setForwardDialogOpen] = useState(false);
 
   // сообщения из Redux
@@ -119,7 +124,6 @@ function ChatRoomWindow({ roomId }) {
 
   // ===== начальный черновик для комнаты =====
   useEffect(() => {
-    // при смене комнаты / первым заходом подтягиваем черновик
     if (!composerDraft) {
       setText("");
       setComposerContext(null);
@@ -191,6 +195,34 @@ function ChatRoomWindow({ roomId }) {
       searchOpenDepsKey: roomId,
     });
 
+  // 🔽 Хелпер для скролла вниз
+  const scrollToBottom = (smooth = true) => {
+    const el = listRef.current;
+    if (!el) return;
+
+    try {
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: smooth ? "smooth" : "auto",
+      });
+    } catch {
+      el.scrollTop = el.scrollHeight;
+    }
+  };
+
+  // 🔽 Авто-скролл, когда появляется новое сообщение ОТ МЕНЯ
+  useEffect(() => {
+    if (!messages.length || !meId) return;
+    const last = messages[messages.length - 1];
+    if (!last) return;
+
+    if (String(last.authorId) !== String(meId)) {
+      return;
+    }
+
+    scrollToBottom(true);
+  }, [messages, meId]);
+
   // ===== markRead =====
   useEffect(() => {
     if (!messages.length || !currentUser) return;
@@ -204,12 +236,12 @@ function ChatRoomWindow({ roomId }) {
     markRead({ roomId, messageId: last._id }).catch(() => {});
   }, [messages, roomId, markRead, currentUser]);
 
-  // ===== меню действий по сообщению (двойной клик по сообщению) =====
+  // ===== меню действий по сообщению (двойной клик) =====
   const [menuState, setMenuState] = useState({
     open: false,
-    anchorRect: null, // DOMRect пузыря
-    boundsRect: null, // DOMRect зоны сообщений (listRef)
-    side: "other", // 'me' | 'other'
+    anchorRect: null,
+    boundsRect: null,
+    side: "other",
     clickY: null,
     message: null,
   });
@@ -218,14 +250,15 @@ function ChatRoomWindow({ roomId }) {
     e.preventDefault();
     e.stopPropagation();
 
-    const wrapEl = e.currentTarget; // div.messageWrap
+    if (selectMode) return;
+
+    const wrapEl = e.currentTarget;
     if (!wrapEl) return;
 
     const bubbleEl = wrapEl.querySelector('[data-role="msg-bubble"]');
     const el = bubbleEl || wrapEl;
     const rect = el.getBoundingClientRect();
 
-    // границы области сообщений (между header+search и input)
     let boundsRect = null;
     if (listRef.current) {
       const br = listRef.current.getBoundingClientRect();
@@ -264,7 +297,7 @@ function ChatRoomWindow({ roomId }) {
       open: false,
     }));
 
-  // ====== ДЕЙСТВИЯ ИЗ МЕНЮ ======
+  // ====== ВСПОМОГАТЕЛЬНОЕ ======
 
   const makeAuthorName = (msg) => {
     try {
@@ -285,6 +318,8 @@ function ChatRoomWindow({ roomId }) {
     );
   };
 
+  // ====== REPLY ======
+
   const handleReply = (msg) => {
     const ctx = {
       type: "reply",
@@ -298,11 +333,120 @@ function ChatRoomWindow({ roomId }) {
     closeMenu();
   };
 
-  // здесь только запускаем модалку пересылки
+  const cancelComposerContext = () => {
+    setComposerContext(null);
+    syncDraft(text, null);
+  };
+
+  // ====== ВЫБОР СООБЩЕНИЙ ======
+
+  const startSelectWith = (msg) => {
+    const id = String(msg._id);
+    setSelectMode(true);
+    setSelectedIds([id]);
+    closeMenu();
+  };
+
+  const toggleSelect = (msg) => {
+    const id = String(msg._id);
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) {
+        const next = prev.filter((x) => x !== id);
+        if (!next.length) setSelectMode(false);
+        return next;
+      }
+      return [...prev, id];
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectMode(false);
+    setSelectedIds([]);
+  };
+
+  // ====== ПЕРЕСЫЛКА ======
+
   const handleForward = (msg) => {
-    setForwardSource(msg);
+    setForwardMessages([msg]);
     setForwardDialogOpen(true);
     closeMenu();
+  };
+
+  const handleSelect = (msg) => {
+    startSelectWith(msg);
+  };
+
+  const handleForwardSelected = () => {
+    if (!selectedIds.length) return;
+    const idSet = new Set(selectedIds);
+
+    const selected = messages.filter((m) => idSet.has(String(m._id)));
+    if (!selected.length) return;
+
+    const sorted = [...selected].sort((a, b) => {
+      const ta = new Date(a.createdAt).getTime() || 0;
+      const tb = new Date(b.createdAt).getTime() || 0;
+      return ta - tb;
+    });
+
+    setForwardMessages(sorted);
+    setForwardDialogOpen(true);
+  };
+
+  const getForwardSourceId = (msg) => {
+    const f = msg?.meta?.forward || {};
+    return (
+      f.sourceMessageId ||
+      f.originalMessageId ||
+      f.messageId ||
+      f.forwardedMessageId ||
+      msg._id
+    );
+  };
+
+  const handleForwardSelectRoom = (targetRoomId) => {
+    const socket = getSocket();
+    if (!socket || !forwardMessages.length) return;
+
+    const sorted = [...forwardMessages].sort((a, b) => {
+      const ta = new Date(a.createdAt).getTime() || 0;
+      const tb = new Date(b.createdAt).getTime() || 0;
+      return ta - tb;
+    });
+
+    const sendNext = (index) => {
+      if (index >= sorted.length) {
+        const extra = (text || "").trim();
+        if (extra) {
+          socket.emit("chat:send", {
+            roomId: targetRoomId,
+            text: extra,
+          });
+        }
+
+        setForwardDialogOpen(false);
+        setForwardMessages([]);
+        clearSelection();
+        dispatch(setActiveRoom(targetRoomId));
+
+        setTimeout(() => scrollToBottom(true), 0);
+        return;
+      }
+
+      const m = sorted[index];
+
+      const payload = {
+        roomId: targetRoomId,
+        text: m.text || "",
+        forwardFrom: getForwardSourceId(m),
+      };
+
+      socket.emit("chat:send", payload, () => {
+        sendNext(index + 1);
+      });
+    };
+
+    sendNext(0);
   };
 
   const handleCopy = async (msg) => {
@@ -314,57 +458,16 @@ function ChatRoomWindow({ roomId }) {
     closeMenu();
   };
 
-  const handleEdit = (msg) => {
-    console.log("Edit", msg);
+  const handleEdit = () => {
     closeMenu();
   };
 
-  const handlePin = (msg) => {
-    console.log("Pin", msg);
+  const handlePin = () => {
     closeMenu();
   };
 
-  const handleSelect = (msg) => {
-    console.log("Select", msg);
+  const handleDelete = () => {
     closeMenu();
-  };
-
-  const handleDelete = (msg) => {
-    console.log("Delete", msg);
-    closeMenu();
-  };
-
-  const cancelComposerContext = () => {
-    setComposerContext(null);
-    syncDraft(text, null);
-  };
-
-  // ===== выбор комнаты для пересылки =====
-  const handleForwardSelectRoom = (targetRoomId) => {
-    if (!forwardSource) return;
-
-    const ctx = {
-      type: "forward",
-      id: forwardSource._id,
-      authorId: forwardSource.authorId,
-      authorName: makeAuthorName(forwardSource),
-      text: forwardSource.text || "",
-    };
-
-    // создаём черновик в целевой комнате: пустой текст + контекст пересылки
-    dispatch(
-      setComposerDraft({
-        roomId: targetRoomId,
-        text: "",
-        context: ctx,
-      })
-    );
-
-    setForwardDialogOpen(false);
-    setForwardSource(null);
-
-    // переключаемся в выбранную комнату
-    dispatch(setActiveRoom(targetRoomId));
   };
 
   // ===== отправка через socket =====
@@ -374,17 +477,11 @@ function ChatRoomWindow({ roomId }) {
 
     const raw = text || "";
     const trimmed = raw.trim();
-
-    const isReply = composerContext?.type === "reply";
-    const isForward = composerContext?.type === "forward";
-
     const hasText = trimmed.length > 0;
 
-    // НЕЛЬЗЯ отправлять совсем пустое сообщение,
-    // но для forward текст можно не писать
-    if (!hasText && !isForward) {
-      return;
-    }
+    if (!hasText) return;
+
+    const isReply = composerContext?.type === "reply";
 
     if (meId) {
       socket.emit("chat:typing", {
@@ -396,20 +493,23 @@ function ChatRoomWindow({ roomId }) {
 
     const payload = {
       roomId,
-      text: hasText ? trimmed : "", // для forward без текста уйдёт пустая строка
+      text: trimmed,
     };
 
     if (isReply) {
       payload.replyTo = composerContext.id;
-    }
-    if (isForward) {
-      payload.forwardFrom = composerContext.id; // 👈 ключ, который теперь понимает сервер
     }
 
     socket.emit("chat:send", payload, (res) => {
       if (res?.ok) {
         setText("");
         setComposerContext(null);
+        dispatch(
+          clearComposerDraft({
+            roomId,
+          })
+        );
+        setTimeout(() => scrollToBottom(true), 0);
       } else {
         console.error("[ChatRoomWindow] send error", res);
       }
@@ -430,7 +530,7 @@ function ChatRoomWindow({ roomId }) {
     notifyTyping();
   };
 
-  // ======== ПОИСК ПО СООБЩЕНИЯМ (hook) ========
+  // ======== ПОИСК ПО СООБЩЕНИЯМ ========
   const {
     searchOpen,
     searchQuery,
@@ -458,11 +558,10 @@ function ChatRoomWindow({ roomId }) {
     dispatch(setActiveRoom(null));
   };
 
-  const canSend = text.trim().length > 0 || composerContext?.type === "forward";
+  const canSend = text.trim().length > 0;
 
   return (
     <div className={s.window}>
-      {/* HEADER */}
       <ChatHeader
         initials={headerInfo.initials}
         title={headerInfo.title}
@@ -471,7 +570,6 @@ function ChatRoomWindow({ roomId }) {
         onToggleSearch={toggleSearch}
       />
 
-      {/* ПАНЕЛЬ ПОИСКА */}
       <ChatSearchBar
         open={searchOpen}
         query={searchQuery}
@@ -483,14 +581,12 @@ function ChatRoomWindow({ roomId }) {
         onClose={closeSearch}
       />
 
-      {/* Плавающая дата */}
       {scrollState.scrollable && isUserScrolling && floatingDay && (
         <div className={s.floatingDayLabel} style={{ top: floatingDayTop }}>
           <div className={s.floatingDayLabelInner}>{floatingDay}</div>
         </div>
       )}
 
-      {/* СООБЩЕНИЯ */}
       <ChatMessages
         listRef={listRef}
         messagesClass={messagesClass}
@@ -503,10 +599,12 @@ function ChatRoomWindow({ roomId }) {
         room={room}
         companyUsers={companyUsers}
         searchQuery={searchQuery}
-        onMessageActionsClick={openMessageMenu} // двойной клик / что ты там повесил
+        onMessageActionsClick={openMessageMenu}
+        selectMode={selectMode}
+        selectedIds={selectedIds}
+        onToggleSelect={toggleSelect}
       />
 
-      {/* МЕНЮ ДЛЯ СООБЩЕНИЯ */}
       <MessageContextMenu
         open={menuState.open}
         anchorRect={menuState.anchorRect}
@@ -524,12 +622,11 @@ function ChatRoomWindow({ roomId }) {
         onDelete={handleDelete}
       />
 
-      {/* МОДАЛКА ПЕРЕСЫЛКИ */}
       <ForwardDialog
         open={forwardDialogOpen}
         onClose={() => {
           setForwardDialogOpen(false);
-          setForwardSource(null);
+          setForwardMessages([]);
         }}
         rooms={rooms}
         currentRoomId={roomId}
@@ -538,7 +635,30 @@ function ChatRoomWindow({ roomId }) {
         onSelectRoom={handleForwardSelectRoom}
       />
 
-      {/* INPUT */}
+      {selectMode && (
+        <div className={s.selectBar}>
+          <button
+            type="button"
+            className={s.selectBarBtnDanger}
+            onClick={clearSelection}
+          >
+            Убрать выбор
+          </button>
+
+          <div className={s.selectBarLabel}>
+            Выбрано {selectedIds.length} сообщений
+          </div>
+
+          <button
+            type="button"
+            className={s.selectBarBtnPrimary}
+            disabled={!selectedIds.length}
+            onClick={handleForwardSelected}
+          >
+            Переслать
+          </button>
+        </div>
+      )}
 
       <ChatInput
         text={text}

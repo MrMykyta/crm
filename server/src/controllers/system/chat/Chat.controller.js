@@ -87,7 +87,9 @@ module.exports.sendMessage = async (req, res, next) => {
       text,
       attachments,
       replyTo,
-      forwardFrom, // 👈 НОВОЕ
+      forwardFrom,
+      forwardBatchId,
+      forwardBatchSeq,
     } = req.body;
 
     const msg = await chatService.sendMessage({
@@ -97,7 +99,9 @@ module.exports.sendMessage = async (req, res, next) => {
       text: text || "",
       attachments: attachments || [],
       replyTo,
-      forwardFrom, // 👈 пробрасываем
+      forwardFrom,
+      forwardBatchId,
+      forwardBatchSeq,
     });
 
     res.status(201).json({ data: msg });

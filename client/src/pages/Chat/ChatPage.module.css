@@ -7,11 +7,9 @@
   height: calc(97vh - var(--topbar-h) - 2 * var(--space-3));
   margin: var(--space-3);
   border-radius: var(--radius-lg);
-  /* background: var(--bg-gradient), var(--bg-radial-1), var(--bg-radial-2); */
   background: var(--sidebar-bg);
   backdrop-filter: blur(var(--glass-blur));
   background-blend-mode: normal, screen, screen;
-
   box-shadow: var(--elev-3);
   border: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
   overflow: hidden;
@@ -193,7 +191,7 @@
 
   display: flex;
   align-items: center;
-  gap: 10px; /* расстояние между аватаром и текстом */
+  gap: 10px;
 }
 
 .roomAvatar {
@@ -239,7 +237,6 @@
 .roomPreview {
   font-size: var(--fs-2xs);
   color: var(--muted);
-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -248,7 +245,7 @@
 /* ===== MAIN CHAT WINDOW ===== */
 
 .window {
-  position: relative; /* нужно для абсолютной плавающей даты */
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -259,7 +256,7 @@
     ),
     transparent;
   color: var(--text);
-  min-width: 0; /* 🔥 чтобы не раздвигался от инпута / reply */
+  min-width: 0;
 }
 
 .empty {
@@ -346,11 +343,11 @@
   transform: translateY(-1px);
 }
 
-/* ===== FLOATING DAY LABEL (плавающая дата под хедером) ===== */
+/* ===== FLOATING DAY LABEL ===== */
 
 .floatingDayLabel {
   position: absolute;
-  top: 64px; /* ровно под .chatHeader */
+  top: 64px;
   left: 0;
   right: 0;
   display: flex;
@@ -382,6 +379,12 @@
   gap: var(--space-2);
 }
 
+.messagesScrollable {
+}
+
+.messagesScrolled {
+}
+
 /* статичный разделитель даты в ленте */
 .dayDivider {
   display: flex;
@@ -401,7 +404,7 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
 }
 
-/* общий пузырь */
+/* общий пузырь (legacy, почти не используется напрямую) */
 .message {
   max-width: 70%;
   background: color-mix(in srgb, var(--card-bg) 90%, transparent);
@@ -422,7 +425,35 @@
   align-items: flex-end;
   margin-bottom: 8px;
   max-width: 80%;
-  gap: 8px; /* расстояние между аватаром / пузырём / кнопкой */
+  gap: 8px;
+}
+
+/* подсветка выбранных сообщений */
+.messageWrapSelected .msgBubble {
+  box-shadow: 0 0 0 2px rgba(80, 140, 255, 0.9);
+}
+
+.messageWrapSelected.meWrap .msgBubble {
+  box-shadow: 0 0 0 2px rgba(80, 190, 255, 0.9);
+}
+
+.msgBubbleHighlight {
+  animation: msgJumpFlash 0.9s ease-out;
+}
+
+@keyframes msgJumpFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 214, 102, 0.75);
+    background-color: rgba(255, 248, 204, 0.95);
+  }
+  40% {
+    box-shadow: 0 0 0 6px rgba(255, 214, 102, 0.0);
+    background-color: rgba(255, 248, 204, 0.6);
+  }
+  100% {
+    box-shadow: none;
+    background-color: inherit;
+  }
 }
 
 /* мои сообщения — справа */
@@ -469,7 +500,7 @@
 /* сам пузырь */
 .msgBubble {
   position: relative;
-  background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+  background: var(--card-bg);
   padding: 8px 10px 6px 10px;
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
@@ -478,7 +509,180 @@
   word-break: break-word;
 }
 
-/* кнопка ⋯ рядом с сообщением */
+/* мои пузыри — градиент */
+.meWrap .msgBubble {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-start) 85%, transparent),
+    color-mix(in srgb, var(--primary-end) 85%, transparent)
+  );
+  border-color: transparent;
+  color: #fff;
+}
+
+/* текст */
+.msgText {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: var(--fs-sm);
+}
+
+/* время справа внизу */
+.msgTime {
+  font-size: var(--fs-3xs, 10px);
+  opacity: 0.75;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* имя автора в группе */
+.messageAuthorRow {
+  margin-bottom: 2px;
+}
+
+.messageAuthorName {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  opacity: 0.9;
+}
+
+/* ===== ХВОСТИКИ ===== */
+
+.otherWrap .msgBubble {
+  border-radius: 16px 16px 16px 2px;
+}
+
+.meWrap .msgBubble {
+  border-radius: 16px 16px 2px 16px;
+}
+
+/* ===== МЕТА-СТРОКА: ВРЕМЯ + ГАЛОЧКИ ===== */
+
+.msgMetaRow {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* внутри общей мета-строки время без extra-отступа */
+.msgMetaRow .msgTime {
+  margin-top: 0;
+}
+
+/* контейнер под статус */
+.msgStatus {
+  display: flex;
+  align-items: center;
+  font-size: 0;
+}
+
+.msgCheckIcon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.msgCheckLayer {
+  position: relative;
+  display: inline-block;
+  font-size: 11px;
+}
+
+.msgCheckLayer + .msgCheckLayer {
+  margin-left: -3px;
+}
+
+.msgCheckSent {
+  color: rgba(255, 255, 255, 0.7);
+  opacity: 0.7;
+}
+
+.msgCheckPartial {
+  color: rgba(255, 255, 255, 0.9);
+  opacity: 0.9;
+}
+
+.msgCheckRead {
+  color: #4fc3ff;
+  opacity: 1;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
+}
+
+.meWrap .msgMetaRow {
+  justify-content: flex-end;
+}
+
+/* ===== ПОДПИСИ REPLY / FORWARD ===== */
+
+/* "Переслано от ..." над текстом */
+.msgForwardLabel {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+/* контейнер прелюда ответа */
+.msgReplyPreview {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 6px;
+  margin: -2px -4px 4px -4px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--muted) 20%, transparent);
+}
+
+.msgReplyPreviewBar {
+  width: 3px;
+  border-radius: 999px;
+  background: #508cff;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.msgReplyPreviewContent {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.msgReplyPreviewTitle {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: #508cff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.msgReplyPreviewText {
+  font-size: var(--fs-2xs);
+  color: var(--muted);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.meWrap .msgReplyPreview {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.meWrap .msgReplyPreviewBar {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.meWrap .msgReplyPreviewTitle {
+  color: #ffffff;
+}
+
+/* ===== КНОПКА ⋯ (сейчас не используется, но пусть будет) ===== */
+
 .msgActionsBtn {
   width: 26px;
   height: 26px;
@@ -495,12 +699,10 @@
   opacity: 0;
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
-
   transition: opacity 0.12s ease, background 0.12s ease, transform 0.12s ease,
     border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
 }
 
-/* сам икон-три-точки рисуем псевдоэлементом */
 .msgActionsBtn::before {
   content: "⋮";
   font-size: 16px;
@@ -508,7 +710,6 @@
   color: inherit;
 }
 
-/* показываем кнопку при наведении на строку сообщения */
 .messageWrap:hover .msgActionsBtn {
   opacity: 1;
 }
@@ -521,86 +722,12 @@
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
 }
 
-/* чуть аккуратнее отступы: мои – справа, чужие – слева */
 .meWrap .msgActionsBtn {
   margin-right: 4px;
 }
 
 .otherWrap .msgActionsBtn {
   margin-left: 4px;
-}
-
-/* мои пузыри — градиент как раньше */
-.meWrap .msgBubble {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--primary-start) 85%, transparent),
-    color-mix(in srgb, var(--primary-end) 85%, transparent)
-  );
-  border-color: transparent;
-  color: #fff;
-}
-
-/* имя автора в группе над текстом */
-.messageAuthorRow {
-  margin-bottom: 2px;
-}
-
-.messageAuthorName {
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
-  opacity: 0.9;
-}
-
-/* текст */
-.msgText {
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-size: var(--fs-sm);
-}
-
-/* время справа внизу — как в телеге */
-.msgTime {
-  font-size: var(--fs-3xs, 10px);
-  opacity: 0.75;
-  text-align: right;
-  margin-top: 4px;
-}
-
-/* ===== ХВОСТИКИ У ПУЗЫРЕЙ ===== */
-
-.otherWrap .msgBubble {
-  border-bottom-left-radius: 4px;
-}
-
-.otherWrap .msgBubble::after {
-  content: "";
-  position: absolute;
-  left: -6px;
-  bottom: 0;
-  width: 12px;
-  height: 16px;
-  background: inherit;
-  border-bottom-left-radius: 10px;
-  transform: translateY(1px);
-  clip-path: polygon(0 100%, 100% 0, 100% 100%);
-}
-
-.meWrap .msgBubble {
-  border-bottom-right-radius: 4px;
-}
-
-.meWrap .msgBubble::after {
-  content: "";
-  position: absolute;
-  right: -6px;
-  bottom: 0;
-  width: 12px;
-  height: 16px;
-  background: color-mix(in srgb, #6753dd 85%, transparent);
-  border-bottom-right-radius: 10px;
-  transform: translateY(1px);
-  clip-path: polygon(0 0, 0 100%, 100% 100%);
 }
 
 /* ===== INPUT AREA ===== */
@@ -613,7 +740,6 @@
   border-top: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
   background: color-mix(in srgb, var(--card-bg) 95%, transparent);
   backdrop-filter: blur(var(--glass-blur));
-  min-width: 0; /* 🔥 не растягиваем .window */
 }
 
 .inputRow {
@@ -626,17 +752,17 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px; /* расстояние между баннером и полем ввода */
-  min-width: 0; /* 🔥 позволяет сжиматься при длинном reply */
+  gap: 6px;
+  min-width: 0;
 }
 
 .inputTextWrap {
   flex: 1;
   display: flex;
-  min-width: 0; /* 🔥 не тянем всё окно из-за textarea */
+  min-width: 0;
 }
 
-/* textarea как в Telegram: растёт вверх, без resize-ручки */
+/* textarea */
 .textbox {
   width: 100%;
   min-height: 38px;
@@ -661,7 +787,7 @@
   background: color-mix(in srgb, var(--input-bg) 90%, transparent);
 }
 
-/* маленькие круглые иконки слева/справа от инпута */
+/* маленькие круглые иконки */
 .inputIconBtn {
   width: 32px;
   height: 32px;
@@ -686,7 +812,7 @@
   transform: translateY(-1px);
 }
 
-/* круглая кнопка отправки, как в телеге */
+/* кнопка отправки */
 .sendIconBtn {
   width: 36px;
   height: 36px;
@@ -1034,7 +1160,7 @@
   transform: translateY(-1px);
 }
 
-/* подсветка совпадений в тексте сообщения */
+/* подсветка совпадений */
 .msgHighlight {
   background: color-mix(in srgb, var(--danger) 80%, transparent);
   border-radius: 4px;
@@ -1050,11 +1176,9 @@
   color: var(--muted);
   font-size: 14px;
   cursor: pointer;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   transition: background var(--tr-fast), border-color var(--tr-fast),
     transform var(--tr-fast), opacity var(--tr-fast);
 }
@@ -1066,76 +1190,7 @@
   transform: translateY(-1px);
 }
 
-/* ===== МЕТА-СТРОКА: ВРЕМЯ + ГАЛОЧКИ ===== */
-
-.msgMetaRow {
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 4px;
-}
-
-/* внутри общей мета-строки время без extra-отступа сверху */
-.msgMetaRow .msgTime {
-  margin-top: 0;
-}
-
-/* контейнер под статус (галочки) */
-.msgStatus {
-  display: flex;
-  align-items: center;
-  font-size: 0;
-}
-
-/* базовый вид чеков */
-.msgCheckIcon {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-/* один слой галочки */
-.msgCheckLayer {
-  position: relative;
-  display: inline-block;
-  font-size: 11px;
-}
-
-/* двойная галка — слегка сдвигаем вторую поверх первой */
-.msgCheckLayer + .msgCheckLayer {
-  margin-left: -3px;
-}
-
-/* СОСТОЯНИЯ:
-   sent      – одна бледная галка
-   readSome  – две серенькие
-   readAll   – две синие (как в WA)
-*/
-
-.msgCheckSent {
-  color: rgba(255, 255, 255, 0.7);
-  opacity: 0.7;
-}
-
-.msgCheckPartial {
-  color: rgba(255, 255, 255, 0.9);
-  opacity: 0.9;
-}
-
-/* тут делаем прям синенькие, чтобы в личках было видно */
-.msgCheckRead {
-  color: #4fc3ff;
-  opacity: 1;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
-}
-
-/* на всякий — только у моих сообщений показываем статус в одну линию с временем */
-.meWrap .msgMetaRow {
-  justify-content: flex-end;
-}
+/* ===== CONTEXT MENU ===== */
 
 .ctxOverlay {
   position: fixed;
@@ -1150,27 +1205,25 @@
 
 .ctxMenu {
   position: fixed;
-  min-width: 220px;
-  max-width: 260px;
+  min-width: 170px;
+  max-width: 220px;
   background: linear-gradient(
     135deg,
     rgba(16, 20, 35, 0.98),
     rgba(22, 30, 52, 0.98)
   );
   color: #fff;
-  border-radius: 16px;
-  padding: 6px 0;
+  border-radius: 14px;
+
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(18px);
   border: 1px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
   font-size: 14px;
-
   animation: ctxMenuFadeIn 0.14s ease-out;
   transform-origin: 50% 50%;
 }
 
-/* чтобы меню красиво «раскрывалось» от стороны сообщения */
 .ctxMenu[data-side="me"] {
   transform-origin: 100% 50%;
 }
@@ -1181,9 +1234,10 @@
 
 .ctxMenuItem {
   width: 100%;
-  padding: 8px 16px;
+  padding: 7px 14px;
   background: none;
   border: none;
+  border-radius: none;
   outline: none;
   color: inherit;
   display: flex;
@@ -1243,7 +1297,6 @@
   background: color-mix(in srgb, var(--card-bg) 96%, transparent);
   border: 1px solid color-mix(in srgb, var(--card-brd) 85%, transparent);
   max-width: 100%;
-  min-width: 0;      /* 🔥 можно сжимать */
   overflow: hidden;
 }
 
@@ -1279,7 +1332,7 @@
   font-weight: var(--fw-medium);
   color: #508cff;
   margin-bottom: 2px;
-  white-space: normal;   /* ✅ даём перенестись */
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -1287,7 +1340,7 @@
 .replyText {
   font-size: var(--fs-2xs);
   color: var(--muted);
-  white-space: normal;   /* ✅ тоже перенос */
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -1316,75 +1369,6 @@
   transform: translateY(-1px);
 }
 
-/* ===== ОТОБРАЖЕНИЕ REPLY / FORWARD ВНУТРИ ПУЗЫРЯ ===== */
-
-.msgForwardLabel {
-  font-size: var(--fs-2xs);
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-
-/* контейнер прелюда ответа */
-.msgReplyPreview {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 4px 6px;
-  margin: -2px -4px 4px -4px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.14);
-}
-
-/* вертикальная полоска слева */
-.msgReplyPreviewBar {
-  width: 3px;
-  border-radius: 999px;
-  background: #508cff;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-/* текстовая часть */
-.msgReplyPreviewContent {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-/* имя автора исходного сообщения */
-.msgReplyPreviewTitle {
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
-  color: #508cff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* кусок текста исходного сообщения (1–2 строки) */
-.msgReplyPreviewText {
-  font-size: var(--fs-2xs);
-  color: var(--muted);
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-/* В своих сообщениях фон и цвета чуть другие, чтобы смотрелось мягко */
-.meWrap .msgReplyPreview {
-  background: rgba(0, 0, 0, 0.18);
-}
-
-.meWrap .msgReplyPreviewBar {
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.meWrap .msgReplyPreviewTitle {
-  color: #ffffff;
-}
-
 /* ===== MODAL: ПЕРЕСЛАТЬ СООБЩЕНИЕ ===== */
 
 .forwardModal {
@@ -1392,13 +1376,10 @@
   width: 420px;
   max-width: 90vw;
   max-height: 520px;
-
   display: flex;
   flex-direction: column;
-
   padding: 12px 14px 14px;
   border-radius: 18px;
-
   background: linear-gradient(
     135deg,
     rgba(16, 20, 35, 0.98),
@@ -1407,10 +1388,8 @@
   box-shadow: 0 22px 55px rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(22px);
   border: 1px solid rgba(255, 255, 255, 0.06);
-
   color: #f5f6ff;
   font-size: 14px;
-
   animation: forwardModalFadeIn 0.18s ease-out;
 }
 
@@ -1429,7 +1408,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   padding: 2px 2px 8px;
   margin-bottom: 4px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -1449,7 +1427,6 @@
   background: transparent;
   color: #b0b4c8;
   font-size: 12px;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1471,7 +1448,6 @@
   overflow-y: auto;
 }
 
-/* скроллбар поаккуратнее */
 .forwardList::-webkit-scrollbar {
   width: 6px;
 }
@@ -1488,19 +1464,14 @@
   padding: 8px 10px;
   border-radius: 12px;
   border: none;
-
   background: transparent;
   display: flex;
   align-items: center;
   gap: 10px;
-
   cursor: pointer;
   color: inherit;
   text-align: left;
-
-  transition:
-    background 0.15s ease,
-    transform 0.12s ease,
+  transition: background 0.15s ease, transform 0.12s ease,
     box-shadow 0.12s ease;
 }
 
@@ -1547,7 +1518,6 @@
   font-size: 13px;
   font-weight: 500;
   color: #f5f6ff;
-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1557,8 +1527,74 @@
   font-size: 11px;
   color: #a5a8c4;
   margin-top: 2px;
-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ===== НИЖНЯЯ ПАНЕЛЬ ВЫБОРА СООБЩЕНИЙ ===== */
+
+.selectBar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px 11px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(
+    180deg,
+    rgba(8, 10, 18, 0.98),
+    rgba(10, 12, 22, 0.98)
+  );
+  color: #f5f6ff;
+  font-size: 14px;
+}
+
+.selectBarLabel {
+  flex: 1;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.selectBarBtnDanger,
+.selectBarBtnPrimary {
+  border-radius: 999px;
+  border: none;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.14s ease;
+}
+
+.selectBarBtnDanger {
+  background: transparent;
+  color: #ff6b6b;
+}
+
+.selectBarBtnDanger:hover {
+  background: rgba(255, 107, 107, 0.15);
+}
+
+.selectBarBtnPrimary {
+  background: linear-gradient(135deg, #7c5cff, #4a32d4);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+}
+
+.selectBarBtnPrimary:disabled {
+  opacity: 0.4;
+  cursor: default;
+  box-shadow: none;
+}
+
+.selectBarBtnPrimary:not(:disabled):hover {
+  transform: translateY(-1px);
 }
