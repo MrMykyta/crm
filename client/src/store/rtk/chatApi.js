@@ -63,6 +63,23 @@ export const chatApi = crmApi.injectEndpoints({
         body: { messageId },
       }),
     }),
+    getPinned: build.query({
+      query: ({ roomId }) => `/chat/rooms/${roomId}/pins`,
+    }),
+
+    pinMessage: build.mutation({
+      query: ({ roomId, messageId }) => ({
+        url: `/chat/rooms/${roomId}/pin/${messageId}`,
+        method: "POST",
+      }),
+    }),
+
+    unpinMessage: build.mutation({
+      query: ({ roomId, messageId }) => ({
+        url: `/chat/rooms/${roomId}/unpin/${messageId}`,
+        method: "POST",
+      }),
+    }),
   }),
 });
 
@@ -73,4 +90,7 @@ export const {
   useGetMessagesQuery,
   useSendMessageMutation,
   useMarkReadMutation,
+  useGetPinnedQuery,
+  usePinMessageMutation,
+  useUnpinMessageMutation,
 } = chatApi;

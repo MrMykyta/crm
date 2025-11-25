@@ -55,7 +55,6 @@ module.exports.getOrCreateDirect = async (req, res, next) => {
  */
 module.exports.listMessages = async (req, res, next) => {
   try {
-    const userId = String(req.user.id);
     const companyId = String(req.companyId);
     const { roomId } = req.params;
     const { before, limit } = req.query;
@@ -70,6 +69,26 @@ module.exports.listMessages = async (req, res, next) => {
     res.json({ data: messages });
   } catch (e) {
     console.error("[chatController.listMessages]", e);
+    next(e);
+  }
+};
+
+/**
+ * GET /api/chat/rooms/:roomId/pins
+ */
+module.exports.listPinnedMessages = async (req, res, next) => {
+  try {
+    const companyId = String(req.companyId);
+    const { roomId } = req.params;
+
+    const messages = await chatService.getPinnedMessages({
+      companyId,
+      roomId,
+    });
+
+    res.json({ data: messages });
+  } catch (e) {
+    console.error("[chatController.listPinnedMessages]", e);
     next(e);
   }
 };
@@ -162,6 +181,52 @@ module.exports.createGroup = async (req, res, next) => {
     res.status(201).json({ data: room });
   } catch (e) {
     console.error("[chatController.createGroup]", e);
+    next(e);
+  }
+};
+
+/**
+ * POST /api/chat/rooms/:roomId/pin/:messageId
+ */
+module.exports.pinMessage = async (req, res, next) => {
+  try {
+    const userId = String(req.user.id);
+    const companyId = String(req.companyId);
+    const { roomId, messageId } = req.params;
+
+    const msg = await chatService.pinMessage({
+      companyId,
+      roomId,
+      messageId,
+      userId,
+    });
+
+    res.json({ data: msg });
+  } catch (e) {
+    console.error("[chatController.pinMessage]", e);
+    next(e);
+  }
+};
+
+/**
+ * POST /api/chat/rooms/:roomId/unpin/:messageId
+ */
+module.exports.unpinMessage = async (req, res, next) => {
+  try {
+    const userId = String(req.user.id);
+    const companyId = String(req.companyId);
+    const { roomId, messageId } = req.params;
+
+    const msg = await chatService.unpinMessage({
+      companyId,
+      roomId,
+      messageId,
+      userId,
+    });
+
+    res.json({ data: msg });
+  } catch (e) {
+    console.error("[chatController.unpinMessage]", e);
     next(e);
   }
 };

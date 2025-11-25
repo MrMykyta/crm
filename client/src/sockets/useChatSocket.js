@@ -1,12 +1,14 @@
 // src/sockets/useChatSocket.js
-import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { getSocket } from './io';
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { getSocket } from "./io";
 import {
   addMessage,
   updateRoomFromMessage,
-  updateRoomRead,        // 👈 НОВОЕ
-} from '../store/slices/chatSlice';
+  updateRoomRead,
+  setPinned,
+  removePinned,
+} from "../store/slices/chatSlice";
 
 export function useChatSocket(activeRoomId) {
   const dispatch = useDispatch();
@@ -18,9 +20,9 @@ export function useChatSocket(activeRoomId) {
     const roomKey = String(activeRoomId);
 
     // JOIN ROOM
-    socket.emit('chat:join', { roomId: roomKey }, (res) => {
+    socket.emit("chat:join", { roomId: roomKey }, (res) => {
       if (!res?.ok) {
-        console.warn('[chat:join] failed', res?.error);
+        console.warn("[chat:join] failed", res?.error);
       }
     });
 
@@ -54,17 +56,24 @@ export function useChatSocket(activeRoomId) {
       );
     };
 
-    socket.on('chat:message:new', onNewMessage);
-    socket.on('chat:message:read', onMessageRead);
+    socket.on("chat:message:new", onNewMessage);
+    socket.on("chat:message:read", onMessageRead);
+    socket.on("chat:message:pinned", ({ roomId, message }) => {
+      dispatch(setPinned({ roomId, pinned: message }));
+    });
+
+    socket.on("chat:message:unpinned", ({ roomId }) => {
+      dispatch(removePinned({ roomId }));
+    });
 
     return () => {
       try {
-        socket.emit('chat:leave', { roomId: roomKey }, () => {});
+        socket.emit("chat:leave", { roomId: roomKey }, () => {});
       } catch (e) {
-        console.warn('[chat:leave] emit failed', e);
+        console.warn("[chat:leave] emit failed", e);
       }
-      socket.off('chat:message:new', onNewMessage);
-      socket.off('chat:message:read', onMessageRead);
+      socket.off("chat:message:new", onNewMessage);
+      socket.off("chat:message:read", onMessageRead);
     };
   }, [activeRoomId, dispatch]);
 }

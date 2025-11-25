@@ -1,4 +1,4 @@
-// mongoModels/chat/ChatMessage.js
+// src/mongoModels/chat/ChatMessage.js
 const { mongoose } = require("../../db/mongo");
 const { Schema } = mongoose;
 
@@ -71,6 +71,8 @@ const ChatMessageSchema = new Schema(
     isSystem: { type: Boolean, default: false },
 
     meta: { type: Schema.Types.Mixed, default: {} },
+
+    // ---------- PINNED ----------
     isPinned: {
       type: Boolean,
       default: false,
@@ -81,11 +83,7 @@ const ChatMessageSchema = new Schema(
       default: null,
       index: true,
     },
-    pinnedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-    },
+    pinnedBy: { type: String},
   },
   {
     timestamps: true,
@@ -96,6 +94,14 @@ const ChatMessageSchema = new Schema(
 // Индексы
 ChatMessageSchema.index({ roomId: 1, createdAt: -1 });
 ChatMessageSchema.index({ companyId: 1, text: "text" });
+
+// для быстрых выборок закреплённых
+ChatMessageSchema.index({
+  roomId: 1,
+  isPinned: 1,
+  pinnedAt: -1,
+  createdAt: -1,
+});
 
 module.exports =
   mongoose.models.ChatMessage ||

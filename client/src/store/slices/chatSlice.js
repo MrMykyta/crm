@@ -1,17 +1,18 @@
 // src/store/slices/chatSlice.js
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   activeRoomId: null,
-  rooms: [],          // список комнат
-  messages: {},       // messages[roomId] = [] (можно будет ограничивать длину)
+  pinned: {}, // pinned[roomId] = {message}
+  rooms: [], // список комнат
+  messages: {}, // messages[roomId] = [] (можно будет ограничивать длину)
   composerDrafts: {}, // drafts[roomId] = { text, context }
   // context: { type: 'reply' | null, id, authorId, authorName, text }
   forwardDraft: null, // { messageId, fromRoomId, toRoomId, authorId, authorName, text }
 };
 
 const chatSlice = createSlice({
-  name: 'chat',
+  name: "chat",
   initialState,
 
   reducers: {
@@ -55,7 +56,7 @@ const chatSlice = createSlice({
       const room = state.rooms.find((r) => String(r._id) === idStr);
       if (!room) return;
 
-      room.lastMessagePreview = message.text || '';
+      room.lastMessagePreview = message.text || "";
       room.lastMessageAt = message.createdAt || new Date().toISOString();
     },
 
@@ -83,7 +84,7 @@ const chatSlice = createSlice({
 
     // сохранить/обновить черновик для комнаты
     setComposerDraft(state, action) {
-      const { roomId, text = '', context = null } = action.payload || {};
+      const { roomId, text = "", context = null } = action.payload || {};
       if (!roomId) return;
 
       const key = String(roomId);
@@ -124,7 +125,7 @@ const chatSlice = createSlice({
         toRoomId,
         authorId,
         authorName,
-        text = '',
+        text = "",
       } = payload;
 
       state.forwardDraft = {
@@ -142,6 +143,16 @@ const chatSlice = createSlice({
     resetChat() {
       return initialState;
     },
+
+    setPinned(state, action) {
+      const { roomId, pinned } = action.payload;
+      state.pinned[String(roomId)] = pinned;
+    },
+
+    removePinned(state, action) {
+      const { roomId } = action.payload;
+      delete state.pinned[String(roomId)];
+    },
   },
 });
 
@@ -156,6 +167,8 @@ export const {
   clearComposerDraft,
   setForwardDraft,
   resetChat,
+  setPinned,
+  removePinned,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

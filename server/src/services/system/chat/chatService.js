@@ -71,6 +71,39 @@ async function getDeepOriginal(msg) {
   return current;
 }
 
+/**
+ * Обновляет lastPinned* в комнате на основании самого «свежего» пина.
+ * Если pinnedMessage (последний изменённый) передан, сначала пробуем его.
+ */
+async function recomputeLastPinnedForRoom(room, { pinnedMessage } = {}) {
+  // если есть закреплённое сообщение — ставим его
+  if (pinnedMessage && pinnedMessage.isPinned) {
+    room.lastPinnedMessageId = pinnedMessage._id;
+    room.lastPinnedAt = pinnedMessage.pinnedAt;
+    await room.save();
+    return;
+  }
+
+  // иначе ищем самый свежий пин в комнате
+  const latest = await ChatMessage.findOne({
+    roomId: room._id,
+    companyId: room.companyId,
+    isPinned: true,
+  })
+    .sort({ pinnedAt: -1, createdAt: -1 })
+    .lean();
+
+  if (latest) {
+    room.lastPinnedMessageId = latest._id;
+    room.lastPinnedAt = latest.pinnedAt;
+  } else {
+    room.lastPinnedMessageId = null;
+    room.lastPinnedAt = null;
+  }
+
+  await room.save();
+}
+
 async function pinMessage({ companyId, roomId, messageId, userId }) {
   const room = await ChatRoom.findOne({ _id: roomId, companyId });
   if (!room) throw new Error("Room not found");
@@ -83,21 +116,30 @@ async function pinMessage({ companyId, roomId, messageId, userId }) {
     msg.pinnedAt = new Date();
     msg.pinnedBy = userId;
     await msg.save();
+
+    await recomputeLastPinnedForRoom(room, { pinnedMessage: msg });
   }
 
-  // рассылаем обновление
   const io = global.io;
+  const msgObj = msg.toObject ? msg.toObject() : msg;
+
   if (io) {
     const participants = room.participants || [];
     const users = participants.map((p) => String(p.userId));
-    const msgObj = msg.toObject ? msg.toObject() : msg;
 
+    // личные комнаты пользователей — для списка чатов / бэджей
     for (const uid of users) {
       io.to(`user:${uid}`).emit("chat:message:pinned", {
-        roomId,
+        roomId: String(roomId),
         message: msgObj,
       });
     }
+
+    // сама комната — чтобы «шапка» и сообщение обновились у всех
+    io.to(`room:${roomId}`).emit("chat:message:pinned", {
+      roomId: String(roomId),
+      message: msgObj,
+    });
   }
 
   return msg;
@@ -115,19 +157,27 @@ async function unpinMessage({ companyId, roomId, messageId, userId }) {
     msg.pinnedAt = null;
     msg.pinnedBy = null;
     await msg.save();
+
+    await recomputeLastPinnedForRoom(room, { pinnedMessage: msg });
   }
 
   const io = global.io;
+
   if (io) {
     const participants = room.participants || [];
     const users = participants.map((p) => String(p.userId));
 
     for (const uid of users) {
       io.to(`user:${uid}`).emit("chat:message:unpinned", {
-        roomId,
+        roomId: String(roomId),
         messageId: String(messageId),
       });
     }
+
+    io.to(`room:${roomId}`).emit("chat:message:unpinned", {
+      roomId: String(roomId),
+      messageId: String(messageId),
+    });
   }
 
   return msg;
@@ -220,6 +270,11 @@ async function sendMessage({
           message: msgObj,
         });
       }
+
+      io.to(`room:${roomId}`).emit("chat:message:new", {
+        roomId,
+        message: msgObj,
+      });
     }
   } catch (err) {
     console.error("[chatService.sendMessage] socket broadcast error", err);
@@ -242,6 +297,19 @@ async function getMessages({ companyId, roomId, limit = 50, before }) {
     .limit(limit);
 
   return items.reverse();
+}
+
+// список всех закреплённых сообщений комнаты (для логики «ближайший пин» на фронте)
+async function getPinnedMessages({ companyId, roomId }) {
+  const items = await ChatMessage.find({
+    companyId,
+    roomId,
+    isPinned: true,
+  })
+    .sort({ createdAt: 1, _id: 1 })
+    .lean();
+
+  return items;
 }
 
 async function markAsRead({ companyId, roomId, userId, messageId }) {
@@ -287,6 +355,7 @@ module.exports = {
   createGroupRoom,
   sendMessage,
   getMessages,
+  getPinnedMessages,
   markAsRead,
   pinMessage,
   unpinMessage,

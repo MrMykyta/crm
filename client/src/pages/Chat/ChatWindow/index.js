@@ -78,20 +78,25 @@ function ChatRoomWindow({ roomId }) {
   const [markRead] = useMarkReadMutation();
 
   const [text, setText] = useState("");
-  // composerContext теперь ТОЛЬКО для reply
-  // { type: 'reply', id, authorId, authorName, text }
-  const [composerContext, setComposerContext] = useState(null);
+  const [composerContext, setComposerContext] = useState(null); // только reply
 
+  // refs
   const listRef = useRef(null);
   const lastReadIdRef = useRef(null);
 
+  // для направления скролла
+  const lastScrollTopRef = useRef(0);
+  const scrollDirRef = useRef("down"); // "up" | "down"
+
   // ===== режим выбора сообщений (как в Telegram) =====
   const [selectMode, setSelectMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState([]); // строки _id
+  const [selectedIds, setSelectedIds] = useState([]);
 
-  // какие сообщения пересылаем (массив)
   const [forwardMessages, setForwardMessages] = useState([]);
   const [forwardDialogOpen, setForwardDialogOpen] = useState(false);
+
+  // свернут ли pinned-бар
+  const [collapsedPinned, setCollapsedPinned] = useState(false);
 
   // сообщения из Redux
   const messages = useSelector((st) => st.chat.messages[String(roomId)] || []);
@@ -133,6 +138,11 @@ function ChatRoomWindow({ roomId }) {
     setText(composerDraft.text || "");
     setComposerContext(composerDraft.context || null);
   }, [roomId, composerDraft]);
+
+  // при смене комнаты сбрасываем свернутость pinned-бара
+  useEffect(() => {
+    setCollapsedPinned(false);
+  }, [roomId]);
 
   // ===== ХЕДЕР =====
   const headerInfo = useMemo(() => {
@@ -208,6 +218,165 @@ function ChatRoomWindow({ roomId }) {
     } catch {
       el.scrollTop = el.scrollHeight;
     }
+  };
+
+  // скролл к конкретному сообщению по id (для pinned / reply)
+  const scrollToMessageId = (msgId, smooth = true) => {
+    if (!msgId || !listRef.current) return;
+    const container = listRef.current;
+    const el = document.getElementById(`msg-${msgId}`);
+    if (!el) return;
+
+    const cRect = container.getBoundingClientRect();
+    const mRect = el.getBoundingClientRect();
+    const offset = mRect.top - cRect.top + container.scrollTop - 32;
+
+    try {
+      container.scrollTo({
+        top: offset,
+        behavior: smooth ? "smooth" : "auto",
+      });
+    } catch {
+      container.scrollTop = offset;
+    }
+  };
+
+  // ===== CБОР ВСЕХ ПИНОВ ИЗ messages =====
+  const [pinnedList, setPinnedList] = useState([]);
+  const [currentPinnedIndex, setCurrentPinnedIndex] = useState(0);
+
+  useEffect(() => {
+    if (!messages || !messages.length) {
+      setPinnedList([]);
+      setCurrentPinnedIndex(0);
+      return;
+    }
+
+    const allPinned = messages.filter((m) => m?.isPinned === true);
+    setPinnedList(allPinned);
+
+    if (!allPinned.length) {
+      setCurrentPinnedIndex(0);
+      return;
+    }
+
+    // нормализуем индекс, чтобы он не вылетал за пределы
+    setCurrentPinnedIndex((prev) => {
+      if (prev < 0) return 0;
+      if (prev >= allPinned.length) return allPinned.length - 1;
+      return prev;
+    });
+  }, [messages]);
+
+  const currentPinned =
+    pinnedList.length === 0
+      ? null
+      : pinnedList[currentPinnedIndex] || pinnedList[0];
+
+  // ===== ПИНЫ: выбор ближайшего закрепа сверху/снизу в зависимости от направления скролла =====
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container || !pinnedList.length) return;
+
+    const handleScroll = () => {
+      const c = listRef.current;
+      if (!c || !pinnedList.length) return;
+
+      // ---- направление скролла ----
+      const currentTop = c.scrollTop;
+      const prevTop = lastScrollTopRef.current;
+
+      if (currentTop > prevTop + 1) {
+        scrollDirRef.current = "down";
+      } else if (currentTop < prevTop - 1) {
+        scrollDirRef.current = "up";
+      }
+      lastScrollTopRef.current = currentTop;
+
+      const scrollTop = c.scrollTop;
+      const scrollBottom = scrollTop + c.clientHeight;
+
+      const indicesAbove = [];
+      const indicesBelow = [];
+
+      // pinnedList идёт по таймлайну, поэтому индексы = хронологический порядок
+      pinnedList.forEach((m, idx) => {
+        const el = document.getElementById(`msg-${m._id}`);
+        if (!el) return;
+
+        // позиция относительно scroll-контейнера
+        const msgTop = el.offsetTop;
+        const msgBottom = msgTop + el.offsetHeight;
+
+        if (msgBottom <= scrollTop) {
+          // полностью выше видимой области
+          indicesAbove.push(idx);
+        } else if (msgTop >= scrollBottom) {
+          // полностью ниже видимой области
+          indicesBelow.push(idx);
+        }
+        // если сообщение пересекает viewport — считаем его "видимым" и не добавляем ни туда ни сюда
+      });
+
+      const dir = scrollDirRef.current;
+      let newIndex = currentPinnedIndex;
+
+      if (dir === "down") {
+        // идём вниз → хотим ближайший нижний пин
+        if (indicesBelow.length) {
+          newIndex = indicesBelow[0]; // самый ближний снизу
+        } else if (indicesAbove.length) {
+          // всё нижнее уже проскроллили → показываем самый нижний из верхних (последний)
+          newIndex = indicesAbove[indicesAbove.length - 1];
+        }
+      } else if (dir === "up") {
+        // идём вверх → хотим ближайший верхний пин
+        if (indicesAbove.length) {
+          newIndex = indicesAbove[indicesAbove.length - 1]; // ближайший сверху
+        } else if (indicesBelow.length) {
+          // всё выше уже проскроллили → берём первый снизу
+          newIndex = indicesBelow[0];
+        }
+      }
+
+      if (
+        typeof newIndex === "number" &&
+        newIndex >= 0 &&
+        newIndex < pinnedList.length &&
+        newIndex !== currentPinnedIndex
+      ) {
+        setCurrentPinnedIndex(newIndex);
+      }
+    };
+
+    // стартовое выравнивание при монтировании / смене pinnedList
+    handleScroll();
+
+    container.addEventListener("scroll", handleScroll);
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, [pinnedList, currentPinnedIndex]);
+
+  const handleJumpToPinned = (msg) => {
+    if (!msg || !msg._id) return;
+
+    // просто скроллим к этому пину
+    scrollToMessageId(msg._id, true);
+
+    // подсветка пузыря
+    setTimeout(() => {
+      const wrapEl = document.getElementById(`msg-${msg._id}`);
+      if (!wrapEl) return;
+
+      const bubble = wrapEl.querySelector('[data-role="msg-bubble"]');
+      if (!bubble) return;
+
+      bubble.classList.add(s.msgBubbleHighlight);
+      setTimeout(() => {
+        bubble.classList.remove(s.msgBubbleHighlight);
+      }, 900);
+    }, 200);
   };
 
   // 🔽 Авто-скролл, когда появляется новое сообщение ОТ МЕНЯ
@@ -462,8 +631,29 @@ function ChatRoomWindow({ roomId }) {
     closeMenu();
   };
 
-  const handlePin = () => {
+  const handlePin = (msg) => {
+    if (!msg || !msg._id) {
+      closeMenu();
+      return;
+    }
+    const socket = getSocket();
+    if (!socket) {
+      closeMenu();
+      return;
+    }
+
+    const event = msg.isPinned ? "chat:unpin" : "chat:pin";
+
+    socket.emit(event, { roomId, messageId: msg._id }, () => {});
     closeMenu();
+  };
+
+  const handleUnpinFromBar = (messageId) => {
+    if (!messageId) return;
+    const socket = getSocket();
+    if (!socket) return;
+
+    socket.emit("chat:unpin", { roomId, messageId }, () => {});
   };
 
   const handleDelete = () => {
@@ -552,13 +742,25 @@ function ChatRoomWindow({ roomId }) {
     .filter(Boolean)
     .join(" ");
 
-  const floatingDayTop = searchOpen ? 104 : 64;
+  const pinnedVisible = !!currentPinned && !searchOpen;
+  const floatingDayTop = searchOpen ? 104 : pinnedVisible ? 104 : 64;
 
   const handleBack = () => {
     dispatch(setActiveRoom(null));
   };
 
   const canSend = text.trim().length > 0;
+
+  // анимация бара при смене currentPinned
+  useEffect(() => {
+    if (!currentPinned) return;
+    const bar = document.querySelector(`.${s.pinnedBar}`);
+    if (!bar) return;
+
+    bar.classList.remove(s.pinnedBarSwitch);
+    void bar.offsetWidth;
+    bar.classList.add(s.pinnedBarSwitch);
+  }, [currentPinnedIndex, currentPinned]);
 
   return (
     <div className={s.window}>
@@ -580,6 +782,36 @@ function ChatRoomWindow({ roomId }) {
         onNext={gotoNextMatch}
         onClose={closeSearch}
       />
+
+      {pinnedVisible && (
+        <div
+          className={`${s.pinnedBar} ${
+            collapsedPinned ? s.pinnedCollapsed : ""
+          }`}
+        >
+          <div
+            className={s.pinnedLeft}
+            onClick={() => handleJumpToPinned(currentPinned)}
+          >
+            <div>📌 Закреплённое сообщение</div>
+            {currentPinned.text && !collapsedPinned && (
+              <div className={s.pinnedPreview}>
+                {currentPinned.text.length > 80
+                  ? `${currentPinned.text.slice(0, 80)}…`
+                  : currentPinned.text}
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className={s.pinnedCloseBtn}
+            onClick={() => handleUnpinFromBar(currentPinned._id)}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {scrollState.scrollable && isUserScrolling && floatingDay && (
         <div className={s.floatingDayLabel} style={{ top: floatingDayTop }}>

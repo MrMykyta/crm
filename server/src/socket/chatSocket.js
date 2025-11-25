@@ -73,7 +73,6 @@ module.exports = function chatSocket(io, socket) {
 
       if (!roomId) throw new Error("roomId is required");
       if (!text && (!attachments || !attachments.length) && !forwardFrom) {
-        // 👆 теперь можно отправить сообщение БЕЗ текста, если есть forwardFrom
         throw new Error("text, attachments or forwardFrom required");
       }
 
@@ -84,7 +83,7 @@ module.exports = function chatSocket(io, socket) {
         text: text || "",
         attachments: attachments || [],
         replyTo,
-        forwardFrom, // 👈 пробрасываем дальше
+        forwardFrom,
       });
 
       const msgObj = msg.toObject ? msg.toObject() : msg;
@@ -92,6 +91,56 @@ module.exports = function chatSocket(io, socket) {
       cb && cb({ ok: true, data: msgObj });
     } catch (e) {
       console.error("[chat:send]", e);
+      cb && cb({ ok: false, error: e.message });
+    }
+  });
+
+  // -------------------------
+  // PIN MESSAGE
+  // -------------------------
+  socket.on("chat:pin", async (payload, cb) => {
+    try {
+      const { roomId, messageId } = payload || {};
+      if (!roomId || !messageId) {
+        throw new Error("roomId and messageId are required");
+      }
+
+      const msg = await chatService.pinMessage({
+        companyId,
+        roomId,
+        messageId,
+        userId: String(userId),
+      });
+
+      const msgObj = msg.toObject ? msg.toObject() : msg;
+      cb && cb({ ok: true, data: msgObj });
+    } catch (e) {
+      console.error("[chat:pin]", e);
+      cb && cb({ ok: false, error: e.message });
+    }
+  });
+
+  // -------------------------
+  // UNPIN MESSAGE
+  // -------------------------
+  socket.on("chat:unpin", async (payload, cb) => {
+    try {
+      const { roomId, messageId } = payload || {};
+      if (!roomId || !messageId) {
+        throw new Error("roomId and messageId are required");
+      }
+
+      const msg = await chatService.unpinMessage({
+        companyId,
+        roomId,
+        messageId,
+        userId: String(userId),
+      });
+
+      const msgObj = msg.toObject ? msg.toObject() : msg;
+      cb && cb({ ok: true, data: msgObj });
+    } catch (e) {
+      console.error("[chat:unpin]", e);
       cb && cb({ ok: false, error: e.message });
     }
   });
@@ -108,7 +157,6 @@ module.exports = function chatSocket(io, socket) {
         roomId,
         userId,
         isTyping: !!isTyping,
-        // если фронт передал имя — прокидываем его дальше
         userName: userName || null,
       });
     } catch (e) {

@@ -36,6 +36,8 @@ const ChatRoomSchema = new Schema(
 
     lastMessageAt: { type: Date, default: null },
     lastMessagePreview: { type: String, default: null },
+
+    // последний закреп, чтобы быстро показывать «шапку», как в телеге
     lastPinnedMessageId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ChatMessage",
@@ -52,7 +54,7 @@ const ChatRoomSchema = new Schema(
   },
   {
     timestamps: true,
-    collection: "chat_rooms", // 👈 фиксируем название коллекции
+    collection: "chat_rooms",
   }
 );
 
@@ -62,6 +64,12 @@ ChatRoomSchema.index(
   { companyId: 1, type: 1, "participants.userId": 1 },
   { name: "direct_room_by_company_and_users" }
 );
+
+// быстрый поиск комнат с закрепами
+ChatRoomSchema.index({
+  companyId: 1,
+  lastPinnedAt: -1,
+});
 
 module.exports =
   mongoose.models.ChatRoom || mongoose.model("ChatRoom", ChatRoomSchema);

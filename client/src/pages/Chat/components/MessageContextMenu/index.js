@@ -88,6 +88,9 @@ export default function MessageContextMenu({
     if (cb) cb(message);
   };
 
+  const isPinned = !!message?.isPinned;
+  const pinLabel = isPinned ? "Открепить" : "Закрепить";
+
   const menuNode = (
     <div className={s.ctxOverlay} onClick={onClose}>
       <div
@@ -126,7 +129,7 @@ export default function MessageContextMenu({
           className={s.ctxMenuItem}
           onClick={handle(onPin)}
         >
-          Закрепить
+          {pinLabel}
         </button>
 
         <button
