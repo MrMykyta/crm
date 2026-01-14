@@ -128,6 +128,26 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.roomTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.roomUnreadBadge {
+  min-width: 20px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--fs-md);
+  line-height: 1.2;
+  text-align: center;
+  background: var(--danger, #ff4d4f);
+  color: #000;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
 /* ===== SEARCH ===== */
 
 .headerSearchWrap {
@@ -164,7 +184,7 @@
 .roomsList {
   flex: 1;
   overflow-y: auto;
-  padding: 0 var(--space-2) var(--space-2);
+  padding: var(--space-2) var(--space-2);
 }
 
 .roomsEmpty {
@@ -192,6 +212,23 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.roomUnread {
+  margin-left: auto;
+  margin-right: 8px;
+  min-width: 20px;
+  padding: 0 6px;
+  height: 20px;
+  border-radius: 999px;
+  background: #ff4b6a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
 .roomAvatar {
@@ -524,7 +561,7 @@
 .msgText {
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
 }
 
 /* время справа внизу */
@@ -541,7 +578,7 @@
 }
 
 .messageAuthorName {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   font-weight: var(--fw-medium);
   opacity: 0.9;
 }
@@ -569,6 +606,7 @@
 /* внутри общей мета-строки время без extra-отступа */
 .msgMetaRow .msgTime {
   margin-top: 0;
+  font-size: var(--fs-xs);
 }
 
 /* контейнер под статус */
@@ -1719,4 +1757,72 @@ html.light .pinnedCloseBtn:hover {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+/* в ChatPage.module.css */
+.systemMessageWrap {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.systemMessageInner {
+  max-width: 80%;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  opacity: 0.85;
+  background: rgba(255, 255, 255, 0.04); /* или что-то в твоём стиле */
+}
+
+/* Кнопка "Показать более ранние сообщения" под pinned-баром (для Safari) */
+.loadMoreWrapper {
+  padding: 6px 16px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loadMoreBtn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 15, 20, 0.9); /* можешь заменить на var(--card-bg) */
+  color: #f5f5f5;
+  font-size: 13px;
+  line-height: 1.2;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+  transition:
+    background 0.15s ease,
+    transform 0.12s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.loadMoreBtn:hover:not(:disabled) {
+  background: rgba(30, 30, 40, 0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.loadMoreBtn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.loadMoreBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
 }

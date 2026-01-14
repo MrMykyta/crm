@@ -5,7 +5,7 @@ const initialState = {
   activeRoomId: null,
   pinned: {}, // pinned[roomId] = {message}
   rooms: [], // список комнат
-  messages: {}, // messages[roomId] = [] (можно будет ограничивать длину)
+  messages: {}, // messages[roomId] = []
   composerDrafts: {}, // drafts[roomId] = { text, context }
   // context: { type: 'reply' | null, id, authorId, authorName, text }
   forwardDraft: null, // { messageId, fromRoomId, toRoomId, authorId, authorName, text }
@@ -17,7 +17,13 @@ const chatSlice = createSlice({
 
   reducers: {
     setRooms(state, action) {
-      state.rooms = Array.isArray(action.payload) ? action.payload : [];
+      const rooms = Array.isArray(action.payload) ? action.payload : [];
+      // если сервер уже прислал myUnreadCount — просто принимаем
+      state.rooms = rooms.map((r) => ({
+        ...r,
+        myUnreadCount:
+          typeof r.myUnreadCount === "number" ? r.myUnreadCount : 0,
+      }));
     },
 
     setActiveRoom(state, action) {
@@ -28,7 +34,9 @@ const chatSlice = createSlice({
     setMessages(state, action) {
       const { roomId, messages } = action.payload || {};
       if (!roomId) return;
-      state.messages[String(roomId)] = Array.isArray(messages) ? messages : [];
+      state.messages[String(roomId)] = Array.isArray(messages)
+        ? messages
+        : [];
     },
 
     // добавить одно сообщение в комнату (live)
@@ -47,22 +55,69 @@ const chatSlice = createSlice({
       list.push(message);
     },
 
-    // обновляем превью и время последнего сообщения в списке комнат
+    // добавить пачку сообщений в начало (подгрузка старых)
+    prependMessages(state, action) {
+      const { roomId, messages } = action.payload || {};
+      if (!roomId || !Array.isArray(messages) || !messages.length) return;
+
+      const key = String(roomId);
+      const existing = state.messages[key] || [];
+
+      const existingIds = new Set(
+        existing.map((m) => (m && m._id ? String(m._id) : null)).filter(Boolean)
+      );
+
+      const toAdd = messages.filter(
+        (m) => m && m._id && !existingIds.has(String(m._id))
+      );
+
+      if (!toAdd.length) return;
+
+      state.messages[key] = [...toAdd, ...existing];
+    },
+
+    // обновляем превью, время последнего сообщения и myUnreadCount
+    // payload: { roomId, message, currentUserId?, isActive? }
     updateRoomFromMessage(state, action) {
-      const { roomId, message } = action.payload || {};
+      const { roomId, message, currentUserId, isActive } =
+        action.payload || {};
       if (!roomId || !message) return;
 
       const idStr = String(roomId);
       const room = state.rooms.find((r) => String(r._id) === idStr);
       if (!room) return;
 
-      room.lastMessagePreview = message.text || "";
+      // превью
+      const text = (message.text || "").trim();
+      const preview =
+        text ||
+        (message.forward && message.forward.textSnippet) ||
+        (message.attachments &&
+          message.attachments[0] &&
+          message.attachments[0].name) ||
+        "Attachment";
+
+      room.lastMessagePreview = preview;
       room.lastMessageAt = message.createdAt || new Date().toISOString();
+
+      // считаем непрочитанные:
+      // 1) есть currentUserId
+      // 2) сообщение НЕ от меня
+      // 3) комната НЕ активна
+      if (
+        currentUserId &&
+        String(message.authorId) !== String(currentUserId) &&
+        !isActive
+      ) {
+        room.myUnreadCount = (room.myUnreadCount || 0) + 1;
+      }
     },
 
     // 🔵 обновляем lastRead для участника комнаты (при chat:message:read)
+    // payload: { roomId, userId, messageId, lastReadAt, currentUserId? }
     updateRoomRead(state, action) {
-      const { roomId, userId, messageId, lastReadAt } = action.payload || {};
+      const { roomId, userId, messageId, lastReadAt, currentUserId } =
+        action.payload || {};
       if (!roomId || !userId) return;
 
       const idStr = String(roomId);
@@ -78,6 +133,27 @@ const chatSlice = createSlice({
         p.lastReadMessageId = messageId;
       }
       p.lastReadAt = lastReadAt || p.lastReadAt || new Date().toISOString();
+
+      // если это Я прочитал — сбрасываем myUnreadCount
+      if (currentUserId && String(userId) === String(currentUserId)) {
+        room.myUnreadCount = 0;
+      }
+    },
+
+    // удалить сообщения по id (для системных после unpin)
+    // payload: { roomId, messageIds: [] }
+    removeMessages(state, action) {
+      const { roomId, messageIds } = action.payload || {};
+      if (!roomId || !Array.isArray(messageIds) || !messageIds.length) return;
+
+      const key = String(roomId);
+      const idsSet = new Set(messageIds.map(String));
+
+      if (Array.isArray(state.messages[key])) {
+        state.messages[key] = state.messages[key].filter(
+          (m) => !m._id || !idsSet.has(String(m._id))
+        );
+      }
     },
 
     // ================= ЧЕРНОВИКИ И КОНТЕКСТ ВВОДА =================
@@ -145,12 +221,14 @@ const chatSlice = createSlice({
     },
 
     setPinned(state, action) {
-      const { roomId, pinned } = action.payload;
+      const { roomId, pinned } = action.payload || {};
+      if (!roomId) return;
       state.pinned[String(roomId)] = pinned;
     },
 
     removePinned(state, action) {
-      const { roomId } = action.payload;
+      const { roomId } = action.payload || {};
+      if (!roomId) return;
       delete state.pinned[String(roomId)];
     },
   },
@@ -161,8 +239,10 @@ export const {
   setActiveRoom,
   setMessages,
   addMessage,
+  prependMessages,
   updateRoomFromMessage,
   updateRoomRead,
+  removeMessages,
   setComposerDraft,
   clearComposerDraft,
   setForwardDraft,

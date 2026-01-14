@@ -1,4 +1,3 @@
-// src/socket/chatSocket.js
 const ChatRoom = require("../mongoModels/chat/ChatRoom");
 const chatService = require("../services/system/chat/chatService");
 
@@ -59,7 +58,7 @@ module.exports = function chatSocket(io, socket) {
   });
 
   // -------------------------
-  // SEND MESSAGE
+  // SEND MESSAGE (в т.ч. системное)
   // -------------------------
   socket.on("chat:send", async (payload, cb) => {
     try {
@@ -68,7 +67,13 @@ module.exports = function chatSocket(io, socket) {
         text,
         attachments,
         replyTo,
-        forwardFrom, // 👈 НОВОЕ
+        forwardFrom,
+        // системные поля
+        isSystem,
+        systemType,
+        systemPayload,
+        forwardBatchId,
+        forwardBatchSeq,
       } = payload || {};
 
       if (!roomId) throw new Error("roomId is required");
@@ -83,7 +88,12 @@ module.exports = function chatSocket(io, socket) {
         text: text || "",
         attachments: attachments || [],
         replyTo,
+        isSystem,
+        systemType,
+        systemPayload,
         forwardFrom,
+        forwardBatchId,
+        forwardBatchSeq,
       });
 
       const msgObj = msg.toObject ? msg.toObject() : msg;

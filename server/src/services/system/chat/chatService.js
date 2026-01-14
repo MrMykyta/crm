@@ -1,4 +1,3 @@
-// src/services/system/chat/chatService.js
 const ChatRoom = require("../../../mongoModels/chat/ChatRoom");
 const ChatMessage = require("../../../mongoModels/chat/ChatMessage");
 const mongoose = require("mongoose");
@@ -158,6 +157,49 @@ async function unpinMessage({ companyId, roomId, messageId, userId }) {
     msg.pinnedBy = null;
     await msg.save();
 
+    // удаляем ВСЕ системные сообщения об этом пине
+    try {
+      const systemPinMessages = await ChatMessage.find({
+        companyId,
+        roomId,
+        isSystem: true,
+        "meta.systemType": "pin",
+        "meta.systemPayload.messageId": messageId,
+      }).lean();
+
+      const systemIds = systemPinMessages.map((m) => m._id);
+
+      if (systemIds.length) {
+        await ChatMessage.deleteMany({
+          _id: { $in: systemIds },
+          companyId,
+          roomId,
+        });
+
+        // можно тут же разослать событие об удалении системных сообщений,
+        // если на фронте захочешь их убирать лайвом:
+        const io = global.io;
+        if (io) {
+          const participants = room.participants || [];
+          const users = participants.map((p) => String(p.userId));
+
+          for (const uid of users) {
+            io.to(`user:${uid}`).emit("chat:system:deleted", {
+              roomId: String(roomId),
+              messageIds: systemIds.map(String),
+            });
+          }
+
+          io.to(`room:${roomId}`).emit("chat:system:deleted", {
+            roomId: String(roomId),
+            messageIds: systemIds.map(String),
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[chatService.unpinMessage] system pin delete error", err);
+    }
+
     await recomputeLastPinnedForRoom(room, { pinnedMessage: msg });
   }
 
@@ -193,6 +235,9 @@ async function sendMessage({
   text,
   attachments = [],
   replyTo,
+  isSystem,
+  systemType,
+  systemPayload,
   forwardFrom,
   forwardBatchId = null,
   forwardBatchSeq = null,
@@ -232,17 +277,26 @@ async function sendMessage({
     }
   }
 
+  console.log("isSystem:", isSystem);
+
+  const meta = {};
+  if (isSystem) {
+    if (systemType) meta.systemType = systemType;
+    if (systemPayload) meta.systemPayload = systemPayload;
+  }
+
   const msg = await ChatMessage.create({
     companyId,
     roomId,
     authorId,
     text,
     attachments,
+    isSystem: !!isSystem,
     replyToMessageId: replyTo || null,
     forward,
     forwardBatchId,
     forwardBatchSeq,
-    meta: {},
+    meta,
   });
 
   room.lastMessageAt = msg.createdAt;

@@ -90,6 +90,8 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
         ...room,
         displayName,
         avatarInitials,
+        myUnreadCount:
+          typeof room.myUnreadCount === "number" ? room.myUnreadCount : 0,
       };
     });
   }, [rooms, userMap, currentUserId]);
@@ -201,6 +203,7 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
         {filteredRooms.map((room) => {
           const idStr = String(room._id);
           const isActive = idStr === String(activeRoomId);
+          const unread = room.myUnreadCount || 0;
 
           return (
             <div
@@ -218,6 +221,12 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
                   {room.lastMessagePreview || "Нет сообщений"}
                 </div>
               </div>
+
+              {unread > 0 && (
+                <div className={s.roomUnread}>
+                  {unread > 99 ? "99+" : unread}
+                </div>
+              )}
             </div>
           );
         })}

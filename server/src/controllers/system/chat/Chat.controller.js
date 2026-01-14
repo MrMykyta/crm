@@ -1,22 +1,80 @@
 // src/controllers/chat/chatController.js
 const chatService = require("../../../services/system/chat/chatService");
 const ChatRoom = require("../../../mongoModels/chat/ChatRoom");
+const ChatMessage = require("../../../mongoModels/chat/ChatMessage");
 
 /**
  * GET /api/chat/rooms
+ * Возвращаем список комнат + myUnreadCount для текущего пользователя
  */
 module.exports.listRooms = async (req, res, next) => {
   try {
     const userId = String(req.user.id);
     const companyId = String(req.companyId);
 
+    // 1) тащим все комнаты, где участвует юзер
     const rooms = await ChatRoom.find({
       companyId,
       "participants.userId": userId,
       isDeleted: false,
-    }).sort({ lastMessageAt: -1, updatedAt: -1 });
+    })
+      .sort({ lastMessageAt: -1, updatedAt: -1 })
+      .lean();
 
-    res.json({ data: rooms });
+    if (!rooms.length) {
+      return res.json({ data: [] });
+    }
+
+    // 2) для каждой комнаты считаем непрочитанные сообщения
+    //    критерия:
+    //    - сообщение НЕ от меня
+    //    - не isSystem (по желанию, чтобы не считать системные)
+    //    - createdAt > lastReadAt участника (если lastReadAt есть)
+    const countsByRoom = {};
+
+    await Promise.all(
+      rooms.map(async (room) => {
+        const roomId = room._id;
+        const participants = room.participants || [];
+
+        const me = participants.find(
+          (p) => String(p.userId) === String(userId)
+        );
+
+        const lastReadAt = me?.lastReadAt
+          ? new Date(me.lastReadAt)
+          : null;
+
+        const filter = {
+          companyId,
+          roomId,
+          isDeleted: { $ne: true },
+          authorId: { $ne: userId },
+          // если не хочешь считать системные как непрочитанные — оставь это условие
+          isSystem: { $ne: true },
+        };
+
+        if (lastReadAt) {
+          filter.createdAt = { $gt: lastReadAt };
+        }
+
+        const cnt = await ChatMessage.countDocuments(filter);
+        countsByRoom[String(roomId)] = cnt;
+      })
+    );
+
+    // 3) приклеиваем myUnreadCount к каждой комнате
+    const enriched = rooms.map((room) => {
+      const idStr = String(room._id);
+      const myUnreadCount = countsByRoom[idStr] || 0;
+
+      return {
+        ...room,
+        myUnreadCount,
+      };
+    });
+
+    res.json({ data: enriched });
   } catch (e) {
     console.error("[chatController.listRooms]", e);
     next(e);
@@ -109,6 +167,7 @@ module.exports.sendMessage = async (req, res, next) => {
       forwardFrom,
       forwardBatchId,
       forwardBatchSeq,
+      isSystem,
     } = req.body;
 
     const msg = await chatService.sendMessage({
@@ -117,6 +176,7 @@ module.exports.sendMessage = async (req, res, next) => {
       authorId: userId,
       text: text || "",
       attachments: attachments || [],
+      isSystem,
       replyTo,
       forwardFrom,
       forwardBatchId,
@@ -168,7 +228,9 @@ module.exports.createGroup = async (req, res, next) => {
       return res.status(400).json({ error: "title is required" });
     }
     if (!Array.isArray(participantIds) || !participantIds.length) {
-      return res.status(400).json({ error: "participantIds is required" });
+      return res
+        .status(400)
+        .json({ error: "participantIds is required" });
     }
 
     const room = await chatService.createGroupRoom({

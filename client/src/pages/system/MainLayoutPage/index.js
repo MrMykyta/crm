@@ -1,3 +1,5 @@
+// src/pages/MainLayout/MainLayoutPage.jsx (путь у тебя свой, я по твоему примеру)
+
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +12,10 @@ import { MENU } from '../../../config/menu';
 import { TopbarProvider } from '../../../Providers/TopbarProvider';
 import { useLogoutMutation } from '../../../store/rtk/sessionApi';
 
+// 🔌 добавляем
+import { initSocket } from '../../../sockets/io';
+import { useChatSocket } from '../../../sockets/useChatSocket';
+
 export default function MainLayoutPage() {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
@@ -19,6 +25,8 @@ export default function MainLayoutPage() {
 
   // берем юзера из Redux
   const currentUser = useSelector(s => s.auth?.currentUser);
+  const accessToken = useSelector(s => s.auth?.accessToken);
+  const activeRoomId = useSelector(s => s.chat?.activeRoomId);
 
   const [logout] = useLogoutMutation();
 
@@ -26,6 +34,15 @@ export default function MainLayoutPage() {
     try { await logout().unwrap(); } catch {}
     navigate('/auth', { replace: true });
   };
+
+  // ⚡ глобальная инициализация socket.io по accessToken
+  useEffect(() => {
+    if (!accessToken) return;
+    initSocket(accessToken);
+  }, [accessToken]);
+
+  // 🎧 глобальный чат-сокет: слушает всё, JOIN делает только для activeRoomId
+  useChatSocket(activeRoomId);
 
   // корректно считываем --custom-bg-layer после маунта + реагируем на изменения
   useEffect(() => {
@@ -61,7 +78,9 @@ export default function MainLayoutPage() {
     const path = location.pathname.replace(/\/+$/, '');
     const flat = MENU.filter(i => i.type === 'item' && i.route);
     const match = flat.find(i => path && path.startsWith(i.route));
-    return match ? (t ? t(match.labelKey) : match.labelKey) : (t ? t('menu.pulpit') : 'Рабочий стол');
+    return match
+      ? (t ? t(match.labelKey) : match.labelKey)
+      : (t ? t('menu.pulpit') : 'Рабочий стол');
   }, [location.pathname, t]);
 
   return (

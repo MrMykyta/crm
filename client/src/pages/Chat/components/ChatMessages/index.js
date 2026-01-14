@@ -25,6 +25,11 @@ export default function ChatMessages({
   selectMode,
   selectedIds,
   onToggleSelect,
+
+  // 🔼 пагинация вверх
+  hasMore,
+  isLoadingMore,
+  onLoadMore,
 }) {
   const byId = useMemo(() => {
     const map = new Map();
@@ -62,8 +67,7 @@ export default function ChatMessages({
     const mRect = el.getBoundingClientRect();
 
     // позиция с небольшим отступом сверху
-    const offset =
-      mRect.top - cRect.top + container.scrollTop - 32;
+    const offset = mRect.top - cRect.top + container.scrollTop - 32;
 
     try {
       container.scrollTo({
@@ -77,10 +81,33 @@ export default function ChatMessages({
     setJumpHighlightId(String(targetMsg._id));
   };
 
+  // 🔼 обработчик скролла: если близко к верху — грузим ещё
+  const handleScroll = (e) => {
+    if (!hasMore || isLoadingMore || !onLoadMore) return;
+    const el = e.currentTarget;
+    if (!el) return;
+
+    // раньше было <= 80 — можно сделать чуть больше
+    if (el.scrollTop <= 300) {
+      onLoadMore();
+    }
+  };
+
   return (
-    <div ref={listRef} className={messagesClass}>
+    <div
+      ref={listRef}
+      className={messagesClass}
+      onScroll={handleScroll} // 👈 вешаем скролл
+    >
       {isLoading && !messages.length && (
         <div className={s.roomsEmpty}>Загружаем сообщения…</div>
+      )}
+
+      {/* Лоадер при подгрузке старых сообщений */}
+      {isLoadingMore && hasMore && (
+        <div className={s.loadMoreSpinner}>
+          Загрузка более ранних сообщений…
+        </div>
       )}
 
       {!isLoading && !messages.length && (
@@ -94,6 +121,26 @@ export default function ChatMessages({
           </div>
 
           {group.items.map((m) => {
+            // ---------- СИСТЕМНОЕ СООБЩЕНИЕ ----------
+            if (m.isSystem) {
+              return (
+                <div
+                  key={m._id}
+                  id={`msg-${m._id}`}
+                  className={s.systemMessageWrap}
+                >
+                  <div className={s.systemMessageInner}>
+                    {renderHighlightedText(
+                      m.text || "",
+                      searchQuery,
+                      s.msgHighlight
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
+            // ---------- Обычное сообщение ----------
             const isMe = meId && String(m.authorId) === meId;
 
             const {
@@ -140,7 +187,7 @@ export default function ChatMessages({
                 ? `${replyMsg.text.slice(0, 140)}…`
                 : replyMsg?.text || "";
 
-            // ---------- FORWARD (новая схема + fallback) ----------
+            // ---------- FORWARD ----------
             const forwardData = m.forward ?? m.meta?.forward ?? null;
             const hasForward =
               forwardData !== null &&
@@ -246,9 +293,7 @@ export default function ChatMessages({
                     <div className={s.messageAuthorRow}>
                       <span
                         className={s.messageAuthorName}
-                        style={
-                          authorColor ? { color: authorColor } : undefined
-                        }
+                        style={authorColor ? { color: authorColor } : undefined}
                       >
                         {authorName}
                       </span>

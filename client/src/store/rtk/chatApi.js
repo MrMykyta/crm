@@ -30,12 +30,19 @@ export const chatApi = crmApi.injectEndpoints({
       invalidatesTags: ["ChatRooms"],
     }),
 
-    // сообщения комнаты
+    // сообщения комнаты (с поддержкой before + limit)
     getMessages: build.query({
-      query: ({ roomId, before }) => ({
-        url: `/chat/rooms/${roomId}/messages`,
-        params: before ? { before } : {},
-      }),
+      query: ({ roomId, before, limit }) => {
+        const params = {};
+
+        if (before) params.before = before;
+        if (limit) params.limit = limit;
+
+        return {
+          url: `/chat/rooms/${roomId}/messages`,
+          params,
+        };
+      },
       providesTags: (result, error, arg) => [
         { type: "ChatMessages", id: String(arg.roomId) },
       ],
@@ -47,7 +54,7 @@ export const chatApi = crmApi.injectEndpoints({
       query: ({ roomId, text, attachments, replyTo, forwardFrom }) => ({
         url: `/chat/rooms/${roomId}/messages`,
         method: "POST",
-        body: { text, attachments, replyTo, forwardFrom }, // 👈 добавили
+        body: { text, attachments, replyTo, forwardFrom },
       }),
       invalidatesTags: (r, e, arg) => [
         { type: "ChatMessages", id: String(arg.roomId) },
@@ -63,6 +70,8 @@ export const chatApi = crmApi.injectEndpoints({
         body: { messageId },
       }),
     }),
+
+    // список закреплённых сообщений комнаты
     getPinned: build.query({
       query: ({ roomId }) => `/chat/rooms/${roomId}/pins`,
     }),
@@ -83,11 +92,13 @@ export const chatApi = crmApi.injectEndpoints({
   }),
 });
 
+// ⬇️ добавил useLazyGetMessagesQuery
 export const {
   useListRoomsQuery,
   useGetOrCreateDirectMutation,
-  useCreateGroupMutation, // <-- новый хук
+  useCreateGroupMutation,
   useGetMessagesQuery,
+  useLazyGetMessagesQuery,
   useSendMessageMutation,
   useMarkReadMutation,
   useGetPinnedQuery,

@@ -4,15 +4,16 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   useGetMessagesQuery,
   useMarkReadMutation,
+  useLazyGetMessagesQuery,
 } from "../../../store/rtk/chatApi";
 
-import { useChatSocket } from "../../../sockets/useChatSocket";
 import { getSocket } from "../../../sockets/io";
 import {
   setMessages,
   setActiveRoom,
   setComposerDraft,
   clearComposerDraft,
+  prependMessages,
 } from "../../../store/slices/chatSlice";
 
 import ChatCreateDirect from "../ChatCreateDirect";
@@ -30,6 +31,11 @@ import ChatMessages from "../components/ChatMessages";
 import MessageContextMenu from "../components/MessageContextMenu";
 import ForwardDialog from "../components/ForwardDialog";
 import { getAuthorInfo } from "../utils/chatMessageUtils";
+
+// простая проверка Safari
+const isSafari =
+  typeof navigator !== "undefined" &&
+  /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
 // ================= ОБЁРТКА =================
 export default function ChatWindow({ roomId, mode = "room", onExitCreate }) {
@@ -70,12 +76,12 @@ function ChatRoomWindow({ roomId }) {
     ? String(currentUser.userId || currentUser.id)
     : null;
 
-  // live-сокет
-  useChatSocket(roomId);
-
   // первоначальная загрузка истории
   const { data, isLoading } = useGetMessagesQuery({ roomId });
   const [markRead] = useMarkReadMutation();
+
+  // lazy-хук для подгрузки старых сообщений
+  const [loadMoreMessages] = useLazyGetMessagesQuery();
 
   const [text, setText] = useState("");
   const [composerContext, setComposerContext] = useState(null); // только reply
@@ -84,9 +90,12 @@ function ChatRoomWindow({ roomId }) {
   const listRef = useRef(null);
   const lastReadIdRef = useRef(null);
 
-  // для направления скролла
+  // для направления скролла (для пинов)
   const lastScrollTopRef = useRef(0);
   const scrollDirRef = useRef("down"); // "up" | "down"
+
+  // флаг «мы уже сделали первичный скролл для этой комнаты»
+  const initialScrollDoneRef = useRef(false);
 
   // ===== режим выбора сообщений (как в Telegram) =====
   const [selectMode, setSelectMode] = useState(false);
@@ -100,6 +109,11 @@ function ChatRoomWindow({ roomId }) {
 
   // сообщения из Redux
   const messages = useSelector((st) => st.chat.messages[String(roomId)] || []);
+
+  // ===== пагинация вверх =====
+  const PAGE_LIMIT = 50;
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const room = useMemo(
     () => rooms.find((r) => String(r._id) === String(roomId)),
@@ -125,6 +139,9 @@ function ChatRoomWindow({ roomId }) {
       : [];
 
     dispatch(setMessages({ roomId, messages: base }));
+
+    // если меньше лимита — дальше грузить нечего
+    setHasMore(base.length >= PAGE_LIMIT);
   }, [data, roomId, dispatch]);
 
   // ===== начальный черновик для комнаты =====
@@ -139,9 +156,10 @@ function ChatRoomWindow({ roomId }) {
     setComposerContext(composerDraft.context || null);
   }, [roomId, composerDraft]);
 
-  // при смене комнаты сбрасываем свернутость pinned-бара
+  // при смене комнаты сбрасываем свернутость pinned-бара и флаг начального скролла
   useEffect(() => {
     setCollapsedPinned(false);
+    initialScrollDoneRef.current = false;
   }, [roomId]);
 
   // ===== ХЕДЕР =====
@@ -220,7 +238,7 @@ function ChatRoomWindow({ roomId }) {
     }
   };
 
-  // скролл к конкретному сообщению по id (для pinned / reply)
+  // скролл к конкретному сообщению по id (для pinned / reply / first unread)
   const scrollToMessageId = (msgId, smooth = true) => {
     if (!msgId || !listRef.current) return;
     const container = listRef.current;
@@ -299,42 +317,33 @@ function ChatRoomWindow({ roomId }) {
       const indicesAbove = [];
       const indicesBelow = [];
 
-      // pinnedList идёт по таймлайну, поэтому индексы = хронологический порядок
       pinnedList.forEach((m, idx) => {
         const el = document.getElementById(`msg-${m._id}`);
         if (!el) return;
 
-        // позиция относительно scroll-контейнера
         const msgTop = el.offsetTop;
         const msgBottom = msgTop + el.offsetHeight;
 
         if (msgBottom <= scrollTop) {
-          // полностью выше видимой области
           indicesAbove.push(idx);
         } else if (msgTop >= scrollBottom) {
-          // полностью ниже видимой области
           indicesBelow.push(idx);
         }
-        // если сообщение пересекает viewport — считаем его "видимым" и не добавляем ни туда ни сюда
       });
 
       const dir = scrollDirRef.current;
       let newIndex = currentPinnedIndex;
 
       if (dir === "down") {
-        // идём вниз → хотим ближайший нижний пин
         if (indicesBelow.length) {
-          newIndex = indicesBelow[0]; // самый ближний снизу
+          newIndex = indicesBelow[0];
         } else if (indicesAbove.length) {
-          // всё нижнее уже проскроллили → показываем самый нижний из верхних (последний)
           newIndex = indicesAbove[indicesAbove.length - 1];
         }
       } else if (dir === "up") {
-        // идём вверх → хотим ближайший верхний пин
         if (indicesAbove.length) {
-          newIndex = indicesAbove[indicesAbove.length - 1]; // ближайший сверху
+          newIndex = indicesAbove[indicesAbove.length - 1];
         } else if (indicesBelow.length) {
-          // всё выше уже проскроллили → берём первый снизу
           newIndex = indicesBelow[0];
         }
       }
@@ -361,10 +370,8 @@ function ChatRoomWindow({ roomId }) {
   const handleJumpToPinned = (msg) => {
     if (!msg || !msg._id) return;
 
-    // просто скроллим к этому пину
     scrollToMessageId(msg._id, true);
 
-    // подсветка пузыря
     setTimeout(() => {
       const wrapEl = document.getElementById(`msg-${msg._id}`);
       if (!wrapEl) return;
@@ -379,6 +386,111 @@ function ChatRoomWindow({ roomId }) {
     }, 200);
   };
 
+  // 🔼 ПОДГРУЗКА СТАРЫХ СООБЩЕНИЙ (дельта scrollHeight + отдельный путь для Safari)
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasMore || isLoading) return;
+    if (!messages || !messages.length) return;
+
+    const container = listRef.current;
+    if (!container) return;
+
+    const oldest = messages[0];
+    if (!oldest || !oldest.createdAt) return;
+
+    const before = oldest.createdAt;
+
+    const prevScrollHeight = container.scrollHeight;
+    const prevScrollTop = container.scrollTop;
+
+    setIsLoadingMore(true);
+
+    try {
+      const res = await loadMoreMessages({
+        roomId,
+        before,
+        limit: PAGE_LIMIT,
+      }).unwrap();
+
+      const extra = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res)
+        ? res
+        : [];
+
+      if (!extra.length) {
+        setHasMore(false);
+        return;
+      }
+
+      dispatch(
+        prependMessages({
+          roomId,
+          messages: extra,
+        })
+      );
+
+      if (extra.length < PAGE_LIMIT) {
+        setHasMore(false);
+      }
+
+      // восстанавливаем позицию
+      requestAnimationFrame(() => {
+        const el = listRef.current;
+        if (!el) return;
+
+        const newScrollHeight = el.scrollHeight;
+        const delta = newScrollHeight - prevScrollHeight;
+
+        if (isSafari) {
+          // Safari: даём ещё один кадр на layout и используем scrollBy
+          requestAnimationFrame(() => {
+            const el2 = listRef.current;
+            if (!el2) return;
+
+            // лёгкий форс-рефлоу, чтобы Safari точно обновил layout
+            // eslint-disable-next-line no-unused-expressions
+            el2.offsetHeight;
+
+            el2.scrollBy(0, delta);
+          });
+        } else {
+          el.scrollTop = prevScrollTop + delta;
+        }
+      });
+    } catch (e) {
+      console.error("[ChatRoomWindow] loadMore error", e);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  // слушаем скролл и триггерим подгрузку ЧУТЬ ЗАРАНЕЕ
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      const el = listRef.current;
+      if (!el) return;
+
+      if (
+        el.scrollTop < 800 &&
+        !isLoadingMore &&
+        hasMore &&
+        !isLoading &&
+        messages.length >= PAGE_LIMIT
+      ) {
+        handleLoadMore();
+      }
+    };
+
+    container.addEventListener("scroll", onScroll);
+    return () => {
+      container.removeEventListener("scroll", onScroll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, hasMore, isLoadingMore, isLoading, messages.length]);
+
   // 🔽 Авто-скролл, когда появляется новое сообщение ОТ МЕНЯ
   useEffect(() => {
     if (!messages.length || !meId) return;
@@ -391,6 +503,58 @@ function ChatRoomWindow({ roomId }) {
 
     scrollToBottom(true);
   }, [messages, meId]);
+
+  // 🔽 ПЕРВЫЙ СКРОЛЛ ПРИ ВХОДЕ В ЧАТ: К ПЕРВОМУ НЕПРОЧИТАННОМУ
+  useEffect(() => {
+    if (!messages.length || !room || !meId) return;
+    if (initialScrollDoneRef.current) return;
+
+    const myParticipant =
+      room.participants?.find((p) => String(p.userId) === String(meId)) || null;
+
+    let targetMsg = null;
+
+    // 1) если есть lastReadMessageId — берём сообщение сразу после него
+    if (myParticipant?.lastReadMessageId) {
+      const lastReadId = String(myParticipant.lastReadMessageId);
+      const idx = messages.findIndex((m) => String(m._id) === lastReadId);
+
+      if (idx >= 0 && idx < messages.length - 1) {
+        targetMsg = messages[idx + 1];
+      } else if (idx >= 0) {
+        targetMsg = null;
+      }
+    }
+
+    // 2) если нет lastReadMessageId, но есть myUnreadCount — прыгаем по нему
+    if (!targetMsg && room.myUnreadCount > 0 && messages.length) {
+      const n = room.myUnreadCount;
+      const indexFrom = Math.max(messages.length - n, 0);
+      targetMsg = messages[indexFrom] || null;
+    }
+
+    if (!targetMsg) {
+      scrollToBottom(false);
+      initialScrollDoneRef.current = true;
+      return;
+    }
+
+    scrollToMessageId(targetMsg._id, false);
+
+    setTimeout(() => {
+      const wrapEl = document.getElementById(`msg-${targetMsg._id}`);
+      if (!wrapEl) return;
+      const bubble = wrapEl.querySelector('[data-role="msg-bubble"]');
+      if (!bubble) return;
+
+      bubble.classList.add(s.msgBubbleHighlight);
+      setTimeout(() => {
+        bubble.classList.remove(s.msgBubbleHighlight);
+      }, 900);
+    }, 200);
+
+    initialScrollDoneRef.current = true;
+  }, [messages, room, meId]);
 
   // ===== markRead =====
   useEffect(() => {
@@ -475,6 +639,14 @@ function ChatRoomWindow({ roomId }) {
     } catch {
       return "Пользователь";
     }
+  };
+
+  const getCurrentUserName = () => {
+    if (!currentUser) return "Кто-то";
+    const full = [currentUser.firstName, currentUser.lastName]
+      .filter(Boolean)
+      .join(" ");
+    return full || currentUser.email || "Пользователь";
   };
 
   const syncDraft = (nextText, nextContext) => {
@@ -642,9 +814,40 @@ function ChatRoomWindow({ roomId }) {
       return;
     }
 
-    const event = msg.isPinned ? "chat:unpin" : "chat:pin";
+    const isUnpin = !!msg.isPinned;
+    const event = isUnpin ? "chat:unpin" : "chat:pin";
 
     socket.emit(event, { roomId, messageId: msg._id }, () => {});
+
+    if (!isUnpin) {
+      const actorName = getCurrentUserName();
+      const baseText = msg.text || "";
+      const preview = baseText
+        ? baseText.length > 40
+          ? `${baseText.slice(0, 40)}…`
+          : baseText
+        : "сообщение";
+
+      const systemText = `${actorName} закрепил(а) «${preview}»`;
+
+      const systemPayload = {
+        roomId,
+        text: systemText,
+        isSystem: true,
+        systemType: "pin",
+        systemPayload: {
+          action: "pin",
+          messageId: msg._id,
+        },
+      };
+
+      socket.emit("chat:send", systemPayload, (res) => {
+        if (!res?.ok) {
+          console.error("[ChatRoomWindow] system pin message error", res);
+        }
+      });
+    }
+
     closeMenu();
   };
 
@@ -835,6 +1038,9 @@ function ChatRoomWindow({ roomId }) {
         selectMode={selectMode}
         selectedIds={selectedIds}
         onToggleSelect={toggleSelect}
+        hasMore={hasMore}
+        isLoadingMore={isLoadingMore}
+        onLoadMore={handleLoadMore}
       />
 
       <MessageContextMenu
