@@ -8,6 +8,8 @@ const initialState = {
   rooms: [], // список комнат
   messages: {}, // messages[roomId] = []
   composerDrafts: {}, // drafts[roomId] = { text, context }
+  composerMode: "new", // 'new' | 'edit'
+  editTarget: null, // { roomId, messageId, originalText, authorName, createdAt }
   // context: { type: 'reply' | null, id, authorId, authorName, text }
   forwardDraft: null, // { messageId, fromRoomId, toRoomId, authorId, authorName, text }
 };
@@ -221,6 +223,18 @@ const chatSlice = createSlice({
       return initialState;
     },
 
+    setEditTarget(state, action) {
+      const payload = action.payload || null;
+      if (!payload || !payload.messageId || !payload.roomId) return;
+      state.editTarget = payload;
+      state.composerMode = "edit";
+    },
+
+    clearEditTarget(state) {
+      state.editTarget = null;
+      state.composerMode = "new";
+    },
+
     setPinned(state, action) {
       const { roomId, pinned } = action.payload || {};
       if (!roomId) return;
@@ -253,7 +267,12 @@ const chatSlice = createSlice({
       );
       if (idx < 0) return;
 
-      list[idx] = { ...list[idx], ...patch };
+      const prev = list[idx] || {};
+      const next = { ...prev, ...patch };
+      if (patch.meta && typeof patch.meta === "object") {
+        next.meta = { ...(prev.meta || {}), ...patch.meta };
+      }
+      list[idx] = next;
     },
 
     // обновление полей комнаты
@@ -287,6 +306,8 @@ export const {
   setActivePinnedIndex,
   updateMessage,
   updateRoom,
+  setEditTarget,
+  clearEditTarget,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

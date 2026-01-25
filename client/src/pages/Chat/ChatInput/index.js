@@ -7,19 +7,23 @@ export default function ChatInput({
   onChangeText,
   onKeyDown,
   onSend,
-  disabled,
+  isBusy = false,
+  canSend = true,
   onHeightChange, // delta px: >0 выросло, <0 сжалось
 
   // контекст: reply / forward
   replyTo,        // { type, id, authorName, text } | null
   onCancelReply,  // () => void
+  // контекст: edit
+  editTarget,     // { authorName, originalText } | null
+  onCancelEdit,   // () => void
 }) {
   const textareaRef = useRef(null);
   const prevTextHeightRef = useRef(0);
   const baseHeightRef = useRef(0); // высота одной строки
 
   const handleSendClick = () => {
-    if (disabled) return;
+    if (isBusy || !canSend) return;
     onSend && onSend();
   };
 
@@ -63,6 +67,19 @@ export default function ChatInput({
     // высоту пересчитает useEffect по text
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape" && editTarget) {
+      e.preventDefault();
+      e.stopPropagation();
+      onCancelEdit && onCancelEdit();
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+      });
+      return;
+    }
+    onKeyDown && onKeyDown(e);
+  };
+
   useEffect(() => {
     autoResize(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -85,6 +102,15 @@ export default function ChatInput({
 
   const iconSymbol = isForward ? "↪︎" : "↩︎";
 
+  const showEdit = !!editTarget;
+  const showReply = !showEdit && !!replyTo;
+
+  const editSnippetRaw = (editTarget?.originalText || "").trim();
+  const editSnippet =
+    editSnippetRaw.length > 80
+      ? `${editSnippetRaw.slice(0, 80)}…`
+      : editSnippetRaw;
+
   return (
     <div className={s.input}>
       {/* слева иконка вложений */}
@@ -94,7 +120,29 @@ export default function ChatInput({
 
       {/* правая часть: баннер + инпут в колонку */}
       <div className={s.inputMain}>
-        {replyTo && (
+        {showEdit && (
+          <div className={s.replyWrap}>
+            <div className={s.replyLeft}>
+              <div className={s.replyIcon}>✎</div>
+              <div className={s.replyTexts}>
+                <div className={s.replyTitle}>Редактирование</div>
+                {editSnippet && (
+                  <div className={s.replyText}>{editSnippet}</div>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className={s.replyCloseBtn}
+              onClick={onCancelEdit}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {showReply && (
           <div className={s.replyWrap}>
             <div className={s.replyLeft}>
               <div className={s.replyIcon}>{iconSymbol}</div>
@@ -125,17 +173,18 @@ export default function ChatInput({
               value={text}
               placeholder="Сообщение…"
               onChange={handleChange}
-              onKeyDown={onKeyDown}
+              onKeyDown={handleKeyDown}
+              disabled={isBusy}
             />
           </div>
 
           <button
             className={s.sendIconBtn}
             onClick={handleSendClick}
-            disabled={disabled}
+            disabled={isBusy || !canSend}
             type="button"
           >
-            ➤
+            {isBusy ? "⏳" : "➤"}
           </button>
         </div>
       </div>

@@ -6,6 +6,8 @@ import {
   useMarkReadMutation,
   useLazyGetMessagesQuery,
   useGetPinnedQuery,
+  useEditMessageMutation,
+  useDeleteMessageMutation,
 } from "../../../store/rtk/chatApi";
 
 import { getSocket } from "../../../sockets/io";
@@ -16,6 +18,8 @@ import {
   clearComposerDraft,
   prependMessages,
   setActivePinnedIndex,
+  setEditTarget,
+  clearEditTarget,
 } from "../../../store/slices/chatSlice";
 
 import ChatCreateDirect from "../ChatCreateDirect";
@@ -33,6 +37,7 @@ import ChatMessages from "../components/ChatMessages";
 import MessageContextMenu from "../components/MessageContextMenu";
 import ForwardDialog from "../components/ForwardDialog";
 import { getAuthorInfo } from "../utils/chatMessageUtils";
+import Modal from "../../../components/Modal";
 
 // простая проверка Safari
 const isSafari =
@@ -73,6 +78,8 @@ function ChatRoomWindow({ roomId }) {
   const composerDraft = useSelector(
     (st) => st.chat.composerDrafts?.[String(roomId)] || null
   );
+  const composerMode = useSelector((st) => st.chat.composerMode);
+  const editTarget = useSelector((st) => st.chat.editTarget);
 
   const meId = currentUser
     ? String(currentUser.userId || currentUser.id)
@@ -81,6 +88,9 @@ function ChatRoomWindow({ roomId }) {
   // первоначальная загрузка истории
   const { data, isLoading } = useGetMessagesQuery({ roomId });
   const [markRead] = useMarkReadMutation();
+  const [editMessage, { isLoading: isEditing }] = useEditMessageMutation();
+  const [deleteMessage, { isLoading: isDeleting }] =
+    useDeleteMessageMutation();
 
   // lazy-хук для подгрузки старых сообщений
   const [loadMoreMessages] = useLazyGetMessagesQuery();
@@ -106,6 +116,11 @@ function ChatRoomWindow({ roomId }) {
 
   const [forwardMessages, setForwardMessages] = useState([]);
   const [forwardDialogOpen, setForwardDialogOpen] = useState(false);
+  const [originalModal, setOriginalModal] = useState({
+    open: false,
+    title: "",
+    text: "",
+  });
 
   // свернут ли pinned-бар
   const [collapsedPinned, setCollapsedPinned] = useState(false);
@@ -153,7 +168,33 @@ function ChatRoomWindow({ roomId }) {
     [rooms, roomId]
   );
   const isGroup = room?.type === "group";
+  const EDIT_WINDOW_MS = 15 * 60 * 1000;
+  const [nowTs, setNowTs] = useState(Date.now());
   const participants = room?.participants || [];
+  const myParticipant = useMemo(() => {
+    if (!meId) return null;
+    return participants.find((p) => String(p.userId) === String(meId)) || null;
+  }, [participants, meId]);
+  const currentUserRole = currentUser?.role || null;
+  const isSystemPrivileged =
+    currentUserRole === "admin" || currentUserRole === "owner";
+  const canViewOriginal =
+    room?.type === "group" &&
+    (isSystemPrivileged ||
+      myParticipant?.role === "admin" ||
+      String(room?.createdBy || "") === String(meId));
+  const isEditMode =
+    composerMode === "edit" &&
+    editTarget &&
+    String(editTarget.roomId) === String(roomId);
+  const editTargetForRoom = isEditMode ? editTarget : null;
+  const prevIsEditModeRef = useRef(false);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setNowTs(Date.now());
+    }, 10_000);
+    return () => clearInterval(id);
+  }, []);
 
   // ===== дата / группировка =====
   const groupedMessages = useMemo(
@@ -167,11 +208,13 @@ function ChatRoomWindow({ roomId }) {
       : Array.isArray(pinnedData)
       ? pinnedData
       : [];
-    return [...base].sort((a, b) => {
-      const ta = new Date(a?.createdAt || 0).getTime();
-      const tb = new Date(b?.createdAt || 0).getTime();
+    return base
+      .filter((m) => !m?.deletedAt)
+      .sort((a, b) => {
+      const ta = new Date(a?.pinnedAt || a?.createdAt || 0).getTime();
+      const tb = new Date(b?.pinnedAt || b?.createdAt || 0).getTime();
       return tb - ta;
-    });
+      });
   }, [pinnedData]);
 
   useEffect(() => {
@@ -215,6 +258,23 @@ function ChatRoomWindow({ roomId }) {
     setHasMore(base.length >= PAGE_LIMIT);
   }, [data, roomId, dispatch]);
 
+  useEffect(() => {
+    if (!isEditMode || !editTargetForRoom?.messageId) return;
+    const msg = messages.find(
+      (m) => String(m._id) === String(editTargetForRoom.messageId)
+    );
+    if (!msg) return;
+    if (msg.isSystem || msg.deletedAt) {
+      cancelEdit();
+      return;
+    }
+
+    const currentText = msg.text || "";
+    if (currentText !== (editTargetForRoom.originalText || "")) {
+      cancelEdit();
+    }
+  }, [messages, isEditMode, editTargetForRoom]);
+
   // ===== начальный черновик для комнаты =====
   useEffect(() => {
     if (!composerDraft) {
@@ -233,6 +293,23 @@ function ChatRoomWindow({ roomId }) {
     initialScrollDoneRef.current = false;
     jumpTokenRef.current += 1;
   }, [roomId]);
+
+  useEffect(() => {
+    if (!editTarget) return;
+    if (String(editTarget.roomId) !== String(roomId)) {
+      dispatch(clearEditTarget());
+    }
+  }, [editTarget, roomId, dispatch]);
+
+  useEffect(() => {
+    const wasEdit = prevIsEditModeRef.current;
+    if (wasEdit && !isEditMode) {
+      setText("");
+      setComposerContext(null);
+      syncDraft("", null);
+    }
+    prevIsEditModeRef.current = isEditMode;
+  }, [isEditMode]);
 
   // ===== ХЕДЕР =====
   const headerInfo = useMemo(() => {
@@ -755,6 +832,64 @@ function ChatRoomWindow({ roomId }) {
     return full || currentUser.email || "Пользователь";
   };
 
+  const isWithinEditWindow = (msg, windowMs = EDIT_WINDOW_MS) => {
+    const createdAt = msg?.createdAt;
+    if (!createdAt) return false;
+    const createdTs = new Date(createdAt).getTime();
+    if (!createdTs) return false;
+    return nowTs - createdTs <= windowMs;
+  };
+
+  const isMessageEditable = (msg) => {
+    if (!msg) return false;
+    if (!meId) return false;
+    if (msg.isSystem || msg.deletedAt) return false;
+    if (String(msg.authorId) !== String(meId)) return false;
+    if (!isWithinEditWindow(msg)) return false;
+    return true;
+  };
+
+  const canDeletePermission = (msg) => {
+    if (!msg) return false;
+    if (!meId) return false;
+    if (msg.isSystem) return false;
+
+    return String(msg.authorId) === String(meId);
+  };
+
+  const isMessageDeletable = (msg) => {
+    if (!canDeletePermission(msg)) return false;
+    if (msg.deletedAt) return false;
+    return true;
+  };
+
+  const canCopyMessage = (msg) => {
+    if (!msg || msg.isSystem || msg.deletedAt) return false;
+    const text = (msg.text || "").trim();
+    return text.length > 0;
+  };
+
+  const canForwardMessage = (msg) => {
+    if (!msg || msg.isSystem || msg.deletedAt) return false;
+    return true;
+  };
+
+  const getOriginalInfo = (msg) => {
+    if (!canViewOriginal || !msg) return null;
+    const audit = msg?.meta?.audit;
+    if (!audit) return null;
+
+    if (msg.deletedAt && audit.textBeforeDelete) {
+      return { title: "До удаления", text: audit.textBeforeDelete };
+    }
+
+    if (msg.editedAt && audit.prevText) {
+      return { title: "До изменения", text: audit.prevText };
+    }
+
+    return null;
+  };
+
   const syncDraft = (nextText, nextContext) => {
     dispatch(
       setComposerDraft({
@@ -905,7 +1040,31 @@ function ChatRoomWindow({ roomId }) {
     closeMenu();
   };
 
-  const handleEdit = () => {
+  const cancelEdit = () => {
+    dispatch(clearEditTarget());
+    setText("");
+    setComposerContext(null);
+    syncDraft("", null);
+  };
+
+  const handleEdit = (msg) => {
+    if (!isMessageEditable(msg)) {
+      closeMenu();
+      return;
+    }
+
+    const payload = {
+      roomId: String(roomId),
+      messageId: String(msg._id),
+      originalText: msg.text || "",
+      authorName: makeAuthorName(msg),
+      createdAt: msg.createdAt,
+    };
+
+    dispatch(setEditTarget(payload));
+    setComposerContext(null);
+    setText(msg.text || "");
+    syncDraft(msg.text || "", null);
     closeMenu();
   };
 
@@ -965,20 +1124,85 @@ function ChatRoomWindow({ roomId }) {
     socket.emit("chat:unpin", { roomId, messageId }, () => {});
   };
 
-  const handleDelete = () => {
+  const handleDelete = async (msg) => {
+    if (!msg || !msg._id) {
+      closeMenu();
+      return;
+    }
+    if (!isMessageDeletable(msg)) {
+      closeMenu();
+      return;
+    }
+
+    try {
+      await deleteMessage({
+        roomId: String(roomId),
+        messageId: String(msg._id),
+      }).unwrap();
+    } catch (e) {
+      const status = e?.status || e?.originalStatus;
+      if (status === 403 || status === 404) {
+        if (typeof window !== "undefined") {
+          window.alert("Удаление недоступно");
+        }
+      } else {
+        if (typeof window !== "undefined") {
+          window.alert("Не удалось удалить сообщение");
+        }
+      }
+    } finally {
+      closeMenu();
+    }
+  };
+
+  const handleShowOriginal = (msg) => {
+    const info = getOriginalInfo(msg);
+    if (!info) {
+      closeMenu();
+      return;
+    }
+    setOriginalModal({
+      open: true,
+      title: info.title,
+      text: info.text,
+    });
     closeMenu();
   };
 
   // ===== отправка через socket =====
-  const handleSend = () => {
-    const socket = getSocket();
-    if (!socket) return;
-
+  const handleSend = async () => {
     const raw = text || "";
     const trimmed = raw.trim();
     const hasText = trimmed.length > 0;
 
     if (!hasText) return;
+
+    if (isEditMode && editTargetForRoom?.messageId) {
+      try {
+        await editMessage({
+          roomId: editTargetForRoom.roomId,
+          messageId: editTargetForRoom.messageId,
+          text: trimmed,
+        }).unwrap();
+
+        cancelEdit();
+      } catch (e) {
+        const status = e?.status || e?.originalStatus;
+        if (status === 403 || status === 404) {
+          if (typeof window !== "undefined") {
+            window.alert("Редактирование недоступно");
+          }
+        } else {
+          if (typeof window !== "undefined") {
+            window.alert("Не удалось сохранить изменения");
+          }
+        }
+      }
+      return;
+    }
+
+    const socket = getSocket();
+    if (!socket) return;
 
     const isReply = composerContext?.type === "reply";
 
@@ -1059,6 +1283,9 @@ function ChatRoomWindow({ roomId }) {
   };
 
   const canSend = text.trim().length > 0;
+  const replyContextToShow = isEditMode ? null : composerContext;
+  const sendState = { isLoading: false };
+  const isBusy = !!sendState.isLoading || (isEditMode && isEditing);
 
   const pinnedAuthor = currentPinned ? makeAuthorName(currentPinned) : "";
   const pinnedSnippetRaw = currentPinned ? getPinnedSnippet(currentPinned) : "";
@@ -1159,6 +1386,13 @@ function ChatRoomWindow({ roomId }) {
         side={menuState.side}
         clickY={menuState.clickY}
         message={menuState.message}
+        canEdit={isMessageEditable(menuState.message)}
+        canCopy={canCopyMessage(menuState.message)}
+        canForward={canForwardMessage(menuState.message)}
+        canDelete={canDeletePermission(menuState.message)}
+        canShowOriginal={!!getOriginalInfo(menuState.message)}
+        deleteDisabled={!!menuState.message?.deletedAt}
+        isDeleting={isDeleting}
         onClose={closeMenu}
         onReply={handleReply}
         onCopy={handleCopy}
@@ -1167,6 +1401,7 @@ function ChatRoomWindow({ roomId }) {
         onForward={handleForward}
         onSelect={handleSelect}
         onDelete={handleDelete}
+        onShowOriginal={handleShowOriginal}
       />
 
       <ForwardDialog
@@ -1181,6 +1416,24 @@ function ChatRoomWindow({ roomId }) {
         companyUsers={companyUsers}
         onSelectRoom={handleForwardSelectRoom}
       />
+
+      <Modal
+        open={originalModal.open}
+        onClose={() =>
+          setOriginalModal({ open: false, title: "", text: "" })
+        }
+        title={originalModal.title || "Оригинал"}
+        size="sm"
+        footer={
+          <Modal.Button onClick={() =>
+            setOriginalModal({ open: false, title: "", text: "" })
+          }>
+            Закрыть
+          </Modal.Button>
+        }
+      >
+        <div>{originalModal.text || "—"}</div>
+      </Modal>
 
       {selectMode && (
         <div className={s.selectBar}>
@@ -1212,10 +1465,13 @@ function ChatRoomWindow({ roomId }) {
         onChangeText={onChangeText}
         onKeyDown={onKeyDown}
         onSend={handleSend}
-        disabled={!canSend}
+        canSend={canSend}
+        isBusy={isBusy}
         onHeightChange={handleInputHeightChange}
-        replyTo={composerContext}
+        replyTo={replyContextToShow}
         onCancelReply={cancelComposerContext}
+        editTarget={editTargetForRoom}
+        onCancelEdit={cancelEdit}
       />
     </div>
   );

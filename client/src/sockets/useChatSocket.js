@@ -167,13 +167,18 @@ export function useChatSocket(activeRoomId) {
 
     // ===================== EDIT / DELETE =====================
     const onMessageEdited = (payload = {}) => {
-      const { roomId, messageId, text, editedAt, editedBy } = payload;
+      const { roomId, messageId, text, editedAt, editedBy, audit } = payload;
       if (!roomId || !messageId) return;
       dispatch(
         updateMessage({
           roomId: String(roomId),
           messageId: String(messageId),
-          patch: { text, editedAt, editedBy },
+          patch: {
+            text,
+            editedAt,
+            editedBy,
+            ...(audit ? { meta: { audit } } : {}),
+          },
         })
       );
 
@@ -200,13 +205,20 @@ export function useChatSocket(activeRoomId) {
     };
 
     const onMessageDeleted = (payload = {}) => {
-      const { roomId, messageId, text, deletedAt, deletedBy } = payload;
+      const { roomId, messageId, text, deletedAt, deletedBy, audit } = payload;
       if (!roomId || !messageId) return;
       dispatch(
         updateMessage({
           roomId: String(roomId),
           messageId: String(messageId),
-          patch: { text, deletedAt, deletedBy, attachments: [], forward: null },
+          patch: {
+            text,
+            deletedAt,
+            deletedBy,
+            attachments: [],
+            forward: null,
+            ...(audit ? { meta: { audit } } : {}),
+          },
         })
       );
 
@@ -221,13 +233,14 @@ export function useChatSocket(activeRoomId) {
               ? draft
               : null;
             if (!list) return;
-            const msg = list.find((m) => String(m?._id) === String(messageId));
-            if (msg) {
-              msg.text = text;
-              msg.deletedAt = deletedAt;
-              msg.deletedBy = deletedBy;
-              msg.attachments = [];
-              msg.forward = null;
+            const id = String(messageId);
+            const next = list.filter((m) => String(m?._id) !== id);
+
+            if (Array.isArray(draft?.data)) {
+              draft.data = next;
+            } else {
+              list.length = 0;
+              list.push(...next);
             }
           }
         )

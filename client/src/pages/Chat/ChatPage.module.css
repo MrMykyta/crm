@@ -564,6 +564,12 @@
   font-size: var(--fs-md);
 }
 
+.msgTextDeleted {
+  color: var(--muted);
+  font-style: italic;
+  opacity: 0.8;
+}
+
 /* время справа внизу */
 .msgTime {
   font-size: var(--fs-3xs, 10px);
@@ -1284,6 +1290,11 @@
   cursor: pointer;
   text-align: left;
   white-space: nowrap;
+}
+
+.ctxMenuItem:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .ctxMenuItem:hover {

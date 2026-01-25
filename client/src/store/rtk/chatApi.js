@@ -62,6 +62,22 @@ export const chatApi = crmApi.injectEndpoints({
       ],
     }),
 
+    // редактирование сообщения
+    editMessage: build.mutation({
+      query: ({ roomId, messageId, text }) => ({
+        url: `/chat/rooms/${roomId}/messages/${messageId}`,
+        method: "PATCH",
+        body: { text },
+      }),
+    }),
+
+    deleteMessage: build.mutation({
+      query: ({ roomId, messageId }) => ({
+        url: `/chat/rooms/${roomId}/messages/${messageId}`,
+        method: "DELETE",
+      }),
+    }),
+
     // отметка прочитанным
     markRead: build.mutation({
       query: ({ roomId, messageId }) => ({
@@ -100,6 +116,8 @@ export const {
   useGetMessagesQuery,
   useLazyGetMessagesQuery,
   useSendMessageMutation,
+  useEditMessageMutation,
+  useDeleteMessageMutation,
   useMarkReadMutation,
   useGetPinnedQuery,
   usePinMessageMutation,

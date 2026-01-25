@@ -18,6 +18,15 @@ export default function MessageContextMenu({
   onForward,
   onSelect,
   onDelete,
+  onShowOriginal,
+  canEdit = true,
+  canCopy = true,
+  canForward = true,
+  canDelete = true,
+  canShowOriginal = false,
+  showOriginalLabel = "Показать оригинал",
+  deleteDisabled = false,
+  isDeleting = false,
 }) {
   const menuRef = useRef(null);
   const [pos, setPos] = useState({ x: -9999, y: -9999 });
@@ -90,6 +99,12 @@ export default function MessageContextMenu({
 
   const isPinned = !!message?.isPinned;
   const pinLabel = isPinned ? "Открепить" : "Закрепить";
+  const editDisabled = !canEdit;
+  const copyDisabled = !canCopy;
+  const forwardDisabled = !canForward;
+  const showDelete = !!canDelete;
+  const showOriginal = !!canShowOriginal;
+  const deleteIsDisabled = deleteDisabled || isDeleting;
 
   const menuNode = (
     <div className={s.ctxOverlay} onClick={onClose}>
@@ -108,21 +123,37 @@ export default function MessageContextMenu({
           Ответить
         </button>
 
-        <button
-          type="button"
-          className={s.ctxMenuItem}
-          onClick={handle(onCopy)}
-        >
-          Копировать
-        </button>
+        {canCopy && (
+          <button
+            type="button"
+            className={s.ctxMenuItem}
+            onClick={copyDisabled ? undefined : handle(onCopy)}
+            disabled={copyDisabled}
+          >
+            Копировать
+          </button>
+        )}
 
-        <button
-          type="button"
-          className={s.ctxMenuItem}
-          onClick={handle(onEdit)}
-        >
-          Изменить
-        </button>
+        {canEdit && (
+          <button
+            type="button"
+            className={s.ctxMenuItem}
+            onClick={editDisabled ? undefined : handle(onEdit)}
+            disabled={editDisabled}
+          >
+            Изменить
+          </button>
+        )}
+
+        {showOriginal && (
+          <button
+            type="button"
+            className={s.ctxMenuItem}
+            onClick={handle(onShowOriginal)}
+          >
+            {showOriginalLabel}
+          </button>
+        )}
 
         <button
           type="button"
@@ -132,13 +163,16 @@ export default function MessageContextMenu({
           {pinLabel}
         </button>
 
-        <button
-          type="button"
-          className={s.ctxMenuItem}
-          onClick={handle(onForward)}
-        >
-          Переслать
-        </button>
+        {canForward && (
+          <button
+            type="button"
+            className={s.ctxMenuItem}
+            onClick={forwardDisabled ? undefined : handle(onForward)}
+            disabled={forwardDisabled}
+          >
+            Переслать
+          </button>
+        )}
 
         <button
           type="button"
@@ -148,13 +182,16 @@ export default function MessageContextMenu({
           Выбрать
         </button>
 
-        <button
-          type="button"
-          className={`${s.ctxMenuItem} ${s.ctxMenuItemDanger}`}
-          onClick={handle(onDelete)}
-        >
-          Удалить
-        </button>
+        {showDelete && (
+          <button
+            type="button"
+            className={`${s.ctxMenuItem} ${s.ctxMenuItemDanger}`}
+            onClick={deleteIsDisabled ? undefined : handle(onDelete)}
+            disabled={deleteIsDisabled}
+          >
+            {isDeleting ? "Удаляем…" : "Удалить"}
+          </button>
+        )}
       </div>
     </div>
   );

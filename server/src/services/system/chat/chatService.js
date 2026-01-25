@@ -92,7 +92,6 @@ async function getMessageInRoom({ companyId, roomId, messageId }) {
   if (!msg) {
     throw new ApplicationError("Message not found", 404);
   }
-
   return msg;
 }
 
@@ -114,6 +113,67 @@ function buildPinnedPreview(msg) {
   }
   const name = msg?.attachments?.[0]?.name;
   return name || "сообщение";
+}
+
+function isSystemPrivileged(user) {
+  const role = user?.role || null;
+  return role === "admin" || role === "owner";
+}
+
+function canViewAudit({ user, room, participant }) {
+  if (!room || !user) return false;
+  if (room.type !== "group") return false;
+  if (isSystemPrivileged(user)) return true;
+  if (String(room.createdBy || "") === String(user.id || "")) return true;
+  if (participant?.role === "admin") return true;
+  return false;
+}
+
+async function loadMembershipRolesMap(companyId, userIds = []) {
+  const ids = toUniqueIds(userIds);
+  if (!ids.length) return new Map();
+
+  const rows = await UserCompany.findAll({
+    where: { companyId, userId: { [Op.in]: ids } },
+    attributes: ["userId", "role"],
+    raw: true,
+  });
+
+  const map = new Map();
+  for (const row of rows) {
+    map.set(String(row.userId), row.role || null);
+  }
+  return map;
+}
+
+async function resolveAuditUser({ user, userId, companyId }) {
+  if (user && user.id) {
+    return { id: String(user.id), role: user.role || null };
+  }
+  if (!userId || !companyId) return null;
+
+  const row = await UserCompany.findOne({
+    where: { companyId, userId },
+    attributes: ["role"],
+    raw: true,
+  });
+  return { id: String(userId), role: row?.role || null };
+}
+
+function sanitizeMessageAudit(message, canView) {
+  if (canView) {
+    return message?.toObject ? message.toObject() : { ...message };
+  }
+
+  const obj = message?.toObject ? message.toObject() : { ...message };
+  if (obj?.meta && obj.meta.audit) {
+    obj.meta = { ...obj.meta };
+    delete obj.meta.audit;
+    if (!Object.keys(obj.meta).length) {
+      delete obj.meta;
+    }
+  }
+  return obj;
 }
 
 async function findOrCreateDirectRoom({ companyId, userId, otherUserId }) {
@@ -193,7 +253,7 @@ async function getDeepOriginal(msg) {
  */
 async function recomputeLastPinnedForRoom(room, { pinnedMessage } = {}) {
   // если есть закреплённое сообщение — ставим его
-  if (pinnedMessage && pinnedMessage.isPinned) {
+  if (pinnedMessage && pinnedMessage.isPinned && !pinnedMessage.deletedAt) {
     room.lastPinnedMessageId = pinnedMessage._id;
     room.lastPinnedAt = pinnedMessage.pinnedAt;
     await room.save();
@@ -205,6 +265,7 @@ async function recomputeLastPinnedForRoom(room, { pinnedMessage } = {}) {
     roomId: room._id,
     companyId: room.companyId,
     isPinned: true,
+    deletedAt: null,
   })
     .sort({ pinnedAt: -1, createdAt: -1 })
     .lean();
@@ -220,7 +281,7 @@ async function recomputeLastPinnedForRoom(room, { pinnedMessage } = {}) {
   await room.save();
 }
 
-async function pinMessage({ companyId, roomId, messageId, userId }) {
+async function pinMessage({ companyId, roomId, messageId, userId, user }) {
   const room = await getRoomForUser({ companyId, roomId, userId });
   if (room.type === "group" && room.isArchived) {
     throw new ApplicationError("Room is archived", 403);
@@ -257,31 +318,41 @@ async function pinMessage({ companyId, roomId, messageId, userId }) {
   }
 
   const io = global.io;
-  const msgObj = msg.toObject ? msg.toObject() : msg;
 
   if (io) {
     const participants = room.participants || [];
     const users = participants.map((p) => String(p.userId));
+    const roleMap = await loadMembershipRolesMap(companyId, users);
 
     // личные комнаты пользователей — для списка чатов / бэджей
     for (const uid of users) {
+      const participant = participants.find(
+        (p) => String(p.userId) === String(uid)
+      );
+      const auditUser = { id: uid, role: roleMap.get(String(uid)) || null };
+      const canAudit = canViewAudit({ user: auditUser, room, participant });
+      const msgObj = sanitizeMessageAudit(msg, canAudit);
+
       io.to(buildUserKey(companyId, uid)).emit("chat:message:pinned", {
         roomId: String(roomId),
         message: msgObj,
       });
     }
 
-    // сама комната — чтобы «шапка» и сообщение обновились у всех
+    // сама комната — без audit, чтобы не утекало
     io.to(buildRoomKey(companyId, roomId)).emit("chat:message:pinned", {
       roomId: String(roomId),
-      message: msgObj,
+      message: sanitizeMessageAudit(msg, false),
     });
   }
 
-  return msg;
+  const auditUser = await resolveAuditUser({ user, userId, companyId });
+  const participant = auditUser ? getParticipant(room, auditUser.id) : null;
+  const canAudit = canViewAudit({ user: auditUser, room, participant });
+  return sanitizeMessageAudit(msg, canAudit);
 }
 
-async function unpinMessage({ companyId, roomId, messageId, userId }) {
+async function unpinMessage({ companyId, roomId, messageId, userId, user }) {
   const room = await getRoomForUser({ companyId, roomId, userId });
   if (room.type === "group" && room.isArchived) {
     throw new ApplicationError("Room is archived", 403);
@@ -360,7 +431,10 @@ async function unpinMessage({ companyId, roomId, messageId, userId }) {
     });
   }
 
-  return msg;
+  const auditUser = await resolveAuditUser({ user, userId, companyId });
+  const participant = auditUser ? getParticipant(room, auditUser.id) : null;
+  const canAudit = canViewAudit({ user: auditUser, room, participant });
+  return sanitizeMessageAudit(msg, canAudit);
 }
 
 /**
@@ -370,6 +444,7 @@ async function sendMessage({
   companyId,
   roomId,
   authorId,
+  user,
   text,
   attachments = [],
   replyTo,
@@ -473,12 +548,18 @@ async function sendMessage({
   try {
     const io = global.io;
     if (io) {
-      const msgObj = msg.toObject ? msg.toObject() : msg;
-
       const participants = room.participants || [];
       const users = participants.map((p) => String(p.userId));
+      const roleMap = await loadMembershipRolesMap(companyId, users);
 
       for (const uid of users) {
+        const participant = participants.find(
+          (p) => String(p.userId) === String(uid)
+        );
+        const auditUser = { id: uid, role: roleMap.get(String(uid)) || null };
+        const canAudit = canViewAudit({ user: auditUser, room, participant });
+        const msgObj = sanitizeMessageAudit(msg, canAudit);
+
         io.to(buildUserKey(companyId, uid)).emit("chat:message:new", {
           roomId,
           message: msgObj,
@@ -487,18 +568,28 @@ async function sendMessage({
 
       io.to(buildRoomKey(companyId, roomId)).emit("chat:message:new", {
         roomId,
-        message: msgObj,
+        message: sanitizeMessageAudit(msg, false),
       });
     }
   } catch (err) {
     console.error("[chatService.sendMessage] socket broadcast error", err);
   }
 
-  return msg;
+  const auditUser = await resolveAuditUser({ user, userId: authorId, companyId });
+  const participant = auditUser ? getParticipant(room, auditUser.id) : null;
+  const canAudit = canViewAudit({ user: auditUser, room, participant });
+  return sanitizeMessageAudit(msg, canAudit);
 }
 
-async function getMessages({ companyId, roomId, userId, limit = 50, before }) {
-  await getRoomForUser({ companyId, roomId, userId });
+async function getMessages({
+  companyId,
+  roomId,
+  userId,
+  user,
+  limit = 50,
+  before,
+}) {
+  const room = await getRoomForUser({ companyId, roomId, userId });
 
   const query = { companyId, roomId };
   if (before) query.createdAt = { $lt: new Date(before) };
@@ -512,22 +603,30 @@ async function getMessages({ companyId, roomId, userId, limit = 50, before }) {
     })
     .limit(limit);
 
-  return items.reverse();
+  const auditUser = await resolveAuditUser({ user, userId, companyId });
+  const participant = auditUser ? getParticipant(room, auditUser.id) : null;
+  const canAudit = canViewAudit({ user: auditUser, room, participant });
+  const ordered = items.reverse();
+  return ordered.map((m) => sanitizeMessageAudit(m, canAudit));
 }
 
 // список всех закреплённых сообщений комнаты (для логики «ближайший пин» на фронте)
-async function getPinnedMessages({ companyId, roomId, userId }) {
-  await getRoomForUser({ companyId, roomId, userId });
+async function getPinnedMessages({ companyId, roomId, userId, user }) {
+  const room = await getRoomForUser({ companyId, roomId, userId });
 
   const items = await ChatMessage.find({
     companyId,
     roomId,
     isPinned: true,
+    deletedAt: null,
   })
-    .sort({ createdAt: 1, _id: 1 })
+    .sort({ pinnedAt: -1, createdAt: -1, _id: -1 })
     .lean();
 
-  return items;
+  const auditUser = await resolveAuditUser({ user, userId, companyId });
+  const participant = auditUser ? getParticipant(room, auditUser.id) : null;
+  const canAudit = canViewAudit({ user: auditUser, room, participant });
+  return items.map((m) => sanitizeMessageAudit(m, canAudit));
 }
 
 async function markAsRead({ companyId, roomId, userId, messageId }) {
@@ -568,7 +667,7 @@ async function markAsRead({ companyId, roomId, userId, messageId }) {
   }
 }
 
-async function editMessage({ companyId, roomId, messageId, userId, text }) {
+async function editMessage({ companyId, roomId, messageId, userId, user, text }) {
   const nextText = text != null ? String(text).trim() : "";
   if (!nextText) {
     throw new ApplicationError("text is required", 400);
@@ -597,6 +696,19 @@ async function editMessage({ companyId, roomId, messageId, userId, text }) {
     throw new ApplicationError("Edit window expired", 403);
   }
 
+  const nextMeta =
+    msg.meta && typeof msg.meta === "object" ? { ...msg.meta } : {};
+  const nextAudit =
+    nextMeta.audit && typeof nextMeta.audit === "object"
+      ? { ...nextMeta.audit }
+      : {};
+
+  nextAudit.prevText = msg.text || "";
+  nextAudit.prevEditedAt = new Date();
+  nextAudit.prevEditedBy = String(userId);
+  nextMeta.audit = nextAudit;
+  msg.meta = nextMeta;
+
   msg.text = nextText;
   msg.editedAt = new Date();
   msg.editedBy = String(userId);
@@ -605,30 +717,48 @@ async function editMessage({ companyId, roomId, messageId, userId, text }) {
   try {
     const io = global.io;
     if (io) {
-      const payload = {
+      const participants = room.participants || [];
+      const users = participants.map((p) => String(p.userId));
+      const roleMap = await loadMembershipRolesMap(companyId, users);
+      const audit = msg?.meta?.audit || null;
+
+      for (const uid of users) {
+        const participant = participants.find(
+          (p) => String(p.userId) === String(uid)
+        );
+        const auditUser = { id: uid, role: roleMap.get(String(uid)) || null };
+        const canAudit = canViewAudit({ user: auditUser, room, participant });
+
+        const payload = {
+          roomId: String(roomId),
+          messageId: String(messageId),
+          text: msg.text,
+          editedAt: msg.editedAt,
+          editedBy: msg.editedBy,
+          ...(canAudit && audit ? { audit } : {}),
+        };
+
+        io.to(buildUserKey(companyId, uid)).emit("chat:message:edited", payload);
+      }
+      io.to(buildRoomKey(companyId, roomId)).emit("chat:message:edited", {
         roomId: String(roomId),
         messageId: String(messageId),
         text: msg.text,
         editedAt: msg.editedAt,
         editedBy: msg.editedBy,
-      };
-
-      const participants = room.participants || [];
-      const users = participants.map((p) => String(p.userId));
-
-      for (const uid of users) {
-        io.to(buildUserKey(companyId, uid)).emit("chat:message:edited", payload);
-      }
-      io.to(buildRoomKey(companyId, roomId)).emit("chat:message:edited", payload);
+      });
     }
   } catch (err) {
     console.error("[chatService.editMessage] socket emit error", err);
   }
 
-  return msg;
+  const auditUser = await resolveAuditUser({ user, userId, companyId });
+  const participant = auditUser ? getParticipant(room, auditUser.id) : null;
+  const canAudit = canViewAudit({ user: auditUser, room, participant });
+  return sanitizeMessageAudit(msg, canAudit);
 }
 
-async function deleteMessage({ companyId, roomId, messageId, userId }) {
+async function deleteMessage({ companyId, roomId, messageId, userId, user }) {
   const room = await getRoomForUser({ companyId, roomId, userId });
   if (room.type === "group" && room.isArchived) {
     throw new ApplicationError("Room is archived", 403);
@@ -639,12 +769,112 @@ async function deleteMessage({ companyId, roomId, messageId, userId }) {
     throw new ApplicationError("System messages cannot be deleted", 403);
   }
 
-  const isAuthor = String(msg.authorId) === String(userId);
-  const isAdmin = room.type === "group" && getParticipant(room, userId)?.role === "admin";
+  const wasPinned = !!msg.isPinned;
 
-  if (!isAuthor && !isAdmin) {
+  if (msg.deletedAt) {
+    if (wasPinned) {
+      msg.isPinned = false;
+      msg.pinnedAt = null;
+      msg.pinnedBy = null;
+      await msg.save();
+
+      try {
+        const systemPinMessages = await ChatMessage.find({
+          companyId,
+          roomId,
+          isSystem: true,
+          "meta.systemType": "pin",
+          "meta.systemPayload.messageId": messageId,
+        }).lean();
+
+        const systemIds = systemPinMessages.map((m) => m._id);
+
+        if (systemIds.length) {
+          await ChatMessage.deleteMany({
+            _id: { $in: systemIds },
+            companyId,
+            roomId,
+          });
+
+          const io = global.io;
+          if (io) {
+            const participants = room.participants || [];
+            const users = participants.map((p) => String(p.userId));
+
+            for (const uid of users) {
+              io.to(buildUserKey(companyId, uid)).emit("chat:system:deleted", {
+                roomId: String(roomId),
+                messageIds: systemIds.map(String),
+              });
+            }
+
+            io.to(buildRoomKey(companyId, roomId)).emit("chat:system:deleted", {
+              roomId: String(roomId),
+              messageIds: systemIds.map(String),
+            });
+          }
+        }
+      } catch (err) {
+        console.error(
+          "[chatService.deleteMessage] system pin delete error",
+          err
+        );
+      }
+
+      await recomputeLastPinnedForRoom(room, { pinnedMessage: msg });
+
+      try {
+        const io = global.io;
+        if (io) {
+          const participants = room.participants || [];
+          const users = participants.map((p) => String(p.userId));
+
+          for (const uid of users) {
+            io.to(buildUserKey(companyId, uid)).emit("chat:message:unpinned", {
+              roomId: String(roomId),
+              messageId: String(messageId),
+            });
+          }
+          io.to(buildRoomKey(companyId, roomId)).emit("chat:message:unpinned", {
+            roomId: String(roomId),
+            messageId: String(messageId),
+          });
+        }
+      } catch (err) {
+        console.error("[chatService.deleteMessage] socket emit error", err);
+      }
+    }
+
+    const auditUser = await resolveAuditUser({ user, userId, companyId });
+    const participant = auditUser ? getParticipant(room, auditUser.id) : null;
+    const canAudit = canViewAudit({ user: auditUser, room, participant });
+    return sanitizeMessageAudit(msg, canAudit);
+  }
+
+  const isAuthor = String(msg.authorId) === String(userId);
+
+  if (!isAuthor) {
     throw new ApplicationError("Insufficient permissions", 403);
   }
+
+  if (wasPinned) {
+    msg.isPinned = false;
+    msg.pinnedAt = null;
+    msg.pinnedBy = null;
+  }
+
+  const nextMeta =
+    msg.meta && typeof msg.meta === "object" ? { ...msg.meta } : {};
+  const nextAudit =
+    nextMeta.audit && typeof nextMeta.audit === "object"
+      ? { ...nextMeta.audit }
+      : {};
+
+  nextAudit.textBeforeDelete = msg.text || "";
+  nextAudit.snapshotDeletedAt = new Date();
+  nextAudit.snapshotDeletedBy = String(userId);
+  nextMeta.audit = nextAudit;
+  msg.meta = nextMeta;
 
   msg.deletedAt = new Date();
   msg.deletedBy = String(userId);
@@ -653,30 +883,105 @@ async function deleteMessage({ companyId, roomId, messageId, userId }) {
   msg.forward = null;
   await msg.save();
 
+  if (wasPinned) {
+    try {
+      const systemPinMessages = await ChatMessage.find({
+        companyId,
+        roomId,
+        isSystem: true,
+        "meta.systemType": "pin",
+        "meta.systemPayload.messageId": messageId,
+      }).lean();
+
+      const systemIds = systemPinMessages.map((m) => m._id);
+
+      if (systemIds.length) {
+        await ChatMessage.deleteMany({
+          _id: { $in: systemIds },
+          companyId,
+          roomId,
+        });
+
+        const io = global.io;
+        if (io) {
+          const participants = room.participants || [];
+          const users = participants.map((p) => String(p.userId));
+
+          for (const uid of users) {
+            io.to(buildUserKey(companyId, uid)).emit("chat:system:deleted", {
+              roomId: String(roomId),
+              messageIds: systemIds.map(String),
+            });
+          }
+
+          io.to(buildRoomKey(companyId, roomId)).emit("chat:system:deleted", {
+            roomId: String(roomId),
+            messageIds: systemIds.map(String),
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[chatService.deleteMessage] system pin delete error", err);
+    }
+
+    await recomputeLastPinnedForRoom(room, { pinnedMessage: msg });
+  }
+
   try {
     const io = global.io;
     if (io) {
-      const payload = {
+      const participants = room.participants || [];
+      const users = participants.map((p) => String(p.userId));
+      const roleMap = await loadMembershipRolesMap(companyId, users);
+      const audit = msg?.meta?.audit || null;
+
+      for (const uid of users) {
+        const participant = participants.find(
+          (p) => String(p.userId) === String(uid)
+        );
+        const auditUser = { id: uid, role: roleMap.get(String(uid)) || null };
+        const canAudit = canViewAudit({ user: auditUser, room, participant });
+
+        const payload = {
+          roomId: String(roomId),
+          messageId: String(messageId),
+          text: msg.text,
+          deletedAt: msg.deletedAt,
+          deletedBy: msg.deletedBy,
+          ...(canAudit && audit ? { audit } : {}),
+        };
+
+        io.to(buildUserKey(companyId, uid)).emit("chat:message:deleted", payload);
+      }
+      io.to(buildRoomKey(companyId, roomId)).emit("chat:message:deleted", {
         roomId: String(roomId),
         messageId: String(messageId),
         text: msg.text,
         deletedAt: msg.deletedAt,
         deletedBy: msg.deletedBy,
-      };
+      });
 
-      const participants = room.participants || [];
-      const users = participants.map((p) => String(p.userId));
-
-      for (const uid of users) {
-        io.to(buildUserKey(companyId, uid)).emit("chat:message:deleted", payload);
+      if (wasPinned) {
+        for (const uid of users) {
+          io.to(buildUserKey(companyId, uid)).emit("chat:message:unpinned", {
+            roomId: String(roomId),
+            messageId: String(messageId),
+          });
+        }
+        io.to(buildRoomKey(companyId, roomId)).emit("chat:message:unpinned", {
+          roomId: String(roomId),
+          messageId: String(messageId),
+        });
       }
-      io.to(buildRoomKey(companyId, roomId)).emit("chat:message:deleted", payload);
     }
   } catch (err) {
     console.error("[chatService.deleteMessage] socket emit error", err);
   }
 
-  return msg;
+  const auditUser = await resolveAuditUser({ user, userId, companyId });
+  const participant = auditUser ? getParticipant(room, auditUser.id) : null;
+  const canAudit = canViewAudit({ user: auditUser, room, participant });
+  return sanitizeMessageAudit(msg, canAudit);
 }
 
 async function updateRoom({ companyId, roomId, userId, patch = {} }) {

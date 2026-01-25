@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { initSocket } from '../../sockets/io';
 import { useListRoomsQuery } from '../../store/rtk/chatApi';
-import { setRooms, setActiveRoom } from '../../store/slices/chatSlice';
+import { setRooms, setActiveRoom, clearEditTarget } from '../../store/slices/chatSlice';
 
 import ChatSidebar from './ChatSidebar';
 import ChatWindow from './ChatWindow';
@@ -16,6 +16,7 @@ export default function ChatPage({ accessToken: accessTokenProp }) {
 
   const activeRoomId = useSelector((st) => st.chat.activeRoomId);
   const accessTokenStore = useSelector((st) => st.auth.accessToken);
+  const composerMode = useSelector((st) => st.chat.composerMode);
 
   const accessToken = accessTokenProp || accessTokenStore;
 
@@ -44,6 +45,12 @@ export default function ChatPage({ accessToken: accessTokenProp }) {
   useEffect(() => {
     const onKey = (e) => {
       if (e.key !== 'Escape') return;
+      if (e.defaultPrevented) return;
+
+      if (composerMode === 'edit') {
+        dispatch(clearEditTarget());
+        return;
+      }
 
       if (mode !== 'room') {
         // если сейчас создаём чат/группу — просто выходим из режима
@@ -59,7 +66,7 @@ export default function ChatPage({ accessToken: accessTokenProp }) {
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [mode, activeRoomId, dispatch]);
+  }, [mode, activeRoomId, dispatch, composerMode]);
 
   const handleExitCreate = () => {
     setMode('room');

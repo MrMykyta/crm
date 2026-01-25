@@ -122,6 +122,7 @@ module.exports.listMessages = async (req, res, next) => {
       companyId,
       roomId,
       userId,
+      user: req.user,
       limit: limit ? Number(limit) : 50,
       before,
     });
@@ -146,6 +147,7 @@ module.exports.listPinnedMessages = async (req, res, next) => {
       companyId,
       roomId,
       userId,
+      user: req.user,
     });
 
     res.json({ data: messages });
@@ -177,6 +179,7 @@ module.exports.sendMessage = async (req, res, next) => {
       companyId,
       roomId,
       authorId: userId,
+      user: req.user,
       text: text || "",
       attachments: attachments || [],
       replyTo,
@@ -264,6 +267,7 @@ module.exports.pinMessage = async (req, res, next) => {
       roomId,
       messageId,
       userId,
+      user: req.user,
     });
 
     res.json({ data: msg });
@@ -287,6 +291,7 @@ module.exports.unpinMessage = async (req, res, next) => {
       roomId,
       messageId,
       userId,
+      user: req.user,
     });
 
     res.json({ data: msg });
@@ -311,6 +316,7 @@ module.exports.editMessage = async (req, res, next) => {
       roomId,
       messageId,
       userId,
+      user: req.user,
       text,
     });
 
@@ -335,6 +341,7 @@ module.exports.deleteMessage = async (req, res, next) => {
       roomId,
       messageId,
       userId,
+      user: req.user,
     });
 
     res.json({ data: msg });

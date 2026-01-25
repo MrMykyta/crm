@@ -144,6 +144,22 @@
 
 ---
 
+### Audit (просмотр оригиналов сообщений)
+
+Audit-данные (текст до изменения/удаления) доступны только:
+- system admin / owner
+- владельцу чата (room.createdBy)
+- администратору чата (participant.role=admin)
+
+Обычные участники:
+- не получают audit через REST
+- не получают audit через socket
+- не видят пункт “Показать оригинал” в UI
+
+Edit/Delete остаются author-only.
+
+---
+
 ## Store / State
 - Single source: Redux `chatSlice` + RTK Query `chatApi` + socket events.
 - `activeRoomId` общий для page и window.
@@ -210,3 +226,6 @@
 
 **P3 Polishing**
 - Reply/forward UX, системные сообщения, performance.
+
+
+

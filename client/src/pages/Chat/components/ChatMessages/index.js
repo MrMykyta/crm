@@ -142,6 +142,7 @@ export default function ChatMessages({
 
             // ---------- Обычное сообщение ----------
             const isMe = meId && String(m.authorId) === meId;
+            const isDeleted = !!m.deletedAt;
 
             const {
               name: authorName,
@@ -182,10 +183,14 @@ export default function ChatMessages({
 
             const replyAuthorName = replyInfo?.name || "Пользователь";
 
+            const replyTextRaw = replyMsg?.deletedAt
+              ? "Сообщение удалено"
+              : replyMsg?.text || "";
+
             const replyText =
-              (replyMsg?.text || "").length > 140
-                ? `${replyMsg.text.slice(0, 140)}…`
-                : replyMsg?.text || "";
+              replyTextRaw.length > 140
+                ? `${replyTextRaw.slice(0, 140)}…`
+                : replyTextRaw || "";
 
             // ---------- FORWARD ----------
             const forwardData = m.forward ?? m.meta?.forward ?? null;
@@ -193,6 +198,7 @@ export default function ChatMessages({
               forwardData !== null &&
               typeof forwardData === "object" &&
               Object.keys(forwardData).length > 0;
+            const showForward = hasForward && !isDeleted;
 
             let forwardAuthorName = "Пользователь";
 
@@ -262,7 +268,7 @@ export default function ChatMessages({
                 {/* ПУЗЫРЬ */}
                 <div className={bubbleClass} data-role="msg-bubble">
                   {/* Переслано от ... */}
-                  {hasForward && (
+                  {showForward && (
                     <div className={s.msgForwardLabel}>
                       Переслано от {forwardAuthorName}
                     </div>
@@ -301,9 +307,16 @@ export default function ChatMessages({
                   )}
 
                   {/* Текст сообщения */}
-                  <div className={s.msgText}>
+                  <div
+                    className={[
+                      s.msgText,
+                      isDeleted ? s.msgTextDeleted : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
                     {renderHighlightedText(
-                      m.text || "",
+                      isDeleted ? "Сообщение удалено" : m.text || "",
                       searchQuery,
                       s.msgHighlight
                     )}
