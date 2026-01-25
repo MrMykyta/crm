@@ -5,7 +5,7 @@ const ucService = require('../../services/crm/userCompanyService');
 // список участников (c пагинацией/поиском/фильтрами)
 module.exports.listUsers = async (req, res) => {
   try {
-    const data = await ucService.listUsers(req.user.id, req.params.companyId, req.query);
+    const data = await ucService.listUsers(req.user.id, req.user.companyId, req.query);
     if (!data) return res.status(403).send({ error: 'Нет прав' });
     return res.status(200).send(data); // { items, total, page, limit }
   } catch (e) {
@@ -18,7 +18,7 @@ module.exports.addUser = async (req, res) => {
   try {
     const { userId, role, departmentId = null, isLead = false } = req.body;
     const membership = await ucService.addUserToCompany(
-      req.user.id, req.params.companyId, userId, role, { departmentId, isLead }
+      req.user.id, req.user.companyId, userId, role, { departmentId, isLead }
     );
     if (!membership) return res.status(403).send({ error: 'Нет прав' });
     return res.status(201).send(membership);
@@ -30,9 +30,9 @@ module.exports.addUser = async (req, res) => {
 // изменить роль/департамент/лида
 exports.updateMember = async (req, res) => {
   try {
-    const { companyId, userId } = req.params;
+    const { userId } = req.params;
     const { role, status, departmentId, isLead } = req.body;
-    const row = await ucService.updateUserMembership(req.user.id, companyId, userId, {
+    const row = await ucService.updateUserMembership(req.user.id, req.user.companyId, userId, {
       role, status, departmentId, isLead
     });
     if (!row) return res.status(403).json({ error: 'forbidden' });
@@ -47,7 +47,7 @@ exports.updateMember = async (req, res) => {
 module.exports.removeUser = async (req, res) => {
   try {
     const ok = await ucService.removeUserFromCompany(
-      req.user.id, req.params.companyId, req.params.userId
+      req.user.id, req.user.companyId, req.params.userId
     );
     if (!ok) return res.status(404).send({ error: 'Пользователь не найден или нет прав' });
     // 200 с телом — удобнее на фронте

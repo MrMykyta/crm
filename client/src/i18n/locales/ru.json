@@ -426,6 +426,101 @@
     "info": "Информация о фирме",
     "settings": "Настройки"
   },
+  "deals": {
+    "title": "Сделки",
+    "actions": {
+      "new": "Новая сделка",
+      "create": "Создать сделку",
+      "open": "Открыть",
+      "won": "Выиграна",
+      "lost": "Проиграна",
+      "cancelEdit": "Отменить редактирование",
+      "archive": "В архив",
+      "archiving": "Архивируем..."
+    },
+    "columns": {
+      "title": "Сделка",
+      "amount": "Сумма",
+      "status": "Статус",
+      "owner": "Ответственный",
+      "updated": "Обновлено"
+    },
+    "filters": {
+      "searchPlaceholder": "Поиск сделок",
+      "pipeline": "Воронка",
+      "allPipelines": "Все воронки",
+      "stage": "Стадия",
+      "allStages": "Все стадии",
+      "owner": "Ответственный",
+      "allOwners": "Все ответственные",
+      "status": "Статус",
+      "allStatuses": "Все статусы"
+    },
+    "fields": {
+      "title": "Название",
+      "counterparty": "Контрагент",
+      "owner": "Ответственный",
+      "amount": "Сумма",
+      "currency": "Валюта",
+      "status": "Статус",
+      "description": "Описание",
+      "stage": "Стадия",
+      "closeDate": "Дата закрытия"
+    },
+    "placeholders": {
+      "title": "Название сделки",
+      "description": "Описание (опционально)"
+    },
+    "form": {
+      "ownerUnassigned": "Не назначен"
+    },
+    "status": {
+      "new": "Новая",
+      "inProgress": "В работе",
+      "won": "Выиграна",
+      "lost": "Проиграна"
+    },
+    "tabs": {
+      "overview": "Обзор",
+      "activities": "Активности",
+      "files": "Файлы",
+      "history": "История",
+      "comingSoon": "Скоро будет"
+    },
+    "details": {
+      "loading": "Загрузка сделки…",
+      "noPermission": "Нет доступа к этой сделке.",
+      "notFound": "Сделка не найдена.",
+      "untitled": "Сделка без названия"
+    },
+    "sidebar": {
+      "owner": "Ответственный",
+      "counterparty": "Контрагент",
+      "contacts": "Контакты",
+      "created": "Создано",
+      "updated": "Обновлено"
+    },
+    "aria": {
+      "openDeal": "Открыть сделку {{title}}"
+    },
+    "modal": {
+      "new": {
+        "title": "Новая сделка",
+        "counterpartyLabel": "Контрагент",
+        "counterpartyPlaceholder": "Начните вводить название или NIP...",
+        "counterpartySearching": "Поиск...",
+        "counterpartyEmpty": "Контрагенты не найдены"
+      }
+    },
+    "validation": {
+      "titleRequired": "Введите название",
+      "counterpartyRequired": "Выберите контрагента"
+    },
+    "common": {
+      "nipLabel": "NIP",
+      "typeToSearch": "Введите название или NIP"
+    }
+  },
 
   "notifications": {
     "title": "Уведомления",

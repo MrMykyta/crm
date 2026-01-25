@@ -5,6 +5,7 @@ const {
   sequelize,
   Counterparty,
   ContactPoint,
+  CompanyDepartment,
   UserCompany,
 } = require("../../models");
 const { Op } = require("sequelize");
@@ -31,6 +32,11 @@ const SORT_WHITELIST = [
  *  - по умолчанию без лидов (isLead = false)
  */
 async function getCompanyUserIds(companyId, opts = {}) {
+  if (!companyId) {
+    const err = new Error("companyId is required");
+    err.status = 400;
+    throw err;
+  }
   const { departmentId = null, includeLeads = false } = opts;
 
   const where = {
@@ -54,6 +60,53 @@ async function getCompanyUserIds(companyId, opts = {}) {
   return rows.map((r) => r.userId).filter(Boolean);
 }
 
+function requireCompanyId(companyId) {
+  if (!companyId) {
+    const err = new Error("companyId is required");
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function assertDepartmentInCompany(departmentId, companyId, t) {
+  if (!departmentId) return;
+  const dept = await CompanyDepartment.findOne({
+    where: { id: departmentId, companyId },
+    transaction: t,
+  });
+  if (!dept) {
+    const err = new Error("departmentId is invalid");
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function assertHoldingInCompany(holdingId, companyId, t) {
+  if (!holdingId) return;
+  const holding = await Counterparty.findOne({
+    where: { id: holdingId, companyId },
+    transaction: t,
+  });
+  if (!holding) {
+    const err = new Error("holdingId is invalid");
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function assertMemberInCompany(userId, companyId, t) {
+  if (!userId) return;
+  const member = await UserCompany.findOne({
+    where: { userId, companyId },
+    transaction: t,
+  });
+  if (!member) {
+    const err = new Error("mainResponsibleUserId is invalid");
+    err.status = 400;
+    throw err;
+  }
+}
+
 /**
  * Утилита: название контрагента для title/meta
  */
@@ -71,6 +124,7 @@ function buildCounterpartyName(c) {
  * ─────────────────────────────────────────────────────────── */
 
 module.exports.list = async (companyId, query = {}) => {
+  requireCompanyId(companyId);
   // разберём query и зададим дефолты
   const parsed = parsePagination(query, {
     sortWhitelist: SORT_WHITELIST,
@@ -150,6 +204,8 @@ module.exports.list = async (companyId, query = {}) => {
         model: ContactPoint,
         as: "contacts",
         attributes: ["id", "channel", "valueNorm", "isPrimary", "createdAt"],
+        where: { companyId },
+        required: false,
       },
     ],
     attributes,
@@ -167,10 +223,15 @@ module.exports.list = async (companyId, query = {}) => {
  * ─────────────────────────────────────────────────────────── */
 
 module.exports.create = async (userId, companyId, data = {}) => {
+  requireCompanyId(companyId);
   const t = await sequelize.transaction();
   let counterparty;
 
   try {
+    await assertHoldingInCompany(data.holdingId, companyId, t);
+    await assertDepartmentInCompany(data.departmentId, companyId, t);
+    await assertMemberInCompany(data.mainResponsibleUserId, companyId, t);
+
     counterparty = await Counterparty.create(
       {
         companyId,
@@ -256,6 +317,7 @@ module.exports.create = async (userId, companyId, data = {}) => {
  * ─────────────────────────────────────────────────────────── */
 
 module.exports.getOne = async (companyId, id) => {
+  requireCompanyId(companyId);
   return Counterparty.findOne({
     where: { id, companyId },
     include: [
@@ -263,6 +325,8 @@ module.exports.getOne = async (companyId, id) => {
         model: ContactPoint,
         as: "contacts",
         attributes: ["id", "channel", "valueNorm", "isPrimary", "createdAt"],
+        where: { companyId },
+        required: false,
       },
     ],
     attributes: {
@@ -282,11 +346,16 @@ module.exports.getOne = async (companyId, id) => {
  * ─────────────────────────────────────────────────────────── */
 
 module.exports.update = async (userId, companyId, id, data = {}) => {
+  requireCompanyId(companyId);
   const t = await sequelize.transaction();
   let counterparty;
   let beforeSnapshot = null;
 
   try {
+    await assertHoldingInCompany(data.holdingId, companyId, t);
+    await assertDepartmentInCompany(data.departmentId, companyId, t);
+    await assertMemberInCompany(data.mainResponsibleUserId, companyId, t);
+
     counterparty = await Counterparty.findOne({
       where: { id, companyId },
       transaction: t,
@@ -394,6 +463,7 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
  * ─────────────────────────────────────────────────────────── */
 
 module.exports.remove = async (companyId, id) => {
+  requireCompanyId(companyId);
   const row = await Counterparty.findOne({ where: { id, companyId } });
   if (!row) return false;
   await row.destroy();
@@ -407,6 +477,7 @@ module.exports.remove = async (companyId, id) => {
  * ─────────────────────────────────────────────────────────── */
 
 module.exports.convertLead = async (companyId, id, userId) => {
+  requireCompanyId(companyId);
   const [n] = await Counterparty.update(
     { type: "client", status: "active", updatedBy: userId },
     { where: { id, companyId, type: "lead" } }

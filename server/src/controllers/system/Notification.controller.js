@@ -3,14 +3,9 @@
 
 const notificationService = require("../../services/system/notificationService");
 
-// helper: companyId из auth/params
-function pickCompanyId(req) {
-  return req.companyId || req.params.companyId || req.user?.companyId;
-}
-
 module.exports.listMy = async (req, res) => {
   try {
-    const companyId = pickCompanyId(req);
+    const companyId = req.user.companyId;
     const userId = req.user.id;
 
     const data = await notificationService.listForUser(
@@ -28,7 +23,7 @@ module.exports.listMy = async (req, res) => {
 
 module.exports.markOneRead = async (req, res) => {
   try {
-    const companyId = pickCompanyId(req);
+    const companyId = req.user.companyId;
     const userId = req.user.id;
     const { id } = req.params;
 
@@ -48,7 +43,7 @@ module.exports.markOneRead = async (req, res) => {
 
 module.exports.markAllRead = async (req, res) => {
   try {
-    const companyId = pickCompanyId(req);
+    const companyId = req.user.companyId;
     const userId = req.user.id;
 
     const n = await notificationService.markAllRead(companyId, userId);
@@ -65,7 +60,7 @@ module.exports.markAllRead = async (req, res) => {
 // HTTP-утилита, если захочешь дергать создание уведом снаружи
 module.exports.createForUser = async (req, res) => {
   try {
-    const companyId = pickCompanyId(req);
+    const companyId = req.user.companyId;
     const { userId, type, title, body, entityType, entityId, meta } = req.body;
 
     const row = await notificationService.notifyUser({

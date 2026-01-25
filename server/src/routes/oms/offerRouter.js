@@ -1,7 +1,8 @@
 const offerRouter = require('express').Router();
 const OfferController = require('../../controllers/oms/Offer.controller');
+const { companyIdGuard } = require('../../middleware/companyIdGuard');
 
-
+offerRouter.use(companyIdGuard);
 
 offerRouter.get('/', OfferController.list);
 offerRouter.post('/', OfferController.create);

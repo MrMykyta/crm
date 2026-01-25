@@ -6,7 +6,7 @@ const { Company } = require('../../models');
 
 exports.listInvitations = async (req, res) => {
   try {
-    const { companyId } = req.params;
+    const companyId = req.user.companyId;
     const data = await service.list(companyId, req.query);
     res.json(data);
   } catch (e) {
@@ -16,7 +16,7 @@ exports.listInvitations = async (req, res) => {
 
 exports.createInvitation = async (req, res) => {
   try {
-    const { companyId } = req.params;
+    const companyId = req.user.companyId;
     const company = await Company.findByPk(companyId, { attributes: ['id', 'name'] });
     if (!company) return res.status(404).json({ error: 'Company not found' });
 

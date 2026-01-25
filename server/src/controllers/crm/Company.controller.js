@@ -13,7 +13,7 @@ exports.listForMe = async (req, res) => {
 
 exports.getOne = async (req, res) => {
   try {
-    const item = await companyService.getByIdScoped(req.user.id, req.companyId);
+    const item = await companyService.getByIdScoped(req.user.id, req.user.companyId);
     if (!item) {
       return res.status(404).send({ error: 'Компания не найдена или нет доступа' });
     }
@@ -36,7 +36,7 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const updated = await companyService.updateCompany(req.user.id, req.companyId, req.body);
+    const updated = await companyService.updateCompany(req.user.id, req.user.companyId, req.body);
     if (!updated) {
       return res.status(403).send({ error: 'Нет прав или компания не найдена' });
     }
@@ -48,7 +48,7 @@ exports.update = async (req, res) => {
 
 exports.remove = async (req, res) => {
     try {
-      const ok = await companyService.deleteCompany(req.user.id,  req.companyId);
+      const ok = await companyService.deleteCompany(req.user.id,  req.user.companyId);
       if (!ok) {
         return res.status(403).send({ error: 'Нет прав или компания не найдена' });
       }

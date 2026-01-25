@@ -7,7 +7,7 @@ const {UserPermission} = require('../../models');
 module.exports.createRole = async (req, res) => {
     try {
         const created = await aclService.createRole({
-            companyId: req.companyId,
+            companyId: req.user.companyId,
             name: req.body.name,
             description: req.body.description || null,
         });
@@ -19,7 +19,7 @@ module.exports.createRole = async (req, res) => {
 
 module.exports.listRoles = async (req, res) => {
     try {
-        const list = await aclService.listRoles({ companyId: req.companyId, query: req.query });
+        const list = await aclService.listRoles({ companyId: req.user.companyId, query: req.query });
         res.json(list);
     } catch (e) { 
         res.status(400).json({ error: e.message }); 
@@ -28,7 +28,7 @@ module.exports.listRoles = async (req, res) => {
 
 module.exports.getRole = async (req, res) => {
     try {
-        const item = await aclService.getRole({ companyId: req.companyId, roleId: req.params.roleId });
+        const item = await aclService.getRole({ companyId: req.user.companyId, roleId: req.params.roleId });
         if (!item) {
             res.sendStatus(404);
         }
@@ -41,7 +41,7 @@ module.exports.getRole = async (req, res) => {
 module.exports.updateRole = async (req, res) => {
     try {
         const updated = await aclService.updateRole({
-        companyId: req.companyId,
+        companyId: req.user.companyId,
         roleId: req.params.roleId,
         data: req.body
         });
@@ -178,7 +178,7 @@ module.exports.deletePermission = async (req, res) => {
 module.exports.getUserPermSummary = async (req, res) => {
   try {
     const data = await aclService.getUserPermissionSummary({
-      companyId: req.companyId || req.user?.companyId,
+      companyId: req.user.companyId,
       userId: req.params.userId,
     });
     if (!data) return res.sendStatus(404);
@@ -192,7 +192,7 @@ module.exports.allowPermForUser = async (req, res) => {
   try {
     await aclService.allowPermForUser({
       userId: req.params.userId,
-      companyId: req.companyId,        // ← из токена/мидлвари
+      companyId: req.user.companyId,
       permId: req.params.permId,
     });
     res.sendStatus(204);
@@ -203,7 +203,7 @@ module.exports.denyPermForUser = async (req, res) => {
   try {
     await aclService.denyPermForUser({
       userId: req.params.userId,
-      companyId: req.companyId,
+      companyId: req.user.companyId,
       permId: req.params.permId,
     });
     res.sendStatus(204);
@@ -214,7 +214,7 @@ module.exports.clearPermOverride = async (req, res) => {
   try {
     await aclService.clearPermOverride({
       userId: req.params.userId,
-      companyId: req.companyId,
+      companyId: req.user.companyId,
       permId: req.params.permId,
     });
     res.sendStatus(204);

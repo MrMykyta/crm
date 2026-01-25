@@ -22,6 +22,15 @@ router.get("/rooms/:roomId/pins", chatController.listPinnedMessages);
 // отправка сообщения
 router.post("/rooms/:roomId/messages", chatController.sendMessage);
 
+// редактирование сообщения
+router.patch("/rooms/:roomId/messages/:messageId", chatController.editMessage);
+
+// удаление сообщения (soft delete)
+router.delete(
+  "/rooms/:roomId/messages/:messageId",
+  chatController.deleteMessage
+);
+
 // отметить как прочитанное
 router.post("/rooms/:roomId/read", chatController.markRead);
 
@@ -36,5 +45,8 @@ router.post(
   "/rooms/:roomId/unpin/:messageId",
   chatController.unpinMessage
 );
+
+// обновление комнаты (archive/unarchive, title, avatar)
+router.patch("/rooms/:roomId", chatController.updateRoom);
 
 module.exports = router;

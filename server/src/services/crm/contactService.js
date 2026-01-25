@@ -5,10 +5,44 @@ const {
   Contact,
   ContactPoint,
   Counterparty,
+  UserCompany,
   User,
 } = require('../../models');
 
 /* ========== helpers ========== */
+
+function requireCompanyId(companyId) {
+  if (!companyId) {
+    const err = new Error('companyId is required');
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function assertCounterpartyInCompany(counterpartyId, companyId, tx) {
+  const row = await Counterparty.findOne({
+    where: { id: counterpartyId, companyId },
+    transaction: tx,
+  });
+  if (!row) {
+    const err = new Error('counterpartyId is invalid');
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function assertMemberInCompany(userId, companyId, tx) {
+  if (!userId) return;
+  const row = await UserCompany.findOne({
+    where: { userId, companyId },
+    transaction: tx,
+  });
+  if (!row) {
+    const err = new Error('mainResponsibleUserId is invalid');
+    err.status = 400;
+    throw err;
+  }
+}
 
 function buildWhere({ companyId, query }) {
   const where = { companyId };
@@ -73,7 +107,7 @@ async function syncContactPoints({ companyId, contactId, points = [], userId, tx
 /* ========== service ========== */
 
 module.exports.list = async ({ companyId, query = {} }) => {
-  if (!companyId) throw new Error('companyId is required');
+  requireCompanyId(companyId);
 
   const page  = Math.max(1, Number(query.page || 1));
   const limit = Math.min(100, Math.max(1, Number(query.limit || 25)));
@@ -83,13 +117,20 @@ module.exports.list = async ({ companyId, query = {} }) => {
 
   const include = [];
   if (query.withCounterparty === '1') {
-    include.push({ model: Counterparty, as: 'counterparty', attributes: ['id','shortName','fullName','type','status'] });
+    include.push({
+      model: Counterparty,
+      as: 'counterparty',
+      attributes: ['id','shortName','fullName','type','status'],
+      where: { companyId },
+      required: false,
+    });
   }
   if (query.withPoints === '1') {
     include.push({
       model: ContactPoint,
       as: 'contactPoints',
       attributes: ['id','channel','valueRaw','valueNorm','label','isPrimary','isPublic'],
+      where: { companyId },
       required: false,
     });
   }
@@ -110,15 +151,27 @@ module.exports.list = async ({ companyId, query = {} }) => {
 };
 
 module.exports.getOne = async ({ companyId, id, query = {} }) => {
-  if (!companyId) throw new Error('companyId is required');
+  requireCompanyId(companyId);
   const include = [
-    { model: Counterparty, as: 'counterparty', attributes: ['id','shortName','fullName','type','status'] },
+    {
+      model: Counterparty,
+      as: 'counterparty',
+      attributes: ['id','shortName','fullName','type','status'],
+      where: { companyId },
+      required: false,
+    },
     { model: User, as: 'responsible', attributes: ['id','firstName','lastName','email'] },
     { model: User, as: 'creator', attributes: ['id','firstName','lastName','email'] },
     { model: User, as: 'updater', attributes: ['id','firstName','lastName','email'] },
   ];
   if (query.withPoints !== '0') {
-    include.push({ model: ContactPoint, as: 'contactPoints', attributes: ['id','channel','valueRaw','valueNorm','label','isPrimary','isPublic','notes'] });
+    include.push({
+      model: ContactPoint,
+      as: 'contactPoints',
+      attributes: ['id','channel','valueRaw','valueNorm','label','isPrimary','isPublic','notes'],
+      where: { companyId },
+      required: false,
+    });
   }
 
   const item = await Contact.findOne({ where: { id, companyId }, include });
@@ -127,7 +180,7 @@ module.exports.getOne = async ({ companyId, id, query = {} }) => {
 };
 
 module.exports.create = async ({ companyId, user, payload }) => {
-  if (!companyId) throw new Error('companyId is required');
+  requireCompanyId(companyId);
   if (!user?.id) throw new Error('auth required');
   if (!payload?.counterpartyId) throw new Error('counterpartyId is required');
 
@@ -154,6 +207,9 @@ module.exports.create = async ({ companyId, user, payload }) => {
   };
 
   return sequelize.transaction(async (tx) => {
+    await assertCounterpartyInCompany(payload.counterpartyId, companyId, tx);
+    await assertMemberInCompany(payload.mainResponsibleUserId, companyId, tx);
+
     // если ставим primary — снимем флаг у прочих по тому же контрагенту
     if (data.isPrimary) {
       await Contact.update(
@@ -173,7 +229,7 @@ module.exports.create = async ({ companyId, user, payload }) => {
 };
 
 module.exports.update = async ({ companyId, id, user, payload }) => {
-  if (!companyId) throw new Error('companyId is required');
+  requireCompanyId(companyId);
   if (!user?.id) throw new Error('auth required');
 
   const contact = await Contact.findOne({ where: { id, companyId } });
@@ -199,6 +255,10 @@ module.exports.update = async ({ companyId, id, user, payload }) => {
   };
 
   return sequelize.transaction(async (tx) => {
+    if (payload.mainResponsibleUserId !== undefined) {
+      await assertMemberInCompany(payload.mainResponsibleUserId, companyId, tx);
+    }
+
     if (patch.isPrimary && !contact.isPrimary) {
       await Contact.update(
         { isPrimary: false },
@@ -217,14 +277,14 @@ module.exports.update = async ({ companyId, id, user, payload }) => {
 };
 
 module.exports.remove = async ({ companyId, id }) => {
-  if (!companyId) throw new Error('companyId is required');
+  requireCompanyId(companyId);
   const contact = await Contact.findOne({ where: { id, companyId } });
   if (!contact) throw new Error('Contact not found');
   await contact.destroy();
 };
 
 module.exports.restore = async ({ companyId, id }) => {
-  if (!companyId) throw new Error('companyId is required');
+  requireCompanyId(companyId);
   await Contact.restore({ where: { id, companyId } });
   return module.exports.getOne({ companyId, id });
 };

@@ -9,7 +9,10 @@ import {
   setPinned,
   removePinned,
   removeMessages,
+  updateMessage,
+  updateRoom,
 } from "../store/slices/chatSlice";
+import { chatApi } from "../store/rtk/chatApi";
 
 export function useChatSocket(activeRoomId) {
   const dispatch = useDispatch();
@@ -85,6 +88,31 @@ export function useChatSocket(activeRoomId) {
 
       const payloadRoomKey = String(roomId);
       dispatch(setPinned({ roomId: payloadRoomKey, pinned: message }));
+
+      dispatch(
+        chatApi.util.updateQueryData(
+          "getPinned",
+          { roomId: payloadRoomKey },
+          (draft) => {
+            const list = Array.isArray(draft?.data)
+              ? draft.data
+              : Array.isArray(draft)
+              ? draft
+              : null;
+            if (!list) return;
+
+            const id = String(message._id);
+            if (list.some((m) => String(m?._id) === id)) return;
+
+            list.push(message);
+            list.sort((a, b) => {
+              const ta = new Date(a.createdAt || 0).getTime();
+              const tb = new Date(b.createdAt || 0).getTime();
+              return ta - tb;
+            });
+          }
+        )
+      );
     };
 
     const onMessageUnpinned = (payload = {}) => {
@@ -93,6 +121,34 @@ export function useChatSocket(activeRoomId) {
 
       const payloadRoomKey = String(roomId);
       dispatch(removePinned({ roomId: payloadRoomKey }));
+
+      dispatch(
+        chatApi.util.updateQueryData(
+          "getPinned",
+          { roomId: payloadRoomKey },
+          (draft) => {
+            const list = Array.isArray(draft?.data)
+              ? draft.data
+              : Array.isArray(draft)
+              ? draft
+              : null;
+            if (!list) return;
+
+            const messageId = payload?.messageId;
+            if (!messageId) return;
+
+            const id = String(messageId);
+            const next = list.filter((m) => String(m?._id) !== id);
+
+            if (Array.isArray(draft?.data)) {
+              draft.data = next;
+            } else {
+              list.length = 0;
+              list.push(...next);
+            }
+          }
+        )
+      );
     };
 
     // ===================== УДАЛЕНИЕ СИСТЕМНЫХ =====================
@@ -109,12 +165,96 @@ export function useChatSocket(activeRoomId) {
       );
     };
 
+    // ===================== EDIT / DELETE =====================
+    const onMessageEdited = (payload = {}) => {
+      const { roomId, messageId, text, editedAt, editedBy } = payload;
+      if (!roomId || !messageId) return;
+      dispatch(
+        updateMessage({
+          roomId: String(roomId),
+          messageId: String(messageId),
+          patch: { text, editedAt, editedBy },
+        })
+      );
+
+      dispatch(
+        chatApi.util.updateQueryData(
+          "getPinned",
+          { roomId: String(roomId) },
+          (draft) => {
+            const list = Array.isArray(draft?.data)
+              ? draft.data
+              : Array.isArray(draft)
+              ? draft
+              : null;
+            if (!list) return;
+            const msg = list.find((m) => String(m?._id) === String(messageId));
+            if (msg) {
+              msg.text = text;
+              msg.editedAt = editedAt;
+              msg.editedBy = editedBy;
+            }
+          }
+        )
+      );
+    };
+
+    const onMessageDeleted = (payload = {}) => {
+      const { roomId, messageId, text, deletedAt, deletedBy } = payload;
+      if (!roomId || !messageId) return;
+      dispatch(
+        updateMessage({
+          roomId: String(roomId),
+          messageId: String(messageId),
+          patch: { text, deletedAt, deletedBy, attachments: [], forward: null },
+        })
+      );
+
+      dispatch(
+        chatApi.util.updateQueryData(
+          "getPinned",
+          { roomId: String(roomId) },
+          (draft) => {
+            const list = Array.isArray(draft?.data)
+              ? draft.data
+              : Array.isArray(draft)
+              ? draft
+              : null;
+            if (!list) return;
+            const msg = list.find((m) => String(m?._id) === String(messageId));
+            if (msg) {
+              msg.text = text;
+              msg.deletedAt = deletedAt;
+              msg.deletedBy = deletedBy;
+              msg.attachments = [];
+              msg.forward = null;
+            }
+          }
+        )
+      );
+    };
+
+    // ===================== ROOM UPDATED =====================
+    const onRoomUpdated = (payload = {}) => {
+      const { roomId, patch, updatedAt } = payload;
+      if (!roomId || !patch) return;
+      dispatch(
+        updateRoom({
+          roomId: String(roomId),
+          patch: { ...patch, updatedAt },
+        })
+      );
+    };
+
     // подписки
     socket.on("chat:message:new", onNewMessage);
     socket.on("chat:message:read", onMessageRead);
     socket.on("chat:message:pinned", onMessagePinned);
     socket.on("chat:message:unpinned", onMessageUnpinned);
     socket.on("chat:system:deleted", onSystemDeleted);
+    socket.on("chat:message:edited", onMessageEdited);
+    socket.on("chat:message:deleted", onMessageDeleted);
+    socket.on("chat:room:updated", onRoomUpdated);
 
     return () => {
       if (roomKey) {
@@ -130,6 +270,9 @@ export function useChatSocket(activeRoomId) {
       socket.off("chat:message:pinned", onMessagePinned);
       socket.off("chat:message:unpinned", onMessageUnpinned);
       socket.off("chat:system:deleted", onSystemDeleted);
+      socket.off("chat:message:edited", onMessageEdited);
+      socket.off("chat:message:deleted", onMessageDeleted);
+      socket.off("chat:room:updated", onRoomUpdated);
     };
   }, [activeRoomId, currentUserId, dispatch]);
 }

@@ -81,10 +81,10 @@ export const authApi = crmApi.injectEndpoints({
     }),
     // пароли
     requestPasswordReset: build.mutation({
-      query: (email) => ({ url: '/auth/password/forgot', method: 'POST', body: { email } }),
+      query: (email) => ({ url: '/auth/password/reset-request', method: 'POST', body: { email } }),
     }),
     resetPassword: build.mutation({
-      query: ({ token, password }) => ({ url: '/auth/password/reset', method: 'POST', body: { token, password } }),
+      query: ({ token, password }) => ({ url: '/auth/reset', method: 'POST', body: { token, password } }),
     }),
   }),
 });

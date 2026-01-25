@@ -6,25 +6,25 @@ const userCompanyController = require('../../controllers/crm/UserCompany.control
 const userCompanyRouter = express.Router();
 
 userCompanyRouter.get(
-  '/:companyId/users',
+  '/users',
   authorize(['member:read', 'member:read:dept', 'member:read:own']),
   userCompanyController.listUsers
 );
 
 userCompanyRouter.post(
-  '/:companyId/users',
+  '/users',
   authorize(['member:create', 'member:create:dept']),
   userCompanyController.addUser
 );
 
 userCompanyRouter.put(
-  '/:companyId/users/:userId',
+  '/users/:userId',
   authorize(['member:update', 'member:update:dept', 'member:update:own']),
   userCompanyController.updateMember
 );
 
 userCompanyRouter.delete(
-  '/:companyId/users/:userId',
+  '/users/:userId',
   authorize(['member:delete', 'member:delete:dept']),
   userCompanyController.removeUser
 );

@@ -4,7 +4,7 @@ const contactService = require('../../services/crm/contactService');
 module.exports.list = async (req, res) => {
   try {
     const { rows, count, page, limit } = await contactService.list({
-      companyId: req.params.companyId || req.companyId,
+      companyId: req.user.companyId,
       query: req.query,
     });
     res.status(200).send({ data: rows, meta: { count, page, limit } });
@@ -17,7 +17,7 @@ module.exports.list = async (req, res) => {
 module.exports.getOne = async (req, res) => {
   try {
     const data = await contactService.getOne({
-      companyId: req.params.companyId || req.companyId,
+      companyId: req.user.companyId,
       id: req.params.id,
       query: req.query,
     });
@@ -31,7 +31,7 @@ module.exports.getOne = async (req, res) => {
 module.exports.create = async (req, res) => {
   try {
     const data = await contactService.create({
-      companyId: req.params.companyId || req.companyId,
+      companyId: req.user.companyId,
       user: req.user,
       payload: req.body,
     });
@@ -45,7 +45,7 @@ module.exports.create = async (req, res) => {
 module.exports.update = async (req, res) => {
   try {
     const data = await contactService.update({
-      companyId: req.params.companyId || req.companyId,
+      companyId: req.user.companyId,
       id: req.params.id,
       user: req.user,
       payload: req.body,
@@ -60,7 +60,7 @@ module.exports.update = async (req, res) => {
 module.exports.remove = async (req, res) => {
   try {
     await contactService.remove({
-      companyId: req.params.companyId || req.companyId,
+      companyId: req.user.companyId,
       id: req.params.id,
     });
     res.status(204).send();
@@ -73,7 +73,7 @@ module.exports.remove = async (req, res) => {
 module.exports.restore = async (req, res) => {
   try {
     const data = await contactService.restore({
-      companyId: req.params.companyId || req.companyId,
+      companyId: req.user.companyId,
       id: req.params.id,
     });
     res.status(200).send(data);

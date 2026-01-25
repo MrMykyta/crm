@@ -33,6 +33,11 @@ async function getRequesterDeptId(requesterId, companyId, tx) {
  *  - member:read:dept   → видеть только свой департамент
  */
 exports.listUsers = async (requesterId, companyId, query = {}) => {
+  if (!companyId) {
+    const err = new Error('companyId is required');
+    err.status = 400;
+    throw err;
+  }
   const requester = { id: requesterId };
   // 1) Определяем company/dept скоуп по базовому праву member:read
 
@@ -131,6 +136,7 @@ exports.listUsers = async (requesterId, companyId, query = {}) => {
         as: 'department',
         attributes: ['id', 'name'],
         required: false,
+        where: { companyId },
       },
     ],
     order: [[parsed.sort, parsed.dir]],
@@ -166,6 +172,11 @@ exports.listUsers = async (requesterId, companyId, query = {}) => {
  *  - Назначить role='owner' может только тот, у кого есть company:owner:assign (или оставь проверку владельца как раньше).
  */
 exports.addUserToCompany = async (requesterId, companyId, userId, role = 'user', opts = {}) => {
+  if (!companyId) {
+    const err = new Error('companyId is required');
+    err.status = 400;
+    throw err;
+  }
   const requester = { id: requesterId };
 
   // Разрешён ли company-wide?
@@ -241,6 +252,11 @@ exports.addUserToCompany = async (requesterId, companyId, userId, role = 'user',
  *  Доп. правило владельцев остаётся.
  */
 exports.updateUserMembership = async (requesterId, companyId, userId, payload = {}) => {
+  if (!companyId) {
+    const err = new Error('companyId is required');
+    err.status = 400;
+    throw err;
+  }
   const requester = { id: requesterId };
 
   // company-wide?
@@ -355,6 +371,11 @@ exports.updateUserMembership = async (requesterId, companyId, userId, payload = 
  *  - member:delete:dept     → удалять только в своём департаменте
  */
 exports.removeUserFromCompany = async (requesterId, companyId, userId) => {
+  if (!companyId) {
+    const err = new Error('companyId is required');
+    err.status = 400;
+    throw err;
+  }
   const requester = { id: requesterId };
 
   // company-wide?

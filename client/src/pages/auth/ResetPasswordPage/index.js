@@ -2,19 +2,8 @@ import { Formik, Form, useField, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useResetPasswordMutation } from '../../../store/rtk/authApi';
 import s from '../../../styles/formGlass.module.css';
-
-// fetch shim
-async function resetPassword(token, password) {
-  const res = await fetch('/api/auth/reset', {
-    method:'POST',
-    credentials:'include',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify({ token, password }),
-  });
-  if (!res.ok) throw new Error('reset failed');
-  return res.json().catch(()=>({ ok:true }));
-}
 
 function InputField({ name, label, type='text', autoComplete }) {
   const [field] = useField(name);
@@ -33,6 +22,7 @@ export default function ResetPasswordPage() {
   const [sp] = useSearchParams();
   const token = sp.get('token');
   const navigate = useNavigate();
+  const [resetPassword] = useResetPasswordMutation();
 
   const schema = Yup.object({
     password: Yup.string()
@@ -49,7 +39,7 @@ export default function ResetPasswordPage() {
   const onSubmit = async (values, { setSubmitting, setStatus }) => {
     setStatus(null);
     try {
-      await resetPassword(token, values.password);
+      await resetPassword({ token, password: values.password }).unwrap();
       setStatus({ ok: true });
       setTimeout(() => navigate('/auth'), 700);
     } catch {

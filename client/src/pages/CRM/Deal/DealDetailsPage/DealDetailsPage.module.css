@@ -1,0 +1,64 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--card-bg) 70%, var(--text) 12%);
+}
+
+.breadcrumb {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.breadcrumb a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 4px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actionBtn {
+  background: var(--card-bg);
+  border: 1px solid color-mix(in srgb, var(--card-bg) 70%, var(--text) 20%);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.actionBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.actionBtnDanger {
+  background: color-mix(in srgb, var(--danger) 28%, var(--card-bg));
+  border-color: color-mix(in srgb, var(--danger) 60%, var(--card-bg));
+  color: var(--danger);
+}
+
+.emptyState {
+  padding: 32px;
+  background: var(--card-bg);
+  border-radius: 16px;
+}
+
+.placeholder {
+  color: var(--muted);
+  font-size: 14px;
+}

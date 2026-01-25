@@ -201,6 +201,8 @@ export const crmApi = createApi({
     'Task',
     'TaskList',
     'Counterparty',
+    'Deal',
+    'DealList',
   ],
   endpoints: () => ({}),
 });

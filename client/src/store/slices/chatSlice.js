@@ -4,6 +4,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   activeRoomId: null,
   pinned: {}, // pinned[roomId] = {message}
+  activePinnedIndexByRoomId: {}, // activePinnedIndexByRoomId[roomId] = number
   rooms: [], // список комнат
   messages: {}, // messages[roomId] = []
   composerDrafts: {}, // drafts[roomId] = { text, context }
@@ -231,6 +232,40 @@ const chatSlice = createSlice({
       if (!roomId) return;
       delete state.pinned[String(roomId)];
     },
+
+    setActivePinnedIndex(state, action) {
+      const { roomId, index } = action.payload || {};
+      if (!roomId || index == null) return;
+      state.activePinnedIndexByRoomId[String(roomId)] = Math.max(0, index);
+    },
+
+    // обновление сообщения (edit/delete)
+    updateMessage(state, action) {
+      const { roomId, messageId, patch } = action.payload || {};
+      if (!roomId || !messageId || !patch) return;
+
+      const key = String(roomId);
+      const list = state.messages[key];
+      if (!Array.isArray(list)) return;
+
+      const idx = list.findIndex(
+        (m) => m && String(m._id) === String(messageId)
+      );
+      if (idx < 0) return;
+
+      list[idx] = { ...list[idx], ...patch };
+    },
+
+    // обновление полей комнаты
+    updateRoom(state, action) {
+      const { roomId, patch } = action.payload || {};
+      if (!roomId || !patch) return;
+
+      const room = state.rooms.find((r) => String(r._id) === String(roomId));
+      if (!room) return;
+
+      Object.assign(room, patch);
+    },
   },
 });
 
@@ -249,6 +284,9 @@ export const {
   resetChat,
   setPinned,
   removePinned,
+  setActivePinnedIndex,
+  updateMessage,
+  updateRoom,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

@@ -25,6 +25,8 @@ import CalendarPage from "./pages/system/CalendarPage";
 import TaskPage from "./pages/system/TaskPage";
 import TaskDetailPage from "./pages/system/TaskPage/TaskDetailPage";
 import Dashboard from "./components/Dashboard";
+import DealsListPage from "./pages/CRM/Deal/DealsListPage";
+import DealDetailsPage from "./pages/CRM/Deal/DealDetailsPage";
 
 
 import "./reset.css";
@@ -136,6 +138,8 @@ function AppShell() {
           <Route path="crm/clients/:id" element={<ClientDetailPage />} />
 
           <Route path="calendar" element={<CalendarPage />} />
+          <Route path="deals" element={<DealsListPage />} />
+          <Route path="deals/:id" element={<DealDetailsPage />} />
           <Route path="tasks" element={<TaskPage />} />
           <Route path="tasks/:id" element={<TaskDetailPage />} />
 

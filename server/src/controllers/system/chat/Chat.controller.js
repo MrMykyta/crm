@@ -10,7 +10,7 @@ const ChatMessage = require("../../../mongoModels/chat/ChatMessage");
 module.exports.listRooms = async (req, res, next) => {
   try {
     const userId = String(req.user.id);
-    const companyId = String(req.companyId);
+    const companyId = String(req.user.companyId);
 
     // 1) тащим все комнаты, где участвует юзер
     const rooms = await ChatRoom.find({
@@ -88,7 +88,7 @@ module.exports.listRooms = async (req, res, next) => {
 module.exports.getOrCreateDirect = async (req, res, next) => {
   try {
     const userId = String(req.user.id);
-    const companyId = String(req.companyId);
+    const companyId = String(req.user.companyId);
     const { otherUserId } = req.body;
 
     if (!otherUserId) {
@@ -113,13 +113,15 @@ module.exports.getOrCreateDirect = async (req, res, next) => {
  */
 module.exports.listMessages = async (req, res, next) => {
   try {
-    const companyId = String(req.companyId);
+    const userId = String(req.user.id);
+    const companyId = String(req.user.companyId);
     const { roomId } = req.params;
     const { before, limit } = req.query;
 
     const messages = await chatService.getMessages({
       companyId,
       roomId,
+      userId,
       limit: limit ? Number(limit) : 50,
       before,
     });
@@ -136,12 +138,14 @@ module.exports.listMessages = async (req, res, next) => {
  */
 module.exports.listPinnedMessages = async (req, res, next) => {
   try {
-    const companyId = String(req.companyId);
+    const userId = String(req.user.id);
+    const companyId = String(req.user.companyId);
     const { roomId } = req.params;
 
     const messages = await chatService.getPinnedMessages({
       companyId,
       roomId,
+      userId,
     });
 
     res.json({ data: messages });
@@ -157,7 +161,7 @@ module.exports.listPinnedMessages = async (req, res, next) => {
 module.exports.sendMessage = async (req, res, next) => {
   try {
     const userId = String(req.user.id);
-    const companyId = String(req.companyId);
+    const companyId = String(req.user.companyId);
     const { roomId } = req.params;
 
     const {
@@ -167,7 +171,6 @@ module.exports.sendMessage = async (req, res, next) => {
       forwardFrom,
       forwardBatchId,
       forwardBatchSeq,
-      isSystem,
     } = req.body;
 
     const msg = await chatService.sendMessage({
@@ -176,11 +179,11 @@ module.exports.sendMessage = async (req, res, next) => {
       authorId: userId,
       text: text || "",
       attachments: attachments || [],
-      isSystem,
       replyTo,
       forwardFrom,
       forwardBatchId,
       forwardBatchSeq,
+      allowSystem: false,
     });
 
     res.status(201).json({ data: msg });
@@ -196,7 +199,7 @@ module.exports.sendMessage = async (req, res, next) => {
 module.exports.markRead = async (req, res, next) => {
   try {
     const userId = String(req.user.id);
-    const companyId = String(req.companyId);
+    const companyId = String(req.user.companyId);
     const { roomId } = req.params;
     const { messageId } = req.body;
 
@@ -221,7 +224,7 @@ module.exports.markRead = async (req, res, next) => {
 module.exports.createGroup = async (req, res, next) => {
   try {
     const userId = String(req.user.id);
-    const companyId = String(req.companyId);
+    const companyId = String(req.user.companyId);
     const { title, participantIds } = req.body || {};
 
     if (!title) {
@@ -253,7 +256,7 @@ module.exports.createGroup = async (req, res, next) => {
 module.exports.pinMessage = async (req, res, next) => {
   try {
     const userId = String(req.user.id);
-    const companyId = String(req.companyId);
+    const companyId = String(req.user.companyId);
     const { roomId, messageId } = req.params;
 
     const msg = await chatService.pinMessage({
@@ -276,7 +279,7 @@ module.exports.pinMessage = async (req, res, next) => {
 module.exports.unpinMessage = async (req, res, next) => {
   try {
     const userId = String(req.user.id);
-    const companyId = String(req.companyId);
+    const companyId = String(req.user.companyId);
     const { roomId, messageId } = req.params;
 
     const msg = await chatService.unpinMessage({
@@ -289,6 +292,78 @@ module.exports.unpinMessage = async (req, res, next) => {
     res.json({ data: msg });
   } catch (e) {
     console.error("[chatController.unpinMessage]", e);
+    next(e);
+  }
+};
+
+/**
+ * PATCH /api/chat/rooms/:roomId/messages/:messageId
+ */
+module.exports.editMessage = async (req, res, next) => {
+  try {
+    const userId = String(req.user.id);
+    const companyId = String(req.user.companyId);
+    const { roomId, messageId } = req.params;
+    const { text } = req.body || {};
+
+    const msg = await chatService.editMessage({
+      companyId,
+      roomId,
+      messageId,
+      userId,
+      text,
+    });
+
+    res.json({ data: msg });
+  } catch (e) {
+    console.error("[chatController.editMessage]", e);
+    next(e);
+  }
+};
+
+/**
+ * DELETE /api/chat/rooms/:roomId/messages/:messageId
+ */
+module.exports.deleteMessage = async (req, res, next) => {
+  try {
+    const userId = String(req.user.id);
+    const companyId = String(req.user.companyId);
+    const { roomId, messageId } = req.params;
+
+    const msg = await chatService.deleteMessage({
+      companyId,
+      roomId,
+      messageId,
+      userId,
+    });
+
+    res.json({ data: msg });
+  } catch (e) {
+    console.error("[chatController.deleteMessage]", e);
+    next(e);
+  }
+};
+
+/**
+ * PATCH /api/chat/rooms/:roomId
+ */
+module.exports.updateRoom = async (req, res, next) => {
+  try {
+    const userId = String(req.user.id);
+    const companyId = String(req.user.companyId);
+    const { roomId } = req.params;
+    const { title, avatarUrl, isArchived } = req.body || {};
+
+    const room = await chatService.updateRoom({
+      companyId,
+      roomId,
+      userId,
+      patch: { title, avatarUrl, isArchived },
+    });
+
+    res.json({ data: room });
+  } catch (e) {
+    console.error("[chatController.updateRoom]", e);
     next(e);
   }
 };

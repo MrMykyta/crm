@@ -10,7 +10,7 @@ exports.me = async (req, res) => {
 
 exports.updateMe = async (req, res) => {
   try {
-    const updated = await userService.updateMe(req.user.id, req.companyId, req.body);
+    const updated = await userService.updateMe(req.user.id, req.user.companyId, req.body);
     res.status(200).send(updated);
   } catch (e) { res.status(400).send({ error: e.message }); }
 };
@@ -35,7 +35,7 @@ exports.getById = async (req, res) => {
   try {
     const userId = req.params.userId;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
-    const data = await userService.getById(userId, req.companyId);
+    const data = await userService.getById(userId, req.user.companyId);
     if (!data) return res.sendStatus(404);
     res.json(data);
   } catch (e) { res.status(400).json({ error: e.message }); }
@@ -45,7 +45,7 @@ exports.updateById = async (req, res) => {
   try {
     const userId = req.params.userId;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
-    const data = await userService.updateById(userId, req.companyId, req.body);
+    const data = await userService.updateById(userId, req.user.companyId, req.body);
     if (!data) return res.sendStatus(404);
     res.json(data);
   } catch (e) { res.status(400).json({ error: e.message }); }

@@ -15,7 +15,7 @@ userRouter.get('/me/companies', auth, userController.myCompanies);
 userRouter.get('/lookup', auth, userController.lookupByEmail);
 
 // ---- управление конкретным пользователем (в контексте активной компании)
-userRouter.get('/:companyId/:userId', auth, authorize('company:read'), userController.getById);
-userRouter.patch('/:companyId/:userId', auth, authorize('company:update'), userController.updateById);
+userRouter.get('/:userId', auth, authorize('company:read'), userController.getById);
+userRouter.patch('/:userId', auth, authorize('company:update'), userController.updateById);
 
 module.exports = userRouter;

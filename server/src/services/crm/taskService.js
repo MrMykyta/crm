@@ -5,6 +5,7 @@ const { Op } = require("sequelize");
 const {
   Task,
   User,
+  UserCompany,
   CompanyDepartment,
   TaskUserParticipant,
   TaskDepartmentParticipant,
@@ -21,6 +22,98 @@ const LIMIT = 20;
 const STATUS_VALUES = ["todo", "in_progress", "done", "blocked", "canceled"];
 const MEMBER_STATUS_VALUES = STATUS_VALUES;
 
+function requireCompanyId(companyId) {
+  if (!companyId) {
+    const err = new Error("companyId is required");
+    err.status = 400;
+    throw err;
+  }
+  return companyId;
+}
+
+function normalizeIds(value) {
+  if (!Array.isArray(value)) return [];
+  const ids = value.filter(Boolean);
+  return [...new Set(ids)];
+}
+
+async function assertCounterpartyInCompany(counterpartyId, companyId) {
+  if (!counterpartyId) return;
+  const row = await Counterparty.findOne({
+    where: { id: counterpartyId, companyId },
+    attributes: ["id"],
+  });
+  if (!row) {
+    const err = new Error("counterpartyId is invalid");
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function assertDealInCompany(dealId, companyId) {
+  if (!dealId) return;
+  const row = await Deal.findOne({
+    where: { id: dealId, companyId },
+    attributes: ["id"],
+  });
+  if (!row) {
+    const err = new Error("dealId is invalid");
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function assertContactIdsInCompany(contactIds, companyId) {
+  const ids = normalizeIds(contactIds);
+  if (!ids.length) return;
+  const rows = await Contact.findAll({
+    where: { id: { [Op.in]: ids }, companyId },
+    attributes: ["id"],
+    raw: true,
+  });
+  const allowed = new Set(rows.map((r) => r.id));
+  const invalid = ids.filter((id) => !allowed.has(id));
+  if (invalid.length) {
+    const err = new Error("contactIds are invalid");
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function assertDepartmentIdsInCompany(departmentIds, companyId) {
+  const ids = normalizeIds(departmentIds);
+  if (!ids.length) return;
+  const rows = await CompanyDepartment.findAll({
+    where: { id: { [Op.in]: ids }, companyId },
+    attributes: ["id"],
+    raw: true,
+  });
+  const allowed = new Set(rows.map((r) => r.id));
+  const invalid = ids.filter((id) => !allowed.has(id));
+  if (invalid.length) {
+    const err = new Error("departmentIds are invalid");
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function assertMemberIdsInCompany(userIds, companyId, label = "userIds") {
+  const ids = normalizeIds(userIds);
+  if (!ids.length) return;
+  const rows = await UserCompany.findAll({
+    where: { companyId, userId: { [Op.in]: ids } },
+    attributes: ["userId"],
+    raw: true,
+  });
+  const allowed = new Set(rows.map((r) => r.userId));
+  const invalid = ids.filter((id) => !allowed.has(id));
+  if (invalid.length) {
+    const err = new Error(`${label} are invalid`);
+    err.status = 400;
+    throw err;
+  }
+}
+
 function parsePagination(query) {
   const page = Math.max(1, parseInt(query.page, 10) || PAGE);
   const limit = Math.min(200, Math.max(1, parseInt(query.limit, 10) || LIMIT));
@@ -32,6 +125,8 @@ function buildListWhere({ companyId, query }) {
   const where = { companyId };
   if (query.status) where.status = query.status;
   if (query.category) where.category = query.category;
+  if (query.counterpartyId) where.counterpartyId = query.counterpartyId;
+  if (query.dealId) where.dealId = query.dealId;
   if (query.q) where.title = { [Op.iLike]: `%${query.q.trim()}%` };
 
   // по дате (пересечение с интервалом)
@@ -83,13 +178,12 @@ function pickContactIds(payload) {
 }
 
 async function expandAllUsersForCompany(companyId) {
-  // можно ограничить активными/сотрудниками компании
-  const rows = await User.findAll({
-    attributes: ["id"],
-    where: { companyId, isActive: true },
+  const rows = await UserCompany.findAll({
+    attributes: ["userId"],
+    where: { companyId },
     raw: true,
   });
-  return rows.map((r) => r.id);
+  return rows.map((r) => r.userId).filter(Boolean);
 }
 
 async function ensureParticipants({ task, companyId, payload }) {
@@ -106,12 +200,15 @@ async function ensureParticipants({ task, companyId, payload }) {
   } else if (participantMode === "lists") {
     assigneeIds = pickAssigneeIds(payload);
     departmentIds = pickDepartmentIds(payload);
+    await assertMemberIdsInCompany(assigneeIds, companyId, "assigneeIds");
+    await assertDepartmentIdsInCompany(departmentIds, companyId);
   } // none → пусто
 
   if (watcherMode === "all") {
     watcherIds = await expandAllUsersForCompany(companyId);
   } else if (watcherMode === "lists") {
     watcherIds = pickWatcherIds(payload);
+    await assertMemberIdsInCompany(watcherIds, companyId, "watcherIds");
   }
 
   // очищаем/пересобираем bindings (простая стратегия, можно оптимизировать diff-ом)
@@ -152,8 +249,9 @@ async function ensureParticipants({ task, companyId, payload }) {
   }
 }
 
-async function ensureContacts({ task, payload }) {
+async function ensureContacts({ task, payload, companyId }) {
   const contactIds = pickContactIds(payload);
+  await assertContactIdsInCompany(contactIds, companyId);
   await TaskContact.destroy({ where: { taskId: task.id } });
   if (contactIds.length) {
     await TaskContact.bulkCreate(
@@ -177,8 +275,10 @@ function computeAggregatedStatus(memberStatuses, aggregateFlag) {
   }
 }
 
-async function recomputeTaskStatusIfNeeded(taskId) {
-  const task = await Task.findByPk(taskId, {
+async function recomputeTaskStatusIfNeeded({ taskId, companyId }) {
+  requireCompanyId(companyId);
+  const task = await Task.findOne({
+    where: { id: taskId, companyId },
     attributes: ["id", "status", "statusAggregate"],
   });
   if (!task) return;
@@ -203,8 +303,12 @@ async function recomputeTaskStatusIfNeeded(taskId) {
 module.exports = {
   // ---------- LIST ----------
   async list({ query, companyId /*, user*/ }) {
+    const cid = requireCompanyId(companyId);
     const { page, limit, offset } = parsePagination(query);
-    const where = buildListWhere({ companyId, query });
+    if (query.counterpartyId)
+      await assertCounterpartyInCompany(query.counterpartyId, cid);
+    if (query.dealId) await assertDealInCompany(query.dealId, cid);
+    const where = buildListWhere({ companyId: cid, query });
 
     const { rows, count } = await Task.findAndCountAll({
       where,
@@ -221,13 +325,31 @@ module.exports = {
           model: Counterparty,
           as: "counterparty",
           attributes: ["id", "shortName", "fullName"],
+          where: { companyId: cid },
+          required: false,
         },
-        { model: Deal, as: "deal", attributes: ["id", "title", "status"] },
+        {
+          model: Deal,
+          as: "deal",
+          attributes: ["id", "title", "status"],
+          where: { companyId: cid },
+          required: false,
+        },
         {
           model: User,
           as: "userParticipants",
           attributes: ["id", "firstName", "lastName", "email"],
           through: { attributes: ["role", "memberStatus"] },
+          include: [
+            {
+              model: UserCompany,
+              as: "memberships",
+              attributes: [],
+              where: { companyId: cid },
+              required: true,
+            },
+          ],
+          required: false,
         },
       ],
     });
@@ -237,6 +359,7 @@ module.exports = {
 
   // ---------- CALENDAR ----------
   async listCalendar({ query, companyId /*, user*/ }) {
+    const cid = requireCompanyId(companyId);
     // обязательный диапазон
     const start = query.from ? new Date(query.from) : null;
     const end = query.to ? new Date(query.to) : null;
@@ -245,7 +368,7 @@ module.exports = {
     }
 
     const where = {
-      companyId,
+      companyId: cid,
       [Op.and]: [
         { [Op.or]: [{ startAt: null }, { startAt: { [Op.lt]: end } }] },
         { [Op.or]: [{ endAt: null }, { endAt: { [Op.gt]: start } }] },
@@ -299,8 +422,9 @@ module.exports = {
 
   // ---------- GET ----------
   async getById({ id, companyId /*, user*/ }) {
+    const cid = requireCompanyId(companyId);
     const item = await Task.findOne({
-      where: { id, companyId },
+      where: { id, companyId: cid },
       include: [
         {
           model: User,
@@ -311,18 +435,38 @@ module.exports = {
           model: Counterparty,
           as: "counterparty",
           attributes: ["id", "shortName", "fullName"],
+          where: { companyId: cid },
+          required: false,
         },
-        { model: Deal, as: "deal", attributes: ["id", "title", "status"] },
+        {
+          model: Deal,
+          as: "deal",
+          attributes: ["id", "title", "status"],
+          where: { companyId: cid },
+          required: false,
+        },
         {
           model: User,
           as: "userParticipants",
           attributes: ["id", "firstName", "lastName", "email"],
           through: { attributes: ["role", "memberStatus"] },
+          include: [
+            {
+              model: UserCompany,
+              as: "memberships",
+              attributes: [],
+              where: { companyId: cid },
+              required: true,
+            },
+          ],
+          required: false,
         },
         {
           model: CompanyDepartment,
           as: "departmentParticipants",
           attributes: ["id", "name"],
+          where: { companyId: cid },
+          required: false,
         },
         {
           model: Contact,
@@ -335,6 +479,8 @@ module.exports = {
             "jobTitle",
           ],
           through: { attributes: [] },
+          where: { companyId: cid },
+          required: false,
         },
       ],
     });
@@ -343,6 +489,7 @@ module.exports = {
 
   // ---------- CREATE ----------
   async create({ payload, companyId, user }) {
+    const cid = requireCompanyId(companyId);
     // обязательные: companyId, createdBy, title
     if (!payload?.title) throw new Error('"title" is required');
     const createdBy = user?.id || payload.createdBy;
@@ -357,9 +504,31 @@ module.exports = {
     const watcherMode =
       payload.watcherMode || (payload.watcherIds?.length ? "lists" : "none");
 
+    if (payload.counterpartyId)
+      await assertCounterpartyInCompany(payload.counterpartyId, cid);
+    if (payload.dealId) await assertDealInCompany(payload.dealId, cid);
+    if (participantMode === "lists") {
+      await assertMemberIdsInCompany(
+        pickAssigneeIds(payload),
+        cid,
+        "assigneeIds"
+      );
+      await assertDepartmentIdsInCompany(pickDepartmentIds(payload), cid);
+    }
+    if (watcherMode === "lists") {
+      await assertMemberIdsInCompany(
+        pickWatcherIds(payload),
+        cid,
+        "watcherIds"
+      );
+    }
+    if (payload.contactIds !== undefined) {
+      await assertContactIdsInCompany(pickContactIds(payload), cid);
+    }
+
     // создаём
     const task = await Task.create({
-      companyId,
+      companyId: cid,
       createdBy,
       title: payload.title,
       category: payload.category || null,
@@ -381,10 +550,10 @@ module.exports = {
       dealId: payload.dealId || null,
     });
 
-    await ensureParticipants({ task, companyId, payload });
-    await ensureContacts({ task, payload });
+    await ensureParticipants({ task, companyId: cid, payload });
+    await ensureContacts({ task, payload, companyId: cid });
 
-    await recomputeTaskStatusIfNeeded(task.id);
+    await recomputeTaskStatusIfNeeded({ taskId: task.id, companyId: cid });
 
     // 🔔 уведомления участникам/наблюдателям
     try {
@@ -392,13 +561,13 @@ module.exports = {
       let watcherIds = [];
 
       if ((task.participantMode || payload.participantMode) === "all") {
-        assigneeIds = await expandAllUsersForCompany(companyId);
+        assigneeIds = await expandAllUsersForCompany(cid);
       } else {
         assigneeIds = pickAssigneeIds(payload);
       }
 
       if ((task.watcherMode || payload.watcherMode) === "all") {
-        watcherIds = await expandAllUsersForCompany(companyId);
+        watcherIds = await expandAllUsersForCompany(cid);
       } else {
         watcherIds = pickWatcherIds(payload);
       }
@@ -410,7 +579,7 @@ module.exports = {
 
       if (recipients.length) {
         await notificationService.notifyManyUsers({
-          companyId,
+          companyId: cid,
           userIds: recipients,
           type: "task.created",
           title: "Task created",
@@ -430,15 +599,49 @@ module.exports = {
       console.error("[taskService.create] notify error", e);
     }
 
-    return await this.getById({ id: task.id, companyId });
+    return await this.getById({ id: task.id, companyId: cid });
   },
 
   // ---------- UPDATE ----------
   async update({ id, payload, companyId, user }) {
-    const task = await Task.findOne({ where: { id, companyId } });
+    const cid = requireCompanyId(companyId);
+    const task = await Task.findOne({ where: { id, companyId: cid } });
     if (!task) throw new Error("Task not found");
 
     const originalStatus = task.status; // запоминаем старый статус
+
+    if (payload.counterpartyId !== undefined && payload.counterpartyId !== null) {
+      await assertCounterpartyInCompany(payload.counterpartyId, cid);
+    }
+    if (payload.dealId !== undefined && payload.dealId !== null) {
+      await assertDealInCompany(payload.dealId, cid);
+    }
+    if (payload.assigneeIds !== undefined) {
+      await assertMemberIdsInCompany(
+        pickAssigneeIds(payload),
+        cid,
+        "assigneeIds"
+      );
+    }
+    if (payload.watcherIds !== undefined) {
+      await assertMemberIdsInCompany(
+        pickWatcherIds(payload),
+        cid,
+        "watcherIds"
+      );
+    }
+    if (payload.departmentIds !== undefined) {
+      await assertDepartmentIdsInCompany(pickDepartmentIds(payload), cid);
+    }
+    if (payload.contactIds !== undefined) {
+      await assertContactIdsInCompany(pickContactIds(payload), cid);
+    }
+    if (Array.isArray(payload.memberStatuses)) {
+      const memberIds = payload.memberStatuses
+        .map((m) => m?.userId)
+        .filter(Boolean);
+      await assertMemberIdsInCompany(memberIds, cid, "memberStatuses");
+    }
 
     const next = {};
     if (payload.title !== undefined) next.title = payload.title || "";
@@ -478,10 +681,10 @@ module.exports = {
       payload.participantMode ||
       payload.watcherMode
     ) {
-      await ensureParticipants({ task, companyId, payload });
+      await ensureParticipants({ task, companyId: cid, payload });
     }
     if (payload.contactIds !== undefined) {
-      await ensureContacts({ task, payload });
+      await ensureContacts({ task, payload, companyId: cid });
     }
 
     // обновление индивидуальных статусов исполнителей
@@ -500,10 +703,10 @@ module.exports = {
     }
 
     // если флаг агрегирования включён — пересчитать общий статус
-    await recomputeTaskStatusIfNeeded(task.id);
+    await recomputeTaskStatusIfNeeded({ taskId: task.id, companyId: cid });
 
     try {
-      const updated = await this.getById({ id: task.id, companyId });
+      const updated = await this.getById({ id: task.id, companyId: cid });
 
       // если статус поменяли — уведомим всех
       if (
@@ -525,7 +728,7 @@ module.exports = {
 
         if (recipients.length) {
           await notificationService.notifyManyUsers({
-            companyId,
+            companyId: cid,
             userIds: recipients,
             type: "task.statusChanged",
             title: "Task status changed",
@@ -544,20 +747,22 @@ module.exports = {
       return updated;
     } catch (e) {
       console.error("[taskService.update] notify error", e);
-      return await this.getById({ id: task.id, companyId });
+      return await this.getById({ id: task.id, companyId: cid });
     }
   },
 
   // ---------- REMOVE (soft) ----------
   async remove({ id, companyId }) {
-    const task = await Task.findOne({ where: { id, companyId } });
+    const cid = requireCompanyId(companyId);
+    const task = await Task.findOne({ where: { id, companyId: cid } });
     if (!task) throw new Error("Task not found");
     await task.destroy();
   },
 
   // ---------- RESTORE ----------
   async restore({ id, companyId }) {
-    await Task.restore({ where: { id, companyId } });
-    return await this.getById({ id, companyId });
+    const cid = requireCompanyId(companyId);
+    await Task.restore({ where: { id, companyId: cid } });
+    return await this.getById({ id, companyId: cid });
   },
 };

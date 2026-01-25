@@ -15,7 +15,7 @@ const base = {
 };
 
 module.exports.create = Joi.object({
-  companyId: base.companyId.required(),
+  companyId: Joi.forbidden(),
   counterpartyId: base.counterpartyId.required(),
   title: base.title.required(),
   description: base.description.optional(),
@@ -26,7 +26,7 @@ module.exports.create = Joi.object({
 });
 
 module.exports.update = Joi.object({
-  companyId: base.companyId.optional(),
+  companyId: Joi.forbidden(),
   counterpartyId: base.counterpartyId.optional(),
   title: base.title.optional(),
   description: base.description.optional(),
@@ -37,7 +37,7 @@ module.exports.update = Joi.object({
 }).min(1);
 
 module.exports.listQuery = paging.keys({
-  companyId: base.companyId,
+  companyId: Joi.forbidden(),
   counterpartyId: base.counterpartyId,
   responsibleId: base.responsibleId,
   status: base.status,

@@ -394,6 +394,101 @@
   "companyMenu": {
     "info": "Podgląd firmy",
     "settings": "Ustawienia"
+  },
+  "deals": {
+    "title": "Transakcje",
+    "actions": {
+      "new": "Nowa transakcja",
+      "create": "Utwórz transakcję",
+      "open": "Otwórz",
+      "won": "Wygrana",
+      "lost": "Przegrana",
+      "cancelEdit": "Anuluj edycję",
+      "archive": "Archiwizuj",
+      "archiving": "Archiwizacja..."
+    },
+    "columns": {
+      "title": "Transakcja",
+      "amount": "Kwota",
+      "status": "Status",
+      "owner": "Właściciel",
+      "updated": "Zaktualizowano"
+    },
+    "filters": {
+      "searchPlaceholder": "Szukaj transakcji",
+      "pipeline": "Lejek",
+      "allPipelines": "Wszystkie lejki",
+      "stage": "Etap",
+      "allStages": "Wszystkie etapy",
+      "owner": "Właściciel",
+      "allOwners": "Wszyscy właściciele",
+      "status": "Status",
+      "allStatuses": "Wszystkie statusy"
+    },
+    "fields": {
+      "title": "Nazwa",
+      "counterparty": "Kontrahent",
+      "owner": "Właściciel",
+      "amount": "Kwota",
+      "currency": "Waluta",
+      "status": "Status",
+      "description": "Opis",
+      "stage": "Etap",
+      "closeDate": "Data zamknięcia"
+    },
+    "placeholders": {
+      "title": "Nazwa transakcji",
+      "description": "Opis (opcjonalnie)"
+    },
+    "form": {
+      "ownerUnassigned": "Nieprzypisany"
+    },
+    "status": {
+      "new": "Nowa",
+      "inProgress": "W toku",
+      "won": "Wygrana",
+      "lost": "Przegrana"
+    },
+    "tabs": {
+      "overview": "Przegląd",
+      "activities": "Aktywności",
+      "files": "Pliki",
+      "history": "Historia",
+      "comingSoon": "Wkrótce"
+    },
+    "details": {
+      "loading": "Ładowanie transakcji…",
+      "noPermission": "Brak uprawnień do tej transakcji.",
+      "notFound": "Nie znaleziono transakcji.",
+      "untitled": "Transakcja bez nazwy"
+    },
+    "sidebar": {
+      "owner": "Właściciel",
+      "counterparty": "Kontrahent",
+      "contacts": "Kontakty",
+      "created": "Utworzono",
+      "updated": "Zaktualizowano"
+    },
+    "aria": {
+      "openDeal": "Otwórz transakcję {{title}}"
+    },
+    "modal": {
+      "new": {
+        "title": "Nowa transakcja",
+        "counterpartyLabel": "Kontrahent",
+        "counterpartyPlaceholder": "Zacznij wpisywać nazwę lub NIP...",
+        "counterpartySearching": "Wyszukiwanie...",
+        "counterpartyEmpty": "Nie znaleziono kontrahentów"
+      }
+    },
+    "validation": {
+      "titleRequired": "Wpisz nazwę",
+      "counterpartyRequired": "Wybierz kontrahenta"
+    },
+    "common": {
+      "nipLabel": "NIP",
+      "typeToSearch": "Wpisz nazwę lub NIP"
+    }
   }
   
 }

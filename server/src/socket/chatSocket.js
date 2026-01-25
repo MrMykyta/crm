@@ -11,8 +11,22 @@ module.exports = function chatSocket(io, socket) {
     return;
   }
 
-  // Подписываем юзера на его личную комнату
-  socket.join(`user:${userId}`);
+  const buildRoomKey = chatService.buildRoomKey;
+  const buildUserKey = chatService.buildUserKey;
+
+  const getRoomForUser = async (roomId) => {
+    const room = await ChatRoom.findOne({
+      _id: roomId,
+      companyId,
+      "participants.userId": String(userId),
+      isDeleted: false,
+    });
+    if (!room) throw new Error("Room not found or access denied");
+    return room;
+  };
+
+  // Подписываем юзера на его личную комнату (company scoped)
+  socket.join(buildUserKey(companyId, userId));
 
   // -------------------------
   // JOIN ROOM
@@ -22,16 +36,8 @@ module.exports = function chatSocket(io, socket) {
       const { roomId } = payload || {};
       if (!roomId) throw new Error("roomId is required");
 
-      const room = await ChatRoom.findOne({
-        _id: roomId,
-        companyId,
-        "participants.userId": String(userId),
-        isDeleted: false,
-      });
-
-      if (!room) throw new Error("Room not found or access denied");
-
-      socket.join(`room:${roomId}`);
+      await getRoomForUser(roomId);
+      socket.join(buildRoomKey(companyId, roomId));
 
       cb && cb({ ok: true });
     } catch (e) {
@@ -48,7 +54,7 @@ module.exports = function chatSocket(io, socket) {
       const { roomId } = payload || {};
       if (!roomId) throw new Error("roomId is required");
 
-      socket.leave(`room:${roomId}`);
+      socket.leave(buildRoomKey(companyId, roomId));
 
       cb && cb({ ok: true });
     } catch (e) {
@@ -77,6 +83,10 @@ module.exports = function chatSocket(io, socket) {
       } = payload || {};
 
       if (!roomId) throw new Error("roomId is required");
+      if (isSystem || systemType || systemPayload) {
+        cb && cb({ ok: true });
+        return;
+      }
       if (!text && (!attachments || !attachments.length) && !forwardFrom) {
         throw new Error("text, attachments or forwardFrom required");
       }
@@ -162,13 +172,18 @@ module.exports = function chatSocket(io, socket) {
     try {
       const { roomId, isTyping, userName } = payload || {};
       if (!roomId) return;
-
-      socket.to(`room:${roomId}`).emit("chat:typing", {
-        roomId,
-        userId,
-        isTyping: !!isTyping,
-        userName: userName || null,
-      });
+      getRoomForUser(roomId)
+        .then(() => {
+          socket.to(buildRoomKey(companyId, roomId)).emit("chat:typing", {
+            roomId,
+            userId,
+            isTyping: !!isTyping,
+            userName: userName || null,
+          });
+        })
+        .catch((e) => {
+          console.error("[chat:typing]", e);
+        });
     } catch (e) {
       console.error("[chat:typing]", e);
     }
@@ -190,7 +205,7 @@ module.exports = function chatSocket(io, socket) {
         messageId,
       });
 
-      socket.to(`room:${roomId}`).emit("chat:read", {
+      socket.to(buildRoomKey(companyId, roomId)).emit("chat:read", {
         roomId,
         userId,
         messageId,

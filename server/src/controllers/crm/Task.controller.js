@@ -2,7 +2,7 @@ const taskService = require('../../services/crm/taskService');
 
 module.exports.list = async (req, res) => {
   try {
-    const companyId = req.params.companyId;
+    const companyId = req.user.companyId;
     const { rows, count, page, limit } = await taskService.list({
       query: req.query,
       companyId,
@@ -17,7 +17,7 @@ module.exports.list = async (req, res) => {
 
 module.exports.listCalendar = async (req, res) => {
   try {
-    const companyId = req.params.companyId;
+    const companyId = req.user.companyId;
     const data = await taskService.listCalendar({
       query: req.query,
       companyId,
@@ -32,7 +32,7 @@ module.exports.listCalendar = async (req, res) => {
 
 module.exports.getById = async (req, res) => {
   try {
-    const companyId = req.params.companyId;
+    const companyId = req.user.companyId;
     const id = req.params.id;
     const item = await taskService.getById({ id, companyId, user: req.user });
     if (!item) return res.status(404).send({ error: 'Task not found' });
@@ -45,7 +45,7 @@ module.exports.getById = async (req, res) => {
 
 module.exports.create = async (req, res) => {
   try {
-    const companyId = req.params.companyId;
+    const companyId = req.user.companyId;
     const item = await taskService.create({
       payload: req.body,
       companyId,
@@ -60,7 +60,7 @@ module.exports.create = async (req, res) => {
 
 module.exports.update = async (req, res) => {
   try {
-    const companyId = req.params.companyId;
+    const companyId = req.user.companyId;
     const id = req.params.id;
     const item = await taskService.update({
       id,
@@ -77,7 +77,7 @@ module.exports.update = async (req, res) => {
 
 module.exports.remove = async (req, res) => {
   try {
-    const companyId = req.params.companyId;
+    const companyId = req.user.companyId;
     const id = req.params.id;
     await taskService.remove({ id, companyId, user: req.user });
     res.status(204).send();
@@ -89,7 +89,7 @@ module.exports.remove = async (req, res) => {
 
 module.exports.restore = async (req, res) => {
   try {
-    const companyId = req.params.companyId;
+    const companyId = req.user.companyId;
     const id = req.params.id;
     const item = await taskService.restore({ id, companyId, user: req.user });
     if (!item) return res.status(404).send({ error: 'Task not found' });

@@ -6,9 +6,9 @@ const { requireMember } = require('../../middleware/requireMember');
 
 const departmentController = require('../../controllers/crm/Department.controller');
 
-departmentRouter.get('/:companyId', requireMember, departmentController.list);
-departmentRouter.post('/:companyId', requireMember, departmentController.create);
-departmentRouter.put('/:companyId/:id', requireMember, departmentController.update);
-departmentRouter.delete('/:companyId/:id', requireMember, departmentController.remove);
+departmentRouter.get('/', requireMember, departmentController.list);
+departmentRouter.post('/', requireMember, departmentController.create);
+departmentRouter.put('/:id', requireMember, departmentController.update);
+departmentRouter.delete('/:id', requireMember, departmentController.remove);
 
 module.exports = departmentRouter;

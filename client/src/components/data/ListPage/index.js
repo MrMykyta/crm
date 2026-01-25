@@ -11,6 +11,7 @@ import ThemedSelect from '../../inputs/RadixSelect'; // 👈 добавили
 import { useListCounterpartiesQuery } from '../../../store/rtk/counterpartyApi';
 import { useListTasksQuery } from '../../../store/rtk/tasksApi';
 import { useListCompanyUsersQuery, useListInvitationsQuery } from '../../../store/rtk/companyUsersApi';
+import { useGetDealsQuery } from '../../../store/rtk/dealsApi';
 
 const REGISTRY = {
   counterparties: {
@@ -25,6 +26,18 @@ const REGISTRY = {
   },
   tasks: {
     useQuery: useListTasksQuery,
+    adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page:  Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  deals: {
+    useQuery: useGetDealsQuery,
     adapt: (data) => {
       const items = Array.isArray(data) ? data : (data?.items || []);
       return {

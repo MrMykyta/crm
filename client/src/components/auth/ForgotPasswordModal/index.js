@@ -1,18 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useRequestPasswordResetMutation } from '../../../store/rtk/authApi';
 import styles from './ForgotPasswordModal.module.css';
-
-// fetch shim
-async function requestPasswordReset(email) {
-  const res = await fetch('/api/auth/password/reset-request', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type':'application/json' },
-    body: JSON.stringify({ email }),
-  });
-  if (!res.ok) throw new Error('reset request failed');
-  return res.json().catch(()=>({ ok:true }));
-}
 
 export default function ForgotPasswordModal({ open, onClose, initialEmail = '' }) {
   const { t } = useTranslation();
@@ -20,6 +9,7 @@ export default function ForgotPasswordModal({ open, onClose, initialEmail = '' }
   const [status, setStatus] = useState(null); // 'ok' | 'error' | null
   const [loading, setLoading] = useState(false);
   const closeRef = useRef(null);
+  const [requestPasswordReset] = useRequestPasswordResetMutation();
 
   useEffect(() => {
     if (!open) return;
@@ -40,7 +30,7 @@ export default function ForgotPasswordModal({ open, onClose, initialEmail = '' }
     setLoading(true);
     setStatus(null);
     try {
-      await requestPasswordReset(email);
+      await requestPasswordReset(email).unwrap();
       setStatus('ok');
     } catch {
       setStatus('error');

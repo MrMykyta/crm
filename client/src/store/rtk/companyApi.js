@@ -2,6 +2,11 @@ import { crmApi, getCompanyId } from './crmApi';
 
 export const companyApi = crmApi.injectEndpoints({
   endpoints: (build) => ({
+    getCompanyBrand: build.query({
+      query: (companyId) => `/companies/${encodeURIComponent(companyId)}`,
+      transformResponse: (resp) => resp?.data || resp,
+      providesTags: (res) => (res ? [{ type: 'Company', id: res.id }] : [{ type: 'Company' }]),
+    }),
     getCompany: build.query({
       query: () => `/companies/${getCompanyId()}`,
       transformResponse: (resp) => resp?.data || resp,
@@ -21,4 +26,8 @@ export const companyApi = crmApi.injectEndpoints({
   }),
 });
 
-export const { useGetCompanyQuery, useUpdateCompanyMutation } = companyApi;
+export const {
+  useGetCompanyBrandQuery,
+  useGetCompanyQuery,
+  useUpdateCompanyMutation,
+} = companyApi;

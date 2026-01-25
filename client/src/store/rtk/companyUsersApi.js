@@ -1,14 +1,25 @@
 import { crmApi, getCompanyId } from './crmApi';
 
+const stripCompanyId = (value) => {
+  if (!value || typeof value !== 'object') return value;
+  if (typeof FormData !== 'undefined' && value instanceof FormData) {
+    value.delete('companyId');
+    return value;
+  }
+  if (value.constructor !== Object) return value;
+  const { companyId, ...rest } = value;
+  return rest;
+};
+
 export const companyUsersApi = crmApi.injectEndpoints({
   endpoints: (build) => ({
 
     // ---------- MEMBERS LIST ----------
     listCompanyUsers: build.query({
       query: (params = {}) => ({
-        url: `/members/${getCompanyId()}/users`,
+        url: '/members/users',
         method: 'GET',
-        params,
+        params: stripCompanyId(params),
       }),
       transformResponse: (resp) =>
         Array.isArray(resp)
@@ -26,9 +37,9 @@ export const companyUsersApi = crmApi.injectEndpoints({
 
     // ---------- MEMBER DETAIL ----------
     getCompanyUser: build.query({
-      // GET /members/:companyId/users/:userId
+      // GET /users/:userId
       query: (userId) => ({
-        url: `/users/${getCompanyId()}/${encodeURIComponent(userId)}`,
+        url: `/users/${encodeURIComponent(userId)}`,
         method: 'GET',
       }),
       transformResponse: (resp) => resp?.data ?? resp,
@@ -38,11 +49,11 @@ export const companyUsersApi = crmApi.injectEndpoints({
 
     // ---------- UPDATE MEMBER (профиль в рамках компании) ----------
     updateCompanyUser: build.mutation({
-      // PATCH /members/:companyId/users/:userId
+      // PATCH /users/:userId
       query: ({ userId, body }) => ({
-        url: `/users/${getCompanyId()}/${encodeURIComponent(userId)}`,
+        url: `/users/${encodeURIComponent(userId)}`,
         method: 'PATCH',
-        body,
+        body: stripCompanyId(body),
       }),
       transformResponse: (resp) => resp?.data ?? resp,
       invalidatesTags: (_res, _err, { userId }) => [
@@ -54,18 +65,18 @@ export const companyUsersApi = crmApi.injectEndpoints({
     // ---------- ADD MEMBER ----------
     addMember: build.mutation({
       query: (body) => ({
-        url: `/members/${getCompanyId()}/users`,
+        url: '/members/users',
         method: 'POST',
-        body,
+        body: stripCompanyId(body),
       }),
       invalidatesTags: [{ type: 'CompanyUser', id: 'LIST' }],
     }),
 
     // ---------- REMOVE MEMBER ----------
     removeUser: build.mutation({
-      // DELETE /members/:companyId/users/:userId  (оставляю твой members-префикс)
+      // DELETE /members/users/:userId
       query: (userId) => ({
-        url: `/members/${getCompanyId()}/users/${encodeURIComponent(userId)}`,
+        url: `/members/users/${encodeURIComponent(userId)}`,
         method: 'DELETE',
       }),
       invalidatesTags: [{ type: 'CompanyUser', id: 'LIST' }],
@@ -73,9 +84,9 @@ export const companyUsersApi = crmApi.injectEndpoints({
 
     // ---------- UPDATE ROLE ----------
     updateUserRole: build.mutation({
-      // PUT /members/:companyId/users/:userId/role
+      // PUT /members/users/:userId/role
       query: ({ userId, role, status }) => ({
-        url: `/members/${getCompanyId()}/users/${encodeURIComponent(userId)}/role`,
+        url: `/members/users/${encodeURIComponent(userId)}/role`,
         method: 'PUT',
         body: { role, status },
       }),

@@ -308,5 +308,100 @@
       "allStatuses": "All statuses",
       "searchPlaceholder": "Search (name, NIP, REGON...)"
     }
+  },
+  "deals": {
+    "title": "Deals",
+    "actions": {
+      "new": "New deal",
+      "create": "Create deal",
+      "open": "Open",
+      "won": "Won",
+      "lost": "Lost",
+      "cancelEdit": "Cancel edit",
+      "archive": "Archive",
+      "archiving": "Archiving..."
+    },
+    "columns": {
+      "title": "Deal",
+      "amount": "Amount",
+      "status": "Status",
+      "owner": "Owner",
+      "updated": "Updated"
+    },
+    "filters": {
+      "searchPlaceholder": "Search deals",
+      "pipeline": "Pipeline",
+      "allPipelines": "All pipelines",
+      "stage": "Stage",
+      "allStages": "All stages",
+      "owner": "Owner",
+      "allOwners": "All owners",
+      "status": "Status",
+      "allStatuses": "All statuses"
+    },
+    "fields": {
+      "title": "Title",
+      "counterparty": "Counterparty",
+      "owner": "Owner",
+      "amount": "Amount",
+      "currency": "Currency",
+      "status": "Status",
+      "description": "Description",
+      "stage": "Stage",
+      "closeDate": "Close date"
+    },
+    "placeholders": {
+      "title": "Deal title",
+      "description": "Optional description"
+    },
+    "form": {
+      "ownerUnassigned": "Unassigned"
+    },
+    "status": {
+      "new": "New",
+      "inProgress": "In progress",
+      "won": "Won",
+      "lost": "Lost"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "activities": "Activities",
+      "files": "Files",
+      "history": "History",
+      "comingSoon": "Coming soon"
+    },
+    "details": {
+      "loading": "Loading deal…",
+      "noPermission": "No permission to view this deal.",
+      "notFound": "Deal not found.",
+      "untitled": "Untitled deal"
+    },
+    "sidebar": {
+      "owner": "Owner",
+      "counterparty": "Counterparty",
+      "contacts": "Contacts",
+      "created": "Created",
+      "updated": "Updated"
+    },
+    "aria": {
+      "openDeal": "Open deal {{title}}"
+    },
+    "modal": {
+      "new": {
+        "title": "New deal",
+        "counterpartyLabel": "Counterparty",
+        "counterpartyPlaceholder": "Type a name or NIP...",
+        "counterpartySearching": "Searching...",
+        "counterpartyEmpty": "No counterparties found"
+      }
+    },
+    "validation": {
+      "titleRequired": "Title is required",
+      "counterpartyRequired": "Select a counterparty"
+    },
+    "common": {
+      "nipLabel": "NIP",
+      "typeToSearch": "Type a name or NIP"
+    }
   }
 }

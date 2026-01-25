@@ -36,6 +36,17 @@ const buildSaveBody = ({ themeMode, lang, appearance } = {}) => {
   return body;
 };
 
+const stripCompanyId = (value) => {
+  if (!value || typeof value !== 'object') return value;
+  if (typeof FormData !== 'undefined' && value instanceof FormData) {
+    value.delete('companyId');
+    return value;
+  }
+  if (value.constructor !== Object) return value;
+  const { companyId, ...rest } = value;
+  return rest;
+};
+
 export const userApi = crmApi.injectEndpoints({
   endpoints: (build) => ({
 
@@ -63,7 +74,7 @@ export const userApi = crmApi.injectEndpoints({
     }),
 
     updateMe: build.mutation({
-      query: (body) => ({ url: '/users/me', method: 'PATCH', body }),
+      query: (body) => ({ url: '/users/me', method: 'PATCH', body: stripCompanyId(body) }),
       invalidatesTags: [{ type: 'User', id: 'me' }],
     }),
 
@@ -79,7 +90,7 @@ export const userApi = crmApi.injectEndpoints({
       query: ({ userId, body }) => ({
         url: `/users/${encodeURIComponent(userId)}`,
         method: 'PATCH',
-        body,
+        body: stripCompanyId(body),
       }),
       invalidatesTags: (_r, _e, { userId }) => [{ type: 'User', id: userId }],
     }),
@@ -88,7 +99,7 @@ export const userApi = crmApi.injectEndpoints({
       query: (body) => ({
         url: '/users/me/contacts',
         method: 'POST',
-        body,
+        body: stripCompanyId(body),
       }),
       invalidatesTags: [{ type: 'User', id: 'me' }],
     }),

@@ -66,7 +66,9 @@ const ChatMessageSchema = new Schema(
     },
 
     editedAt: { type: Date, default: null },
+    editedBy: { type: String, default: null },
     deletedAt: { type: Date, default: null },
+    deletedBy: { type: String, default: null },
 
     isSystem: { type: Boolean, default: false },
 

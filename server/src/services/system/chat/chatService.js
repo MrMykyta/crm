@@ -1,8 +1,124 @@
 const ChatRoom = require("../../../mongoModels/chat/ChatRoom");
 const ChatMessage = require("../../../mongoModels/chat/ChatMessage");
 const mongoose = require("mongoose");
+const { Op } = require("sequelize");
+const ApplicationError = require("../../../errors/ApplicationError");
+const { UserCompany, User } = require("../../../models");
+
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
+
+const buildRoomKey = (companyId, roomId) =>
+  `room:${String(companyId)}:${String(roomId)}`;
+const buildUserKey = (companyId, userId) =>
+  `user:${String(companyId)}:${String(userId)}`;
+
+function toUniqueIds(ids = []) {
+  return Array.from(new Set(ids.map((id) => String(id)).filter(Boolean)));
+}
+
+async function assertUsersInCompany(userIds, companyId) {
+  const ids = toUniqueIds(userIds);
+  if (!ids.length) return;
+
+  const rows = await UserCompany.findAll({
+    where: { companyId, userId: { [Op.in]: ids } },
+    attributes: ["userId"],
+    raw: true,
+  });
+
+  const allowed = new Set(rows.map((r) => String(r.userId)));
+  const missing = ids.filter((id) => !allowed.has(String(id)));
+  if (missing.length) {
+    throw new ApplicationError("participantIds contain users outside company", 400);
+  }
+}
+
+async function getRoomForUser({ companyId, roomId, userId }) {
+  if (!companyId || !roomId || !userId) {
+    throw new ApplicationError("Room access requires companyId and userId", 400);
+  }
+
+  if (!mongoose.isValidObjectId(roomId)) {
+    throw new ApplicationError("Room not found", 404);
+  }
+
+  const room = await ChatRoom.findOne({
+    _id: roomId,
+    companyId,
+    "participants.userId": String(userId),
+    isDeleted: false,
+  });
+
+  if (!room) {
+    throw new ApplicationError("Room not found or access denied", 404);
+  }
+
+  return room;
+}
+
+function getParticipant(room, userId) {
+  return (room?.participants || []).find(
+    (p) => String(p.userId) === String(userId)
+  );
+}
+
+function assertGroupAdmin(room, userId) {
+  if (room.type !== "group") {
+    throw new ApplicationError("Group admin required", 400);
+  }
+  const p = getParticipant(room, userId);
+  if (!p || p.role !== "admin") {
+    throw new ApplicationError("Insufficient permissions", 403);
+  }
+  return p;
+}
+
+function assertCanPin(room, userId) {
+  if (room.type === "direct") return;
+  assertGroupAdmin(room, userId);
+}
+
+async function getMessageInRoom({ companyId, roomId, messageId }) {
+  if (!mongoose.isValidObjectId(messageId)) {
+    throw new ApplicationError("Message not found", 404);
+  }
+
+  const msg = await ChatMessage.findOne({
+    _id: messageId,
+    roomId,
+    companyId,
+  });
+
+  if (!msg) {
+    throw new ApplicationError("Message not found", 404);
+  }
+
+  return msg;
+}
+
+async function getUserDisplayName(userId) {
+  if (!userId) return "Пользователь";
+  const row = await User.findOne({
+    where: { id: userId },
+    attributes: ["firstName", "lastName", "email"],
+    raw: true,
+  });
+  const full = [row?.firstName, row?.lastName].filter(Boolean).join(" ");
+  return full || row?.email || "Пользователь";
+}
+
+function buildPinnedPreview(msg) {
+  const raw = (msg?.text || "").trim();
+  if (raw) {
+    return raw.length > 40 ? `${raw.slice(0, 40)}…` : raw;
+  }
+  const name = msg?.attachments?.[0]?.name;
+  return name || "сообщение";
+}
 
 async function findOrCreateDirectRoom({ companyId, userId, otherUserId }) {
+  await assertUsersInCompany([userId, otherUserId], companyId);
+
   const existing = await ChatRoom.findOne({
     companyId,
     type: "direct",
@@ -28,7 +144,8 @@ async function createGroupRoom({
   title,
   participantIds,
 }) {
-  const unique = Array.from(new Set([creatorId, ...participantIds]));
+  const unique = toUniqueIds([creatorId, ...(participantIds || [])]);
+  await assertUsersInCompany(unique, companyId);
 
   const participants = unique.map((id) => ({
     userId: id,
@@ -104,11 +221,12 @@ async function recomputeLastPinnedForRoom(room, { pinnedMessage } = {}) {
 }
 
 async function pinMessage({ companyId, roomId, messageId, userId }) {
-  const room = await ChatRoom.findOne({ _id: roomId, companyId });
-  if (!room) throw new Error("Room not found");
-
-  const msg = await ChatMessage.findOne({ _id: messageId, roomId, companyId });
-  if (!msg) throw new Error("Message not found");
+  const room = await getRoomForUser({ companyId, roomId, userId });
+  if (room.type === "group" && room.isArchived) {
+    throw new ApplicationError("Room is archived", 403);
+  }
+  assertCanPin(room, userId);
+  const msg = await getMessageInRoom({ companyId, roomId, messageId });
 
   if (!msg.isPinned) {
     msg.isPinned = true;
@@ -117,6 +235,25 @@ async function pinMessage({ companyId, roomId, messageId, userId }) {
     await msg.save();
 
     await recomputeLastPinnedForRoom(room, { pinnedMessage: msg });
+
+    try {
+      const actorName = await getUserDisplayName(userId);
+      const preview = buildPinnedPreview(msg);
+      const systemText = `${actorName} закрепил(а) «${preview}»`;
+
+      await sendMessage({
+        companyId,
+        roomId,
+        authorId: userId,
+        text: systemText,
+        isSystem: true,
+        systemType: "pin",
+        systemPayload: { action: "pin", messageId: String(messageId) },
+        allowSystem: true,
+      });
+    } catch (err) {
+      console.error("[chatService.pinMessage] system pin message error", err);
+    }
   }
 
   const io = global.io;
@@ -128,14 +265,14 @@ async function pinMessage({ companyId, roomId, messageId, userId }) {
 
     // личные комнаты пользователей — для списка чатов / бэджей
     for (const uid of users) {
-      io.to(`user:${uid}`).emit("chat:message:pinned", {
+      io.to(buildUserKey(companyId, uid)).emit("chat:message:pinned", {
         roomId: String(roomId),
         message: msgObj,
       });
     }
 
     // сама комната — чтобы «шапка» и сообщение обновились у всех
-    io.to(`room:${roomId}`).emit("chat:message:pinned", {
+    io.to(buildRoomKey(companyId, roomId)).emit("chat:message:pinned", {
       roomId: String(roomId),
       message: msgObj,
     });
@@ -145,11 +282,12 @@ async function pinMessage({ companyId, roomId, messageId, userId }) {
 }
 
 async function unpinMessage({ companyId, roomId, messageId, userId }) {
-  const room = await ChatRoom.findOne({ _id: roomId, companyId });
-  if (!room) throw new Error("Room not found");
-
-  const msg = await ChatMessage.findOne({ _id: messageId, roomId, companyId });
-  if (!msg) throw new Error("Message not found");
+  const room = await getRoomForUser({ companyId, roomId, userId });
+  if (room.type === "group" && room.isArchived) {
+    throw new ApplicationError("Room is archived", 403);
+  }
+  assertCanPin(room, userId);
+  const msg = await getMessageInRoom({ companyId, roomId, messageId });
 
   if (msg.isPinned) {
     msg.isPinned = false;
@@ -184,13 +322,13 @@ async function unpinMessage({ companyId, roomId, messageId, userId }) {
           const users = participants.map((p) => String(p.userId));
 
           for (const uid of users) {
-            io.to(`user:${uid}`).emit("chat:system:deleted", {
+            io.to(buildUserKey(companyId, uid)).emit("chat:system:deleted", {
               roomId: String(roomId),
               messageIds: systemIds.map(String),
             });
           }
 
-          io.to(`room:${roomId}`).emit("chat:system:deleted", {
+          io.to(buildRoomKey(companyId, roomId)).emit("chat:system:deleted", {
             roomId: String(roomId),
             messageIds: systemIds.map(String),
           });
@@ -210,13 +348,13 @@ async function unpinMessage({ companyId, roomId, messageId, userId }) {
     const users = participants.map((p) => String(p.userId));
 
     for (const uid of users) {
-      io.to(`user:${uid}`).emit("chat:message:unpinned", {
+      io.to(buildUserKey(companyId, uid)).emit("chat:message:unpinned", {
         roomId: String(roomId),
         messageId: String(messageId),
       });
     }
 
-    io.to(`room:${roomId}`).emit("chat:message:unpinned", {
+    io.to(buildRoomKey(companyId, roomId)).emit("chat:message:unpinned", {
       roomId: String(roomId),
       messageId: String(messageId),
     });
@@ -241,10 +379,24 @@ async function sendMessage({
   forwardFrom,
   forwardBatchId = null,
   forwardBatchSeq = null,
+  allowSystem = false,
 }) {
-  const room = await ChatRoom.findOne({ _id: roomId, companyId });
-  if (!room) {
-    throw new Error("Room not found");
+  const room = await getRoomForUser({
+    companyId,
+    roomId,
+    userId: authorId,
+  });
+
+  if (room.type === "group" && room.isArchived && !allowSystem) {
+    throw new ApplicationError("Room is archived", 403);
+  }
+
+  if (isSystem && !allowSystem) {
+    throw new ApplicationError("System messages are not allowed", 403);
+  }
+
+  if (replyTo) {
+    await getMessageInRoom({ companyId, roomId, messageId: replyTo });
   }
 
   let forward = null;
@@ -256,24 +408,32 @@ async function sendMessage({
       companyId,
     });
 
-    if (orig) {
-      const deep = await getDeepOriginal(orig);
+    if (!orig) {
+      throw new ApplicationError("Forward source not found", 404);
+    }
 
-      const rawSnippet = (deep.text || "").trim();
-      const snippet =
-        rawSnippet.length > 300 ? rawSnippet.slice(0, 300) + "…" : rawSnippet;
+    await getRoomForUser({
+      companyId,
+      roomId: orig.roomId,
+      userId: authorId,
+    });
 
-      forward = {
-        sourceMessageId: orig._id,
-        originalMessageId: deep._id,
-        originalAuthorId: deep.authorId,
-        originalAuthorName: deep?.forward?.originalAuthorName || null,
-        textSnippet: snippet,
-      };
+    const deep = await getDeepOriginal(orig);
 
-      if ((!text || !text.trim()) && deep.text) {
-        text = deep.text;
-      }
+    const rawSnippet = (deep.text || "").trim();
+    const snippet =
+      rawSnippet.length > 300 ? rawSnippet.slice(0, 300) + "…" : rawSnippet;
+
+    forward = {
+      sourceMessageId: orig._id,
+      originalMessageId: deep._id,
+      originalAuthorId: deep.authorId,
+      originalAuthorName: deep?.forward?.originalAuthorName || null,
+      textSnippet: snippet,
+    };
+
+    if ((!text || !text.trim()) && deep.text) {
+      text = deep.text;
     }
   }
 
@@ -319,13 +479,13 @@ async function sendMessage({
       const users = participants.map((p) => String(p.userId));
 
       for (const uid of users) {
-        io.to(`user:${uid}`).emit("chat:message:new", {
+        io.to(buildUserKey(companyId, uid)).emit("chat:message:new", {
           roomId,
           message: msgObj,
         });
       }
 
-      io.to(`room:${roomId}`).emit("chat:message:new", {
+      io.to(buildRoomKey(companyId, roomId)).emit("chat:message:new", {
         roomId,
         message: msgObj,
       });
@@ -337,7 +497,9 @@ async function sendMessage({
   return msg;
 }
 
-async function getMessages({ companyId, roomId, limit = 50, before }) {
+async function getMessages({ companyId, roomId, userId, limit = 50, before }) {
+  await getRoomForUser({ companyId, roomId, userId });
+
   const query = { companyId, roomId };
   if (before) query.createdAt = { $lt: new Date(before) };
 
@@ -354,7 +516,9 @@ async function getMessages({ companyId, roomId, limit = 50, before }) {
 }
 
 // список всех закреплённых сообщений комнаты (для логики «ближайший пин» на фронте)
-async function getPinnedMessages({ companyId, roomId }) {
+async function getPinnedMessages({ companyId, roomId, userId }) {
+  await getRoomForUser({ companyId, roomId, userId });
+
   const items = await ChatMessage.find({
     companyId,
     roomId,
@@ -367,17 +531,17 @@ async function getPinnedMessages({ companyId, roomId }) {
 }
 
 async function markAsRead({ companyId, roomId, userId, messageId }) {
-  const room = await ChatRoom.findOne({ _id: roomId, companyId });
-  if (!room) throw new Error("Room not found");
+  const room = await getRoomForUser({ companyId, roomId, userId });
 
   const p = room.participants.find((x) => String(x.userId) === String(userId));
-  if (!p) throw new Error("User not in this room");
+  if (!p) throw new ApplicationError("User not in this room", 403);
 
   p.lastReadAt = new Date();
 
   let storedMessageId = null;
 
   if (mongoose.isValidObjectId(messageId)) {
+    await getMessageInRoom({ companyId, roomId, messageId });
     p.lastReadMessageId = messageId;
     storedMessageId = messageId;
   }
@@ -391,7 +555,7 @@ async function markAsRead({ companyId, roomId, userId, messageId }) {
       const users = participants.map((x) => String(x.userId));
 
       for (const uid of users) {
-        io.to(`user:${uid}`).emit("chat:message:read", {
+        io.to(buildUserKey(companyId, uid)).emit("chat:message:read", {
           roomId: String(roomId),
           userId: String(userId),
           messageId: storedMessageId,
@@ -404,6 +568,181 @@ async function markAsRead({ companyId, roomId, userId, messageId }) {
   }
 }
 
+async function editMessage({ companyId, roomId, messageId, userId, text }) {
+  const nextText = text != null ? String(text).trim() : "";
+  if (!nextText) {
+    throw new ApplicationError("text is required", 400);
+  }
+
+  const room = await getRoomForUser({ companyId, roomId, userId });
+  if (room.type === "group" && room.isArchived) {
+    throw new ApplicationError("Room is archived", 403);
+  }
+
+  const msg = await getMessageInRoom({ companyId, roomId, messageId });
+  if (msg.isSystem) {
+    throw new ApplicationError("System messages cannot be edited", 403);
+  }
+  if (msg.deletedAt) {
+    throw new ApplicationError("Message already deleted", 403);
+  }
+
+  if (String(msg.authorId) !== String(userId)) {
+    throw new ApplicationError("Only author can edit message", 403);
+  }
+
+  const createdAt = new Date(msg.createdAt || Date.now()).getTime();
+  const now = Date.now();
+  if (now - createdAt > EDIT_WINDOW_MS) {
+    throw new ApplicationError("Edit window expired", 403);
+  }
+
+  msg.text = nextText;
+  msg.editedAt = new Date();
+  msg.editedBy = String(userId);
+  await msg.save();
+
+  try {
+    const io = global.io;
+    if (io) {
+      const payload = {
+        roomId: String(roomId),
+        messageId: String(messageId),
+        text: msg.text,
+        editedAt: msg.editedAt,
+        editedBy: msg.editedBy,
+      };
+
+      const participants = room.participants || [];
+      const users = participants.map((p) => String(p.userId));
+
+      for (const uid of users) {
+        io.to(buildUserKey(companyId, uid)).emit("chat:message:edited", payload);
+      }
+      io.to(buildRoomKey(companyId, roomId)).emit("chat:message:edited", payload);
+    }
+  } catch (err) {
+    console.error("[chatService.editMessage] socket emit error", err);
+  }
+
+  return msg;
+}
+
+async function deleteMessage({ companyId, roomId, messageId, userId }) {
+  const room = await getRoomForUser({ companyId, roomId, userId });
+  if (room.type === "group" && room.isArchived) {
+    throw new ApplicationError("Room is archived", 403);
+  }
+
+  const msg = await getMessageInRoom({ companyId, roomId, messageId });
+  if (msg.isSystem) {
+    throw new ApplicationError("System messages cannot be deleted", 403);
+  }
+
+  const isAuthor = String(msg.authorId) === String(userId);
+  const isAdmin = room.type === "group" && getParticipant(room, userId)?.role === "admin";
+
+  if (!isAuthor && !isAdmin) {
+    throw new ApplicationError("Insufficient permissions", 403);
+  }
+
+  msg.deletedAt = new Date();
+  msg.deletedBy = String(userId);
+  msg.text = "Сообщение удалено";
+  msg.attachments = [];
+  msg.forward = null;
+  await msg.save();
+
+  try {
+    const io = global.io;
+    if (io) {
+      const payload = {
+        roomId: String(roomId),
+        messageId: String(messageId),
+        text: msg.text,
+        deletedAt: msg.deletedAt,
+        deletedBy: msg.deletedBy,
+      };
+
+      const participants = room.participants || [];
+      const users = participants.map((p) => String(p.userId));
+
+      for (const uid of users) {
+        io.to(buildUserKey(companyId, uid)).emit("chat:message:deleted", payload);
+      }
+      io.to(buildRoomKey(companyId, roomId)).emit("chat:message:deleted", payload);
+    }
+  } catch (err) {
+    console.error("[chatService.deleteMessage] socket emit error", err);
+  }
+
+  return msg;
+}
+
+async function updateRoom({ companyId, roomId, userId, patch = {} }) {
+  const room = await getRoomForUser({ companyId, roomId, userId });
+  assertGroupAdmin(room, userId);
+
+  const next = {};
+  if (patch.title !== undefined) next.title = patch.title || null;
+  if (patch.avatarUrl !== undefined) next.avatarUrl = patch.avatarUrl || null;
+  if (patch.isArchived !== undefined) next.isArchived = !!patch.isArchived;
+
+  const keys = Object.keys(next);
+  if (!keys.length) {
+    throw new ApplicationError("No allowed fields to update", 400);
+  }
+
+  const wasArchived = !!room.isArchived;
+  room.set(next);
+  await room.save();
+
+  const isArchivedNow = !!room.isArchived;
+  if (wasArchived !== isArchivedNow) {
+    const actorName = await getUserDisplayName(userId);
+    const actionText = isArchivedNow
+      ? `${actorName} архивировал(а) чат`
+      : `${actorName} восстановил(а) чат`;
+
+    try {
+      await sendMessage({
+        companyId,
+        roomId,
+        authorId: String(userId),
+        text: actionText,
+        isSystem: true,
+        systemType: "archive",
+        systemPayload: { action: isArchivedNow ? "archive" : "unarchive" },
+        allowSystem: true,
+      });
+    } catch (err) {
+      console.error("[chatService.updateRoom] system archive message error", err);
+    }
+  }
+
+  try {
+    const io = global.io;
+    if (io) {
+      const payload = {
+        roomId: String(roomId),
+        patch: next,
+        updatedAt: room.updatedAt,
+      };
+      const participants = room.participants || [];
+      const users = participants.map((p) => String(p.userId));
+
+      for (const uid of users) {
+        io.to(buildUserKey(companyId, uid)).emit("chat:room:updated", payload);
+      }
+      io.to(buildRoomKey(companyId, roomId)).emit("chat:room:updated", payload);
+    }
+  } catch (err) {
+    console.error("[chatService.updateRoom] socket emit error", err);
+  }
+
+  return room;
+}
+
 module.exports = {
   findOrCreateDirectRoom,
   createGroupRoom,
@@ -413,4 +752,9 @@ module.exports = {
   markAsRead,
   pinMessage,
   unpinMessage,
+  editMessage,
+  deleteMessage,
+  updateRoom,
+  buildRoomKey,
+  buildUserKey,
 };

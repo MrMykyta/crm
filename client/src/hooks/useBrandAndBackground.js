@@ -1,16 +1,29 @@
 import { useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
+import { useGetCompanyBrandQuery } from "../store/rtk/companyApi";
+import { useGetMeQuery } from "../store/rtk/userApi";
 
 /**
- * Без axios и без RTK-хуков: берём токен/компанию из window.__AUTH_TOKEN__/__COMPANY_ID__,
- * которые устанавливаются в setApiSession(). Делаем fetch напрямую.
+ * Данные берём через RTK Query (store).
  */
 export default function useBrandAndBackground(
   bgUrl,
-  { companyId, initialAvatarUrl, initialUserAvatarUrl } = {}
+  { initialAvatarUrl, initialUserAvatarUrl } = {}
 ) {
   const bgImgRef = useRef(null);
   const companyAvatarImgRef = useRef(null);
   const userAvatarImgRef = useRef(null);
+  const companyId = useSelector((s) => s.auth?.companyId);
+  const accessToken = useSelector((s) => s.auth?.accessToken);
+
+  const { data: company } = useGetCompanyBrandQuery(companyId, {
+    skip: !companyId || !!initialAvatarUrl,
+  });
+  const { data: me } = useGetMeQuery(undefined, {
+    skip: !accessToken || !!initialUserAvatarUrl,
+  });
+  const companyAvatarUrl =
+    initialAvatarUrl || company?.avatarUrl || company?.data?.avatarUrl || null;
 
   // ---------- Фон ----------
   useEffect(() => {
@@ -52,24 +65,13 @@ export default function useBrandAndBackground(
     (async () => {
       if (stopped) return;
 
-      if (initialAvatarUrl) {
-        await ensureImage(initialAvatarUrl, "--company-avatar-url", "company:avatar-ready", companyAvatarImgRef);
-        return;
-      }
-      const cid = companyId || window.__COMPANY_ID__;
-      const token = window.__AUTH_TOKEN__;
-      if (cid && token) {
-        try {
-          const res = await fetch(
-            `${(process.env.REACT_APP_API_URL?.replace(/\/+$/, '') || 'http://localhost:5001')}/api/companies/${encodeURIComponent(cid)}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          const c = await res.json().catch(() => null);
-          const url = c?.avatarUrl || c?.data?.avatarUrl;
-          if (!stopped && url) {
-            await ensureImage(url, "--company-avatar-url", "company:avatar-ready", companyAvatarImgRef);
-          }
-        } catch {}
+      if (companyAvatarUrl) {
+        await ensureImage(
+          companyAvatarUrl,
+          "--company-avatar-url",
+          "company:avatar-ready",
+          companyAvatarImgRef
+        );
       }
     })();
 
@@ -78,7 +80,7 @@ export default function useBrandAndBackground(
       document.documentElement.style.removeProperty("--company-avatar-url");
       companyAvatarImgRef.current = null;
     };
-  }, [companyId, initialAvatarUrl]);
+  }, [companyAvatarUrl]);
 
   // ---------- Аватар пользователя ----------
   useEffect(() => {
@@ -100,20 +102,15 @@ export default function useBrandAndBackground(
         }
       } catch {}
 
-      // Лёгкий /me при наличии токена
-      try {
-        const token = window.__AUTH_TOKEN__;
-        if (!token) return;
-        const res = await fetch(
-          `${(process.env.REACT_APP_API_URL?.replace(/\/+$/, '') || 'http://localhost:5001')}/api/users/me`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const me = await res.json().catch(() => null);
-        const apiUrl = me?.avatarUrl || me?.avatar || null;
-        if (apiUrl) {
-          await ensureImage(apiUrl, "--user-avatar-url", "user:avatar-ready", userAvatarImgRef);
-        }
-      } catch {}
+      const apiUrl =
+        me?.avatarUrl ||
+        me?.avatar ||
+        me?.data?.avatarUrl ||
+        me?.data?.avatar ||
+        null;
+      if (apiUrl) {
+        await ensureImage(apiUrl, "--user-avatar-url", "user:avatar-ready", userAvatarImgRef);
+      }
     })();
 
     return () => {
@@ -121,5 +118,5 @@ export default function useBrandAndBackground(
       document.documentElement.style.removeProperty("--user-avatar-url");
       userAvatarImgRef.current = null;
     };
-  }, [initialUserAvatarUrl]);
+  }, [initialUserAvatarUrl, me]);
 }

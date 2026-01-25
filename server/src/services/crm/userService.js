@@ -182,7 +182,7 @@ module.exports.loginFromCompany = async ({userId, companyId}) => {
       createdAt: user.createdAt,
       emailVerifiedAt: user.emailVerifiedAt
     };
-    const membership = await UserCompany.findAll({
+    const membership = await UserCompany.findOne({
       where: { userId: userId, companyId:companyId, status: 'active' }
     });
 
@@ -233,6 +233,16 @@ module.exports.getMe = async (userId) => {
 };
 
 module.exports.updateMe = async (userId, companyId, data = {}) => {
+  if (companyId) {
+    const membership = await UserCompany.findOne({
+      where: { userId, companyId },
+    });
+    if (!membership) {
+      const err = new Error('Forbidden');
+      err.status = 403;
+      throw err;
+    }
+  }
   // companyId обязателен для contact_points (FK NOT NULL)
   if (!companyId && Array.isArray(data.contacts) && data.contacts.length) {
     throw new Error('companyId is required to save contacts');
@@ -278,17 +288,19 @@ module.exports.updateMe = async (userId, companyId, data = {}) => {
 
 module.exports.getUserCompanies = async (userId) => {
   return Company.findAll({
-    include: [{
-      model: UserCompany,
-      as: 'memberships',
-      where: { userId: userId },
-      attributes: ['role', 'status'],
-      required: true,
-    }],
-    include: [{ 
-      model: ContactPoint, 
-      as: 'contacts' 
-    }],
+    include: [
+      {
+        model: UserCompany,
+        as: 'memberships',
+        where: { userId: userId },
+        attributes: ['role', 'status'],
+        required: true,
+      },
+      { 
+        model: ContactPoint, 
+        as: 'contacts' 
+      },
+    ],
     order: [['created_at', 'DESC']],
 
   });
@@ -306,17 +318,33 @@ module.exports.findPublicByEmail = async (email) => {
 
 /** =========== НОВОЕ: получить пользователя по id (с контекстом компании) =========== */
 exports.getById = async (userId, companyId) => {
-  const user = await User.findByPk(userId, {
-    attributes: ['id','email','firstName','lastName','avatarUrl','isActive','lastLoginAt','createdAt','emailVerifiedAt'],
-    include: [{ model: ContactPoint, as: 'contacts' }],
-  });
-  if (!user) return null;
+  if (!companyId) return null;
 
   // членство
-  const membership = companyId ? await UserCompany.findOne({
+  const membership = await UserCompany.findOne({
     where: { userId, companyId },
-    include: [{ model: CompanyDepartment, as: 'department', attributes: ['id','name'] }],
-  }) : null;
+    include: [{
+      model: CompanyDepartment,
+      as: 'department',
+      attributes: ['id','name'],
+      required: false,
+      where: { companyId },
+    }],
+  });
+  if (!membership) return null;
+
+  const user = await User.findByPk(userId, {
+    attributes: ['id','email','firstName','lastName','avatarUrl','isActive','lastLoginAt','createdAt','emailVerifiedAt'],
+    include: [
+      {
+        model: ContactPoint,
+        as: 'contacts',
+        required: false,
+        where: { companyId },
+      },
+    ],
+  });
+  if (!user) return null;
 
   // роли из user_roles
   let rolesRows = companyId ? await UserRole.findAll({
@@ -364,8 +392,15 @@ exports.getById = async (userId, companyId) => {
 
 /** =========== НОВОЕ: обновить пользователя по id (частичный) =========== */
 exports.updateById = async (userId, companyId, payload = {}) => {
+  if (!companyId) return null;
   const t = await sequelize.transaction();
   try {
+    const membership = await UserCompany.findOne({
+      where: { userId, companyId },
+      transaction: t,
+    });
+    if (!membership) return null;
+
     const user = await User.findByPk(userId, { transaction: t });
     if (!user) return null;
 

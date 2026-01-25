@@ -5,6 +5,7 @@ import {
   useGetMessagesQuery,
   useMarkReadMutation,
   useLazyGetMessagesQuery,
+  useGetPinnedQuery,
 } from "../../../store/rtk/chatApi";
 
 import { getSocket } from "../../../sockets/io";
@@ -14,6 +15,7 @@ import {
   setComposerDraft,
   clearComposerDraft,
   prependMessages,
+  setActivePinnedIndex,
 } from "../../../store/slices/chatSlice";
 
 import ChatCreateDirect from "../ChatCreateDirect";
@@ -82,6 +84,10 @@ function ChatRoomWindow({ roomId }) {
 
   // lazy-хук для подгрузки старых сообщений
   const [loadMoreMessages] = useLazyGetMessagesQuery();
+  const { data: pinnedData } = useGetPinnedQuery(
+    { roomId },
+    { skip: !roomId }
+  );
 
   const [text, setText] = useState("");
   const [composerContext, setComposerContext] = useState(null); // только reply
@@ -89,10 +95,7 @@ function ChatRoomWindow({ roomId }) {
   // refs
   const listRef = useRef(null);
   const lastReadIdRef = useRef(null);
-
-  // для направления скролла (для пинов)
-  const lastScrollTopRef = useRef(0);
-  const scrollDirRef = useRef("down"); // "up" | "down"
+  const jumpTokenRef = useRef(0);
 
   // флаг «мы уже сделали первичный скролл для этой комнаты»
   const initialScrollDoneRef = useRef(false);
@@ -109,11 +112,41 @@ function ChatRoomWindow({ roomId }) {
 
   // сообщения из Redux
   const messages = useSelector((st) => st.chat.messages[String(roomId)] || []);
+  const activePinnedIndex = useSelector(
+    (st) => st.chat.activePinnedIndexByRoomId?.[String(roomId)] ?? 0
+  );
+
+  const messagesRef = useRef(messages);
+  const messagesByIdRef = useRef(new Map());
+
+  useEffect(() => {
+    messagesRef.current = messages;
+    const map = new Map();
+    messages.forEach((m) => {
+      if (m && m._id) map.set(String(m._id), m);
+    });
+    messagesByIdRef.current = map;
+  }, [messages]);
 
   // ===== пагинация вверх =====
   const PAGE_LIMIT = 50;
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const hasMoreRef = useRef(hasMore);
+  const isLoadingMoreRef = useRef(isLoadingMore);
+  const isLoadingRef = useRef(isLoading);
+
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+
+  useEffect(() => {
+    isLoadingMoreRef.current = isLoadingMore;
+  }, [isLoadingMore]);
+
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   const room = useMemo(
     () => rooms.find((r) => String(r._id) === String(roomId)),
@@ -127,6 +160,44 @@ function ChatRoomWindow({ roomId }) {
     () => groupMessagesByDay(messages),
     [messages]
   );
+
+  const pinnedList = useMemo(() => {
+    const base = Array.isArray(pinnedData?.data)
+      ? pinnedData.data
+      : Array.isArray(pinnedData)
+      ? pinnedData
+      : [];
+    return [...base].sort((a, b) => {
+      const ta = new Date(a?.createdAt || 0).getTime();
+      const tb = new Date(b?.createdAt || 0).getTime();
+      return tb - ta;
+    });
+  }, [pinnedData]);
+
+  useEffect(() => {
+    if (!roomId) return;
+
+    if (!pinnedList.length) {
+      if (activePinnedIndex !== 0) {
+        dispatch(setActivePinnedIndex({ roomId, index: 0 }));
+      }
+      return;
+    }
+
+    if (activePinnedIndex >= pinnedList.length) {
+      dispatch(
+        setActivePinnedIndex({
+          roomId,
+          index: Math.max(0, pinnedList.length - 1),
+        })
+      );
+    }
+  }, [pinnedList.length, activePinnedIndex, roomId, dispatch]);
+
+  const currentPinned =
+    pinnedList.length === 0
+      ? null
+      : pinnedList[activePinnedIndex] || pinnedList[0];
 
   // когда пришла история по REST — кладём её в Redux один раз
   useEffect(() => {
@@ -160,6 +231,7 @@ function ChatRoomWindow({ roomId }) {
   useEffect(() => {
     setCollapsedPinned(false);
     initialScrollDoneRef.current = false;
+    jumpTokenRef.current += 1;
   }, [roomId]);
 
   // ===== ХЕДЕР =====
@@ -259,149 +331,156 @@ function ChatRoomWindow({ roomId }) {
     }
   };
 
-  // ===== CБОР ВСЕХ ПИНОВ ИЗ messages =====
-  const [pinnedList, setPinnedList] = useState([]);
-  const [currentPinnedIndex, setCurrentPinnedIndex] = useState(0);
+  const MAX_PIN_LOAD_ATTEMPTS = 6;
 
-  useEffect(() => {
-    if (!messages || !messages.length) {
-      setPinnedList([]);
-      setCurrentPinnedIndex(0);
-      return;
-    }
+  const waitForMessageInView = (messageId, token, timeoutMs = 3000) =>
+    new Promise((resolve) => {
+      const container = listRef.current;
+      if (!container || !messageId) {
+        resolve(false);
+        return;
+      }
 
-    const allPinned = messages.filter((m) => m?.isPinned === true);
-    setPinnedList(allPinned);
+      let done = false;
+      let rafId = null;
+      let timeoutId = null;
+      let scrollTimerId = null;
+      let scrollStable = false;
 
-    if (!allPinned.length) {
-      setCurrentPinnedIndex(0);
-      return;
-    }
+      const cleanup = () => {
+        if (done) return;
+        done = true;
+        if (rafId) cancelAnimationFrame(rafId);
+        if (timeoutId) clearTimeout(timeoutId);
+        if (scrollTimerId) clearTimeout(scrollTimerId);
+        container.removeEventListener("scroll", onScroll);
+      };
 
-    // нормализуем индекс, чтобы он не вылетал за пределы
-    setCurrentPinnedIndex((prev) => {
-      if (prev < 0) return 0;
-      if (prev >= allPinned.length) return allPinned.length - 1;
-      return prev;
+      const markStableSoon = () => {
+        scrollStable = false;
+        if (scrollTimerId) clearTimeout(scrollTimerId);
+        scrollTimerId = setTimeout(() => {
+          scrollStable = true;
+        }, 120);
+      };
+
+      const onScroll = () => {
+        markStableSoon();
+      };
+
+      const isInView = () => {
+        const el = document.getElementById(`msg-${messageId}`);
+        if (!el) return false;
+        const cRect = container.getBoundingClientRect();
+        const mRect = el.getBoundingClientRect();
+        return mRect.bottom >= cRect.top && mRect.top <= cRect.bottom;
+      };
+
+      const tick = () => {
+        if (done) return;
+        if (jumpTokenRef.current !== token) {
+          cleanup();
+          resolve(false);
+          return;
+        }
+        if (isInView() && scrollStable) {
+          cleanup();
+          resolve(true);
+          return;
+        }
+        rafId = requestAnimationFrame(tick);
+      };
+
+      container.addEventListener("scroll", onScroll, { passive: true });
+      markStableSoon();
+      rafId = requestAnimationFrame(tick);
+      timeoutId = setTimeout(() => {
+        cleanup();
+        resolve(false);
+      }, timeoutMs);
     });
-  }, [messages]);
 
-  const currentPinned =
-    pinnedList.length === 0
-      ? null
-      : pinnedList[currentPinnedIndex] || pinnedList[0];
+  const highlightMessage = (messageId) => {
+    if (!messageId) return;
+    const wrapEl = document.getElementById(`msg-${messageId}`);
+    if (!wrapEl) return;
 
-  // ===== ПИНЫ: выбор ближайшего закрепа сверху/снизу в зависимости от направления скролла =====
-  useEffect(() => {
-    const container = listRef.current;
-    if (!container || !pinnedList.length) return;
+    const bubble = wrapEl.querySelector('[data-role="msg-bubble"]');
+    if (!bubble) return;
 
-    const handleScroll = () => {
-      const c = listRef.current;
-      if (!c || !pinnedList.length) return;
-
-      // ---- направление скролла ----
-      const currentTop = c.scrollTop;
-      const prevTop = lastScrollTopRef.current;
-
-      if (currentTop > prevTop + 1) {
-        scrollDirRef.current = "down";
-      } else if (currentTop < prevTop - 1) {
-        scrollDirRef.current = "up";
-      }
-      lastScrollTopRef.current = currentTop;
-
-      const scrollTop = c.scrollTop;
-      const scrollBottom = scrollTop + c.clientHeight;
-
-      const indicesAbove = [];
-      const indicesBelow = [];
-
-      pinnedList.forEach((m, idx) => {
-        const el = document.getElementById(`msg-${m._id}`);
-        if (!el) return;
-
-        const msgTop = el.offsetTop;
-        const msgBottom = msgTop + el.offsetHeight;
-
-        if (msgBottom <= scrollTop) {
-          indicesAbove.push(idx);
-        } else if (msgTop >= scrollBottom) {
-          indicesBelow.push(idx);
-        }
-      });
-
-      const dir = scrollDirRef.current;
-      let newIndex = currentPinnedIndex;
-
-      if (dir === "down") {
-        if (indicesBelow.length) {
-          newIndex = indicesBelow[0];
-        } else if (indicesAbove.length) {
-          newIndex = indicesAbove[indicesAbove.length - 1];
-        }
-      } else if (dir === "up") {
-        if (indicesAbove.length) {
-          newIndex = indicesAbove[indicesAbove.length - 1];
-        } else if (indicesBelow.length) {
-          newIndex = indicesBelow[0];
-        }
-      }
-
-      if (
-        typeof newIndex === "number" &&
-        newIndex >= 0 &&
-        newIndex < pinnedList.length &&
-        newIndex !== currentPinnedIndex
-      ) {
-        setCurrentPinnedIndex(newIndex);
-      }
-    };
-
-    // стартовое выравнивание при монтировании / смене pinnedList
-    handleScroll();
-
-    container.addEventListener("scroll", handleScroll);
-    return () => {
-      container.removeEventListener("scroll", handleScroll);
-    };
-  }, [pinnedList, currentPinnedIndex]);
-
-  const handleJumpToPinned = (msg) => {
-    if (!msg || !msg._id) return;
-
-    scrollToMessageId(msg._id, true);
-
+    bubble.classList.add(s.msgBubbleHighlight);
     setTimeout(() => {
-      const wrapEl = document.getElementById(`msg-${msg._id}`);
-      if (!wrapEl) return;
-
-      const bubble = wrapEl.querySelector('[data-role="msg-bubble"]');
-      if (!bubble) return;
-
-      bubble.classList.add(s.msgBubbleHighlight);
-      setTimeout(() => {
-        bubble.classList.remove(s.msgBubbleHighlight);
-      }, 900);
-    }, 200);
+      bubble.classList.remove(s.msgBubbleHighlight);
+    }, 1400);
   };
 
-  // 🔼 ПОДГРУЗКА СТАРЫХ СООБЩЕНИЙ (дельта scrollHeight + отдельный путь для Safari)
-  const handleLoadMore = async () => {
-    if (isLoadingMore || !hasMore || isLoading) return;
-    if (!messages || !messages.length) return;
+  const jumpToPinnedMessage = async (messageId, token) => {
+    if (!messageId) return false;
+
+    const idStr = String(messageId);
+
+    if (messagesByIdRef.current.has(idStr)) {
+      scrollToMessageId(idStr, true);
+      const ok = await waitForMessageInView(idStr, token);
+      if (ok) highlightMessage(idStr);
+      return true;
+    }
+
+    for (let attempt = 0; attempt < MAX_PIN_LOAD_ATTEMPTS; attempt += 1) {
+      const res = await loadOlderBatch();
+      if (!res?.ok) break;
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      if (messagesByIdRef.current.has(idStr)) {
+        scrollToMessageId(idStr, true);
+        const ok = await waitForMessageInView(idStr, token);
+        if (ok) highlightMessage(idStr);
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const handlePinnedBarClick = async () => {
+    if (!currentPinned || !currentPinned._id || !pinnedList.length) return;
+
+    const token = jumpTokenRef.current + 1;
+    jumpTokenRef.current = token;
+    const ok = await jumpToPinnedMessage(currentPinned._id, token);
+    if (!ok) {
+      if (typeof window !== "undefined") {
+        window.alert("Сообщение не найдено");
+      }
+      return;
+    }
+
+    const nextIndex = (activePinnedIndex + 1) % pinnedList.length;
+    dispatch(setActivePinnedIndex({ roomId, index: nextIndex }));
+  };
+
+  const loadOlderBatch = async () => {
+    if (isLoadingMoreRef.current || isLoadingRef.current) {
+      return { ok: false };
+    }
+    if (!hasMoreRef.current) {
+      return { ok: false, done: true };
+    }
+
+    const currentMessages = messagesRef.current || [];
+    if (!currentMessages.length) return { ok: false };
 
     const container = listRef.current;
-    if (!container) return;
-
-    const oldest = messages[0];
-    if (!oldest || !oldest.createdAt) return;
+    const oldest = currentMessages[0];
+    if (!oldest || !oldest.createdAt) return { ok: false };
 
     const before = oldest.createdAt;
 
-    const prevScrollHeight = container.scrollHeight;
-    const prevScrollTop = container.scrollTop;
+    const prevScrollHeight = container?.scrollHeight || 0;
+    const prevScrollTop = container?.scrollTop || 0;
 
+    isLoadingMoreRef.current = true;
     setIsLoadingMore(true);
 
     try {
@@ -419,7 +498,7 @@ function ChatRoomWindow({ roomId }) {
 
       if (!extra.length) {
         setHasMore(false);
-        return;
+        return { ok: false, done: true };
       }
 
       dispatch(
@@ -433,35 +512,46 @@ function ChatRoomWindow({ roomId }) {
         setHasMore(false);
       }
 
-      // восстанавливаем позицию
-      requestAnimationFrame(() => {
-        const el = listRef.current;
-        if (!el) return;
+      if (container) {
+        // восстанавливаем позицию
+        requestAnimationFrame(() => {
+          const el = listRef.current;
+          if (!el) return;
 
-        const newScrollHeight = el.scrollHeight;
-        const delta = newScrollHeight - prevScrollHeight;
+          const newScrollHeight = el.scrollHeight;
+          const delta = newScrollHeight - prevScrollHeight;
 
-        if (isSafari) {
-          // Safari: даём ещё один кадр на layout и используем scrollBy
-          requestAnimationFrame(() => {
-            const el2 = listRef.current;
-            if (!el2) return;
+          if (isSafari) {
+            // Safari: даём ещё один кадр на layout и используем scrollBy
+            requestAnimationFrame(() => {
+              const el2 = listRef.current;
+              if (!el2) return;
 
-            // лёгкий форс-рефлоу, чтобы Safari точно обновил layout
-            // eslint-disable-next-line no-unused-expressions
-            el2.offsetHeight;
+              // лёгкий форс-рефлоу, чтобы Safari точно обновил layout
+              // eslint-disable-next-line no-unused-expressions
+              el2.offsetHeight;
 
-            el2.scrollBy(0, delta);
-          });
-        } else {
-          el.scrollTop = prevScrollTop + delta;
-        }
-      });
+              el2.scrollBy(0, delta);
+            });
+          } else {
+            el.scrollTop = prevScrollTop + delta;
+          }
+        });
+      }
+
+      return { ok: true };
     } catch (e) {
       console.error("[ChatRoomWindow] loadMore error", e);
+      return { ok: false, error: e };
     } finally {
       setIsLoadingMore(false);
+      isLoadingMoreRef.current = false;
     }
+  };
+
+  // 🔼 ПОДГРУЗКА СТАРЫХ СООБЩЕНИЙ (дельта scrollHeight + отдельный путь для Safari)
+  const handleLoadMore = async () => {
+    await loadOlderBatch();
   };
 
   // слушаем скролл и триггерим подгрузку ЧУТЬ ЗАРАНЕЕ
@@ -639,6 +729,22 @@ function ChatRoomWindow({ roomId }) {
     } catch {
       return "Пользователь";
     }
+  };
+
+  const getPinnedSnippet = (msg) => {
+    if (!msg) return "";
+    if (msg.deletedAt) return "Сообщение удалено";
+
+    const text = (msg.text || "").trim();
+    if (text) return text;
+
+    if (msg.forward?.textSnippet) return msg.forward.textSnippet;
+
+    if (Array.isArray(msg.attachments) && msg.attachments.length) {
+      return msg.attachments[0]?.name || "Вложение";
+    }
+
+    return "Сообщение";
   };
 
   const getCurrentUserName = () => {
@@ -954,6 +1060,13 @@ function ChatRoomWindow({ roomId }) {
 
   const canSend = text.trim().length > 0;
 
+  const pinnedAuthor = currentPinned ? makeAuthorName(currentPinned) : "";
+  const pinnedSnippetRaw = currentPinned ? getPinnedSnippet(currentPinned) : "";
+  const pinnedSnippet =
+    pinnedSnippetRaw.length > 80
+      ? `${pinnedSnippetRaw.slice(0, 80)}…`
+      : pinnedSnippetRaw;
+
   // анимация бара при смене currentPinned
   useEffect(() => {
     if (!currentPinned) return;
@@ -963,7 +1076,7 @@ function ChatRoomWindow({ roomId }) {
     bar.classList.remove(s.pinnedBarSwitch);
     void bar.offsetWidth;
     bar.classList.add(s.pinnedBarSwitch);
-  }, [currentPinnedIndex, currentPinned]);
+  }, [activePinnedIndex, currentPinned]);
 
   return (
     <div className={s.window}>
@@ -992,16 +1105,12 @@ function ChatRoomWindow({ roomId }) {
             collapsedPinned ? s.pinnedCollapsed : ""
           }`}
         >
-          <div
-            className={s.pinnedLeft}
-            onClick={() => handleJumpToPinned(currentPinned)}
-          >
+          <div className={s.pinnedLeft} onClick={handlePinnedBarClick}>
             <div>📌 Закреплённое сообщение</div>
-            {currentPinned.text && !collapsedPinned && (
+            {!collapsedPinned && (
               <div className={s.pinnedPreview}>
-                {currentPinned.text.length > 80
-                  ? `${currentPinned.text.slice(0, 80)}…`
-                  : currentPinned.text}
+                <strong>{pinnedAuthor}</strong>
+                {pinnedSnippet ? ` · ${pinnedSnippet}` : ""}
               </div>
             )}
           </div>

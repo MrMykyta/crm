@@ -96,7 +96,6 @@ export default function ThemeProvider({ children }) {
   }
 
   useBrandAndBackground(appearance?.backgroundPath || null, {
-    companyId,
     initialAvatarUrl: undefined,
     initialUserAvatarUrl: userAvatarUrl,
   });

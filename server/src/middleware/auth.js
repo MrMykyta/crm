@@ -3,6 +3,7 @@
 
 const { verifyAccess } = require('../utils/tokenService');
 const { getPermissionsAndRole } = require('./permissionResolver'); // ← берём новый резолвер
+const ApplicationError = require('../errors/ApplicationError');
 const TokenError = require('../errors/TokenError');
 
 module.exports.auth = async (req, res, next) => {
@@ -28,8 +29,12 @@ module.exports.auth = async (req, res, next) => {
       membership = ctx.membership || null;
     }
 
-    req.user = { id: userId, role, permissions, membership };
     req.companyId = companyId;
+    req.user = { id: userId, role, permissions, membership, companyId: req.companyId };
+
+    if (userId && !req.user.companyId) {
+      return next(new ApplicationError('Company context required', 403));
+    }
 
     // опционально, оставить на время отладки:
     //  console.log('[auth]', { userId, role, companyId, allow: permissions.allow.length, deny: permissions.deny.length, permissions: permissions.allow });
