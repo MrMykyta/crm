@@ -1,8 +1,8 @@
 // src/store/index.js
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
+import { configureStore, combineReducers, createListenerMiddleware } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 
-import authReducer from './slices/authSlice';
+import authReducer, { setAuth, logout } from './slices/authSlice';
 import chatReducer from './slices/chatSlice';
 import bootstrapReducer from './slices/bootstrapSlice';
 import lookupsReducer from './slices/lookupsSlice';
@@ -18,6 +18,27 @@ const appReducer = combineReducers({
   [crmApi.reducerPath]: crmApi.reducer,
 });
 
+const listenerMiddleware = createListenerMiddleware();
+
+listenerMiddleware.startListening({
+  actionCreator: setAuth,
+  effect: (action, api) => {
+    const prevCompanyId = api.getOriginalState()?.auth?.companyId ?? null;
+    const hasCompanyId = Object.prototype.hasOwnProperty.call(action.payload || {}, 'companyId');
+    const nextCompanyId = hasCompanyId ? action.payload.companyId : prevCompanyId;
+    if (hasCompanyId && String(prevCompanyId || '') !== String(nextCompanyId || '')) {
+      api.dispatch(crmApi.util.resetApiState());
+    }
+  },
+});
+
+listenerMiddleware.startListening({
+  actionCreator: logout,
+  effect: (_action, api) => {
+    api.dispatch(crmApi.util.resetApiState());
+  },
+});
+
 // --- rootReducer с глобальным RESET ---
 const rootReducer = (state, action) => {
   if (action.type === 'APP/RESET') {
@@ -31,7 +52,7 @@ export const resetApp = () => ({ type: 'APP/RESET' });
 
 const store = configureStore({
   reducer: rootReducer,
-  middleware: (getDefault) => getDefault().concat(crmApi.middleware),
+  middleware: (getDefault) => getDefault().prepend(listenerMiddleware.middleware).concat(crmApi.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

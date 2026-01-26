@@ -68,14 +68,17 @@ export const selectAvatarUrl = (s) => {
   const url = s.auth?.currentUser?.avatarUrl || null;
   if (!url) return null;
   const rev = s.auth?.avatarRev ?? 0;
-  return url.includes('?') ? `${url}&v=${rev}` : `${url}?v=${rev}`;
+  const looksLikeId = /^[0-9a-fA-F-]{32,36}$/.test(String(url));
+  if (looksLikeId) return url;
+  const base = url.includes('?') ? `${url}&v=${rev}` : `${url}?v=${rev}`;
+  return base;
 };
 
 /* ===========================
    Thunks / helpers
    =========================== */
 
-// Безопасно записать auth во все места: redux + sessionCtx + localStorage
+// Безопасно записать auth во все места: redux + sessionCtx
 export const applyAuth = ({ token, accessToken, refreshToken, companyId, user } = {}) =>
   (dispatch, getState) => {
     const state = getState();
@@ -91,12 +94,6 @@ export const applyAuth = ({ token, accessToken, refreshToken, companyId, user } 
     // в sessionCtx (для rtk/fetch prepareHeaders)
     setApiSession({ token: at, companyId: cid });
 
-    // в localStorage (чтобы переживать перезагрузку вкладки)
-    try {
-      if (at)      localStorage.setItem('accessToken', at); else localStorage.removeItem('accessToken');
-      if (cid)     localStorage.setItem('companyId', String(cid)); else localStorage.removeItem('companyId');
-      if (me)      localStorage.setItem('user', JSON.stringify(me)); else localStorage.removeItem('user');
-    } catch {}
   };
 
 // Удобный thunk: только обновить пользователя (например после аплоада аватара)
@@ -106,7 +103,6 @@ export const applyUserPatch = (userPatch) => (dispatch, getState) => {
   const next  = { ...(prev || {}), ...(userPatch || {}) };
 
   dispatch(patchUser(userPatch)); // оптимистичный апдейт
-  try { localStorage.setItem('user', JSON.stringify(next)); } catch {}
 };
 
 // Полный logout: дернуть бэк для чистки refresh и зачистить клиент

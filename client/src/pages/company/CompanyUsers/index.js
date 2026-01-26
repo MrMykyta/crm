@@ -1,5 +1,6 @@
 // src/pages/CompanyUsers/index.jsx
 import { useMemo, useRef, useState } from "react";
+import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import ListPage from "../../../components/data/ListPage";
 import s from "../../styles/CrmUsers.module.css";
 import FilterToolbar from "../../../components/filters/FilterToolbar";
@@ -63,18 +64,19 @@ function Avatar({ name = "", email = "", url = "" }) {
     (name || email || "U")
       .split(/\s+/).filter(Boolean).slice(0, 2)
       .map((w) => w[0]?.toUpperCase()).join("") || "U";
+  const { url: safeUrl, onError } = useSignedFileUrl(url);
 
   return (
     <span className={s.avatarWrap}>
-      {url ? (
+      {safeUrl ? (
         <img
           className={s.avatarImg}
-          src={url}
+          src={safeUrl}
           alt=""
-          onError={(e)=>{ e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'grid'; }}
+          onError={(e)=>{ onError(); e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'grid'; }}
         />
       ) : null}
-      <span className={s.avatar} style={{ display: url ? 'none' : 'grid' }}>{initials}</span>
+      <span className={s.avatar} style={{ display: safeUrl ? 'none' : 'grid' }}>{initials}</span>
     </span>
   );
 }

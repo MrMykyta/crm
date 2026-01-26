@@ -3,9 +3,29 @@ const ChatMessage = require("../../../mongoModels/chat/ChatMessage");
 const mongoose = require("mongoose");
 const { Op } = require("sequelize");
 const ApplicationError = require("../../../errors/ApplicationError");
-const { UserCompany, User } = require("../../../models");
+const { UserCompany, User, File } = require("../../../models");
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
+
+const CHAT_ATTACHMENT_MIME = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "application/pdf",
+  "audio/mpeg",
+  "audio/ogg",
+  "audio/wav",
+  "video/mp4",
+  "video/webm",
+  "text/plain",
+  "text/csv",
+  "application/zip",
+  "application/msword",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
 
 const buildRoomKey = (companyId, roomId) =>
   `room:${String(companyId)}:${String(roomId)}`;
@@ -111,7 +131,7 @@ function buildPinnedPreview(msg) {
   if (raw) {
     return raw.length > 40 ? `${raw.slice(0, 40)}…` : raw;
   }
-  const name = msg?.attachments?.[0]?.name;
+  const name = msg?.meta?.attachments?.[0]?.filename || msg?.attachments?.[0]?.name;
   return name || "сообщение";
 }
 
@@ -512,6 +532,57 @@ async function sendMessage({
     }
   }
 
+  const rawAttachments = Array.isArray(attachments) ? attachments : [];
+  const normalizedAttachments = [];
+
+  if (rawAttachments.length) {
+    if (isSystem) {
+      throw new ApplicationError("System messages cannot include attachments", 403);
+    }
+
+    for (const item of rawAttachments) {
+      const fileId =
+        typeof item === "string"
+          ? item
+          : item?.fileId || item?.id || null;
+      if (!fileId) {
+        throw new ApplicationError("Attachment fileId is required", 400);
+      }
+
+      const file = await File.findOne({ where: { id: fileId, companyId } });
+      if (!file || file.deletedAt) {
+        throw new ApplicationError("Attachment not found", 404);
+      }
+      if (String(file.ownerType || "").toLowerCase() !== "chatmessage") {
+        throw new ApplicationError("Attachment ownerType mismatch", 400);
+      }
+      if (String(file.ownerId) !== String(roomId)) {
+        throw new ApplicationError("Attachment ownerId mismatch", 400);
+      }
+      if (file.purpose !== "chat_attachment") {
+        throw new ApplicationError("Attachment purpose mismatch", 400);
+      }
+      if (file.visibility !== "private") {
+        throw new ApplicationError("Attachment visibility not allowed", 400);
+      }
+      if (!CHAT_ATTACHMENT_MIME.has(file.mime)) {
+        throw new ApplicationError("Attachment mime not allowed", 415);
+      }
+
+      normalizedAttachments.push({
+        fileId: String(file.id),
+        filename: file.filename,
+        mime: file.mime,
+        size: file.size,
+      });
+    }
+  }
+
+  const hasText = text && String(text).trim();
+  if (!hasText && !normalizedAttachments.length && !forwardFrom) {
+    throw new ApplicationError("text, attachments or forwardFrom required", 400);
+  }
+
   console.log("isSystem:", isSystem);
 
   const meta = {};
@@ -519,13 +590,16 @@ async function sendMessage({
     if (systemType) meta.systemType = systemType;
     if (systemPayload) meta.systemPayload = systemPayload;
   }
+  if (normalizedAttachments.length) {
+    meta.attachments = normalizedAttachments;
+  }
 
   const msg = await ChatMessage.create({
     companyId,
     roomId,
     authorId,
-    text,
-    attachments,
+    text: text || "",
+    attachments: [],
     isSystem: !!isSystem,
     replyToMessageId: replyTo || null,
     forward,
@@ -539,7 +613,7 @@ async function sendMessage({
   const previewText =
     (text && text.trim()) ||
     (forward && forward.textSnippet) ||
-    attachments[0]?.name ||
+    normalizedAttachments[0]?.filename ||
     "Attachment";
 
   room.lastMessagePreview = previewText;
@@ -881,6 +955,10 @@ async function deleteMessage({ companyId, roomId, messageId, userId, user }) {
   msg.text = "Сообщение удалено";
   msg.attachments = [];
   msg.forward = null;
+  if (msg.meta && msg.meta.attachments) {
+    msg.meta = { ...msg.meta };
+    delete msg.meta.attachments;
+  }
   await msg.save();
 
   if (wasPinned) {

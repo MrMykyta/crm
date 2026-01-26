@@ -1,4 +1,6 @@
 /* ChatPage.module.css */
+/* Chat layout styles: sidebar, room list, header, messages, composer, and overlays. */
+/* Keep spacing and sizes here consistent so UI stays Telegram-like without layout jumps. */
 /* ===== ROOT LAYOUT ===== */
 
 .wrap {
@@ -215,8 +217,6 @@
 }
 
 .roomUnread {
-  margin-left: auto;
-  margin-right: 8px;
   min-width: 20px;
   padding: 0 6px;
   height: 20px;
@@ -243,6 +243,13 @@
   font-weight: 600;
   color: #ffffff;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.roomAvatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .roomText {
@@ -250,6 +257,20 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+}
+
+.roomMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.roomTime {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .room:hover {
@@ -263,6 +284,17 @@
   background: var(--sidebar-active);
   border-color: color-mix(in srgb, var(--primary-start) 60%, transparent);
   box-shadow: var(--elev-1);
+}
+
+.roomActive::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--primary-start);
 }
 
 .roomTitle {
@@ -322,6 +354,14 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+}
+
+.chatHeaderMainClickable {
+  cursor: pointer;
+}
+
+.chatHeaderMainClickable:hover .chatTitle {
+  color: color-mix(in srgb, var(--primary-start) 70%, var(--text));
 }
 
 .chatAvatar {
@@ -786,6 +826,11 @@
   backdrop-filter: blur(var(--glass-blur));
 }
 
+.inputDragging {
+  border-top-color: color-mix(in srgb, var(--primary-start) 70%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-start) 60%, transparent);
+}
+
 .inputRow {
   display: flex;
   align-items: flex-end;
@@ -854,6 +899,253 @@
   border-color: var(--primary-start);
   color: var(--text);
   transform: translateY(-1px);
+}
+
+.inputFile {
+  display: none;
+}
+
+.attachmentsWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.composerAttachmentsRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.composerAttachmentItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 56px;
+}
+
+.composerAttachmentThumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--card-brd);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.composerAttachmentThumb img,
+.composerAttachmentThumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.composerAttachmentIcon {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.composerAttachmentPlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 18px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.composerAttachmentRemove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.composerAttachmentOverlay {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--card-bg) 70%, transparent);
+  color: var(--muted);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4px;
+}
+
+.composerAttachmentOverlayError {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: var(--danger);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4px;
+}
+
+.composerAttachmentActions {
+  display: flex;
+  gap: 6px;
+}
+
+.composerAttachmentMore {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  border: 1px dashed var(--card-brd);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.sendErrorBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--danger) 60%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-radius: 8px;
+  font-size: var(--fs-xs);
+  color: var(--danger);
+}
+
+.sendErrorBtn {
+  border: 1px solid color-mix(in srgb, var(--danger) 70%, transparent);
+  background: transparent;
+  color: var(--danger);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.sendErrorBtn:hover {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+}
+
+.attachmentUploading {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+.attachmentCard {
+  border: 1px solid var(--card-brd);
+  border-radius: 12px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attachmentPreview {
+  width: 100%;
+}
+
+.attachmentImg {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.attachmentPdf {
+  width: 100%;
+  height: 260px;
+  border: none;
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.attachmentAudio {
+  width: 100%;
+}
+
+.attachmentVideo {
+  width: 100%;
+  max-height: 260px;
+  border-radius: 8px;
+}
+
+.attachmentFileIcon {
+  font-size: 24px;
+}
+
+.attachmentMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.attachmentName {
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--text);
+}
+
+.attachmentSub {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+.attachmentActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.attachmentBtn {
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  background: color-mix(in srgb, var(--sidebar-hover) 70%, transparent);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.attachmentBtn:hover {
+  border-color: var(--primary-start);
+}
+
+.attachmentBtnDanger {
+  border: 1px solid color-mix(in srgb, var(--danger) 70%, transparent);
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: var(--danger);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.attachmentBtnDanger:hover {
+  background: color-mix(in srgb, var(--danger) 28%, transparent);
 }
 
 /* кнопка отправки */

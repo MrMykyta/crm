@@ -1,9 +1,18 @@
 const ApplicationError = require("../errors/ApplicationError");
 const multer = require("multer");
 
+const safeLogUrl = (url = "") =>
+  String(url).replace(/([?&]sig=)[^&]+/g, "$1***");
+
 module.exports = (err, req, res, next) => {
   // лог в консоль
-  console.error(`[${err.name}] ${err.message}`);
+  const rawUrl = req?.originalUrl || req?.url || "";
+  const logUrl = rawUrl ? safeLogUrl(rawUrl) : "";
+  if (logUrl && logUrl.includes("/api/files/") && logUrl.includes("/inline")) {
+    console.error(`[${err.name}] ${err.message} ${req.method} ${logUrl}`);
+  } else {
+    console.error(`[${err.name}] ${err.message}`);
+  }
 
   /* --- 1. ошибки бизнес-логики (твои кастомные) --- */
   if (err instanceof ApplicationError) {

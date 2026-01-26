@@ -14,9 +14,6 @@ import {
   useSaveMyPreferencesMutation,
 } from "../../store/rtk/userApi";
 
-const KEY_THEME = "theme";
-const KEY_APPEAR = "ui.appearance";
-
 const ThemeCtx = createContext(null);
 export const useTheme = () => useContext(ThemeCtx);
 
@@ -24,17 +21,11 @@ export default function ThemeProvider({ children }) {
   // ждём авторизацию из redux
   const accessToken = useSelector((s) => s.auth?.accessToken);
   const companyIdRedux = useSelector((s) => s.auth?.companyId);
+  const currentUserId = useSelector((s) => s.auth?.currentUser?.id || null);
 
-  const [mode, setModeState] = useState(
-    () => localStorage.getItem(KEY_THEME) || "system"
-  );
-  const [appearance, setAppearanceState] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(KEY_APPEAR) || "{}");
-    } catch {
-      return {};
-    }
-  });
+  const [mode, setModeState] = useState("system");
+  const [appearance, setAppearanceState] = useState({});
+  const prevUserIdRef = useRef(currentUserId);
 
   const [savePrefs] = useSaveMyPreferencesMutation();
 
@@ -81,35 +72,21 @@ export default function ThemeProvider({ children }) {
     document.documentElement.style.setProperty("--font-multiplier", mult);
   }, [appearance?.fontScale]);
 
-  // fallback companyId на случай ранней загрузки
-  const companyIdLS =
-    (typeof window !== "undefined" && localStorage.getItem("companyId")) ||
-    undefined;
-  const companyId = companyIdRedux || companyIdLS;
-
-  let userAvatarUrl = "";
-  try {
-    const raw = localStorage.getItem("user");
-    if (raw) userAvatarUrl = JSON.parse(raw)?.avatarUrl || "";
-  } catch {
-    userAvatarUrl = "";
-  }
+  const companyId = companyIdRedux;
 
   useBrandAndBackground(appearance?.backgroundPath || null, {
     initialAvatarUrl: undefined,
-    initialUserAvatarUrl: userAvatarUrl,
+    initialUserAvatarUrl: undefined,
   });
 
+  // при смене пользователя очищаем appearance, чтобы не тянуть фон/настройки другого аккаунта
   useEffect(() => {
-    try {
-      localStorage.setItem(KEY_THEME, mode);
-    } catch {}
-  }, [mode]);
-  useEffect(() => {
-    try {
-      localStorage.setItem(KEY_APPEAR, JSON.stringify(appearance));
-    } catch {}
-  }, [appearance]);
+    const prev = prevUserIdRef.current;
+    if ((prev && !currentUserId) || (prev && currentUserId && String(prev) !== String(currentUserId))) {
+      setAppearanceState({});
+    }
+    prevUserIdRef.current = currentUserId;
+  }, [currentUserId]);
 
   const isHydratingRef = useRef(false);
   const saveTimerRef = useRef(null);
@@ -150,7 +127,7 @@ export default function ThemeProvider({ children }) {
       const { themeMode, appearance: serverApp } = parsePrefs(serverPrefs);
       if (themeMode) setModeState(themeMode);
       if (serverApp && Object.keys(serverApp).length) {
-        setAppearanceState((prev) => ({ ...serverApp, ...prev }));
+        setAppearanceState((prev) => ({ ...prev, ...serverApp }));
       }
     } finally {
       isHydratingRef.current = false;

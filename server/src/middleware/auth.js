@@ -32,7 +32,20 @@ module.exports.auth = async (req, res, next) => {
     req.companyId = companyId;
     req.user = { id: userId, role, permissions, membership, companyId: req.companyId };
 
-    if (userId && !req.user.companyId) {
+    const path = (req.originalUrl || req.url || '').split('?')[0];
+    const method = String(req.method || 'GET').toUpperCase();
+    const allowNoCompany = [
+      { method: 'POST', re: /^\/api\/companies\/?$/ },
+      { method: 'GET', re: /^\/api\/companies\/?$/ },
+      { method: 'GET', re: /^\/api\/users\/me(?:\/companies)?\/?$/ },
+      { method: 'GET', re: /^\/api\/system\/me\/preferences\/?$/ },
+      { method: 'PUT', re: /^\/api\/system\/me\/preferences\/?$/ },
+      { method: 'POST', re: /^\/api\/auth\/login-from-company\/?$/ },
+      { method: 'POST', re: /^\/api\/auth\/logout-all\/?$/ },
+    ];
+    const isCompanyOptional = allowNoCompany.some((r) => r.method === method && r.re.test(path));
+
+    if (userId && !req.user.companyId && !isCompanyOptional) {
       return next(new ApplicationError('Company context required', 403));
     }
 

@@ -583,5 +583,59 @@
       "fields":{
       }
     }
+  },
+  "chat": {
+    "attach": {
+      "uploading": "Загрузка файла…",
+      "tooLarge": "Файл слишком большой или превышен общий лимит",
+      "unsupportedType": "Неподдерживаемый тип файла",
+      "download": "Скачать",
+      "retry": "Повторить",
+      "remove": "Убрать",
+      "sendFailed": "Сообщение не отправлено"
+    },
+    "audio": {
+      "playbackError": "Не удалось воспроизвести",
+      "play": "Воспроизвести",
+      "pause": "Пауза",
+      "loading": "Загрузка аудио…"
+    },
+    "info": {
+      "title": "Информация",
+      "tabs": {
+        "participants": "Участники",
+        "profile": "Профиль",
+        "media": "Медиа",
+        "links": "Ссылки",
+        "documents": "Документы"
+      },
+      "empty": {
+        "participants": "Нет участников",
+        "profile": "Профиль недоступен",
+        "media": "Пока нет медиа",
+        "links": "Пока нет ссылок",
+        "documents": "Пока нет документов"
+      },
+      "actions": {
+        "edit": "Изменить",
+        "save": "Сохранить",
+        "cancel": "Отмена",
+        "close": "Закрыть",
+        "loadMore": "Загрузить ещё"
+      },
+      "fields": {
+        "searchParticipants": "Поиск участников",
+        "groupName": "Название группы"
+      },
+      "media": {
+        "open": "Открыть"
+      },
+      "documents": {
+        "download": "Скачать"
+      },
+      "links": {
+        "open": "Открыть"
+      }
+    }
   }
 }

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../../../store/rtk/sessionApi";
 import { selectUser, selectAvatarUrl } from "../../../store/slices/authSlice";
+import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import s from "./UserMenu.module.css";
 
 export default function UserMenu({ onClose, onLogout }) {
@@ -14,7 +15,8 @@ export default function UserMenu({ onClose, onLogout }) {
   const { t } = useTranslation();
 
   const user = useSelector(selectUser);
-  const avatarUrl = useSelector(selectAvatarUrl);
+  const rawAvatarUrl = useSelector(selectAvatarUrl);
+  const { url: avatarUrl, onError: onAvatarError } = useSignedFileUrl(rawAvatarUrl);
 
   const [logout] = useLogoutMutation();
   const [hasImg, setHasImg] = useState(Boolean(avatarUrl));
@@ -59,7 +61,10 @@ export default function UserMenu({ onClose, onLogout }) {
               className={s.avatarImg}
               src={avatarUrl}
               alt={fullName}
-              onError={() => setHasImg(false)}
+              onError={() => {
+                onAvatarError();
+                setHasImg(false);
+              }}
             />
           ) : (
             <div className={s.initials}>{initials}</div>

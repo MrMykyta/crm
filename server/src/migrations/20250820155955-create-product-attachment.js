@@ -36,7 +36,7 @@ module.exports = {
         allowNull:false, 
         field:'attachment_id',
         references:{ 
-          model:'attachments', 
+          model:'files', 
           key:'id' 
         }, 
         onUpdate:'CASCADE', 

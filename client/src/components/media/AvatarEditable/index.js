@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import styles from "./AvatarEditable.module.css";
 
 /**
@@ -32,8 +33,10 @@ export default function AvatarEditable({
   const fileRef = useRef(null);
 
   // определяем соотношение сторон
+  const { url: safeValue, onError: onAvatarError } = useSignedFileUrl(value);
+
   useEffect(() => {
-    if (!value) return;
+    if (!safeValue) return;
     const img = new Image();
     img.onload = () => {
       if (img.naturalWidth && img.naturalHeight) {
@@ -41,12 +44,14 @@ export default function AvatarEditable({
       }
     };
     img.onerror = () => setRatio(1);
-    img.src = value;
-  }, [value]);
+    img.src = safeValue;
+  }, [safeValue]);
 
   const extractUrl = (out) => {
     if (!out) return "";
     if (typeof out === "string") return out;
+    const id = out.id || out.data?.id;
+    if (id) return id;
     return out.url || out.data?.url || out.path || out.location || "";
   };
 
@@ -113,8 +118,8 @@ export default function AvatarEditable({
         tabIndex={0}
         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openModal()}
       >
-        {value ? (
-          <img className={styles.img} src={value} alt="Логотип" />
+        {safeValue ? (
+          <img className={styles.img} src={safeValue} alt="Логотип" onError={onAvatarError} />
         ) : (
           <div className={styles.ph}>LOGO</div>
         )}
@@ -130,8 +135,8 @@ export default function AvatarEditable({
 
             <div className={styles.previewRow}>
               <div className={styles.previewBox}>
-                {value ? (
-                  <img src={value} alt="Превью" />
+                {safeValue ? (
+                  <img src={safeValue} alt="Превью" />
                 ) : (
                   <div className={styles.previewPh}>нет изображения</div>
                 )}

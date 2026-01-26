@@ -1,9 +1,8 @@
 export const TASK_STATUS = ['todo','in_progress','done','blocked','canceled'];
 
-function getCompanyMemberOptions(){
-  const raw = localStorage.getItem('companyMembers');
-  const members = raw ? JSON.parse(raw) : [];
-  return members.map(m => ({
+function getCompanyMemberOptions(members = []){
+  const list = Array.isArray(members) ? members : [];
+  return list.map(m => ({
     value: m.userId || m.id,
     label: m.name || `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim() || m.email || '—',
   }));
@@ -66,9 +65,9 @@ export function toApiTask(values={}){
   };
 }
 
-export function buildTaskSchema(i18n){
+export function buildTaskSchema(i18n, { members = [], currentUserId } = {}){
   const t = i18n?.t?.bind(i18n) ?? (x=>x);
-  const memberOptions = getCompanyMemberOptions();
+  const memberOptions = getCompanyMemberOptions(members);
   const statusOptions = TASK_STATUS.map(v => ({ value:v, labelKey:`crm.task.enums.status.${v}` }));
 
   return [
@@ -97,7 +96,7 @@ export function buildTaskSchema(i18n){
     { name:'watcherIds', type:'dropdown-multiselect', float:true, cols:2,
       label:'crm.task.fields.watchers',
       options:(values)=>{
-        const me = JSON.parse(localStorage.getItem('user')||'null')?.id;
+        const me = currentUserId || null;
         const ass = new Set(values?.assigneeIds || []);
         return memberOptions.filter(o => !ass.has(o.value) && o.value !== me);
       },

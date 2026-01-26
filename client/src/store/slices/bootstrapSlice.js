@@ -61,12 +61,6 @@ export const bootstrapLoad = createAsyncThunk(
     const companyUsers = Array.isArray(usersRes?.items) ? usersRes.items : (usersRes?.data ?? usersRes ?? []);
     const counterparties = Array.isArray(countersRes?.items) ? countersRes.items : (countersRes?.data ?? countersRes ?? []);
 
-    // Поддержка легаси-хуков, читающих localStorage.companyMembers
-    try {
-      localStorage.setItem('companyMembers', JSON.stringify(companyUsers || []));
-      window.dispatchEvent(new StorageEvent('storage', { key: 'companyMembers' }));
-    } catch {}
-
     return { companyUsers, counterparties, roles: [] };
   }
 );

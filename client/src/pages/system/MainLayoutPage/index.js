@@ -3,7 +3,7 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 
 import s from './MainLayout.module.css';
 import Sidebar from '../../../components/layout/Sidebar';
@@ -11,6 +11,8 @@ import Topbar from '../../../components/layout/Topbar';
 import { MENU } from '../../../config/menu';
 import { TopbarProvider } from '../../../Providers/TopbarProvider';
 import { useLogoutMutation } from '../../../store/rtk/sessionApi';
+import { useGetMeQuery } from '../../../store/rtk/userApi';
+import { applyUserPatch } from '../../../store/slices/authSlice';
 
 // 🔌 добавляем
 import { initSocket } from '../../../sockets/io';
@@ -18,6 +20,7 @@ import { useChatSocket } from '../../../sockets/useChatSocket';
 
 export default function MainLayoutPage() {
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const [collapsed, setCollapsed] = useState(false);
   const [hasWallpaper, setHasWallpaper] = useState(false);
   const location = useLocation();
@@ -26,9 +29,14 @@ export default function MainLayoutPage() {
   // берем юзера из Redux
   const currentUser = useSelector(s => s.auth?.currentUser);
   const accessToken = useSelector(s => s.auth?.accessToken);
+  const companyId = useSelector(s => s.auth?.companyId);
   const activeRoomId = useSelector(s => s.chat?.activeRoomId);
 
   const [logout] = useLogoutMutation();
+
+  const { data: me, refetch: refetchMe } = useGetMeQuery(undefined, {
+    skip: !accessToken,
+  });
 
   const handleLogout = async () => {
     try { await logout().unwrap(); } catch {}
@@ -40,6 +48,17 @@ export default function MainLayoutPage() {
     if (!accessToken) return;
     initSocket(accessToken);
   }, [accessToken]);
+
+  // Перезапросить /me при смене токена/компании (после company-setup)
+  useEffect(() => {
+    if (!accessToken) return;
+    refetchMe();
+  }, [accessToken, companyId, refetchMe]);
+
+  // Синхронизируем /me в authSlice, чтобы Topbar/UserMenu не были пустыми
+  useEffect(() => {
+    if (me?.id) dispatch(applyUserPatch(me));
+  }, [me?.id, dispatch]);
 
   // 🎧 глобальный чат-сокет: слушает всё, JOIN делает только для activeRoomId
   useChatSocket(activeRoomId);
@@ -97,7 +116,7 @@ export default function MainLayoutPage() {
             <Topbar
               collapsed={collapsed}
               title={pageTitle}
-              user={currentUser}
+              user={me || currentUser}
               onLogout={handleLogout}
             />
             <div className={s.body}>

@@ -6,6 +6,7 @@ import {
   getMessageStatus,
   renderHighlightedText,
 } from "../../utils/chatMessageUtils";
+import ChatAttachment from "../ChatAttachment";
 
 export default function ChatMessages({
   listRef,
@@ -143,6 +144,11 @@ export default function ChatMessages({
             // ---------- Обычное сообщение ----------
             const isMe = meId && String(m.authorId) === meId;
             const isDeleted = !!m.deletedAt;
+            const attachments = isDeleted
+              ? []
+              : m?.meta?.attachments || m?.attachments || [];
+            const hasAttachments =
+              Array.isArray(attachments) && attachments.length > 0;
 
             const {
               name: authorName,
@@ -183,9 +189,20 @@ export default function ChatMessages({
 
             const replyAuthorName = replyInfo?.name || "Пользователь";
 
-            const replyTextRaw = replyMsg?.deletedAt
+            let replyTextRaw = replyMsg?.deletedAt
               ? "Сообщение удалено"
               : replyMsg?.text || "";
+
+            if (!replyTextRaw && replyMsg && !replyMsg.deletedAt) {
+              const replyAttachments =
+                replyMsg?.meta?.attachments || replyMsg?.attachments || [];
+              if (Array.isArray(replyAttachments) && replyAttachments.length) {
+                replyTextRaw =
+                  replyAttachments[0]?.filename ||
+                  replyAttachments[0]?.name ||
+                  "Вложение";
+              }
+            }
 
             const replyText =
               replyTextRaw.length > 140
@@ -307,20 +324,35 @@ export default function ChatMessages({
                   )}
 
                   {/* Текст сообщения */}
-                  <div
-                    className={[
-                      s.msgText,
-                      isDeleted ? s.msgTextDeleted : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  >
-                    {renderHighlightedText(
-                      isDeleted ? "Сообщение удалено" : m.text || "",
-                      searchQuery,
-                      s.msgHighlight
-                    )}
-                  </div>
+                  {(isDeleted || (m.text || "").trim()) && (
+                    <div
+                      className={[
+                        s.msgText,
+                        isDeleted ? s.msgTextDeleted : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                    >
+                      {renderHighlightedText(
+                        isDeleted ? "Сообщение удалено" : m.text || "",
+                        searchQuery,
+                        s.msgHighlight
+                      )}
+                    </div>
+                  )}
+
+                  {/* Вложения */}
+                  {hasAttachments && (
+                    <div className={s.attachmentsWrap}>
+                      {attachments.map((att, idx) => (
+                        <ChatAttachment
+                          key={`${m._id}-att-${att.fileId || att.id || idx}`}
+                          attachment={att}
+                          mode="message"
+                        />
+                      ))}
+                    </div>
+                  )}
 
                   {/* Время + галочки */}
                   <div className={s.msgMetaRow}>

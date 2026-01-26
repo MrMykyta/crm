@@ -1,6 +1,7 @@
 import { crmApi, setApiSession } from './crmApi';
-import { setAuth } from '../slices/authSlice';
+import { setAuth, applyUserPatch } from '../slices/authSlice';
 import { bootstrapLoad } from '../slices/bootstrapSlice';
+import { userApi } from './userApi';
 
 export const authApi = crmApi.injectEndpoints({
   endpoints: (build) => ({
@@ -22,7 +23,7 @@ export const authApi = crmApi.injectEndpoints({
           if (accessToken) {
             dispatch(setAuth({ accessToken, refreshToken, companyId, user }));
             setApiSession({ token: accessToken, companyId });
-            dispatch(bootstrapLoad());
+            if (companyId) dispatch(bootstrapLoad());
           }
         } catch {}
       },
@@ -40,9 +41,11 @@ export const authApi = crmApi.injectEndpoints({
           const refreshToken = data?.tokens?.refreshToken ?? data?.refreshToken ?? null;
           const companyId = data?.activeCompanyId ?? data?.companyId ?? null;
           const user = data?.user ?? null;
-          dispatch(setAuth({ accessToken, refreshToken, companyId, user }));
-          setApiSession({ token: accessToken, companyId });
-          dispatch(bootstrapLoad());
+          if (accessToken) {
+            dispatch(setAuth({ accessToken, refreshToken, companyId, user }));
+            setApiSession({ token: accessToken, companyId });
+            if (companyId) dispatch(bootstrapLoad());
+          }
         } catch {}
       },
     }),
@@ -55,10 +58,12 @@ export const authApi = crmApi.injectEndpoints({
           const accessToken = data?.tokens?.accessToken ?? data?.accessToken ?? null;
           const refreshToken = data?.tokens?.refreshToken ?? data?.refreshToken ?? null;
           const companyId = data?.activeCompanyId ?? data?.companyId ?? null;
-          const user = data?.user ?? null;
-          dispatch(setAuth({ accessToken, refreshToken, companyId, user }));
-          setApiSession({ token: accessToken, companyId });
-          dispatch(bootstrapLoad());
+          const user = data?.safeUser ?? data?.user ?? null;
+          if (accessToken) {
+            dispatch(setAuth({ accessToken, refreshToken, companyId, user }));
+            setApiSession({ token: accessToken, companyId });
+            if (companyId) dispatch(bootstrapLoad());
+          }
         } catch {}
       },
     }),
@@ -74,7 +79,13 @@ export const authApi = crmApi.injectEndpoints({
           if (accessToken) {
             dispatch(setAuth({ accessToken, refreshToken, companyId, user }));
             setApiSession({ token: accessToken, companyId });
-            dispatch(bootstrapLoad());
+            if (companyId) dispatch(bootstrapLoad());
+
+            // Получаем /me сразу после company-setup, чтобы Topbar не был пустым
+            try {
+              const me = await dispatch(userApi.endpoints.getMe.initiate(undefined, { forceRefetch: true })).unwrap();
+              if (me) dispatch(applyUserPatch(me));
+            } catch {}
           }
         } catch {}
       },

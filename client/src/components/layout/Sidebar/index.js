@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { MENU } from "../../../config/menu";
 import SidebarTooltip from "../SidebarTooltip";
 import CompanyMenu from "../../company/CompanyMenu";
+import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import styles from "./Sidebar.module.css";
 
 // RTK Query — данные компании
@@ -47,6 +48,8 @@ export default function Sidebar({ collapsed = false, onToggle, onNavigate, t }) 
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase())
     .join("");
+
+  const { url: companyAvatarUrl, onError: onCompanyAvatarError } = useSignedFileUrl(company?.avatarUrl || preAvatar || "");
 
   const sections = useMemo(() => {
     const res = [];
@@ -95,11 +98,12 @@ export default function Sidebar({ collapsed = false, onToggle, onNavigate, t }) 
               aria-expanded={menuCompanyOpen}
             >
               <div className={styles.mark}>
-                {(company?.avatarUrl || preAvatar) ? (
+                {companyAvatarUrl ? (
                   <img
                     className={styles.logoImg}
-                    src={company?.avatarUrl || preAvatar}
+                    src={companyAvatarUrl}
                     alt={companyName}
+                    onError={onCompanyAvatarError}
                   />
                 ) : (
                   <span className={styles.initials}>{initials}</span>

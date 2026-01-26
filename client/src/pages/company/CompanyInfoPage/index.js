@@ -4,36 +4,26 @@ import EntityDetailPage from "../../_scaffold/EntityDetailPage";
 import AvatarEditable from "../../../components/media/AvatarEditable";
 import { companySchema, toFormCompany, toApiCompany } from "../../../schemas/company.schema";
 import { useGetCompanyQuery, useUpdateCompanyMutation } from "../../../store/rtk/companyApi";
-import { useUploadFileMutation, useAttachFromUrlMutation } from "../../../store/rtk/uploadApi";
+import { useUploadFileMutation } from "../../../store/rtk/filesApi";
 import { useTopbar } from "../../../Providers/TopbarProvider";
 import styles from "./CompanyInfoPage.module.css";
 
-function CompanyLogoHeader({ values, onChange, companyId, uploadFile, attachFromUrl, currentUserId }) {
+function CompanyLogoHeader({ values, onChange, companyId, uploadFile }) {
   const uploader = async (file) => {
     const res = await uploadFile({
       ownerType: "company",
       ownerId: companyId,
       file,
-      purpose: "avatar",
-      companyId,
-      uploadedBy: currentUserId,
+      purpose: "logo",
+      visibility: "private",
     }).unwrap();
-    const url = res?.url || res?.data?.url || res?.path || "";
+    const fileId = res?.data?.id || res?.id || null;
+    if (fileId) return { id: fileId };
+    const url = res?.data?.url || res?.url || res?.path || "";
     return { url };
   };
 
-  const urlUploader = async (url) => {
-    const res = await attachFromUrl({
-      ownerType: "company",
-      ownerId: companyId,
-      remoteUrl: url,
-      purpose: "avatar",
-      companyId,
-      uploadedBy: currentUserId,
-    }).unwrap();
-    const out = res?.url || res?.data?.url || res?.path || "";
-    return { url: out };
-  };
+  const urlUploader = async (url) => ({ url });
 
   return (
     <div className={styles.headerCard}>
@@ -63,7 +53,6 @@ const TABS = [
 export default function CompanyInfoPage() {
   const { setTitle, reset } = useTopbar();
   const companyId = useSelector((s) => s.auth.companyId);
-  const currentUserId = useSelector((s) => s.auth.currentUser?.id);
 
   // ❗️Меняем useMemo -> useEffect, чтобы не сеттить стейт во время рендера
   useEffect(() => {
@@ -75,7 +64,6 @@ export default function CompanyInfoPage() {
   const { data: company, isFetching } = useGetCompanyQuery(undefined, { skip: !companyId });
   const [updateCompany, { isLoading: saving }] = useUpdateCompanyMutation();
   const [uploadFile] = useUploadFileMutation();
-  const [attachFromUrl] = useAttachFromUrlMutation();
 
   if (!companyId) return null;
   if (!company && isFetching) return null;
@@ -104,11 +92,9 @@ export default function CompanyInfoPage() {
       leftTop={({ values, onChange }) => (
         <CompanyLogoHeader
           companyId={companyId}
-          currentUserId={currentUserId}
           values={values}
           onChange={onChange}
           uploadFile={uploadFile}
-          attachFromUrl={attachFromUrl}
         />
       )}
     />

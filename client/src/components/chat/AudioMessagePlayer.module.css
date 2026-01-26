@@ -1,0 +1,78 @@
+.player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  border: 1px solid var(--card-brd);
+  width: 100%;
+  min-width: 220px;
+}
+
+.playBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  background: var(--primary-start);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.playBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 140px;
+}
+
+.timer {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+.wave {
+  display: grid;
+  grid-template-columns: repeat(48, 1fr);
+  gap: 2px;
+  align-items: end;
+  height: 28px;
+  cursor: pointer;
+  width: 100%;
+  min-width: 140px;
+}
+
+.waveBar,
+.waveBarActive {
+  width: 100%;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+}
+
+.waveBarActive {
+  background: var(--primary-start);
+}
+
+.filename {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.error {
+  font-size: var(--fs-xs);
+  color: var(--danger);
+}

@@ -6,7 +6,7 @@ import * as Yup from "yup";
 
 import page from "../../UserSettingsPage.module.css";
 import st from "./AppearanceForm.module.css";
-import { useUploadFileMutation, useAttachFromUrlMutation } from "../../../../../store/rtk/uploadApi";
+import { useUploadFileMutation } from "../../../../../store/rtk/filesApi";
 import { useTheme } from "../../../../../Providers/ThemeProvider";
 import { useSaveMyPreferencesMutation } from "../../../../../store/rtk/userApi";
 
@@ -21,7 +21,6 @@ const Schema = Yup.object().shape({
 export default function AppearanceForm({ initial }) {
   const { appearance, setAppearance, mode, lang } = useTheme();
   const userId = useSelector((s) => s.auth?.currentUser?.id);
-  const companyId = useSelector((s) => s.auth?.companyId);
   const [saveMyPreferences] = useSaveMyPreferencesMutation();
 
   const [uploading, setUploading] = useState(false);
@@ -30,7 +29,6 @@ export default function AppearanceForm({ initial }) {
   const [saveOk, setSaveOk] = useState("");
 
   const [uploadFile] = useUploadFileMutation();
-  const [attachFromUrl] = useAttachFromUrlMutation();
 
   const initValues = useMemo(
     () => ({
@@ -63,16 +61,16 @@ export default function AppearanceForm({ initial }) {
     try {
       setUploading(true);
       const res = await uploadFile({
-        ownerType: "users",
+        ownerType: "user",
         ownerId: userId,
         file,
         purpose: "background",
-        companyId,
-        uploadedBy: userId,
+        visibility: "private",
       }).unwrap();
-      const url = res?.url || res?.data?.url || res?.path || "";
-      setFieldValue("backgroundPath", url);
-      setAppearance({ backgroundPath: url });
+      const fileId = res?.data?.id || res?.id || null;
+      const ref = fileId || res?.data?.url || res?.url || res?.path || "";
+      setFieldValue("backgroundPath", ref);
+      setAppearance({ backgroundPath: ref });
       setSaveOk("Фон загружен");
     } catch (e) {
       setUploadError(mapUploadError(e));
@@ -90,18 +88,9 @@ export default function AppearanceForm({ initial }) {
 
     try {
       setUploading(true);
-      const res = await attachFromUrl({
-        ownerType: "users",
-        ownerId: userId,
-        remoteUrl: src,
-        purpose: "background",
-        companyId,
-        uploadedBy: userId,
-      }).unwrap();
-      const url = res?.url || res?.data?.url || res?.path || "";
-      setFieldValue("backgroundPath", url);
+      setFieldValue("backgroundPath", src);
       setFieldValue("urlDraft", "");
-      setAppearance({ backgroundPath: url });
+      setAppearance({ backgroundPath: src });
       setSaveOk("Фон загружен");
     } catch (e) {
       setUploadError(mapUploadError(e));

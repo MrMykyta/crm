@@ -6,7 +6,9 @@ const { sseRouter } = require("./system/sseRouter");
 
 // ===================SYSTEM======================
 rootRouter.use("/acl", auth, require("./system/aclRouter"));
-rootRouter.use("/attachments", auth, require("./system/attachmentRouter"));
+// Unified Files API (private + public endpoints)
+rootRouter.use("/files", require("./system/filesRouter"));
+rootRouter.use("/public-files", require("./system/publicFilesRouter"));
 rootRouter.use("/invitations", require("./system/invitationsRouter"));
 rootRouter.use("/system", auth, require("./system/userPreferencesRouter"));
 rootRouter.use("/notifications", auth, require("./system/notificationRouter"));

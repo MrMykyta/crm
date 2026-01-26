@@ -10,6 +10,9 @@ const initialState = {
   composerDrafts: {}, // drafts[roomId] = { text, context }
   composerMode: "new", // 'new' | 'edit'
   editTarget: null, // { roomId, messageId, originalText, authorName, createdAt }
+  activeAudioFileId: null,
+  infoPanelOpenByRoomId: {},
+  infoPanelActiveTabByRoomId: {},
   // context: { type: 'reply' | null, id, authorId, authorName, text }
   forwardDraft: null, // { messageId, fromRoomId, toRoomId, authorId, authorName, text }
 };
@@ -31,6 +34,7 @@ const chatSlice = createSlice({
 
     setActiveRoom(state, action) {
       state.activeRoomId = action.payload ? String(action.payload) : null;
+      state.activeAudioFileId = null;
     },
 
     // история сообщений для комнаты (после первоначальной загрузки)
@@ -92,9 +96,13 @@ const chatSlice = createSlice({
 
       // превью
       const text = (message.text || "").trim();
+      const metaAttachments = message?.meta?.attachments;
       const preview =
         text ||
         (message.forward && message.forward.textSnippet) ||
+        (metaAttachments &&
+          metaAttachments[0] &&
+          (metaAttachments[0].filename || metaAttachments[0].name)) ||
         (message.attachments &&
           message.attachments[0] &&
           message.attachments[0].name) ||
@@ -157,6 +165,36 @@ const chatSlice = createSlice({
           (m) => !m._id || !idsSet.has(String(m._id))
         );
       }
+    },
+
+    setActiveAudio(state, action) {
+      state.activeAudioFileId = action.payload || null;
+    },
+
+    clearActiveAudio(state) {
+      state.activeAudioFileId = null;
+    },
+
+    openInfoPanel(state, action) {
+      const { roomId, tab } = action.payload || {};
+      if (!roomId) return;
+      const key = String(roomId);
+      state.infoPanelOpenByRoomId[key] = true;
+      if (tab) state.infoPanelActiveTabByRoomId[key] = tab;
+    },
+
+    closeInfoPanel(state, action) {
+      const roomId = action.payload;
+      if (!roomId) return;
+      const key = String(roomId);
+      delete state.infoPanelOpenByRoomId[key];
+      delete state.infoPanelActiveTabByRoomId[key];
+    },
+
+    setInfoPanelTab(state, action) {
+      const { roomId, tab } = action.payload || {};
+      if (!roomId || !tab) return;
+      state.infoPanelActiveTabByRoomId[String(roomId)] = tab;
     },
 
     // ================= ЧЕРНОВИКИ И КОНТЕКСТ ВВОДА =================
@@ -308,6 +346,11 @@ export const {
   updateRoom,
   setEditTarget,
   clearEditTarget,
+  setActiveAudio,
+  clearActiveAudio,
+  openInfoPanel,
+  closeInfoPanel,
+  setInfoPanelTab,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

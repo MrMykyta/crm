@@ -44,7 +44,7 @@ module.exports = (sequelize, DataTypes) => {
         as: 'attributes' 
       });
 
-      Product.belongsToMany(models.Attachments, {
+      Product.belongsToMany(models.File, {
         through: models.ProductAttachment,
         foreignKey: 'product_id',
         otherKey: 'attachment_id',

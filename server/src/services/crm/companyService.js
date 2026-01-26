@@ -1,7 +1,25 @@
 // src/services/companyService.js
 const { sequelize, Company, UserCompany} = require('../../models');
+const ApplicationError = require('../../errors/ApplicationError');
 const { bootstrapCompanyAcl } = require('../system/aclBootstrap');
 const { addContacts } = require('./contactPointService');
+
+const UUID_RE = /^[0-9a-fA-F-]{32,36}$/;
+const isFileApiUrl = (v) => typeof v === 'string' && v.includes('/api/files/');
+const validateFileIdField = (field, value) => {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') {
+    throw new ApplicationError(`VALIDATION_ERROR: ${field} must be uuid or null`, 400);
+  }
+  if (isFileApiUrl(value)) {
+    throw new ApplicationError(`VALIDATION_ERROR: ${field} must be fileId, not URL`, 400);
+  }
+  if (!UUID_RE.test(value)) {
+    throw new ApplicationError(`VALIDATION_ERROR: ${field} must be uuid`, 400);
+  }
+  return value;
+};
 
 /** утилита: роль пользователя в компании */
 async function getUserRole(userId, companyId) {
@@ -99,8 +117,12 @@ module.exports.updateCompany = async (requesterId, companyId, payload = {}) => {
 
     // разрешённые поля к обновлению
     const allowed = (({
-      name, nip, regon, krs, bdo, website, street, postalCode, city, country, description, ownerUserId
-    }) => ({ name, nip, regon, krs, bdo, website, street, postalCode, city, country, description, ownerUserId }))(payload);
+      name, nip, regon, krs, bdo, website, street, postalCode, city, country, description, ownerUserId, avatarUrl
+    }) => ({ name, nip, regon, krs, bdo, website, street, postalCode, city, country, description, ownerUserId, avatarUrl }))(payload);
+
+    if (allowed.avatarUrl !== undefined) {
+      allowed.avatarUrl = validateFileIdField('avatarUrl', allowed.avatarUrl);
+    }
 
     await company.update(allowed, { transaction: t });
 

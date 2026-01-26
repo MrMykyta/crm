@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useGetCompanyQuery } from "../../../store/rtk/companyApi";
+import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import s from "./CompanyMenu.module.css";
 
 export default function CompanyMenu({ company: companyProp, onClose }) {
@@ -62,18 +63,19 @@ export default function CompanyMenu({ company: companyProp, onClose }) {
   const initials = (name || "")
     .split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join("");
 
-  const avatar =
+  const rawAvatar =
     company?.avatarUrl ||
     company?.logoUrl ||
     cssAvatar ||
     "";
+  const { url: avatar, onError: onAvatarError } = useSignedFileUrl(rawAvatar);
 
   return (
     <div ref={ref} className={s.menu} role="menu" aria-label="Company menu">
       <div className={s.head}>
         <div className={s.logoWrap}>
           {avatar ? (
-            <img src={avatar} alt={name} className={s.logo} />
+            <img src={avatar} alt={name} className={s.logo} onError={onAvatarError} />
           ) : (
             <div className={s.logoFallback}>{(initials || "C").toUpperCase()}</div>
           )}

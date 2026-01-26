@@ -2,6 +2,7 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 import ListPage from '../../../components/data/ListPage';
 import Modal from '../../../components/Modal';
@@ -28,11 +29,9 @@ export default function TasksPage(){
   const { colWidths, colOrder, onColumnResize, onColumnOrderChange } = useGridPrefs('crm.tasks');
 
   // lookups (users/departments/contacts/counterparties/deals) и текущий пользователь
-  const lookups = useMemo(() => buildTaskLookups(), []);
-  const currentUser = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem('user') || 'null'); }
-    catch { return null; }
-  }, []);
+  const members = useSelector((s) => s.bootstrap?.companyUsers || []);
+  const currentUser = useSelector((s) => s.auth?.currentUser || null);
+  const lookups = useMemo(() => buildTaskLookups({ members }), [members]);
 
   const [createTask] = useCreateTaskMutation();
 

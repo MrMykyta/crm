@@ -6,10 +6,8 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
-const path = require('path');
 
 const rootRouter = require('./src/routes/rootRouter');
-const uploadRoutes = require('./src/routes/system/uploadRouter');
 const errorHandler = require('./src/middleware/errorHandler');
 const { initCron } = require('./boot/cron');
 
@@ -28,9 +26,28 @@ const { connectMongo } = require('./src/db/mongo');
 
 /* ---------- Security / misc ---------- */
 app.set('trust proxy', 1);
+
+// Поддержка нескольких источников: CORS_ORIGINS="https://site.tld,https://www.site.tld,http://localhost:3000"
+const originsFromEnv =
+  (process.env.CORS_ORIGINS && process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)) ||
+  (process.env.APP_URL ? [process.env.APP_URL.trim()] : []);
+
+const whitelist = new Set([
+  ...originsFromEnv,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+]);
+
+const cspFrameAncestors = ["'self'", ...whitelist];
+const cspDirectives = helmet.contentSecurityPolicy.getDefaultDirectives();
+cspDirectives['frame-ancestors'] = cspFrameAncestors;
+
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: {
+      directives: cspDirectives,
+    },
     // crossOriginEmbedderPolicy: false, // раскомментируй, если ломаются воркеры/канвас
   })
 );
@@ -49,18 +66,6 @@ app.use(
   rateLimit({ windowMs: 60 * 1000, limit: 120, standardHeaders: true })
 );
 
-/* ---------- CORS ---------- */
-// Поддержка нескольких источников: CORS_ORIGINS="https://site.tld,https://www.site.tld,http://localhost:3000"
-const originsFromEnv =
-  (process.env.CORS_ORIGINS && process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)) ||
-  (process.env.APP_URL ? [process.env.APP_URL.trim()] : []);
-
-const whitelist = new Set([
-  ...originsFromEnv,
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-]);
-
 app.use(
   cors({
     origin(origin, cb) {
@@ -77,27 +82,14 @@ app.use(
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-/* ---------- Static (/uploads -> public/uploads) ---------- */
-// Caddy проксирует /uploads/* на API → реально отдаём из public/uploads
-
-app.use(
-  '/uploads',
-  express.static(path.join(__dirname, 'uploads'), {
-    maxAge: '30d',
-    immutable: true,
-    index: false,
-    setHeaders(res) {
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-    },
-  })
-);
+/* ---------- Files (Unified) ---------- */
+// Private files are NEVER served via express.static.
+// Public files are served only via /api/public-files/:publicKey.
 
 /* ---------- Health ---------- */
 app.get('/health', (_req, res) => res.status(200).send('OK'));
 
 /* ---------- API ---------- */
-app.use('/api/uploads', uploadRoutes);
 app.use('/api', rootRouter);
 
 /* ---------- Errors ---------- */

@@ -33,6 +33,8 @@ module.exports.PERMISSIONS = [
   // notes
   'note:read','note:create','note:update','note:delete',
   
-  // attachments
+  // files (unified)
+  'file:read','file:upload','file:delete',
+  // legacy attachments (kept for compatibility while migrating)
   'attachment:read','attachment:upload','attachment:delete'
 ];

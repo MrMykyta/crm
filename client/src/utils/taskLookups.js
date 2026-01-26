@@ -1,32 +1,23 @@
 // taskLookups.js
 
-
-export function getCompanyMembersOptions() {
-  try {
-    const raw = localStorage.getItem('companyMembers');
-    const arr = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(arr)) return [];
-    return arr.map(m => {
-      const label = [m.firstName, m.lastName].filter(Boolean).join(' ') || m.email || m.userId || m.id;
-      const value = m.userId || m.id;
-      return { value, label };
-    });
-  } catch { return []; }
+export function getCompanyMembersOptions(members = []) {
+  const arr = Array.isArray(members) ? members : [];
+  return arr.map(m => {
+    const label = [m.firstName, m.lastName].filter(Boolean).join(' ') || m.email || m.userId || m.id;
+    const value = m.userId || m.id;
+    return { value, label };
+  });
 }
 
-export function getCompanyDepartmentsOptions() {
-  try {
-    const raw = localStorage.getItem('companyDepartments');
-    const arr = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(arr)) return [];
-    return arr.map(d => ({ value: d.id, label: d.name || d.title || d.id }));
-  } catch { return []; }
+export function getCompanyDepartmentsOptions(departments = []) {
+  const arr = Array.isArray(departments) ? departments : [];
+  return arr.map(d => ({ value: d.id, label: d.name || d.title || d.id }));
 }
 
-export function buildTaskLookups() {
+export function buildTaskLookups({ members = [], departments = [] } = {}) {
   return {
-    userOptions: getCompanyMembersOptions(),
-    departmentOptions: getCompanyDepartmentsOptions(),
+    userOptions: getCompanyMembersOptions(members),
+    departmentOptions: getCompanyDepartmentsOptions(departments),
     contactOptions: [],
     counterpartyOptions: [],
     dealOptions: [],

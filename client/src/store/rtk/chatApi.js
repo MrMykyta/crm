@@ -105,6 +105,15 @@ export const chatApi = crmApi.injectEndpoints({
         method: "POST",
       }),
     }),
+
+    updateRoom: build.mutation({
+      query: ({ roomId, patch }) => ({
+        url: `/chat/rooms/${roomId}`,
+        method: "PATCH",
+        body: patch || {},
+      }),
+      invalidatesTags: ["ChatRooms"],
+    }),
   }),
 });
 
@@ -122,4 +131,5 @@ export const {
   useGetPinnedQuery,
   usePinMessageMutation,
   useUnpinMessageMutation,
+  useUpdateRoomMutation,
 } = chatApi;

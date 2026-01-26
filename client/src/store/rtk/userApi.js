@@ -1,4 +1,6 @@
 // src/store/rtk/userApi.js
+// User API RTK endpoints: profile, preferences, and user-level updates.
+// Important: when updating avatar, invalidate CompanyUser list so chat list avatars refresh.
 import { crmApi } from './crmApi';
 
 /** Нормализуем ответ сервера в единый формат */
@@ -74,8 +76,13 @@ export const userApi = crmApi.injectEndpoints({
     }),
 
     updateMe: build.mutation({
+      // PATCH /users/me — updates current user profile (incl. avatarUrl).
       query: (body) => ({ url: '/users/me', method: 'PATCH', body: stripCompanyId(body) }),
-      invalidatesTags: [{ type: 'User', id: 'me' }],
+      // Invalidate both /users/me and company users list to refresh chat list avatars.
+      invalidatesTags: [
+        { type: 'User', id: 'me' },
+        { type: 'CompanyUser', id: 'LIST' },
+      ],
     }),
 
     getUserById: build.query({

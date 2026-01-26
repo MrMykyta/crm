@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
       ProductAttachment.belongsTo(models.Product, { 
         foreignKey: 'product_id' 
       });
-      ProductAttachment.belongsTo(models.Attachments, { 
+      ProductAttachment.belongsTo(models.File, { 
         foreignKey: 'attachment_id' 
       });
     }

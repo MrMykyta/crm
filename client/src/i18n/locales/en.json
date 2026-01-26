@@ -403,5 +403,59 @@
       "nipLabel": "NIP",
       "typeToSearch": "Type a name or NIP"
     }
+  },
+  "chat": {
+    "attach": {
+      "uploading": "Uploading file…",
+      "tooLarge": "File is too large or total size exceeded",
+      "unsupportedType": "Unsupported file type",
+      "download": "Download",
+      "retry": "Retry",
+      "remove": "Remove",
+      "sendFailed": "Message was not sent"
+    },
+    "audio": {
+      "playbackError": "Unable to play audio",
+      "play": "Play",
+      "pause": "Pause",
+      "loading": "Loading audio…"
+    },
+    "info": {
+      "title": "Chat info",
+      "tabs": {
+        "participants": "Participants",
+        "profile": "Profile",
+        "media": "Media",
+        "links": "Links",
+        "documents": "Documents"
+      },
+      "empty": {
+        "participants": "No participants",
+        "profile": "Profile not available",
+        "media": "No media yet",
+        "links": "No links yet",
+        "documents": "No documents yet"
+      },
+      "actions": {
+        "edit": "Edit",
+        "save": "Save",
+        "cancel": "Cancel",
+        "close": "Close",
+        "loadMore": "Load more"
+      },
+      "fields": {
+        "searchParticipants": "Search participants",
+        "groupName": "Group name"
+      },
+      "media": {
+        "open": "Open"
+      },
+      "documents": {
+        "download": "Download"
+      },
+      "links": {
+        "open": "Open"
+      }
+    }
   }
 }

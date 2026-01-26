@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useGetCompanyBrandQuery } from "../store/rtk/companyApi";
 import { useGetMeQuery } from "../store/rtk/userApi";
+import { useSignedFileUrl } from "./useSignedFileUrl";
 
 /**
  * Данные берём через RTK Query (store).
@@ -22,28 +23,41 @@ export default function useBrandAndBackground(
   const { data: me } = useGetMeQuery(undefined, {
     skip: !accessToken || !!initialUserAvatarUrl,
   });
-  const companyAvatarUrl =
+  const rawCompanyAvatar =
     initialAvatarUrl || company?.avatarUrl || company?.data?.avatarUrl || null;
+  const { url: companyAvatarUrl, onError: onCompanyAvatarError } = useSignedFileUrl(rawCompanyAvatar);
+
+  const { url: safeBgUrl, onError: onBgError } = useSignedFileUrl(bgUrl);
+
+  const rawUserAvatar =
+    me?.avatarUrl ||
+    me?.avatar ||
+    me?.data?.avatarUrl ||
+    me?.data?.avatar ||
+    initialUserAvatarUrl ||
+    null;
+
+  const { url: userAvatarUrl, onError: onUserAvatarError } = useSignedFileUrl(rawUserAvatar);
 
   // ---------- Фон ----------
   useEffect(() => {
     const root = document.documentElement;
-    if (!bgUrl) { root.style.removeProperty("--custom-bg-layer"); return; }
+    if (!safeBgUrl) { root.style.removeProperty("--custom-bg-layer"); return; }
 
     const img = new Image();
     bgImgRef.current = img;
     img.crossOrigin = "anonymous";
-    img.onload = () => root.style.setProperty("--custom-bg-layer", `url("${bgUrl}")`);
-    img.onerror = () => root.style.removeProperty("--custom-bg-layer");
-    img.src = bgUrl;
+    img.onload = () => root.style.setProperty("--custom-bg-layer", `url("${safeBgUrl}")`);
+    img.onerror = () => { onBgError(); root.style.removeProperty("--custom-bg-layer"); };
+    img.src = safeBgUrl;
 
     return () => {
       if (bgImgRef.current === img) bgImgRef.current = null;
       root.style.removeProperty("--custom-bg-layer");
     };
-  }, [bgUrl]);
+  }, [safeBgUrl]);
 
-  const ensureImage = (url, cssVar, eventName, refHolder) =>
+  const ensureImage = (url, cssVar, eventName, refHolder, onErr) =>
     new Promise((resolve) => {
       if (!url) return resolve(false);
       const root = document.documentElement;
@@ -55,7 +69,7 @@ export default function useBrandAndBackground(
         if (eventName) window.dispatchEvent(new CustomEvent(eventName, { detail: { url } }));
         resolve(true);
       };
-      img.onerror = () => { root.style.removeProperty(cssVar); resolve(false); };
+      img.onerror = () => { if (onErr) onErr(); root.style.removeProperty(cssVar); resolve(false); };
       img.src = url;
     });
 
@@ -70,7 +84,8 @@ export default function useBrandAndBackground(
           companyAvatarUrl,
           "--company-avatar-url",
           "company:avatar-ready",
-          companyAvatarImgRef
+          companyAvatarImgRef,
+          onCompanyAvatarError
         );
       }
     })();
@@ -88,28 +103,8 @@ export default function useBrandAndBackground(
     (async () => {
       if (stopped) return;
 
-      if (initialUserAvatarUrl) {
-        await ensureImage(initialUserAvatarUrl, "--user-avatar-url", "user:avatar-ready", userAvatarImgRef);
-        return;
-      }
-      try {
-        const raw = localStorage.getItem("user");
-        const u = raw ? JSON.parse(raw) : null;
-        const lsUrl = u?.avatarUrl || u?.avatar || null;
-        if (lsUrl) {
-          const ok = await ensureImage(lsUrl, "--user-avatar-url", "user:avatar-ready", userAvatarImgRef);
-          if (ok) return;
-        }
-      } catch {}
-
-      const apiUrl =
-        me?.avatarUrl ||
-        me?.avatar ||
-        me?.data?.avatarUrl ||
-        me?.data?.avatar ||
-        null;
-      if (apiUrl) {
-        await ensureImage(apiUrl, "--user-avatar-url", "user:avatar-ready", userAvatarImgRef);
+      if (userAvatarUrl) {
+        await ensureImage(userAvatarUrl, "--user-avatar-url", "user:avatar-ready", userAvatarImgRef, onUserAvatarError);
       }
     })();
 
@@ -118,5 +113,5 @@ export default function useBrandAndBackground(
       document.documentElement.style.removeProperty("--user-avatar-url");
       userAvatarImgRef.current = null;
     };
-  }, [initialUserAvatarUrl, me]);
+  }, [userAvatarUrl, onUserAvatarError]);
 }

@@ -1,6 +1,7 @@
 // src/pages/system/TaskPage/TaskDetailPage/index.jsx
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import EntityDetailPage from '../../../_scaffold/EntityDetailPage';
 import { buildTaskSchema, toFormTask, toApiTask } from '../../../../schemas/task.schema';
 import { useGetTaskQuery, useUpdateTaskMutation } from '../../../../store/rtk/tasksApi';
@@ -30,11 +31,13 @@ export default function TaskDetailPage(){
   const { id } = useParams();
   const { data: base, isFetching } = useGetTaskQuery(id);
   const [updateTask, { isLoading: saving }] = useUpdateTaskMutation();
+  const members = useSelector((s) => s.bootstrap?.companyUsers || []);
+  const currentUserId = useSelector((s) => s.auth?.currentUser?.id || null);
 
   const schemaBuilder = useMemo(() => (i18n) => {
-    const full = buildTaskSchema(i18n);
+    const full = buildTaskSchema(i18n, { members, currentUserId });
     return filterSchema(full, TASK_FORM_FIELDS);
-  }, []);
+  }, [members, currentUserId]);
 
   const save = async (entityId, payload) => {
     const saved = await updateTask({ id: entityId, payload }).unwrap();

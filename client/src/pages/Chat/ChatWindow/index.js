@@ -1,6 +1,7 @@
 // src/pages/Chat/ChatWindow/index.jsx
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
   useGetMessagesQuery,
   useMarkReadMutation,
@@ -9,6 +10,7 @@ import {
   useEditMessageMutation,
   useDeleteMessageMutation,
 } from "../../../store/rtk/chatApi";
+import { useUploadFileMutation } from "../../../store/rtk/filesApi";
 
 import { getSocket } from "../../../sockets/io";
 import {
@@ -20,6 +22,9 @@ import {
   setActivePinnedIndex,
   setEditTarget,
   clearEditTarget,
+  clearActiveAudio,
+  openInfoPanel,
+  closeInfoPanel,
 } from "../../../store/slices/chatSlice";
 
 import ChatCreateDirect from "../ChatCreateDirect";
@@ -38,11 +43,38 @@ import MessageContextMenu from "../components/MessageContextMenu";
 import ForwardDialog from "../components/ForwardDialog";
 import { getAuthorInfo } from "../utils/chatMessageUtils";
 import Modal from "../../../components/Modal";
+import ChatInfoPanel from "../../../components/chat/info/ChatInfoPanel";
 
 // простая проверка Safari
 const isSafari =
   typeof navigator !== "undefined" &&
   /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+const MAX_FILES = 10;
+const MAX_TOTAL_SIZE_MB = 50;
+const MAX_SINGLE_FILE_MB = 20;
+const MAX_TOTAL_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
+const MAX_SINGLE_BYTES = MAX_SINGLE_FILE_MB * 1024 * 1024;
+
+const CHAT_ATTACH_MIME = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "application/pdf",
+  "audio/mpeg",
+  "audio/ogg",
+  "audio/wav",
+  "video/mp4",
+  "video/webm",
+  "text/plain",
+  "text/csv",
+  "application/zip",
+  "application/msword",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
 
 // ================= ОБЁРТКА =================
 export default function ChatWindow({ roomId, mode = "room", onExitCreate }) {
@@ -71,6 +103,7 @@ export default function ChatWindow({ roomId, mode = "room", onExitCreate }) {
 // ================= ВНУТРЕННИЙ КОМПОНЕНТ =================
 function ChatRoomWindow({ roomId }) {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   const currentUser = useSelector((st) => st.auth.user || st.auth.currentUser);
   const rooms = useSelector((st) => st.chat.rooms);
@@ -91,6 +124,7 @@ function ChatRoomWindow({ roomId }) {
   const [editMessage, { isLoading: isEditing }] = useEditMessageMutation();
   const [deleteMessage, { isLoading: isDeleting }] =
     useDeleteMessageMutation();
+  const [uploadFile] = useUploadFileMutation();
 
   // lazy-хук для подгрузки старых сообщений
   const [loadMoreMessages] = useLazyGetMessagesQuery();
@@ -101,6 +135,8 @@ function ChatRoomWindow({ roomId }) {
 
   const [text, setText] = useState("");
   const [composerContext, setComposerContext] = useState(null); // только reply
+  const [attachmentsDraft, setAttachmentsDraft] = useState([]);
+  const [sendError, setSendError] = useState(false);
 
   // refs
   const listRef = useRef(null);
@@ -133,6 +169,7 @@ function ChatRoomWindow({ roomId }) {
 
   const messagesRef = useRef(messages);
   const messagesByIdRef = useRef(new Map());
+  const prevRoomIdRef = useRef(null);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -142,6 +179,21 @@ function ChatRoomWindow({ roomId }) {
     });
     messagesByIdRef.current = map;
   }, [messages]);
+
+  useEffect(() => {
+    if (prevRoomIdRef.current && prevRoomIdRef.current !== roomId) {
+      dispatch(closeInfoPanel(prevRoomIdRef.current));
+    }
+    prevRoomIdRef.current = roomId;
+  }, [dispatch, roomId]);
+
+  useEffect(() => {
+    return () => {
+      if (roomId) {
+        dispatch(closeInfoPanel(roomId));
+      }
+    };
+  }, [dispatch, roomId]);
 
   // ===== пагинация вверх =====
   const PAGE_LIMIT = 50;
@@ -195,6 +247,20 @@ function ChatRoomWindow({ roomId }) {
     }, 10_000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    setAttachmentsDraft([]);
+    setSendError(false);
+    dispatch(clearActiveAudio());
+    return () => dispatch(clearActiveAudio());
+  }, [roomId, dispatch]);
+
+  useEffect(() => {
+    if (isEditMode) {
+      setAttachmentsDraft([]);
+      setSendError(false);
+    }
+  }, [isEditMode]);
 
   // ===== дата / группировка =====
   const groupedMessages = useMemo(
@@ -314,7 +380,7 @@ function ChatRoomWindow({ roomId }) {
   // ===== ХЕДЕР =====
   const headerInfo = useMemo(() => {
     if (!room) {
-      return { title: "Чат", subtitle: "", initials: "C" };
+      return { title: "Чат", subtitle: "", initials: "C", avatar: "" };
     }
 
     if (room.type === "group") {
@@ -327,6 +393,7 @@ function ChatRoomWindow({ roomId }) {
           count === 1 ? "" : count < 5 ? "а" : "ов"
         }`,
         initials: t[0] || "G",
+        avatar: room.avatarUrl || "",
       };
     }
 
@@ -334,7 +401,7 @@ function ChatRoomWindow({ roomId }) {
     const otherPart = parts.find((p) => String(p.userId) !== meId) || parts[0];
 
     if (!otherPart) {
-      return { title: "Чат", subtitle: "", initials: "C" };
+      return { title: "Чат", subtitle: "", initials: "C", avatar: "" };
     }
 
     const user =
@@ -352,6 +419,7 @@ function ChatRoomWindow({ roomId }) {
       title: t,
       subtitle: "был(а) недавно",
       initials: init,
+      avatar: user.avatarUrl || "",
     };
   }, [room, companyUsers, meId]);
 
@@ -817,6 +885,11 @@ function ChatRoomWindow({ roomId }) {
 
     if (msg.forward?.textSnippet) return msg.forward.textSnippet;
 
+    const metaAttachments = msg?.meta?.attachments;
+    if (Array.isArray(metaAttachments) && metaAttachments.length) {
+      return metaAttachments[0]?.filename || "Вложение";
+    }
+
     if (Array.isArray(msg.attachments) && msg.attachments.length) {
       return msg.attachments[0]?.name || "Вложение";
     }
@@ -874,6 +947,123 @@ function ChatRoomWindow({ roomId }) {
     return true;
   };
 
+  const updateDraft = useCallback((localId, patch) => {
+    setAttachmentsDraft((prev) =>
+      prev.map((d) => (d.localId === localId ? { ...d, ...patch } : d))
+    );
+  }, []);
+
+  const uploadDraft = useCallback(
+    async (draft) => {
+      if (!draft || !draft.file) return;
+      updateDraft(draft.localId, { status: "uploading", error: null });
+      try {
+        const res = await uploadFile({
+          ownerType: "chatMessage",
+          ownerId: String(roomId),
+          purpose: "chat_attachment",
+          file: draft.file,
+        }).unwrap();
+
+        const data = res?.data || res || {};
+        if (!data?.id) {
+          throw new Error("Upload failed");
+        }
+
+        updateDraft(draft.localId, {
+          status: "done",
+          fileId: data.id,
+          filename: data.filename || draft.filename,
+          mime: data.mime || draft.mime || "",
+          size: data.size || draft.size || 0,
+        });
+      } catch (e) {
+        updateDraft(draft.localId, {
+          status: "error",
+          error: t("chat.attach.sendFailed"),
+        });
+      }
+    },
+    [roomId, updateDraft, uploadFile, t]
+  );
+
+  const handleFilesSelected = async (fileList) => {
+    if (!fileList || !fileList.length) return;
+    if (!roomId) return;
+    if (isEditMode) return;
+    if (sendError) setSendError(false);
+
+    const files = Array.from(fileList);
+    const currentSize = attachmentsDraft.reduce(
+      (sum, d) => sum + (d.size || 0),
+      0
+    );
+    let totalSize = currentSize;
+    let count = attachmentsDraft.length;
+
+    const nextDrafts = [];
+
+    for (const file of files) {
+      if (count >= MAX_FILES) {
+        if (typeof window !== "undefined") {
+          window.alert(t("chat.attach.tooLarge"));
+        }
+        continue;
+      }
+      if (!file.type || !CHAT_ATTACH_MIME.has(file.type)) {
+        if (typeof window !== "undefined") {
+          window.alert(t("chat.attach.unsupportedType"));
+        }
+        continue;
+      }
+      if (file.size > MAX_SINGLE_BYTES) {
+        if (typeof window !== "undefined") {
+          window.alert(t("chat.attach.tooLarge"));
+        }
+        continue;
+      }
+      if (totalSize + file.size > MAX_TOTAL_BYTES) {
+        if (typeof window !== "undefined") {
+          window.alert(t("chat.attach.tooLarge"));
+        }
+        continue;
+      }
+
+      const draft = {
+        localId: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        file,
+        status: "uploading",
+        fileId: null,
+        filename: file.name,
+        mime: file.type || "",
+        size: file.size || 0,
+        error: null,
+      };
+      nextDrafts.push(draft);
+      totalSize += file.size;
+      count += 1;
+    }
+
+    if (!nextDrafts.length) return;
+
+    setAttachmentsDraft((prev) => [...prev, ...nextDrafts]);
+
+    nextDrafts.forEach((draft) => {
+      uploadDraft(draft);
+    });
+  };
+
+  const handleRetryAttachment = (localId) => {
+    const draft = attachmentsDraft.find((d) => d.localId === localId);
+    if (!draft) return;
+    uploadDraft(draft);
+  };
+
+  const handleRemoveAttachment = (localId) => {
+    setAttachmentsDraft((prev) => prev.filter((d) => d.localId !== localId));
+    if (sendError) setSendError(false);
+  };
+
   const getOriginalInfo = (msg) => {
     if (!canViewOriginal || !msg) return null;
     const audit = msg?.meta?.audit;
@@ -903,12 +1093,22 @@ function ChatRoomWindow({ roomId }) {
   // ====== REPLY ======
 
   const handleReply = (msg) => {
+    let replyText = msg.text || "";
+    if (!replyText) {
+      const replyAttachments = msg?.meta?.attachments || msg?.attachments || [];
+      if (Array.isArray(replyAttachments) && replyAttachments.length) {
+        replyText =
+          replyAttachments[0]?.filename ||
+          replyAttachments[0]?.name ||
+          "Вложение";
+      }
+    }
     const ctx = {
       type: "reply",
       id: msg._id,
       authorId: msg.authorId,
       authorName: makeAuthorName(msg),
-      text: msg.text || "",
+      text: replyText,
     };
     setComposerContext(ctx);
     syncDraft(text, ctx);
@@ -1174,8 +1374,14 @@ function ChatRoomWindow({ roomId }) {
     const raw = text || "";
     const trimmed = raw.trim();
     const hasText = trimmed.length > 0;
+    const hasAttachments = doneAttachments.length > 0;
 
-    if (!hasText) return;
+    if (hasUploading) return;
+
+    if (!hasText && !hasAttachments && !isEditMode) return;
+    if (isEditMode && !hasText) return;
+
+    if (sendError) setSendError(false);
 
     if (isEditMode && editTargetForRoom?.messageId) {
       try {
@@ -1223,9 +1429,17 @@ function ChatRoomWindow({ roomId }) {
       payload.replyTo = composerContext.id;
     }
 
+    if (hasAttachments) {
+      payload.attachments = doneAttachments.map((a) => ({
+        fileId: a.fileId,
+      }));
+    }
+
     socket.emit("chat:send", payload, (res) => {
       if (res?.ok) {
         setText("");
+        setAttachmentsDraft([]);
+        setSendError(false);
         setComposerContext(null);
         dispatch(
           clearComposerDraft({
@@ -1235,6 +1449,10 @@ function ChatRoomWindow({ roomId }) {
         setTimeout(() => scrollToBottom(true), 0);
       } else {
         console.error("[ChatRoomWindow] send error", res);
+        setSendError(true);
+        if (typeof window !== "undefined") {
+          window.alert(t("chat.attach.sendFailed"));
+        }
       }
     });
   };
@@ -1249,6 +1467,7 @@ function ChatRoomWindow({ roomId }) {
   const onChangeText = (e) => {
     const next = e.target.value;
     setText(next);
+    if (sendError) setSendError(false);
     syncDraft(next, composerContext);
     notifyTyping();
   };
@@ -1282,7 +1501,19 @@ function ChatRoomWindow({ roomId }) {
     dispatch(setActiveRoom(null));
   };
 
-  const canSend = text.trim().length > 0;
+  const handleOpenInfo = () => {
+    if (!roomId || !room) return;
+    const defaultTab = room.type === "group" ? "participants" : "profile";
+    dispatch(openInfoPanel({ roomId, tab: defaultTab }));
+  };
+
+  const doneAttachments = attachmentsDraft.filter((d) => d.status === "done");
+  const hasUploading = attachmentsDraft.some((d) => d.status === "uploading");
+  const hasDoneAttachments = doneAttachments.length > 0;
+  const canSend =
+    (isEditMode
+      ? text.trim().length > 0
+      : text.trim().length > 0 || hasDoneAttachments) && !hasUploading;
   const replyContextToShow = isEditMode ? null : composerContext;
   const sendState = { isLoading: false };
   const isBusy = !!sendState.isLoading || (isEditMode && isEditing);
@@ -1309,10 +1540,25 @@ function ChatRoomWindow({ roomId }) {
     <div className={s.window}>
       <ChatHeader
         initials={headerInfo.initials}
+        avatar={headerInfo.avatar}
         title={headerInfo.title}
         subtitle={subtitleToShow}
         onBack={handleBack}
         onToggleSearch={toggleSearch}
+        onTitleClick={handleOpenInfo}
+      />
+
+      <ChatInfoPanel
+        roomId={roomId}
+        room={room}
+        messages={messages}
+        participants={participants}
+        meId={meId}
+        currentUser={currentUser}
+        companyUsers={companyUsers}
+        hasMore={hasMore}
+        isLoadingMore={isLoadingMore}
+        onLoadMore={loadOlderBatch}
       />
 
       <ChatSearchBar
@@ -1465,13 +1711,21 @@ function ChatRoomWindow({ roomId }) {
         onChangeText={onChangeText}
         onKeyDown={onKeyDown}
         onSend={handleSend}
-        canSend={canSend}
         isBusy={isBusy}
+        canSend={canSend}
         onHeightChange={handleInputHeightChange}
         replyTo={replyContextToShow}
         onCancelReply={cancelComposerContext}
         editTarget={editTargetForRoom}
         onCancelEdit={cancelEdit}
+        attachments={attachmentsDraft}
+        onFilesSelected={handleFilesSelected}
+        onRemoveAttachment={handleRemoveAttachment}
+        onRetryAttachment={handleRetryAttachment}
+        isUploading={hasUploading}
+        disableAttachments={isEditMode}
+        sendError={sendError}
+        onRetrySend={handleSend}
       />
     </div>
   );

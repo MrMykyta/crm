@@ -9,6 +9,7 @@ import styles from "./Topbar.module.css";
 
 import UserMenu from "../UserMenu";
 import NotificationsMenu from "../NotificationsMenu";
+import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 
 import {
   useListMyNotificationsQuery,
@@ -46,9 +47,8 @@ export default function Topbar({
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
 
-  const [avatarUrl, setAvatarUrl] = useState(
-    () => user?.avatarUrl || readCssVarUrl("--user-avatar-url")
-  );
+  const rawAvatarUrl = user?.avatarUrl || readCssVarUrl("--user-avatar-url");
+  const { url: avatarUrl, onError: onAvatarError } = useSignedFileUrl(rawAvatarUrl);
 
   // =================== NOTIFICATIONS ===================
   const { data: notifData, refetch: refetchNotifs } =
@@ -242,18 +242,9 @@ export default function Topbar({
   };
   
   // =================== OTHER TOPBAR ===================
-  useEffect(() => {
-    if (user?.avatarUrl) setAvatarUrl(user.avatarUrl);
-  }, [user?.avatarUrl]);
+  // avatarUrl приходит через signed inline URL
 
-  useEffect(() => {
-    const onUserAvatar = (e) => {
-      const next = e?.detail?.url;
-      if (next) setAvatarUrl(next);
-    };
-    window.addEventListener("user:avatar-ready", onUserAvatar);
-    return () => window.removeEventListener("user:avatar-ready", onUserAvatar);
-  }, []);
+  // user:avatar-ready now updates CSS var; signed URL is derived from user/var directly
 
   useEffect(() => {
     const h = (e) => {
@@ -359,7 +350,7 @@ export default function Topbar({
             onClick={() => setMenuOpen((v) => !v)}
           >
             {avatarUrl ? (
-              <img className={styles.avatarImg} src={avatarUrl} alt="" />
+              <img className={styles.avatarImg} src={avatarUrl} alt="" onError={onAvatarError} />
             ) : (
               <div className={styles.avatarFallback}>{initials}</div>
             )}

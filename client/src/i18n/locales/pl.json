@@ -489,6 +489,60 @@
       "nipLabel": "NIP",
       "typeToSearch": "Wpisz nazwę lub NIP"
     }
+  },
+  "chat": {
+    "attach": {
+      "uploading": "Przesyłanie pliku…",
+      "tooLarge": "Plik jest za duży lub przekroczono limit",
+      "unsupportedType": "Nieobsługiwany typ pliku",
+      "download": "Pobierz",
+      "retry": "Ponów",
+      "remove": "Usuń",
+      "sendFailed": "Wiadomość nie została wysłana"
+    },
+    "audio": {
+      "playbackError": "Nie można odtworzyć audio",
+      "play": "Odtwórz",
+      "pause": "Pauza",
+      "loading": "Ładowanie audio…"
+    },
+    "info": {
+      "title": "Informacje",
+      "tabs": {
+        "participants": "Uczestnicy",
+        "profile": "Profil",
+        "media": "Media",
+        "links": "Linki",
+        "documents": "Dokumenty"
+      },
+      "empty": {
+        "participants": "Brak uczestników",
+        "profile": "Profil niedostępny",
+        "media": "Brak mediów",
+        "links": "Brak linków",
+        "documents": "Brak dokumentów"
+      },
+      "actions": {
+        "edit": "Edytuj",
+        "save": "Zapisz",
+        "cancel": "Anuluj",
+        "close": "Zamknij",
+        "loadMore": "Załaduj więcej"
+      },
+      "fields": {
+        "searchParticipants": "Szukaj uczestników",
+        "groupName": "Nazwa grupy"
+      },
+      "media": {
+        "open": "Otwórz"
+      },
+      "documents": {
+        "download": "Pobierz"
+      },
+      "links": {
+        "open": "Otwórz"
+      }
+    }
   }
-  
+
 }

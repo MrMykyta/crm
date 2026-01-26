@@ -4,7 +4,12 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { initSocket } from '../../sockets/io';
 import { useListRoomsQuery } from '../../store/rtk/chatApi';
-import { setRooms, setActiveRoom, clearEditTarget } from '../../store/slices/chatSlice';
+import {
+  setRooms,
+  setActiveRoom,
+  clearEditTarget,
+  closeInfoPanel,
+} from '../../store/slices/chatSlice';
 
 import ChatSidebar from './ChatSidebar';
 import ChatWindow from './ChatWindow';
@@ -17,6 +22,9 @@ export default function ChatPage({ accessToken: accessTokenProp }) {
   const activeRoomId = useSelector((st) => st.chat.activeRoomId);
   const accessTokenStore = useSelector((st) => st.auth.accessToken);
   const composerMode = useSelector((st) => st.chat.composerMode);
+  const infoPanelOpen = useSelector(
+    (st) => st.chat.infoPanelOpenByRoomId?.[String(activeRoomId || '')]
+  );
 
   const accessToken = accessTokenProp || accessTokenStore;
 
@@ -46,6 +54,11 @@ export default function ChatPage({ accessToken: accessTokenProp }) {
     const onKey = (e) => {
       if (e.key !== 'Escape') return;
       if (e.defaultPrevented) return;
+
+      if (infoPanelOpen && activeRoomId) {
+        dispatch(closeInfoPanel(activeRoomId));
+        return;
+      }
 
       if (composerMode === 'edit') {
         dispatch(clearEditTarget());

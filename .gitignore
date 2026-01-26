@@ -2,3 +2,9 @@ node_modules/
 .env
 public/
 Readme.md
+uploads/
+public-uploads/
+uploads-tmp/
+server/uploads/
+server/public-uploads/
+server/uploads-tmp/
