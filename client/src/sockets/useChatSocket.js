@@ -10,6 +10,7 @@ import {
   removePinned,
   removeMessages,
   updateMessage,
+  updateReaction,
   updateRoom,
 } from "../store/slices/chatSlice";
 import { chatApi } from "../store/rtk/chatApi";
@@ -247,6 +248,24 @@ export function useChatSocket(activeRoomId) {
       );
     };
 
+    // ===================== REACTIONS =====================
+    // Apply server reaction events to Redux state.
+    const onReactionUpdate = (payload = {}) => {
+      const { messageId, emoji, count, reacted, userId } = payload;
+      if (!messageId || !emoji) return;
+      const isSelf =
+        userId && currentUserId && String(userId) === String(currentUserId);
+
+      dispatch(
+        updateReaction({
+          messageId: String(messageId),
+          emoji,
+          count: typeof count === "number" ? count : undefined,
+          reacted: isSelf ? reacted : undefined,
+        })
+      );
+    };
+
     // ===================== ROOM UPDATED =====================
     const onRoomUpdated = (payload = {}) => {
       const { roomId, patch, updatedAt } = payload;
@@ -268,6 +287,8 @@ export function useChatSocket(activeRoomId) {
     socket.on("chat:message:edited", onMessageEdited);
     socket.on("chat:message:deleted", onMessageDeleted);
     socket.on("chat:room:updated", onRoomUpdated);
+    socket.on("chat:reaction:add", onReactionUpdate);
+    socket.on("chat:reaction:remove", onReactionUpdate);
 
     return () => {
       if (roomKey) {
@@ -286,6 +307,8 @@ export function useChatSocket(activeRoomId) {
       socket.off("chat:message:edited", onMessageEdited);
       socket.off("chat:message:deleted", onMessageDeleted);
       socket.off("chat:room:updated", onRoomUpdated);
+      socket.off("chat:reaction:add", onReactionUpdate);
+      socket.off("chat:reaction:remove", onReactionUpdate);
     };
   }, [activeRoomId, currentUserId, dispatch]);
 }

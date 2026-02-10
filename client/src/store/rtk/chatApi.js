@@ -87,6 +87,30 @@ export const chatApi = crmApi.injectEndpoints({
       }),
     }),
 
+    // реакция на сообщение (toggle add/remove)
+    toggleMessageReaction: build.mutation({
+      query: ({ messageId, emoji }) => ({
+        url: `/chat/messages/${messageId}/reactions`,
+        method: "POST",
+        body: { emoji },
+      }),
+    }),
+
+    // удалить реакцию (idempotent)
+    removeMessageReaction: build.mutation({
+      query: ({ messageId, emoji }) => ({
+        url: `/chat/messages/${messageId}/reactions/${encodeURIComponent(
+          emoji || ""
+        )}`,
+        method: "DELETE",
+      }),
+    }),
+
+    // получить реакции для сообщения
+    getMessageReactions: build.query({
+      query: ({ messageId }) => `/chat/messages/${messageId}/reactions`,
+    }),
+
     // список закреплённых сообщений комнаты
     getPinned: build.query({
       query: ({ roomId }) => `/chat/rooms/${roomId}/pins`,
@@ -128,6 +152,9 @@ export const {
   useEditMessageMutation,
   useDeleteMessageMutation,
   useMarkReadMutation,
+  useToggleMessageReactionMutation,
+  useRemoveMessageReactionMutation,
+  useGetMessageReactionsQuery,
   useGetPinnedQuery,
   usePinMessageMutation,
   useUnpinMessageMutation,

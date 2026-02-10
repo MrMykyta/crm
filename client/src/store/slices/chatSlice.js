@@ -7,6 +7,7 @@ const initialState = {
   activePinnedIndexByRoomId: {}, // activePinnedIndexByRoomId[roomId] = number
   rooms: [], // список комнат
   messages: {}, // messages[roomId] = []
+  reactions: {}, // reactions[messageId][emoji] = { count, reacted }
   composerDrafts: {}, // drafts[roomId] = { text, context }
   composerMode: "new", // 'new' | 'edit'
   editTarget: null, // { roomId, messageId, originalText, authorName, createdAt }
@@ -16,6 +17,34 @@ const initialState = {
   // context: { type: 'reply' | null, id, authorId, authorName, text }
   forwardDraft: null, // { messageId, fromRoomId, toRoomId, authorId, authorName, text }
 };
+
+// Normalize server reaction payload into map form for the store.
+function normalizeReactionsMap(raw) {
+  if (!raw || typeof raw !== "object") return {};
+  const next = {};
+  Object.entries(raw).forEach(([emoji, value]) => {
+    if (!emoji) return;
+    if (typeof value === "number") {
+      if (value > 0) next[emoji] = { count: value, reacted: false };
+      return;
+    }
+    if (value && typeof value === "object") {
+      const count = Number(value.count || 0);
+      if (!count) return;
+      next[emoji] = { count, reacted: Boolean(value.reacted) };
+    }
+  });
+  return next;
+}
+
+// Hydrate reaction state from a single message payload.
+function applyMessageReactions(state, message) {
+  if (!message || !message._id) return;
+  const key = String(message._id);
+  const raw = message.reactions || message?.meta?.reactions || null;
+  if (!raw || typeof raw !== "object") return;
+  state.reactions[key] = normalizeReactionsMap(raw);
+}
 
 const chatSlice = createSlice({
   name: "chat",
@@ -41,9 +70,9 @@ const chatSlice = createSlice({
     setMessages(state, action) {
       const { roomId, messages } = action.payload || {};
       if (!roomId) return;
-      state.messages[String(roomId)] = Array.isArray(messages)
-        ? messages
-        : [];
+      const list = Array.isArray(messages) ? messages : [];
+      state.messages[String(roomId)] = list;
+      list.forEach((m) => applyMessageReactions(state, m));
     },
 
     // добавить одно сообщение в комнату (live)
@@ -60,6 +89,7 @@ const chatSlice = createSlice({
       if (list.some((m) => String(m._id) === String(message._id))) return;
 
       list.push(message);
+      applyMessageReactions(state, message);
     },
 
     // добавить пачку сообщений в начало (подгрузка старых)
@@ -81,6 +111,7 @@ const chatSlice = createSlice({
       if (!toAdd.length) return;
 
       state.messages[key] = [...toAdd, ...existing];
+      toAdd.forEach((m) => applyMessageReactions(state, m));
     },
 
     // обновляем превью, время последнего сообщения и myUnreadCount
@@ -165,6 +196,10 @@ const chatSlice = createSlice({
           (m) => !m._id || !idsSet.has(String(m._id))
         );
       }
+
+      idsSet.forEach((id) => {
+        delete state.reactions[id];
+      });
     },
 
     setActiveAudio(state, action) {
@@ -311,6 +346,43 @@ const chatSlice = createSlice({
         next.meta = { ...(prev.meta || {}), ...patch.meta };
       }
       list[idx] = next;
+
+      if (patch.reactions && typeof patch.reactions === "object") {
+        state.reactions[String(messageId)] = normalizeReactionsMap(
+          patch.reactions
+        );
+      }
+    },
+
+    // Apply reaction delta for a single message/emoji.
+    updateReaction(state, action) {
+      const { messageId, emoji, count, reacted } = action.payload || {};
+      if (!messageId || !emoji) return;
+      const key = String(messageId);
+      if (!state.reactions[key]) state.reactions[key] = {};
+
+      const prev = state.reactions[key][emoji] || {
+        count: 0,
+        reacted: false,
+      };
+
+      const nextCount =
+        typeof count === "number" ? Math.max(0, count) : prev.count;
+      const nextReacted =
+        typeof reacted === "boolean" ? reacted : prev.reacted;
+
+      if (!nextCount) {
+        delete state.reactions[key][emoji];
+      } else {
+        state.reactions[key][emoji] = {
+          count: nextCount,
+          reacted: nextReacted,
+        };
+      }
+
+      if (!Object.keys(state.reactions[key]).length) {
+        delete state.reactions[key];
+      }
     },
 
     // обновление полей комнаты
@@ -343,6 +415,7 @@ export const {
   removePinned,
   setActivePinnedIndex,
   updateMessage,
+  updateReaction,
   updateRoom,
   setEditTarget,
   clearEditTarget,

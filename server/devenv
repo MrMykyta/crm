@@ -1,0 +1,32 @@
+DB_NAME=crm
+DB_USER=postgres
+DB_PASSWORD=61270708
+DB_HOST=127.0.0.1
+DB_PORT=5432
+
+
+MONGO_URI=mongodb://localhost:27017/sunset
+
+
+PORT=5001
+DEV_ORIGIN=http://localhost:3000
+# DEV_ORIGIN=http://192.168.0.3:3000
+
+
+JWT_ACCESS_TTL=10m
+JWT_REFRESH_TTL_HOURS=4
+JWT_ACCESS_SECRET=OKurwaBober
+JWT_REFRESH_SECRET=JAPierdole
+
+SEED_COMPANY_ID=3253b184-6641-4438-a2dc-03e503ade768
+
+APP_URL=http://localhost:3000
+# APP_URL=http://192.168.0.3:3000
+
+MAIL_FROM_NAME=CRM
+MAIL_FROM_ADDR=mykytaovcharenko08@gmail.com
+GMAIL_USER=mykytaovcharenko08@gmail.com
+GMAIL_APP_PASSWORD=othzpijjfhghssqd
+
+FILE_BASE_URL=http://localhost:5001
+# FILE_BASE_URL=http://192.168.0.3:5001

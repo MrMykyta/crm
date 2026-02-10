@@ -197,6 +197,76 @@ module.exports.sendMessage = async (req, res, next) => {
 };
 
 /**
+ * GET /api/chat/messages/:messageId/reactions
+ */
+module.exports.listMessageReactions = async (req, res, next) => {
+  try {
+    const userId = String(req.user.id);
+    const companyId = String(req.user.companyId);
+    const { messageId } = req.params;
+
+    const reactions = await chatService.getMessageReactions({
+      companyId,
+      messageId,
+      userId,
+    });
+
+    res.json({ reactions });
+  } catch (e) {
+    console.error("[chatController.listMessageReactions]", e);
+    next(e);
+  }
+};
+
+/**
+ * POST /api/chat/messages/:messageId/reactions
+ */
+module.exports.toggleReaction = async (req, res, next) => {
+  try {
+    const userId = String(req.user.id);
+    const companyId = String(req.user.companyId);
+    const { messageId } = req.params;
+    const { emoji } = req.body || {};
+
+    const payload = await chatService.toggleReaction({
+      companyId,
+      messageId,
+      userId,
+      emoji,
+    });
+
+    res.json(payload);
+  } catch (e) {
+    console.error("[chatController.toggleReaction]", e);
+    next(e);
+  }
+};
+
+/**
+ * DELETE /api/chat/messages/:messageId/reactions/:emoji
+ */
+module.exports.removeReaction = async (req, res, next) => {
+  try {
+    const userId = String(req.user.id);
+    const companyId = String(req.user.companyId);
+    const { messageId, emoji: emojiParam } = req.params;
+    const emoji = emojiParam ? decodeURIComponent(emojiParam) : "";
+
+    const payload = await chatService.removeReaction({
+      companyId,
+      messageId,
+      userId,
+      emoji,
+    });
+
+    res.json(payload);
+  } catch (e) {
+    console.error("[chatController.removeReaction]", e);
+    next(e);
+  }
+};
+
+/**
  * POST /api/chat/rooms/:roomId/read
  */
 module.exports.markRead = async (req, res, next) => {

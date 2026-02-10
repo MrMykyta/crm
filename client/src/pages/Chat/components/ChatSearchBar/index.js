@@ -1,4 +1,7 @@
+// src/pages/Chat/components/ChatSearchBar.jsx
+// Search bar for message search with navigation between matches.
 import React from "react";
+import { useTranslation } from "react-i18next";
 import s from "../../ChatPage.module.css";
 
 export default function ChatSearchBar({
@@ -11,6 +14,7 @@ export default function ChatSearchBar({
   onNext,
   onClose,
 }) {
+  const { t } = useTranslation();
   if (!open) return null;
 
   const showCounter = query.trim();
@@ -20,7 +24,7 @@ export default function ChatSearchBar({
       <input
         className={s.chatSearchInput}
         type="text"
-        placeholder="Поиск по сообщениям…"
+        placeholder={t("chat.search.placeholder")}
         value={query}
         onChange={onChange}
       />

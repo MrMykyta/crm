@@ -6,6 +6,7 @@ const { addContacts } = require('./contactPointService');
 
 const UUID_RE = /^[0-9a-fA-F-]{32,36}$/;
 const isFileApiUrl = (v) => typeof v === 'string' && v.includes('/api/files/');
+const isHttpUrl = (v) => /^https?:\/\/.+/i.test(v);
 const validateFileIdField = (field, value) => {
   if (value === undefined) return undefined;
   if (value === null || value === '') return null;
@@ -19,6 +20,20 @@ const validateFileIdField = (field, value) => {
     throw new ApplicationError(`VALIDATION_ERROR: ${field} must be uuid`, 400);
   }
   return value;
+};
+
+const validateAvatarField = (field, value) => {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') {
+    throw new ApplicationError(`VALIDATION_ERROR: ${field} must be uuid or url or null`, 400);
+  }
+  if (isFileApiUrl(value)) {
+    throw new ApplicationError(`VALIDATION_ERROR: ${field} must be fileId or external URL`, 400);
+  }
+  if (UUID_RE.test(value)) return value;
+  if (isHttpUrl(value)) return value;
+  throw new ApplicationError(`VALIDATION_ERROR: ${field} must be uuid or url`, 400);
 };
 
 /** утилита: роль пользователя в компании */
@@ -121,7 +136,7 @@ module.exports.updateCompany = async (requesterId, companyId, payload = {}) => {
     }) => ({ name, nip, regon, krs, bdo, website, street, postalCode, city, country, description, ownerUserId, avatarUrl }))(payload);
 
     if (allowed.avatarUrl !== undefined) {
-      allowed.avatarUrl = validateFileIdField('avatarUrl', allowed.avatarUrl);
+      allowed.avatarUrl = validateAvatarField('avatarUrl', allowed.avatarUrl);
     }
 
     await company.update(allowed, { transaction: t });

@@ -1,6 +1,8 @@
 // src/pages/Chat/hooks/useChatTyping.js
+// Typing indicator hook: subscribes to socket events and builds subtitle text.
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { getSocket } from "../../../sockets/io";
+import i18n from "../../../i18n";
 
 const DEFAULT_TYPING_EMIT_THROTTLE = 2000;
 const DEFAULT_TYPING_STALE_MS = 8000;
@@ -31,7 +33,8 @@ export function useChatTyping({
         if (isTyping) {
           next[key] = {
             userId: key,
-            userName: userName || next[key]?.userName || "Пользователь",
+            userName:
+              userName || next[key]?.userName || i18n.t("chat.message.user"),
             at: Date.now(),
           };
         } else {
@@ -82,7 +85,7 @@ export function useChatTyping({
     const userName =
       [currentUser.firstName, currentUser.lastName].filter(Boolean).join(" ") ||
       currentUser.email ||
-      "Вы";
+      i18n.t("chat.typing.you");
 
     socket.emit("chat:typing", {
       roomId,
@@ -114,10 +117,10 @@ export function useChatTyping({
     if (!others.length) return "";
 
     if (others.length === 1) {
-      const name = others[0].userName || "Собеседник";
-      return `${name} печатает…`;
+      const name = others[0].userName || i18n.t("chat.typing.userFallback");
+      return i18n.t("chat.typing.single", { name });
     }
-    return "Несколько человек печатают…";
+    return i18n.t("chat.typing.multi");
   }, [typingUsers, meId]);
 
   return {

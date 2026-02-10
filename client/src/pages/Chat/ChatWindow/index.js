@@ -1,4 +1,5 @@
 // src/pages/Chat/ChatWindow/index.jsx
+// Main chat window: header, pinned bar, messages list, composer, and right info panel.
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -9,6 +10,7 @@ import {
   useGetPinnedQuery,
   useEditMessageMutation,
   useDeleteMessageMutation,
+  useToggleMessageReactionMutation,
 } from "../../../store/rtk/chatApi";
 import { useUploadFileMutation } from "../../../store/rtk/filesApi";
 
@@ -23,8 +25,9 @@ import {
   setEditTarget,
   clearEditTarget,
   clearActiveAudio,
-  openInfoPanel,
+  setInfoPanelTab,
   closeInfoPanel,
+  updateReaction,
 } from "../../../store/slices/chatSlice";
 
 import ChatCreateDirect from "../ChatCreateDirect";
@@ -37,13 +40,14 @@ import { useChatSearch } from "../hooks/useChatSearch";
 import { useChatScrollFloatingDay } from "../hooks/useChatScrollFloatingDay";
 
 import ChatHeader from "../components/ChatHeader";
-import ChatSearchBar from "../components/ChatSearchBar";
 import ChatMessages from "../components/ChatMessages";
 import MessageContextMenu from "../components/MessageContextMenu";
 import ForwardDialog from "../components/ForwardDialog";
 import { getAuthorInfo } from "../utils/chatMessageUtils";
 import Modal from "../../../components/Modal";
+import ConfirmDialog from "../../../components/dialogs/ConfirmDialog";
 import ChatInfoPanel from "../../../components/chat/info/ChatInfoPanel";
+import MediaViewer from "../../../components/chat/MediaViewer";
 
 // простая проверка Safari
 const isSafari =
@@ -78,13 +82,16 @@ const CHAT_ATTACH_MIME = new Set([
 
 // ================= ОБЁРТКА =================
 export default function ChatWindow({ roomId, mode = "room", onExitCreate }) {
+  const { t } = useTranslation();
   if (mode === "createDirect" || mode === "createGroup") {
     return (
       <div className={s.window}>
-        <ChatCreateDirect
-          mode={mode === "createGroup" ? "group" : "direct"}
-          onChatCreated={onExitCreate}
-        />
+        <div className={s.chatMain}>
+          <ChatCreateDirect
+            mode={mode === "createGroup" ? "group" : "direct"}
+            onChatCreated={onExitCreate}
+          />
+        </div>
       </div>
     );
   }
@@ -92,7 +99,9 @@ export default function ChatWindow({ roomId, mode = "room", onExitCreate }) {
   if (!roomId) {
     return (
       <div className={s.window}>
-        <div className={s.empty}>Выберите чат</div>
+        <div className={s.chatMain}>
+          <div className={s.empty}>{t("chat.emptyRoom")}</div>
+        </div>
       </div>
     );
   }
@@ -105,12 +114,20 @@ function ChatRoomWindow({ roomId }) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
 
+  // Redux: current user and rooms list.
   const currentUser = useSelector((st) => st.auth.user || st.auth.currentUser);
   const rooms = useSelector((st) => st.chat.rooms);
+  // Redux: bootstrap users for avatar/name resolution.
   const companyUsers = useSelector((st) => st.bootstrap.companyUsers || []);
+  // Redux: info panel open flag for this room.
+  const isInfoOpen = useSelector(
+    (st) => st.chat.infoPanelOpenByRoomId?.[String(roomId)]
+  );
+  // Redux: composer draft for this room.
   const composerDraft = useSelector(
     (st) => st.chat.composerDrafts?.[String(roomId)] || null
   );
+  // Redux: composer mode + edit target.
   const composerMode = useSelector((st) => st.chat.composerMode);
   const editTarget = useSelector((st) => st.chat.editTarget);
 
@@ -124,6 +141,8 @@ function ChatRoomWindow({ roomId }) {
   const [editMessage, { isLoading: isEditing }] = useEditMessageMutation();
   const [deleteMessage, { isLoading: isDeleting }] =
     useDeleteMessageMutation();
+  // Mutation for toggling message reactions.
+  const [toggleReaction] = useToggleMessageReactionMutation();
   const [uploadFile] = useUploadFileMutation();
 
   // lazy-хук для подгрузки старых сообщений
@@ -133,12 +152,16 @@ function ChatRoomWindow({ roomId }) {
     { skip: !roomId }
   );
 
+  // Composer input value.
   const [text, setText] = useState("");
+  // Reply/forward context for composer.
   const [composerContext, setComposerContext] = useState(null); // только reply
+  // Draft attachments before sending.
   const [attachmentsDraft, setAttachmentsDraft] = useState([]);
+  // Send error flag (used for retry UI).
   const [sendError, setSendError] = useState(false);
 
-  // refs
+  // Refs for message list and scroll logic.
   const listRef = useRef(null);
   const lastReadIdRef = useRef(null);
   const jumpTokenRef = useRef(0);
@@ -146,27 +169,44 @@ function ChatRoomWindow({ roomId }) {
   // флаг «мы уже сделали первичный скролл для этой комнаты»
   const initialScrollDoneRef = useRef(false);
 
-  // ===== режим выбора сообщений (как в Telegram) =====
+  // Selection mode (multi-select messages).
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
 
+  // Forward modal state.
   const [forwardMessages, setForwardMessages] = useState([]);
   const [forwardDialogOpen, setForwardDialogOpen] = useState(false);
+  // Audit modal (show original text).
   const [originalModal, setOriginalModal] = useState({
     open: false,
     title: "",
     text: "",
   });
+  // Confirm delete dialog state.
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    open: false,
+    message: null,
+  });
+  // Scroll-to-bottom button visibility.
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  // Media viewer for message attachments.
+  const [messageViewer, setMessageViewer] = useState({
+    open: false,
+    items: [],
+    index: 0,
+  });
 
-  // свернут ли pinned-бар
+  // Collapsed state for pinned bar.
   const [collapsedPinned, setCollapsedPinned] = useState(false);
 
-  // сообщения из Redux
+  // Messages list from Redux for current room.
   const messages = useSelector((st) => st.chat.messages[String(roomId)] || []);
+  // Active pinned index for current room.
   const activePinnedIndex = useSelector(
     (st) => st.chat.activePinnedIndexByRoomId?.[String(roomId)] ?? 0
   );
 
+  // Refs to avoid stale closures while paging/jumping.
   const messagesRef = useRef(messages);
   const messagesByIdRef = useRef(new Map());
   const prevRoomIdRef = useRef(null);
@@ -197,6 +237,7 @@ function ChatRoomWindow({ roomId }) {
 
   // ===== пагинация вверх =====
   const PAGE_LIMIT = 50;
+  // Pagination flags for loading older messages.
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const hasMoreRef = useRef(hasMore);
@@ -221,6 +262,7 @@ function ChatRoomWindow({ roomId }) {
   );
   const isGroup = room?.type === "group";
   const EDIT_WINDOW_MS = 15 * 60 * 1000;
+  // Local clock to auto-hide edit action after time window.
   const [nowTs, setNowTs] = useState(Date.now());
   const participants = room?.participants || [];
   const myParticipant = useMemo(() => {
@@ -240,6 +282,7 @@ function ChatRoomWindow({ roomId }) {
     editTarget &&
     String(editTarget.roomId) === String(roomId);
   const editTargetForRoom = isEditMode ? editTarget : null;
+  // Track previous edit mode to sync composer text.
   const prevIsEditModeRef = useRef(false);
   useEffect(() => {
     const id = setInterval(() => {
@@ -251,6 +294,8 @@ function ChatRoomWindow({ roomId }) {
   useEffect(() => {
     setAttachmentsDraft([]);
     setSendError(false);
+    setMessageViewer({ open: false, items: [], index: 0 });
+    setDeleteConfirm({ open: false, message: null });
     dispatch(clearActiveAudio());
     return () => dispatch(clearActiveAudio());
   }, [roomId, dispatch]);
@@ -380,19 +425,22 @@ function ChatRoomWindow({ roomId }) {
   // ===== ХЕДЕР =====
   const headerInfo = useMemo(() => {
     if (!room) {
-      return { title: "Чат", subtitle: "", initials: "C", avatar: "" };
+      return {
+        title: t("chat.sidebar.roomFallback"),
+        subtitle: "",
+        initials: "C",
+        avatar: "",
+      };
     }
 
     if (room.type === "group") {
-      const t = room.title || "Группа";
+      const groupTitle = room.title || t("chat.header.groupFallback");
       const count = room.participants?.length || 0;
 
       return {
-        title: t,
-        subtitle: `${count} участник${
-          count === 1 ? "" : count < 5 ? "а" : "ов"
-        }`,
-        initials: t[0] || "G",
+        title: groupTitle,
+        subtitle: t("chat.header.groupMembersCount", { count }),
+        initials: groupTitle[0] || "G",
         avatar: room.avatarUrl || "",
       };
     }
@@ -401,7 +449,12 @@ function ChatRoomWindow({ roomId }) {
     const otherPart = parts.find((p) => String(p.userId) !== meId) || parts[0];
 
     if (!otherPart) {
-      return { title: "Чат", subtitle: "", initials: "C", avatar: "" };
+      return {
+        title: t("chat.sidebar.roomFallback"),
+        subtitle: "",
+        initials: "C",
+        avatar: "",
+      };
     }
 
     const user =
@@ -411,17 +464,19 @@ function ChatRoomWindow({ roomId }) {
 
     const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
 
-    const t = fullName || user.email || "Пользователь";
+    const displayName =
+      fullName || user.email || t("chat.message.user");
     const init =
-      (user.firstName?.[0] || t[0] || "U") + (user.lastName?.[0] || "");
+      (user.firstName?.[0] || displayName[0] || "U") +
+      (user.lastName?.[0] || "");
 
     return {
-      title: t,
-      subtitle: "был(а) недавно",
+      title: displayName,
+      subtitle: t("chat.header.directSubtitle"),
       initials: init,
       avatar: user.avatarUrl || "",
     };
-  }, [room, companyUsers, meId]);
+  }, [room, companyUsers, meId, t]);
 
   // ===== typing (сокеты + подзаголовок) =====
   const { typingLabel, notifyTyping } = useChatTyping({
@@ -439,6 +494,18 @@ function ChatRoomWindow({ roomId }) {
       groupedMessages,
       searchOpenDepsKey: roomId,
     });
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const update = () => {
+      const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setShowScrollDown(distance > 160);
+    };
+    update();
+    el.addEventListener("scroll", update);
+    return () => el.removeEventListener("scroll", update);
+  }, [roomId, listRef, messages.length]);
 
   // 🔽 Хелпер для скролла вниз
   const scrollToBottom = (smooth = true) => {
@@ -596,7 +663,7 @@ function ChatRoomWindow({ roomId }) {
     const ok = await jumpToPinnedMessage(currentPinned._id, token);
     if (!ok) {
       if (typeof window !== "undefined") {
-        window.alert("Сообщение не найдено");
+        window.alert(t("chat.pinned.notFound"));
       }
       return;
     }
@@ -814,16 +881,23 @@ function ChatRoomWindow({ roomId }) {
     message: null,
   });
 
-  const openMessageMenu = (message, e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Active overlay controller (menu / reaction / dialog / viewer).
+  const [activeOverlay, setActiveOverlay] = useState(null);
+
+  const openMessageMenu = (message, e, anchorEl) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
     if (selectMode) return;
 
-    const wrapEl = e.currentTarget;
+    const wrapEl = anchorEl || e?.currentTarget;
     if (!wrapEl) return;
 
-    const bubbleEl = wrapEl.querySelector('[data-role="msg-bubble"]');
+    const bubbleEl =
+      wrapEl.closest?.('[data-role="msg-bubble"]') ||
+      wrapEl.querySelector?.('[data-role="msg-bubble"]');
     const el = bubbleEl || wrapEl;
     const rect = el.getBoundingClientRect();
 
@@ -842,6 +916,13 @@ function ChatRoomWindow({ roomId }) {
 
     const isMe = meId && String(message.authorId) === String(meId);
 
+    setForwardDialogOpen(false);
+    setForwardMessages([]);
+    setDeleteConfirm({ open: false, message: null });
+    setOriginalModal({ open: false, title: "", text: "" });
+    setMessageViewer({ open: false, items: [], index: 0 });
+
+    setActiveOverlay({ type: "menu", messageId: String(message._id) });
     setMenuState({
       open: true,
       anchorRect: {
@@ -859,26 +940,71 @@ function ChatRoomWindow({ roomId }) {
     });
   };
 
-  const closeMenu = () =>
+  const closeMenu = () => {
     setMenuState((prev) => ({
       ...prev,
       open: false,
     }));
+    setActiveOverlay((prev) =>
+      prev?.type === "menu" ? null : prev
+    );
+  };
+
+  const toggleReactionPicker = useCallback(
+    (messageId) => {
+      if (!messageId) return;
+      if (selectMode) return;
+      if (activeOverlay?.type === "dialog" || activeOverlay?.type === "viewer") {
+        return;
+      }
+      closeMenu();
+      setActiveOverlay((prev) => {
+        if (
+          prev?.type === "reaction" &&
+          String(prev.messageId) === String(messageId)
+        ) {
+          return null;
+        }
+        return { type: "reaction", messageId: String(messageId) };
+      });
+    },
+    [closeMenu, selectMode, activeOverlay]
+  );
+
+  const closeReactionPicker = useCallback(() => {
+    setActiveOverlay((prev) => (prev?.type === "reaction" ? null : prev));
+  }, []);
+
+  const handleOpenMediaViewer = useCallback(
+    (items, index = 0) => {
+      if (!Array.isArray(items) || !items.length) return;
+      const safeIndex = Math.max(0, Math.min(index, items.length - 1));
+      setMessageViewer({ open: true, items, index: safeIndex });
+      setActiveOverlay({ type: "viewer" });
+      closeMenu();
+    },
+    [closeMenu]
+  );
+
+  const handleCloseMediaViewer = useCallback(() => {
+    setMessageViewer({ open: false, items: [], index: 0 });
+    setActiveOverlay((prev) => (prev?.type === "viewer" ? null : prev));
+  }, []);
 
   // ====== ВСПОМОГАТЕЛЬНОЕ ======
 
   const makeAuthorName = (msg) => {
     try {
       const { name } = getAuthorInfo(msg, companyUsers);
-      return name || "Пользователь";
+      return name || t("chat.message.user");
     } catch {
-      return "Пользователь";
+      return t("chat.message.user");
     }
   };
 
   const getPinnedSnippet = (msg) => {
     if (!msg) return "";
-    if (msg.deletedAt) return "Сообщение удалено";
+    if (msg.deletedAt) return t("chat.message.deleted");
 
     const text = (msg.text || "").trim();
     if (text) return text;
@@ -887,22 +1013,22 @@ function ChatRoomWindow({ roomId }) {
 
     const metaAttachments = msg?.meta?.attachments;
     if (Array.isArray(metaAttachments) && metaAttachments.length) {
-      return metaAttachments[0]?.filename || "Вложение";
+      return metaAttachments[0]?.filename || t("chat.message.attachment");
     }
 
     if (Array.isArray(msg.attachments) && msg.attachments.length) {
-      return msg.attachments[0]?.name || "Вложение";
+      return msg.attachments[0]?.name || t("chat.message.attachment");
     }
 
-    return "Сообщение";
+    return t("chat.message.fallback");
   };
 
   const getCurrentUserName = () => {
-    if (!currentUser) return "Кто-то";
+    if (!currentUser) return t("chat.message.someone");
     const full = [currentUser.firstName, currentUser.lastName]
       .filter(Boolean)
       .join(" ");
-    return full || currentUser.email || "Пользователь";
+    return full || currentUser.email || t("chat.message.user");
   };
 
   const isWithinEditWindow = (msg, windowMs = EDIT_WINDOW_MS) => {
@@ -1070,11 +1196,11 @@ function ChatRoomWindow({ roomId }) {
     if (!audit) return null;
 
     if (msg.deletedAt && audit.textBeforeDelete) {
-      return { title: "До удаления", text: audit.textBeforeDelete };
+      return { title: t("chat.modal.beforeDelete"), text: audit.textBeforeDelete };
     }
 
     if (msg.editedAt && audit.prevText) {
-      return { title: "До изменения", text: audit.prevText };
+      return { title: t("chat.modal.beforeEdit"), text: audit.prevText };
     }
 
     return null;
@@ -1100,7 +1226,7 @@ function ChatRoomWindow({ roomId }) {
         replyText =
           replyAttachments[0]?.filename ||
           replyAttachments[0]?.name ||
-          "Вложение";
+          t("chat.message.attachment");
       }
     }
     const ctx = {
@@ -1151,6 +1277,7 @@ function ChatRoomWindow({ roomId }) {
   const handleForward = (msg) => {
     setForwardMessages([msg]);
     setForwardDialogOpen(true);
+    setActiveOverlay({ type: "dialog", kind: "forward" });
     closeMenu();
   };
 
@@ -1173,6 +1300,7 @@ function ChatRoomWindow({ roomId }) {
 
     setForwardMessages(sorted);
     setForwardDialogOpen(true);
+    setActiveOverlay({ type: "dialog", kind: "forward" });
   };
 
   const getForwardSourceId = (msg) => {
@@ -1208,6 +1336,9 @@ function ChatRoomWindow({ roomId }) {
 
         setForwardDialogOpen(false);
         setForwardMessages([]);
+        setActiveOverlay((prev) =>
+          prev?.type === "dialog" && prev?.kind === "forward" ? null : prev
+        );
         clearSelection();
         dispatch(setActiveRoom(targetRoomId));
 
@@ -1291,9 +1422,12 @@ function ChatRoomWindow({ roomId }) {
         ? baseText.length > 40
           ? `${baseText.slice(0, 40)}…`
           : baseText
-        : "сообщение";
+        : t("chat.message.fallback");
 
-      const systemText = `${actorName} закрепил(а) «${preview}»`;
+      const systemText = t("chat.system.pin", {
+        name: actorName,
+        text: preview,
+      });
 
       const systemPayload = {
         roomId,
@@ -1324,7 +1458,7 @@ function ChatRoomWindow({ roomId }) {
     socket.emit("chat:unpin", { roomId, messageId }, () => {});
   };
 
-  const handleDelete = async (msg) => {
+  const handleDelete = (msg) => {
     if (!msg || !msg._id) {
       closeMenu();
       return;
@@ -1333,7 +1467,52 @@ function ChatRoomWindow({ roomId }) {
       closeMenu();
       return;
     }
+    setDeleteConfirm({ open: true, message: msg });
+    setActiveOverlay({
+      type: "dialog",
+      kind: "delete",
+      messageId: String(msg._id),
+    });
+    closeMenu();
+  };
 
+  // Toggle reaction for a message and sync response into Redux.
+  const handleToggleReaction = async (messageId, emoji) => {
+    if (!messageId || !emoji) return;
+    try {
+      const res = await toggleReaction({
+        messageId: String(messageId),
+        emoji,
+      }).unwrap();
+
+      const payload = res?.emoji ? res : res?.data || null;
+      if (!payload) return;
+
+      dispatch(
+        updateReaction({
+          messageId: String(payload.messageId || messageId),
+          emoji: payload.emoji || emoji,
+          count: typeof payload.count === "number" ? payload.count : undefined,
+          reacted:
+            typeof payload.reacted === "boolean" ? payload.reacted : undefined,
+        })
+      );
+    } catch (e) {
+      if (typeof window !== "undefined") {
+        window.alert(t("common.error"));
+      }
+    }
+  };
+
+  const confirmDelete = async () => {
+    const msg = deleteConfirm.message;
+    if (!msg || !msg._id) {
+      setDeleteConfirm({ open: false, message: null });
+      setActiveOverlay((prev) =>
+        prev?.type === "dialog" && prev?.kind === "delete" ? null : prev
+      );
+      return;
+    }
     try {
       await deleteMessage({
         roomId: String(roomId),
@@ -1343,15 +1522,18 @@ function ChatRoomWindow({ roomId }) {
       const status = e?.status || e?.originalStatus;
       if (status === 403 || status === 404) {
         if (typeof window !== "undefined") {
-          window.alert("Удаление недоступно");
+          window.alert(t("chat.errors.deleteForbidden"));
         }
       } else {
         if (typeof window !== "undefined") {
-          window.alert("Не удалось удалить сообщение");
+          window.alert(t("chat.errors.deleteFailed"));
         }
       }
     } finally {
-      closeMenu();
+      setDeleteConfirm({ open: false, message: null });
+      setActiveOverlay((prev) =>
+        prev?.type === "dialog" && prev?.kind === "delete" ? null : prev
+      );
     }
   };
 
@@ -1366,6 +1548,7 @@ function ChatRoomWindow({ roomId }) {
       title: info.title,
       text: info.text,
     });
+    setActiveOverlay({ type: "dialog", kind: "original" });
     closeMenu();
   };
 
@@ -1396,11 +1579,11 @@ function ChatRoomWindow({ roomId }) {
         const status = e?.status || e?.originalStatus;
         if (status === 403 || status === 404) {
           if (typeof window !== "undefined") {
-            window.alert("Редактирование недоступно");
+            window.alert(t("chat.errors.editForbidden"));
           }
         } else {
           if (typeof window !== "undefined") {
-            window.alert("Не удалось сохранить изменения");
+            window.alert(t("chat.errors.editFailed"));
           }
         }
       }
@@ -1485,6 +1668,90 @@ function ChatRoomWindow({ roomId }) {
     gotoNextMatch,
   } = useChatSearch({ roomId, messages, listRef });
 
+  const openSearchMode = () => {
+    if (searchOpen) return;
+    closeMenu();
+    closeReactionPicker();
+    setDeleteConfirm({ open: false, message: null });
+    setForwardDialogOpen(false);
+    setForwardMessages([]);
+    setOriginalModal({ open: false, title: "", text: "" });
+    setMessageViewer({ open: false, items: [], index: 0 });
+    setActiveOverlay(null);
+    dispatch(closeInfoPanel(roomId));
+    toggleSearch();
+  };
+
+  const closeSearchMode = () => {
+    if (!searchOpen) return;
+    closeSearch();
+  };
+
+  const handleSearchInputChange = (e) => {
+    if (!searchOpen) toggleSearch();
+    handleSearchChange(e);
+  };
+
+  // ESC closes the top layer: overlays first, then search.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      if (e.defaultPrevented) return;
+
+      if (activeOverlay) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (activeOverlay.type === "menu") {
+          closeMenu();
+          return;
+        }
+        if (activeOverlay.type === "reaction") {
+          closeReactionPicker();
+          return;
+        }
+        if (activeOverlay.type === "dropdown") {
+          setActiveOverlay(null);
+          return;
+        }
+        if (activeOverlay.type === "viewer") {
+          handleCloseMediaViewer();
+          return;
+        }
+        if (activeOverlay.type === "dialog") {
+          if (activeOverlay.kind === "delete") {
+            setDeleteConfirm({ open: false, message: null });
+          }
+          if (activeOverlay.kind === "forward") {
+            setForwardDialogOpen(false);
+            setForwardMessages([]);
+          }
+          if (activeOverlay.kind === "original") {
+            setOriginalModal({ open: false, title: "", text: "" });
+          }
+          setActiveOverlay(null);
+        }
+        return;
+      }
+
+      if (searchOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeSearchMode();
+      }
+    };
+
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [
+    activeOverlay,
+    searchOpen,
+    closeSearchMode,
+    closeMenu,
+    closeReactionPicker,
+    handleCloseMediaViewer,
+  ]);
+
   // ================= РЕНДЕР =================
   const messagesClass = [
     s.messages,
@@ -1501,10 +1768,23 @@ function ChatRoomWindow({ roomId }) {
     dispatch(setActiveRoom(null));
   };
 
-  const handleOpenInfo = () => {
+  const handleToggleDropdown = (e) => {
     if (!roomId || !room) return;
+    const anchorRect = e?.currentTarget?.getBoundingClientRect?.() || null;
     const defaultTab = room.type === "group" ? "participants" : "profile";
-    dispatch(openInfoPanel({ roomId, tab: defaultTab }));
+    if (activeOverlay?.type === "dropdown") {
+      setActiveOverlay(null);
+      return;
+    }
+    closeMenu();
+    closeReactionPicker();
+    setDeleteConfirm({ open: false, message: null });
+    setForwardDialogOpen(false);
+    setForwardMessages([]);
+    setOriginalModal({ open: false, title: "", text: "" });
+    setMessageViewer({ open: false, items: [], index: 0 });
+    dispatch(setInfoPanelTab({ roomId, tab: defaultTab }));
+    setActiveOverlay({ type: "dropdown", anchorRect });
   };
 
   const doneAttachments = attachmentsDraft.filter((d) => d.status === "done");
@@ -1538,16 +1818,274 @@ function ChatRoomWindow({ roomId }) {
 
   return (
     <div className={s.window}>
-      <ChatHeader
-        initials={headerInfo.initials}
-        avatar={headerInfo.avatar}
-        title={headerInfo.title}
-        subtitle={subtitleToShow}
-        onBack={handleBack}
-        onToggleSearch={toggleSearch}
-        onTitleClick={handleOpenInfo}
-      />
+      {/* Center column */}
+      <div className={s.chatMain}>
+        <ChatHeader
+          initials={headerInfo.initials}
+          avatar={headerInfo.avatar}
+          title={headerInfo.title}
+          subtitle={subtitleToShow}
+          isArchived={
+            room?.isArchived === true || room?.status === "archived"
+          }
+          onBack={handleBack}
+          isSearchMode={searchOpen}
+          searchQuery={searchQuery}
+          currentMatch={currentMatch}
+          totalMatches={totalMatches}
+          onSearchChange={handleSearchInputChange}
+          onSearchOpen={openSearchMode}
+          onSearchClose={closeSearchMode}
+          onSearchPrev={gotoPrevMatch}
+          onSearchNext={gotoNextMatch}
+          onTitleClick={handleToggleDropdown}
+        />
 
+        {pinnedVisible && (
+          <div
+            className={`${s.pinnedBar} ${
+              collapsedPinned ? s.pinnedCollapsed : ""
+            }`}
+          >
+          <div className={s.pinnedLeft} onClick={handlePinnedBarClick}>
+              <div>{t("chat.pinned.title")}</div>
+              {!collapsedPinned && (
+                <div className={s.pinnedPreview}>
+                  <strong>{pinnedAuthor}</strong>
+                  {pinnedSnippet ? ` · ${pinnedSnippet}` : ""}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              className={s.pinnedCloseBtn}
+              onClick={() => handleUnpinFromBar(currentPinned._id)}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {scrollState.scrollable && isUserScrolling && floatingDay && (
+          <div className={s.floatingDayLabel} style={{ top: floatingDayTop }}>
+            <div className={s.floatingDayLabelInner}>{floatingDay}</div>
+          </div>
+        )}
+
+        <div className={s.messagesSurface} data-ui="chat-messages">
+          <ChatMessages
+            listRef={listRef}
+            messagesClass={messagesClass}
+            isLoading={isLoading}
+            messages={messages}
+            groupedMessages={groupedMessages}
+            meId={meId}
+            isGroup={isGroup}
+            participants={participants}
+            room={room}
+            companyUsers={companyUsers}
+            searchQuery={searchQuery}
+            onMessageActionsClick={openMessageMenu}
+            onOpenMedia={handleOpenMediaViewer}
+            onToggleReaction={handleToggleReaction}
+            activeOverlay={activeOverlay}
+            onToggleReactionPicker={toggleReactionPicker}
+            onCloseReactionPicker={closeReactionPicker}
+            selectMode={selectMode}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            hasMore={hasMore}
+            isLoadingMore={isLoadingMore}
+            onLoadMore={handleLoadMore}
+          />
+        </div>
+
+        {showScrollDown && (
+          <button
+            type="button"
+            className={s.scrollToBottom}
+            onClick={() => scrollToBottom(true)}
+            aria-label={t("chat.actions.scrollToBottom")}
+          >
+            ↓
+          </button>
+        )}
+
+        <MessageContextMenu
+          open={menuState.open && activeOverlay?.type === "menu"}
+          anchorRect={menuState.anchorRect}
+          boundsRect={menuState.boundsRect}
+          side={menuState.side}
+          clickY={menuState.clickY}
+          message={menuState.message}
+          canEdit={isMessageEditable(menuState.message)}
+          canCopy={canCopyMessage(menuState.message)}
+          canForward={canForwardMessage(menuState.message)}
+          canDelete={canDeletePermission(menuState.message)}
+          canShowOriginal={!!getOriginalInfo(menuState.message)}
+          deleteDisabled={!!menuState.message?.deletedAt}
+          isDeleting={isDeleting}
+          onClose={closeMenu}
+          onReply={handleReply}
+          onCopy={handleCopy}
+          onEdit={handleEdit}
+          onPin={handlePin}
+          onForward={handleForward}
+          onSelect={handleSelect}
+          onDelete={handleDelete}
+          onShowOriginal={handleShowOriginal}
+          showOriginalLabel={t("chat.menu.showOriginal")}
+        />
+
+        <ForwardDialog
+          open={
+            forwardDialogOpen &&
+            activeOverlay?.type === "dialog" &&
+            activeOverlay?.kind === "forward"
+          }
+          onClose={() => {
+            setForwardDialogOpen(false);
+            setForwardMessages([]);
+            setActiveOverlay((prev) =>
+              prev?.type === "dialog" && prev?.kind === "forward" ? null : prev
+            );
+          }}
+          rooms={rooms}
+          currentRoomId={roomId}
+          meId={meId}
+          companyUsers={companyUsers}
+          onSelectRoom={handleForwardSelectRoom}
+        />
+
+        <Modal
+          open={
+            originalModal.open &&
+            activeOverlay?.type === "dialog" &&
+            activeOverlay?.kind === "original"
+          }
+          onClose={() => {
+            setOriginalModal({ open: false, title: "", text: "" });
+            setActiveOverlay((prev) =>
+              prev?.type === "dialog" && prev?.kind === "original" ? null : prev
+            );
+          }}
+          title={originalModal.title || t("chat.modal.originalTitle")}
+          size="sm"
+          footer={
+            <Modal.Button
+              onClick={() => {
+                setOriginalModal({ open: false, title: "", text: "" });
+                setActiveOverlay((prev) =>
+                  prev?.type === "dialog" && prev?.kind === "original"
+                    ? null
+                    : prev
+                );
+              }}
+            >
+              {t("common.close")}
+            </Modal.Button>
+          }
+        >
+          <div>{originalModal.text || t("common.none")}</div>
+        </Modal>
+
+        {messageViewer.open && activeOverlay?.type === "viewer" && (
+          <MediaViewer
+            items={messageViewer.items}
+            activeIndex={messageViewer.index}
+            onChangeIndex={(idx) =>
+              setMessageViewer((prev) => ({ ...prev, index: idx }))
+            }
+            onClose={handleCloseMediaViewer}
+          />
+        )}
+
+        <ConfirmDialog
+          open={
+            deleteConfirm.open &&
+            activeOverlay?.type === "dialog" &&
+            activeOverlay?.kind === "delete"
+          }
+          title={t("chat.delete.title")}
+          text={t("chat.delete.text")}
+          okText={t("common.delete")}
+          cancelText={t("common.cancel")}
+          onOk={confirmDelete}
+          onCancel={() => {
+            setDeleteConfirm({ open: false, message: null });
+            setActiveOverlay((prev) =>
+              prev?.type === "dialog" && prev?.kind === "delete" ? null : prev
+            );
+          }}
+        />
+
+        {selectMode && (
+          <div className={s.selectBar}>
+            <button
+              type="button"
+              className={s.selectBarBtnDanger}
+              onClick={clearSelection}
+            >
+              {t("chat.select.clear")}
+            </button>
+
+            <div className={s.selectBarLabel}>
+              {t("chat.select.selectedCount", { count: selectedIds.length })}
+            </div>
+
+            <button
+              type="button"
+              className={s.selectBarBtnPrimary}
+              disabled={!selectedIds.length}
+              onClick={handleForwardSelected}
+            >
+              {t("chat.select.forward")}
+            </button>
+          </div>
+        )}
+
+        <ChatInput
+          text={text}
+          onChangeText={onChangeText}
+          onKeyDown={onKeyDown}
+          onSend={handleSend}
+          isBusy={isBusy}
+          canSend={canSend}
+          onHeightChange={handleInputHeightChange}
+          replyTo={replyContextToShow}
+          onCancelReply={cancelComposerContext}
+          editTarget={editTargetForRoom}
+          onCancelEdit={cancelEdit}
+          attachments={attachmentsDraft}
+          onFilesSelected={handleFilesSelected}
+          onRemoveAttachment={handleRemoveAttachment}
+          onRetryAttachment={handleRetryAttachment}
+          isUploading={hasUploading}
+          disableAttachments={isEditMode}
+          sendError={sendError}
+          onRetrySend={handleSend}
+        />
+      </div>
+
+      {/* Right info column (kept, but not used in dropdown mode) */}
+      <div className={`${s.chatSide} ${isInfoOpen ? s.chatSideOpen : ""}`}>
+        <ChatInfoPanel
+          roomId={roomId}
+          room={room}
+          messages={messages}
+          participants={participants}
+          meId={meId}
+          currentUser={currentUser}
+          companyUsers={companyUsers}
+          hasMore={hasMore}
+          isLoadingMore={isLoadingMore}
+          onLoadMore={loadOlderBatch}
+          variant="side"
+        />
+      </div>
+
+      {/* Header dropdown (overlay) */}
       <ChatInfoPanel
         roomId={roomId}
         room={room}
@@ -1559,173 +2097,10 @@ function ChatRoomWindow({ roomId }) {
         hasMore={hasMore}
         isLoadingMore={isLoadingMore}
         onLoadMore={loadOlderBatch}
-      />
-
-      <ChatSearchBar
-        open={searchOpen}
-        query={searchQuery}
-        currentMatch={currentMatch}
-        totalMatches={totalMatches}
-        onChange={handleSearchChange}
-        onPrev={gotoPrevMatch}
-        onNext={gotoNextMatch}
-        onClose={closeSearch}
-      />
-
-      {pinnedVisible && (
-        <div
-          className={`${s.pinnedBar} ${
-            collapsedPinned ? s.pinnedCollapsed : ""
-          }`}
-        >
-          <div className={s.pinnedLeft} onClick={handlePinnedBarClick}>
-            <div>📌 Закреплённое сообщение</div>
-            {!collapsedPinned && (
-              <div className={s.pinnedPreview}>
-                <strong>{pinnedAuthor}</strong>
-                {pinnedSnippet ? ` · ${pinnedSnippet}` : ""}
-              </div>
-            )}
-          </div>
-
-          <button
-            type="button"
-            className={s.pinnedCloseBtn}
-            onClick={() => handleUnpinFromBar(currentPinned._id)}
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {scrollState.scrollable && isUserScrolling && floatingDay && (
-        <div className={s.floatingDayLabel} style={{ top: floatingDayTop }}>
-          <div className={s.floatingDayLabelInner}>{floatingDay}</div>
-        </div>
-      )}
-
-      <ChatMessages
-        listRef={listRef}
-        messagesClass={messagesClass}
-        isLoading={isLoading}
-        messages={messages}
-        groupedMessages={groupedMessages}
-        meId={meId}
-        isGroup={isGroup}
-        participants={participants}
-        room={room}
-        companyUsers={companyUsers}
-        searchQuery={searchQuery}
-        onMessageActionsClick={openMessageMenu}
-        selectMode={selectMode}
-        selectedIds={selectedIds}
-        onToggleSelect={toggleSelect}
-        hasMore={hasMore}
-        isLoadingMore={isLoadingMore}
-        onLoadMore={handleLoadMore}
-      />
-
-      <MessageContextMenu
-        open={menuState.open}
-        anchorRect={menuState.anchorRect}
-        boundsRect={menuState.boundsRect}
-        side={menuState.side}
-        clickY={menuState.clickY}
-        message={menuState.message}
-        canEdit={isMessageEditable(menuState.message)}
-        canCopy={canCopyMessage(menuState.message)}
-        canForward={canForwardMessage(menuState.message)}
-        canDelete={canDeletePermission(menuState.message)}
-        canShowOriginal={!!getOriginalInfo(menuState.message)}
-        deleteDisabled={!!menuState.message?.deletedAt}
-        isDeleting={isDeleting}
-        onClose={closeMenu}
-        onReply={handleReply}
-        onCopy={handleCopy}
-        onEdit={handleEdit}
-        onPin={handlePin}
-        onForward={handleForward}
-        onSelect={handleSelect}
-        onDelete={handleDelete}
-        onShowOriginal={handleShowOriginal}
-      />
-
-      <ForwardDialog
-        open={forwardDialogOpen}
-        onClose={() => {
-          setForwardDialogOpen(false);
-          setForwardMessages([]);
-        }}
-        rooms={rooms}
-        currentRoomId={roomId}
-        meId={meId}
-        companyUsers={companyUsers}
-        onSelectRoom={handleForwardSelectRoom}
-      />
-
-      <Modal
-        open={originalModal.open}
-        onClose={() =>
-          setOriginalModal({ open: false, title: "", text: "" })
-        }
-        title={originalModal.title || "Оригинал"}
-        size="sm"
-        footer={
-          <Modal.Button onClick={() =>
-            setOriginalModal({ open: false, title: "", text: "" })
-          }>
-            Закрыть
-          </Modal.Button>
-        }
-      >
-        <div>{originalModal.text || "—"}</div>
-      </Modal>
-
-      {selectMode && (
-        <div className={s.selectBar}>
-          <button
-            type="button"
-            className={s.selectBarBtnDanger}
-            onClick={clearSelection}
-          >
-            Убрать выбор
-          </button>
-
-          <div className={s.selectBarLabel}>
-            Выбрано {selectedIds.length} сообщений
-          </div>
-
-          <button
-            type="button"
-            className={s.selectBarBtnPrimary}
-            disabled={!selectedIds.length}
-            onClick={handleForwardSelected}
-          >
-            Переслать
-          </button>
-        </div>
-      )}
-
-      <ChatInput
-        text={text}
-        onChangeText={onChangeText}
-        onKeyDown={onKeyDown}
-        onSend={handleSend}
-        isBusy={isBusy}
-        canSend={canSend}
-        onHeightChange={handleInputHeightChange}
-        replyTo={replyContextToShow}
-        onCancelReply={cancelComposerContext}
-        editTarget={editTargetForRoom}
-        onCancelEdit={cancelEdit}
-        attachments={attachmentsDraft}
-        onFilesSelected={handleFilesSelected}
-        onRemoveAttachment={handleRemoveAttachment}
-        onRetryAttachment={handleRetryAttachment}
-        isUploading={hasUploading}
-        disableAttachments={isEditMode}
-        sendError={sendError}
-        onRetrySend={handleSend}
+        variant="layer"
+        openOverride={activeOverlay?.type === "dropdown"}
+        anchorRect={activeOverlay?.anchorRect || null}
+        onRequestClose={() => setActiveOverlay(null)}
       />
     </div>
   );

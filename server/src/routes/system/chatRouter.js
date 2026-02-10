@@ -16,6 +16,14 @@ router.post("/group", chatController.createGroup);
 // сообщения комнаты
 router.get("/rooms/:roomId/messages", chatController.listMessages);
 
+// реакции на сообщение
+router.get("/messages/:messageId/reactions", chatController.listMessageReactions);
+router.post("/messages/:messageId/reactions", chatController.toggleReaction);
+router.delete(
+  "/messages/:messageId/reactions/:emoji",
+  chatController.removeReaction
+);
+
 // список закреплённых сообщений комнаты
 router.get("/rooms/:roomId/pins", chatController.listPinnedMessages);
 

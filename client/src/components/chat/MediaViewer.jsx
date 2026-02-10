@@ -40,7 +40,7 @@ export default function MediaViewer({
   // Active media item based on index.
   const activeItem = items[activeIndex] || null;
 
-  // Signed URL for the active item only (prevents mass requests).
+  // Signed inline URL for the active item only (prevents mass requests).
   const { url: mediaUrl, onError } = useSignedFileUrl(
     activeItem?.fileId || ""
   );
@@ -144,7 +144,7 @@ export default function MediaViewer({
               />
             )
           ) : (
-            <div className={s.viewerPlaceholder}>…</div>
+            <div className={s.viewerPlaceholder}>{t("common.loading")}</div>
           )}
 
           {canNavigate && (

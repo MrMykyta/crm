@@ -67,6 +67,7 @@
     "reset": "Reset",
     "none": "—",
     "cancel": "Cancel",
+    "delete": "Delete",
     "primary": "Primary",
     "saved": "Saved",
     "unsaved": "Unsaved changes"
@@ -227,9 +228,7 @@
       "contactCount": "{{count}} contact",
       "contactCount_plural": "{{count}} contacts"
     },
-    "common": {
-      
-    },
+    "common": {},
     "form": {
       "sections": {
         "contacts": "Contacts"
@@ -410,15 +409,162 @@
       "tooLarge": "File is too large or total size exceeded",
       "unsupportedType": "Unsupported file type",
       "download": "Download",
+      "open": "Open",
       "retry": "Retry",
       "remove": "Remove",
-      "sendFailed": "Message was not sent"
+      "sendFailed": "Message was not sent",
+      "file": "File",
+      "fileType": "file",
+      "downloadFailed": "Couldn't get download link"
     },
     "audio": {
       "playbackError": "Unable to play audio",
       "play": "Play",
       "pause": "Pause",
       "loading": "Loading audio…"
+    },
+    "sidebar": {
+      "title": "Chats",
+      "searchPlaceholder": "Search",
+      "noMessages": "No messages",
+      "unreadMax": "99+",
+      "empty": "No chats",
+      "newGroup": "New group",
+      "newDirect": "New chat",
+      "roomFallback": "Chat",
+      "settings": "Settings",
+      "emptyTitle": "No chats yet",
+      "emptySubtitle": "Start a new conversation to get going"
+    },
+    "messages": {
+      "loading": "Loading messages…",
+      "loadingMore": "Loading older messages…",
+      "empty": "No messages yet",
+      "loadingRooms": "Loading chats…"
+    },
+    "emptyRoom": "Select a chat",
+    "message": {
+      "user": "User",
+      "someone": "Someone",
+      "deleted": "Message deleted",
+      "attachment": "Attachment",
+      "fallback": "Message",
+      "forwardedFrom": "Forwarded from {{name}}",
+      "status": {
+        "sent": "Sent",
+        "delivered": "Delivered",
+        "readSome": "Read by some",
+        "readAll": "Read by all",
+        "read": "Read"
+      }
+    },
+    "delete": {
+      "title": "Delete message",
+      "text": "Are you sure?"
+    },
+    "system": {
+      "pin": "{{name}} pinned “{{text}}”"
+    },
+    "mediaItem": "Media",
+    "actions": {
+      "react": "React",
+      "more": "More",
+      "scrollToBottom": "Scroll to bottom"
+    },
+    "header": {
+      "search": "Search",
+      "more": "More",
+      "members": "{{count}} members",
+      "lastSeen": "last seen recently",
+      "groupFallback": "Group",
+      "directSubtitle": "Direct message",
+      "groupMembersCount": "{{count}} members",
+      "archived": "Archived",
+      "searchSoon": "Coming soon",
+      "menu": {
+        "mute": "Mute notifications",
+        "clear": "Clear chat",
+        "leave": "Leave group"
+      }
+    },
+    "search": {
+      "placeholder": "Search messages…"
+    },
+    "pinned": {
+      "title": "📌 Pinned message",
+      "notFound": "Message not found"
+    },
+    "select": {
+      "clear": "Clear selection",
+      "selectedCount": "{{count}} selected",
+      "forward": "Forward"
+    },
+    "menu": {
+      "reply": "Reply",
+      "copy": "Copy",
+      "edit": "Edit",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "forward": "Forward",
+      "select": "Select",
+      "delete": "Delete",
+      "deleting": "Deleting…",
+      "showOriginal": "Show original"
+    },
+    "modal": {
+      "originalTitle": "Original",
+      "beforeDelete": "Before delete",
+      "beforeEdit": "Before edit",
+      "deleteTitle": "Delete message?",
+      "deleteText": "This message will be removed for everyone.",
+      "deleteConfirm": "Delete",
+      "deleteCancel": "Cancel"
+    },
+    "errors": {
+      "deleteForbidden": "Delete not allowed",
+      "deleteFailed": "Failed to delete message",
+      "editForbidden": "Edit not allowed",
+      "editFailed": "Failed to save changes"
+    },
+    "composer": {
+      "forwardFrom": "Forwarded from {{name}}",
+      "forwardTitle": "Forward message",
+      "replyTo": "Reply to {{name}}",
+      "replyTitle": "Reply to message",
+      "editTitle": "Editing",
+      "placeholder": "Message…"
+    },
+    "typing": {
+      "you": "You",
+      "userFallback": "User",
+      "single": "{{name}} is typing…",
+      "multi": "Several people are typing…"
+    },
+    "date": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "forward": {
+      "title": "Forward message",
+      "currentRoom": "Current chat",
+      "groupTitle": "{{title}} · {{count}} members",
+      "directFallback": "Direct chat"
+    },
+    "create": {
+      "directTitle": "New chat",
+      "groupTitle": "New group",
+      "directSubtitle": "Pick a teammate to start a conversation.",
+      "groupSubtitle": "Choose teammates to create a group chat.",
+      "directPlaceholder": "Who would you like to message?",
+      "groupPlaceholder": "Who would you like to invite?",
+      "directError": "Couldn't create chat",
+      "groupError": "Couldn't create group",
+      "loadUsersError": "Couldn't load users",
+      "loadingUsers": "Loading members…",
+      "emptyUsers": "No users found",
+      "noName": "No name",
+      "groupNamePlaceholder": "Group name",
+      "groupCreate": "Create"
     },
     "info": {
       "title": "Chat info",
@@ -455,6 +601,24 @@
       },
       "links": {
         "open": "Open"
+      }
+    },
+    "dropdown": {
+      "actions": {
+        "edit": "Edit",
+        "invite": "Invite",
+        "mute": "Mute",
+        "clear": "Clear",
+        "leave": "Leave",
+        "archive": "Archive",
+        "unarchive": "Unarchive"
+      },
+      "tabs": {
+        "participants": "Participants",
+        "profile": "Profile",
+        "media": "Media",
+        "links": "Links",
+        "documents": "Documents"
       }
     }
   }

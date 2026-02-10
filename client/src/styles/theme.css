@@ -4,41 +4,72 @@
    -> 1rem = 16px * (font-scale/100)  (ставится в ThemeProvider)
 */
 :root {
-  /* цветовая база */
-  --bg: #0c0f16;
-  --text: #e9edff;
-  --muted: #aab2d6;
+  /* ===== Premium dark tokens ===== */
+  --surface-0: #0b0f16;   /* page */
+  --surface-1: rgba(15, 23, 36, 0.55);   /* sidebar glass */
+  --surface-2: rgba(13, 20, 33, 0.42);   /* chat canvas glass */
+  --surface-3: rgba(17, 26, 40, 0.6);    /* popover / modal glass */
 
-  --card-bg: rgba(16,18,27,.6);
-  --card-brd: rgba(255,255,255,.12);
-  --input-bg: rgba(10,12,19,.65);
-  --shadow: 0 20px 60px rgba(0,0,0,.45);
+  --text-1: rgba(255,255,255,.92);
+  --text-2: rgba(255,255,255,.7);
+  --text-3: rgba(255,255,255,.45);
+
+  --border-1: rgba(255,255,255,.18);
+  --border-2: rgba(255,255,255,.1);
+
+  --shadow-1: 0 22px 70px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.28),
+    0 1px 0 rgba(255,255,255,.08) inset;
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 18px;
+
+  --gap-xs: 6px;
+  --gap-sm: 10px;
+  --gap-md: 14px;
+  --gap-lg: 18px;
+
+  --accent: #6d7dff;
+  --accent-2: #a78bfa;
+  --focus: rgba(109,125,255,.32);
+
+  --glass: rgba(255,255,255,.06);
+  --glass-2: rgba(255,255,255,.08);
+
+  /* ===== Legacy aliases mapped to new system ===== */
+  --bg: var(--surface-0);
+  --text: var(--text-1);
+  --muted: var(--text-2);
+
+  --card-bg: color-mix(in srgb, var(--surface-2) 92%, transparent);
+  --card-brd: var(--border-2);
+  --input-bg: color-mix(in srgb, var(--surface-2) 88%, transparent);
+  --shadow: var(--shadow-1);
 
   /* вспомогательные */
   --shadow-clr: #000;           /* для color-mix в модулях */
-  --glass-brd: var(--card-brd); /* единый бордер для “glass” */
+  --glass-brd: var(--border-1); /* единый бордер для “glass” */
 
-  --primary-start: #5b7cff;
-  --primary-end:   #7a5bff;
-  --focus: #85a2ff;
+  --primary-start: var(--accent);
+  --primary-end:   var(--accent-2);
 
-  --bg-gradient: linear-gradient(160deg, #0a0c13 0%, #0e1220 100%);
-  --bg-radial-1: radial-gradient(1200px 600px at 10% -10%, #1a1f3a 0%, transparent 60%);
-  --bg-radial-2: radial-gradient(800px 400px at 110% 10%, #271a3a 0%, transparent 60%);
+  --bg-gradient: linear-gradient(180deg, #0a0f18 0%, #0c1220 100%);
+  --bg-radial-1: radial-gradient(1200px 700px at 8% -12%, rgba(120, 140, 255, 0.2) 0%, transparent 60%);
+  --bg-radial-2: radial-gradient(900px 520px at 110% 12%, rgba(167, 139, 250, 0.16) 0%, transparent 60%);
 
-  --blob-1: #5b7cff;
-  --blob-2: #7a5bff;
+  --blob-1: var(--accent);
+  --blob-2: var(--accent-2);
 
-  --sidebar-bg: rgba(18,21,33,.52);
-  --sidebar-brd: rgba(255,255,255,.12);
-  --sidebar-text: #e9edff;
-  --sidebar-hover: color-mix(in srgb, var(--primary-start) 12%, transparent);
-  --sidebar-active: color-mix(in srgb, var(--primary-start) 18%, transparent);
+  --sidebar-bg: var(--surface-1);
+  --sidebar-brd: rgba(255,255,255,.08);
+  --sidebar-text: var(--text-1);
+  --sidebar-hover: rgba(255,255,255,.06);
+  --sidebar-active: rgba(109,125,255,.1);
 
-  --topbar-bg: rgba(16,18,27,.72);
-  --topbar-brd: rgba(255,255,255,.12);
-  --topbar-text: #e9edff;
-  --topbar-input-bg: rgba(10,12,19,.65);
+  --topbar-bg: var(--surface-2);
+  --topbar-brd: rgba(255,255,255,.1);
+  --topbar-text: var(--text-1);
+  --topbar-input-bg: color-mix(in srgb, var(--surface-2) 92%, transparent);
 
   /* ========= TYPOGRAPHY ========= */
   --font-base: 16px;
@@ -71,16 +102,16 @@
   --space-6: 1.5rem;  /* 24px */
 
   /* ========= RADII ========= */
-  --radius-sm: 10px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 18px;
   --radius-xl: 20px;
   --radius-full: 999px;
 
   /* ========= ELEVATION ========= */
-  --elev-1: 0 6px 18px rgba(0,0,0,.28);
-  --elev-2: 0 10px 24px color-mix(in srgb, var(--primary-start) 35%, transparent);
-  --elev-3: 0 20px 60px rgba(0,0,0,.45);
+  --elev-1: var(--shadow-1);
+  --elev-2: 0 24px 70px rgba(0,0,0,.45);
+  --elev-3: 0 32px 90px rgba(0,0,0,.5);
 
   /* ========= SIZES / LAYOUT ========= */
   --sidebar-w: 15.5rem;           /* 248px */
@@ -90,11 +121,12 @@
 
   /* ========= ANIMATION ========= */
   --tr-fast: .15s ease;
-  --tr-med:  .25s ease;
+  --tr-med:  .22s ease;
 
   /* управляется ThemeProvider */
   --font-scale: 100;
-  --glass-blur: 20px;
+  --glass-blur: 26px;
+  --glass-sat: 140%;
 
   --success:        #65f797;
   --success-weak:   color-mix(in srgb, var(--success) 18%, transparent);
@@ -149,7 +181,11 @@
 
   --primary-start: #ff8c5c;
   --primary-end:   #a77bff;
+  --accent: var(--primary-start);
+  --accent-2: var(--primary-end);
   --focus: #ffb685;
+  --glass: rgba(0,0,0,.04);
+  --glass-2: rgba(0,0,0,.06);
 
   --bg-gradient: linear-gradient(160deg, #fff8f2 0%, #f9f4ff 100%);
   --bg-radial-1: radial-gradient(1200px 600px at 10% -10%, #ffe1c4 0%, transparent 60%);

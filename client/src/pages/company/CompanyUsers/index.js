@@ -1,5 +1,5 @@
 // src/pages/CompanyUsers/index.jsx
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import ListPage from "../../../components/data/ListPage";
 import s from "../../styles/CrmUsers.module.css";
@@ -98,6 +98,14 @@ export default function CompanyUsers() {
   const [updateUserRole]   = useUpdateUserRoleMutation();
   const [resendInvitation] = useResendInvitationMutation();
   const [revokeInvitation] = useRevokeInvitationMutation();
+
+  useEffect(() => {
+    if (mode !== "invites") return;
+    const t = setTimeout(() => {
+      listRef.current?.refetch?.();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [mode]);
 
   const columns = useMemo(() => {
     if (mode === "members") {

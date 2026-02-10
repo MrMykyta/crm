@@ -2,26 +2,35 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
-  border: 1px solid var(--card-brd);
+  padding: 2px 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
   width: 100%;
-  min-width: 220px;
+  min-width: 200px;
 }
 
 .playBtn {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
-  background: var(--primary-start);
-  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-1);
   font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  backdrop-filter: blur(16px) saturate(var(--glass-sat, 140%));
+  transition: background var(--tr-fast), border-color var(--tr-fast),
+    color var(--tr-fast), transform var(--tr-fast), box-shadow var(--tr-fast);
+}
+
+.playBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  transform: translateY(-1px);
 }
 
 .playBtn:disabled {
@@ -39,7 +48,7 @@
 
 .timer {
   font-size: var(--fs-xs);
-  color: var(--muted);
+  color: var(--text-3);
 }
 
 .wave {
@@ -57,16 +66,16 @@
 .waveBarActive {
   width: 100%;
   border-radius: 2px;
-  background: color-mix(in srgb, var(--muted) 70%, transparent);
+  background: color-mix(in srgb, var(--text-3) 70%, transparent);
 }
 
 .waveBarActive {
-  background: var(--primary-start);
+  background: rgba(109, 125, 255, 0.7);
 }
 
 .filename {
   font-size: var(--fs-xs);
-  color: var(--muted);
+  color: var(--text-3);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

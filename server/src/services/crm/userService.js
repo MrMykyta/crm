@@ -11,6 +11,7 @@ const tokenService = require('../../utils/tokenService');
 
 const UUID_RE = /^[0-9a-fA-F-]{32,36}$/;
 const isFileApiUrl = (v) => typeof v === 'string' && v.includes('/api/files/');
+const isHttpUrl = (v) => /^https?:\/\/.+/i.test(v);
 const validateFileIdField = (field, value) => {
   if (value === undefined) return undefined;
   if (value === null || value === '') return null;
@@ -24,6 +25,20 @@ const validateFileIdField = (field, value) => {
     throw new ApplicationError(`VALIDATION_ERROR: ${field} must be uuid`, 400);
   }
   return value;
+};
+
+const validateAvatarField = (field, value) => {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') {
+    throw new ApplicationError(`VALIDATION_ERROR: ${field} must be uuid or url or null`, 400);
+  }
+  if (isFileApiUrl(value)) {
+    throw new ApplicationError(`VALIDATION_ERROR: ${field} must be fileId or external URL`, 400);
+  }
+  if (UUID_RE.test(value)) return value;
+  if (isHttpUrl(value)) return value;
+  throw new ApplicationError(`VALIDATION_ERROR: ${field} must be uuid or url`, 400);
 };
 
 
@@ -283,7 +298,7 @@ module.exports.updateMe = async (userId, companyId, data = {}) => {
       patch.passwordHash = await bcrypt.hash(data.password, 10);
     }
     if (data.avatarUrl !== undefined) {
-      patch.avatarUrl = validateFileIdField('avatarUrl', data.avatarUrl);
+      patch.avatarUrl = validateAvatarField('avatarUrl', data.avatarUrl);
     }
     if (data.backgroundUrl !== undefined) {
       patch.backgroundUrl = validateFileIdField('backgroundUrl', data.backgroundUrl);
@@ -432,7 +447,7 @@ exports.updateById = async (userId, companyId, payload = {}) => {
     if (payload.lastName  !== undefined) patch.lastName  = payload.lastName;
     if (payload.isActive  !== undefined) patch.isActive  = !!payload.isActive;
     if (payload.password) patch.passwordHash = await bcrypt.hash(payload.password, 10);
-    if (payload.avatarUrl !== undefined) patch.avatarUrl = validateFileIdField('avatarUrl', payload.avatarUrl);
+    if (payload.avatarUrl !== undefined) patch.avatarUrl = validateAvatarField('avatarUrl', payload.avatarUrl);
     if (payload.backgroundUrl !== undefined) patch.backgroundUrl = validateFileIdField('backgroundUrl', payload.backgroundUrl);
 
     await user.update(patch, { transaction: t });

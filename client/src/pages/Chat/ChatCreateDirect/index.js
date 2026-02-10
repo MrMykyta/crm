@@ -1,6 +1,8 @@
 // src/pages/Chat/ChatCreateDirect.jsx
+// Chat creation flow: direct dialog or group creation with participant selection.
 import React, { useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import {
   useGetOrCreateDirectMutation,
   useCreateGroupMutation,
@@ -9,6 +11,7 @@ import { useListCompanyUsersQuery } from '../../../store/rtk/companyUsersApi';
 import s from '../ChatPage.module.css';
 
 export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
+  const { t } = useTranslation();
   const authUser = useSelector((st) => st.auth.user || st.auth.currentUser);
   const { data, isLoading, error } = useListCompanyUsersQuery();
   const [createDirect, { isLoading: creatingDirect }] =
@@ -24,13 +27,13 @@ export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
 
   const isGroup = mode === 'group';
 
-  const title = isGroup ? 'Создать группу' : 'Создать чат';
+  const title = isGroup ? t('chat.create.groupTitle') : t('chat.create.directTitle');
   const subtitle = isGroup
-    ? 'Выберите участников из вашей компании, чтобы создать групповой чат.'
-    : 'Выберите участника из вашей компании, чтобы начать диалог.';
+    ? t('chat.create.groupSubtitle')
+    : t('chat.create.directSubtitle');
   const placeholder = isGroup
-    ? 'Кого вы хотите пригласить?'
-    : 'С кем вы хотите начать диалог?';
+    ? t('chat.create.groupPlaceholder')
+    : t('chat.create.directPlaceholder');
 
   const rawUsers = useMemo(() => {
     if (!data) return [];
@@ -86,7 +89,7 @@ export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
         onChatCreated && onChatCreated();
       } catch (e) {
         console.error('[ChatCreateDirect] createDirect error', e);
-        setLocalError('Не удалось создать чат');
+        setLocalError(t('chat.create.directError'));
       } finally {
         setBusyId(null);
       }
@@ -110,7 +113,7 @@ export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
       onChatCreated && onChatCreated();
     } catch (e) {
       console.error('[ChatCreateDirect] createGroup error', e);
-      setLocalError('Не удалось создать группу');
+      setLocalError(t('chat.create.groupError'));
     }
   };
 
@@ -138,19 +141,19 @@ export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
 
       {(error || localError) && (
         <div className={s.createError}>
-          {localError || 'Не удалось загрузить пользователей'}
+          {localError || t('chat.create.loadUsersError')}
         </div>
       )}
 
       {/* СПИСОК ПОЛЬЗОВАТЕЛЕЙ */}
       <div className={s.userList}>
         {isLoading && (
-          <div className={s.createEmpty}>Загружаем участников…</div>
+          <div className={s.createEmpty}>{t('chat.create.loadingUsers')}</div>
         )}
 
         {!isLoading && filteredUsers.length === 0 && (
           <div className={s.createEmpty}>
-            Не найдено ни одного пользователя
+            {t('chat.create.emptyUsers')}
           </div>
         )}
 
@@ -159,7 +162,7 @@ export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
             const userId = u.userId || u.id;
             const fullName =
               [u.firstName, u.lastName].filter(Boolean).join(' ') ||
-              'Без имени';
+              t('chat.create.noName');
             const initials =
               (u.firstName?.[0] || '?') + (u.lastName?.[0] || '');
 
@@ -202,7 +205,7 @@ export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
         <div className={s.createFooter}>
           <input
             className={s.groupTitleInput}
-            placeholder="Название группы"
+            placeholder={t('chat.create.groupNamePlaceholder')}
             value={groupTitle}
             onChange={(e) => setGroupTitle(e.target.value)}
           />
@@ -216,7 +219,7 @@ export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
             }
             onClick={handleCreateGroup}
           >
-            Создать
+            {t('chat.create.groupCreate')}
           </button>
         </div>
       )}

@@ -1,7 +1,14 @@
 // components/chat/info/ChatInfoPanel.jsx
 // Slide-down Info Panel for the current chat: participants/media/links/documents,
 // plus optional group edit (title/avatar) and media viewer integration.
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useUploadFileMutation } from "../../../store/rtk/filesApi";
@@ -57,13 +64,19 @@ export default function ChatInfoPanel({
   hasMore,
   isLoadingMore,
   onLoadMore,
+  anchorRect,
+  openOverride,
+  onRequestClose,
+  variant = "side",
 }) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   // Open state for the slide-down panel.
-  const isOpen = useSelector(
+  const isOpenFromStore = useSelector(
     (st) => st.chat.infoPanelOpenByRoomId?.[String(roomId)]
   );
+  const isControlled = typeof openOverride === "boolean";
+  const isOpen = isControlled ? openOverride : isOpenFromStore;
   // Active tab for the current room panel.
   const activeTab = useSelector(
     (st) => st.chat.infoPanelActiveTabByRoomId?.[String(roomId)]
@@ -79,6 +92,7 @@ export default function ChatInfoPanel({
   const [isInfoLoading, setIsInfoLoading] = useState(false);
   // Media viewer state (overlay for images/videos).
   const [viewerOpen, setViewerOpen] = useState(false);
+  // Active index inside media viewer.
   const [viewerIndex, setViewerIndex] = useState(0);
 
   // Keep last known message count to detect if load-more added anything.
@@ -90,7 +104,10 @@ export default function ChatInfoPanel({
   const [updateRoom, { isLoading: isSaving }] = useUpdateRoomMutation();
 
   const isGroup = room?.type === "group";
+  const isDropdown = variant === "layer";
   const defaultTab = isGroup ? "participants" : "profile";
+  const panelRef = useRef(null);
+  const [caretLeft, setCaretLeft] = useState(null);
 
   // Signed URL source for group avatar (only when panel open).
   const avatarSource = isOpen
@@ -144,13 +161,31 @@ export default function ChatInfoPanel({
     setAvatarDraftId(room?.avatarUrl || "");
   }, [room?.title, room?.avatarUrl, isEditing]);
 
+  useLayoutEffect(() => {
+    if (!isDropdown || !isOpen) {
+      setCaretLeft(null);
+      return;
+    }
+    if (!panelRef.current || !anchorRect) return;
+    const rect = panelRef.current.getBoundingClientRect();
+    const center = anchorRect.left + anchorRect.width / 2;
+    let left = center - rect.left;
+    const min = 24;
+    const max = rect.width - 24;
+    left = Math.max(min, Math.min(left, max));
+    setCaretLeft(left);
+  }, [isDropdown, isOpen, anchorRect]);
+
   /** Close panel and reset editing state. */
   const handleClose = useCallback(() => {
-    if (!roomId) return;
-    dispatch(closeInfoPanel(roomId));
+    if (onRequestClose) {
+      onRequestClose();
+    } else if (!isControlled && roomId) {
+      dispatch(closeInfoPanel(roomId));
+    }
     setIsEditing(false);
     setViewerOpen(false);
-  }, [dispatch, roomId]);
+  }, [dispatch, roomId, onRequestClose, isControlled]);
 
   /** Upload new group avatar via Files API and store fileId locally. */
   const handleAvatarUpload = useCallback(
@@ -252,6 +287,15 @@ export default function ChatInfoPanel({
     });
   }, [participants, companyUsers]);
 
+  const memberCount = participantsList.length;
+  const isArchived = room?.isArchived === true || room?.status === "archived";
+  const baseSubtitle = isGroup
+    ? t("chat.header.groupMembersCount", { count: memberCount })
+    : t("chat.header.directSubtitle");
+  const headerSubtitle = isArchived
+    ? `${baseSubtitle} · ${t("chat.header.archived")}`
+    : baseSubtitle;
+
   const otherUserInfo = useMemo(() => {
     if (!participantsList.length || !meId) return null;
     const other = participantsList.find(
@@ -267,9 +311,12 @@ export default function ChatInfoPanel({
       avatar: authorInfo.avatar || other.avatarUrl,
       initials: authorInfo.initials || other.initials,
       subtitle:
-        [other.department, other.role].filter(Boolean).join(" · ") || "",
+        [other.department, other.role]
+          .filter(Boolean)
+          .join(" · ") ||
+        headerSubtitle,
     };
-  }, [participantsList, meId, companyUsers]);
+  }, [participantsList, meId, companyUsers, headerSubtitle]);
 
   const { url: otherAvatarUrl, onError: onOtherAvatarError } = useSignedFileUrl(
     isOpen ? otherUserInfo?.avatar || "" : ""
@@ -356,123 +403,235 @@ export default function ChatInfoPanel({
     [mediaItems]
   );
 
-  if (!isOpen || !room) return null;
-
   const groupInitials = room?.title
     ? String(room.title).trim().slice(0, 1).toUpperCase()
     : "#";
 
   const tabs = isGroup
     ? [
-        { key: "participants", label: t("chat.info.tabs.participants") },
-        { key: "media", label: t("chat.info.tabs.media") },
-        { key: "links", label: t("chat.info.tabs.links") },
-        { key: "documents", label: t("chat.info.tabs.documents") },
+        {
+          key: "participants",
+          label: isDropdown
+            ? t("chat.dropdown.tabs.participants")
+            : t("chat.info.tabs.participants"),
+        },
+        {
+          key: "media",
+          label: isDropdown
+            ? t("chat.dropdown.tabs.media")
+            : t("chat.info.tabs.media"),
+        },
+        {
+          key: "links",
+          label: isDropdown
+            ? t("chat.dropdown.tabs.links")
+            : t("chat.info.tabs.links"),
+        },
+        {
+          key: "documents",
+          label: isDropdown
+            ? t("chat.dropdown.tabs.documents")
+            : t("chat.info.tabs.documents"),
+        },
       ]
     : [
-        { key: "profile", label: t("chat.info.tabs.profile") },
-        { key: "media", label: t("chat.info.tabs.media") },
-        { key: "links", label: t("chat.info.tabs.links") },
-        { key: "documents", label: t("chat.info.tabs.documents") },
+        {
+          key: "profile",
+          label: isDropdown
+            ? t("chat.dropdown.tabs.profile")
+            : t("chat.info.tabs.profile"),
+        },
+        {
+          key: "media",
+          label: isDropdown
+            ? t("chat.dropdown.tabs.media")
+            : t("chat.info.tabs.media"),
+        },
+        {
+          key: "links",
+          label: isDropdown
+            ? t("chat.dropdown.tabs.links")
+            : t("chat.info.tabs.links"),
+        },
+        {
+          key: "documents",
+          label: isDropdown
+            ? t("chat.dropdown.tabs.documents")
+            : t("chat.info.tabs.documents"),
+        },
       ];
 
   const currentTab = activeTab || defaultTab;
 
+  const panelInner = room ? (
+    <div className={s.infoPanelInner}>
+      <ChatInfoHeader
+        isGroup={isGroup}
+        title={room.title || t("chat.info.title")}
+        subtitle={isDropdown ? headerSubtitle : room.subtitle || ""}
+        avatarUrl={avatarPreviewUrl}
+        initials={groupInitials}
+        onAvatarError={isGroup ? onAvatarError : onOtherAvatarError}
+        otherUser={
+          otherUserInfo ? { ...otherUserInfo, avatar: otherAvatarUrl } : null
+        }
+        canEdit={!isDropdown && canEditGroup}
+        isEditing={isEditing}
+        titleDraft={titleDraft}
+        onTitleChange={setTitleDraft}
+        onEdit={() => setIsEditing(true)}
+        onCancel={() => {
+          setIsEditing(false);
+          setTitleDraft(room?.title || "");
+          setAvatarDraftId(room?.avatarUrl || "");
+        }}
+        onSave={handleSave}
+        isSaving={isSaving}
+        onClose={handleClose}
+        avatarUploader={handleAvatarUpload}
+        isAvatarUploading={isAvatarUploading}
+      />
+
+      {isDropdown && (
+        <div className={s.infoActionsRow}>
+          {isGroup ? (
+            <>
+              {canEditGroup && (
+                <button
+                  type="button"
+                  className={s.infoActionPill}
+                  onClick={() => setIsEditing(true)}
+                >
+                  {t("chat.dropdown.actions.edit")}
+                </button>
+              )}
+              <button type="button" className={s.infoActionPill}>
+                {t("chat.dropdown.actions.invite")}
+              </button>
+              <button
+                type="button"
+                className={`${s.infoActionPill} ${s.infoActionPillDanger}`}
+              >
+                {isArchived
+                  ? t("chat.dropdown.actions.unarchive")
+                  : t("chat.dropdown.actions.archive")}
+              </button>
+              <button
+                type="button"
+                className={`${s.infoActionPill} ${s.infoActionPillDanger}`}
+              >
+                {t("chat.dropdown.actions.leave")}
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className={s.infoActionPill}>
+                {t("chat.dropdown.actions.mute")}
+              </button>
+              <button type="button" className={s.infoActionPill}>
+                {t("chat.dropdown.actions.clear")}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      <div className={s.infoTabsSticky}>
+        <ChatInfoTabs
+          tabs={tabs}
+          activeTab={currentTab}
+          onChange={(tab) => dispatch(setInfoPanelTab({ roomId, tab }))}
+        />
+      </div>
+
+      <div className={s.infoContent}>
+        {currentTab === "participants" && (
+          <ParticipantsTab
+            participants={participantsList}
+            emptyText={t("chat.info.empty.participants")}
+            searchPlaceholder={t("chat.info.fields.searchParticipants")}
+          />
+        )}
+
+        {currentTab === "profile" && (
+          <ProfileTab
+            profile={otherUserInfo}
+            emptyText={t("chat.info.empty.profile")}
+          />
+        )}
+
+        {currentTab === "media" && (
+          <MediaTab
+            items={mediaItems}
+            maxPreview={MAX_MEDIA_PREVIEW}
+            emptyText={t("chat.info.empty.media")}
+            loadMoreLabel={t("chat.info.actions.loadMore")}
+            hasMore={hasMore}
+            isLoading={isInfoLoading}
+            onLoadMore={handleLoadMore}
+            onOpen={handleOpenMedia}
+          />
+        )}
+
+        {currentTab === "links" && (
+          <LinksTab
+            items={linkItems}
+            emptyText={t("chat.info.empty.links")}
+            openLabel={t("chat.info.links.open")}
+            loadMoreLabel={t("chat.info.actions.loadMore")}
+            hasMore={hasMore}
+            isLoading={isInfoLoading}
+            onLoadMore={handleLoadMore}
+          />
+        )}
+
+        {currentTab === "documents" && (
+          <DocumentsTab
+            items={documentItems}
+            emptyText={t("chat.info.empty.documents")}
+            downloadLabel={t("chat.info.documents.download")}
+            loadMoreLabel={t("chat.info.actions.loadMore")}
+            hasMore={hasMore}
+            isLoading={isInfoLoading}
+            onLoadMore={handleLoadMore}
+          />
+        )}
+      </div>
+    </div>
+  ): null;
+
+  if (variant === "layer" && !isOpen) return null;
+
+  const panelStyle =
+    isDropdown && isOpen
+      ? { "--info-caret-left": caretLeft ? `${caretLeft}px` : "50%" }
+      : undefined;
+
   return (
-    <div className={s.infoLayer}>
-      <div className={s.infoOverlay} onClick={handleClose} />
-      <div className={s.infoPanel} onClick={(e) => e.stopPropagation()}>
-        <div className={s.infoPanelInner}>
-          <ChatInfoHeader
-            isGroup={isGroup}
-            title={room.title || t("chat.info.title")}
-            subtitle={room.subtitle || ""}
-            avatarUrl={avatarPreviewUrl}
-            initials={groupInitials}
-            onAvatarError={isGroup ? onAvatarError : onOtherAvatarError}
-            otherUser={
-              otherUserInfo
-                ? { ...otherUserInfo, avatar: otherAvatarUrl }
-                : null
-            }
-            canEdit={canEditGroup}
-            isEditing={isEditing}
-            titleDraft={titleDraft}
-            onTitleChange={setTitleDraft}
-            onEdit={() => setIsEditing(true)}
-            onCancel={() => {
-              setIsEditing(false);
-              setTitleDraft(room?.title || "");
-              setAvatarDraftId(room?.avatarUrl || "");
-            }}
-            onSave={handleSave}
-            isSaving={isSaving}
-            onClose={handleClose}
-            avatarUploader={handleAvatarUpload}
-            isAvatarUploading={isAvatarUploading}
-          />
-
-          <ChatInfoTabs
-            tabs={tabs}
-            activeTab={currentTab}
-            onChange={(tab) => dispatch(setInfoPanelTab({ roomId, tab }))}
-          />
-
-          <div className={s.infoContent}>
-            {currentTab === "participants" && (
-              <ParticipantsTab
-                participants={participantsList}
-                emptyText={t("chat.info.empty.participants")}
-                searchPlaceholder={t("chat.info.fields.searchParticipants")}
-              />
-            )}
-
-            {currentTab === "profile" && (
-              <ProfileTab
-                profile={otherUserInfo}
-                emptyText={t("chat.info.empty.profile")}
-              />
-            )}
-
-            {currentTab === "media" && (
-              <MediaTab
-                items={mediaItems}
-                maxPreview={MAX_MEDIA_PREVIEW}
-                emptyText={t("chat.info.empty.media")}
-                loadMoreLabel={t("chat.info.actions.loadMore")}
-                hasMore={hasMore}
-                isLoading={isInfoLoading}
-                onLoadMore={handleLoadMore}
-                onOpen={handleOpenMedia}
-              />
-            )}
-
-            {currentTab === "links" && (
-              <LinksTab
-                items={linkItems}
-                emptyText={t("chat.info.empty.links")}
-                openLabel={t("chat.info.links.open")}
-                loadMoreLabel={t("chat.info.actions.loadMore")}
-                hasMore={hasMore}
-                isLoading={isInfoLoading}
-                onLoadMore={handleLoadMore}
-              />
-            )}
-
-            {currentTab === "documents" && (
-              <DocumentsTab
-                items={documentItems}
-                emptyText={t("chat.info.empty.documents")}
-                downloadLabel={t("chat.info.documents.download")}
-                loadMoreLabel={t("chat.info.actions.loadMore")}
-                hasMore={hasMore}
-                isLoading={isInfoLoading}
-                onLoadMore={handleLoadMore}
-              />
-            )}
+    <>
+      {variant === "side" ? (
+        <>
+          {isOpen && <div className={s.infoSideOverlay} onClick={handleClose} />}
+          <aside
+            className={`${s.infoSide} ${isOpen ? s.infoSideOpen : ""}`}
+            aria-hidden={!isOpen}
+          >
+            {panelInner}
+          </aside>
+        </>
+      ) : (
+        <div className={s.infoLayer}>
+          {isOpen && <div className={s.infoOverlay} onClick={handleClose} />}
+          <div
+            ref={panelRef}
+            className={s.infoPanel}
+            style={panelStyle}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {panelInner}
           </div>
         </div>
-      </div>
+      )}
 
       {viewerOpen && (
         <MediaViewer
@@ -482,6 +641,6 @@ export default function ChatInfoPanel({
           onClose={() => setViewerOpen(false)}
         />
       )}
-    </div>
+    </>
   );
 }

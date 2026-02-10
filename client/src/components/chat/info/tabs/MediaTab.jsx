@@ -1,6 +1,7 @@
 // components/chat/info/tabs/MediaTab.jsx
 // Media grid for Info Panel, opens MediaViewer on item click.
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../../../hooks/useSignedFileUrl";
 import s from "../ChatInfoPanel.module.css";
 
@@ -8,7 +9,7 @@ import s from "../ChatInfoPanel.module.css";
  * Small media thumbnail tile.
  * @param {Object} props
  */
-function MediaThumb({ item, shouldLoad, onOpen }) {
+function MediaThumb({ item, shouldLoad, onOpen, ariaLabel }) {
   const isVideo = item?.mime?.startsWith("video/");
   // Signed URL for the preview tile (only when shouldLoad=true).
   const { url, onError } = useSignedFileUrl(shouldLoad ? item?.fileId : "");
@@ -18,7 +19,7 @@ function MediaThumb({ item, shouldLoad, onOpen }) {
       type="button"
       className={s.infoMediaItem}
       onClick={onOpen}
-      aria-label={item?.filename || "media"}
+      aria-label={item?.filename || ariaLabel}
     >
       {url ? (
         isVideo ? (
@@ -27,7 +28,7 @@ function MediaThumb({ item, shouldLoad, onOpen }) {
           <img src={url} alt={item?.filename || "media"} onError={onError} />
         )
       ) : (
-        <div className={s.infoMediaPlaceholder}>…</div>
+        <div className={s.infoMediaPlaceholder} />
       )}
     </button>
   );
@@ -43,6 +44,8 @@ export default function MediaTab({
   onLoadMore,
   onOpen,
 }) {
+  const { t } = useTranslation();
+  const mediaLabel = t("chat.mediaItem");
   return (
     <div>
       {!items.length ? (
@@ -55,6 +58,7 @@ export default function MediaTab({
               item={item}
               shouldLoad={idx < maxPreview}
               onOpen={() => onOpen && onOpen(idx)}
+              ariaLabel={mediaLabel}
             />
           ))}
         </div>
@@ -67,7 +71,7 @@ export default function MediaTab({
           disabled={isLoading}
           onClick={onLoadMore}
         >
-          {isLoading ? "…" : loadMoreLabel}
+          {isLoading ? t("common.loading") : loadMoreLabel}
         </button>
       )}
     </div>

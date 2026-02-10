@@ -1,5 +1,7 @@
 // src/pages/Chat/utils/chatMessageUtils.js
+// Utility helpers for chat messages: author meta, status, and highlighted text.
 import React from "react";
+import i18n from "../../../i18n";
 
 // детерминированный цвет по userId
 export const getUserColor = (userId) => {
@@ -37,7 +39,7 @@ export const getAuthorInfo = (m, companyUsers = []) => {
     ? [user.firstName, user.lastName].filter(Boolean).join(" ")
     : "";
 
-  const name = fullName || user?.email || "Пользователь";
+  const name = fullName || user?.email || i18n.t("chat.message.user");
 
   const initials =
     (user?.firstName?.[0] || name[0] || "U") + (user?.lastName?.[0] || "");

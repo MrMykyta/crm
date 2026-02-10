@@ -1,5 +1,6 @@
 const ChatRoom = require("../../../mongoModels/chat/ChatRoom");
 const ChatMessage = require("../../../mongoModels/chat/ChatMessage");
+const ChatReaction = require("../../../mongoModels/chat/ChatReaction");
 const mongoose = require("mongoose");
 const { Op } = require("sequelize");
 const ApplicationError = require("../../../errors/ApplicationError");
@@ -31,6 +32,90 @@ const buildRoomKey = (companyId, roomId) =>
   `room:${String(companyId)}:${String(roomId)}`;
 const buildUserKey = (companyId, userId) =>
   `user:${String(companyId)}:${String(userId)}`;
+
+// Normalize incoming emoji string (trim + ensure string).
+function normalizeEmoji(rawEmoji) {
+  return String(rawEmoji || "").trim();
+}
+
+// Build per-message reactions map for current user.
+async function buildReactionsMap({ messageIds = [], userId = null, companyId }) {
+  const ids = toUniqueIds(messageIds);
+  if (!ids.length) return new Map();
+
+  const objectIds = ids
+    .filter((id) => mongoose.isValidObjectId(id))
+    .map((id) => new mongoose.Types.ObjectId(id));
+
+  if (!objectIds.length) return new Map();
+
+  // Aggregate counts for each emoji per message.
+  const match = { messageId: { $in: objectIds } };
+  if (companyId) match.companyId = String(companyId);
+
+  const counts = await ChatReaction.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: { messageId: "$messageId", emoji: "$emoji" },
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // Fetch emojis reacted by the current user.
+  const userReactions = userId
+    ? await ChatReaction.find({
+        messageId: { $in: objectIds },
+        ...(companyId ? { companyId: String(companyId) } : {}),
+        userId: String(userId),
+      })
+        .select("messageId emoji")
+        .lean()
+    : [];
+
+  const map = new Map();
+
+  counts.forEach((row) => {
+    const messageId = String(row?._id?.messageId || "");
+    const emoji = row?._id?.emoji || "";
+    if (!messageId || !emoji) return;
+    const next = map.get(messageId) || {};
+    next[emoji] = { count: Number(row.count || 0), reacted: false };
+    map.set(messageId, next);
+  });
+
+  userReactions.forEach((row) => {
+    const messageId = String(row?.messageId || "");
+    const emoji = row?.emoji || "";
+    if (!messageId || !emoji) return;
+    const next = map.get(messageId) || {};
+    const prev = next[emoji] || { count: 0, reacted: false };
+    next[emoji] = { count: Number(prev.count || 0), reacted: true };
+    map.set(messageId, next);
+  });
+
+  return map;
+}
+
+// Attach reactions to a message object (non-mutating).
+function withReactions(message, reactions) {
+  return { ...(message || {}), reactions: reactions || {} };
+}
+
+// Emit reaction updates to room + user channels.
+function emitReactionUpdate({ companyId, room, payload, event }) {
+  const io = global.io;
+  if (!io || !room) return;
+  const participants = room.participants || [];
+  const users = participants.map((p) => String(p.userId));
+
+  users.forEach((uid) => {
+    io.to(buildUserKey(companyId, uid)).emit(event, payload);
+  });
+
+  io.to(buildRoomKey(companyId, room._id)).emit(event, payload);
+}
 
 function toUniqueIds(ids = []) {
   return Array.from(new Set(ids.map((id) => String(id)).filter(Boolean)));
@@ -113,6 +198,34 @@ async function getMessageInRoom({ companyId, roomId, messageId }) {
     throw new ApplicationError("Message not found", 404);
   }
   return msg;
+}
+
+// Resolve a message and validate user access to its room for reactions.
+async function getMessageForReaction({ companyId, messageId, userId }) {
+  if (!mongoose.isValidObjectId(messageId)) {
+    throw new ApplicationError("Message not found", 404);
+  }
+
+  const msg = await ChatMessage.findOne({
+    _id: messageId,
+    companyId,
+  });
+
+  if (!msg) {
+    throw new ApplicationError("Message not found", 404);
+  }
+
+  if (msg.deletedAt) {
+    throw new ApplicationError("Message deleted", 403);
+  }
+
+  const room = await getRoomForUser({
+    companyId,
+    roomId: msg.roomId,
+    userId,
+  });
+
+  return { msg, room };
 }
 
 async function getUserDisplayName(userId) {
@@ -632,7 +745,10 @@ async function sendMessage({
         );
         const auditUser = { id: uid, role: roleMap.get(String(uid)) || null };
         const canAudit = canViewAudit({ user: auditUser, room, participant });
-        const msgObj = sanitizeMessageAudit(msg, canAudit);
+        const msgObj = withReactions(
+          sanitizeMessageAudit(msg, canAudit),
+          {}
+        );
 
         io.to(buildUserKey(companyId, uid)).emit("chat:message:new", {
           roomId,
@@ -642,7 +758,7 @@ async function sendMessage({
 
       io.to(buildRoomKey(companyId, roomId)).emit("chat:message:new", {
         roomId,
-        message: sanitizeMessageAudit(msg, false),
+        message: withReactions(sanitizeMessageAudit(msg, false), {}),
       });
     }
   } catch (err) {
@@ -652,7 +768,7 @@ async function sendMessage({
   const auditUser = await resolveAuditUser({ user, userId: authorId, companyId });
   const participant = auditUser ? getParticipant(room, auditUser.id) : null;
   const canAudit = canViewAudit({ user: auditUser, room, participant });
-  return sanitizeMessageAudit(msg, canAudit);
+  return withReactions(sanitizeMessageAudit(msg, canAudit), {});
 }
 
 async function getMessages({
@@ -681,7 +797,15 @@ async function getMessages({
   const participant = auditUser ? getParticipant(room, auditUser.id) : null;
   const canAudit = canViewAudit({ user: auditUser, room, participant });
   const ordered = items.reverse();
-  return ordered.map((m) => sanitizeMessageAudit(m, canAudit));
+  const sanitized = ordered.map((m) => sanitizeMessageAudit(m, canAudit));
+  const reactionsMap = await buildReactionsMap({
+    messageIds: sanitized.map((m) => m?._id).filter(Boolean),
+    userId,
+    companyId,
+  });
+  return sanitized.map((m) =>
+    withReactions(m, reactionsMap.get(String(m?._id)) || {})
+  );
 }
 
 // список всех закреплённых сообщений комнаты (для логики «ближайший пин» на фронте)
@@ -700,7 +824,129 @@ async function getPinnedMessages({ companyId, roomId, userId, user }) {
   const auditUser = await resolveAuditUser({ user, userId, companyId });
   const participant = auditUser ? getParticipant(room, auditUser.id) : null;
   const canAudit = canViewAudit({ user: auditUser, room, participant });
-  return items.map((m) => sanitizeMessageAudit(m, canAudit));
+  const sanitized = items.map((m) => sanitizeMessageAudit(m, canAudit));
+  const reactionsMap = await buildReactionsMap({
+    messageIds: sanitized.map((m) => m?._id).filter(Boolean),
+    userId,
+    companyId,
+  });
+  return sanitized.map((m) =>
+    withReactions(m, reactionsMap.get(String(m?._id)) || {})
+  );
+}
+
+// Toggle reaction for a message (add/remove for current user).
+async function toggleReaction({ companyId, messageId, userId, emoji }) {
+  const cleanEmoji = normalizeEmoji(emoji);
+  if (!cleanEmoji) {
+    throw new ApplicationError("emoji is required", 400);
+  }
+
+  const { msg, room } = await getMessageForReaction({
+    companyId,
+    messageId,
+    userId,
+  });
+
+  const existing = await ChatReaction.findOne({
+    companyId,
+    messageId: msg._id,
+    userId: String(userId),
+    emoji: cleanEmoji,
+  });
+
+  let reacted = false;
+
+  if (existing) {
+    await existing.deleteOne();
+  } else {
+    await ChatReaction.create({
+      companyId,
+      roomId: msg.roomId,
+      messageId: msg._id,
+      userId: String(userId),
+      emoji: cleanEmoji,
+    });
+    reacted = true;
+  }
+
+  const count = await ChatReaction.countDocuments({
+    messageId: msg._id,
+    emoji: cleanEmoji,
+    companyId: String(companyId),
+  });
+
+  const payload = {
+    messageId: String(msg._id),
+    emoji: cleanEmoji,
+    count,
+    reacted,
+    userId: String(userId),
+  };
+
+  emitReactionUpdate({
+    companyId,
+    room,
+    payload,
+    event: reacted ? "chat:reaction:add" : "chat:reaction:remove",
+  });
+
+  return payload;
+}
+
+// Explicitly remove reaction for current user.
+async function removeReaction({ companyId, messageId, userId, emoji }) {
+  const cleanEmoji = normalizeEmoji(emoji);
+  if (!cleanEmoji) {
+    throw new ApplicationError("emoji is required", 400);
+  }
+
+  const { msg, room } = await getMessageForReaction({
+    companyId,
+    messageId,
+    userId,
+  });
+
+  await ChatReaction.deleteOne({
+    companyId,
+    messageId: msg._id,
+    userId: String(userId),
+    emoji: cleanEmoji,
+  });
+
+  const count = await ChatReaction.countDocuments({
+    messageId: msg._id,
+    emoji: cleanEmoji,
+    companyId: String(companyId),
+  });
+
+  const payload = {
+    messageId: String(msg._id),
+    emoji: cleanEmoji,
+    count,
+    reacted: false,
+    userId: String(userId),
+  };
+
+  emitReactionUpdate({
+    companyId,
+    room,
+    payload,
+    event: "chat:reaction:remove",
+  });
+
+  return payload;
+}
+
+// List reactions for a single message (count + reacted for current user).
+async function getMessageReactions({ companyId, messageId, userId }) {
+  const { msg } = await getMessageForReaction({ companyId, messageId, userId });
+  const reactionsMap = await buildReactionsMap({
+    messageIds: [msg._id],
+    userId,
+    companyId,
+  });
+  return reactionsMap.get(String(msg._id)) || {};
 }
 
 async function markAsRead({ companyId, roomId, userId, messageId }) {
@@ -1132,6 +1378,9 @@ module.exports = {
   sendMessage,
   getMessages,
   getPinnedMessages,
+  toggleReaction,
+  removeReaction,
+  getMessageReactions,
   markAsRead,
   pinMessage,
   unpinMessage,

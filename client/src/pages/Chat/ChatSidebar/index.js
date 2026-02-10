@@ -4,10 +4,17 @@
 // so list updates immediately after avatar changes.
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import { useListCompanyUsersQuery } from "../../../store/rtk/companyUsersApi";
 import { setActiveRoom } from "../../../store/slices/chatSlice";
-import { MessageSquarePlus, Users, MessageSquare } from "lucide-react";
+import {
+  MessageSquarePlus,
+  Users,
+  MessageSquare,
+  Search,
+  Settings,
+} from "lucide-react";
 
 import s from "../ChatPage.module.css";
 
@@ -49,6 +56,7 @@ function ChatRoomItem({
   unread,
   onClick,
 }) {
+  const { t } = useTranslation();
   // Signed inline URL for avatar (auto-refetch on expiration).
   const { url: avatarUrl, onError } = useSignedFileUrl(room.avatarSource || "");
   return (
@@ -77,7 +85,7 @@ function ChatRoomItem({
       <div className={s.roomText}>
         <div className={s.roomTitle}>{room.displayName}</div>
         <div className={s.roomPreview}>
-          {room.lastMessagePreview || "Нет сообщений"}
+          {room.lastMessagePreview || t("chat.sidebar.noMessages")}
         </div>
       </div>
 
@@ -85,7 +93,7 @@ function ChatRoomItem({
         <div className={s.roomTime}>{room.timeLabel || ""}</div>
         {unread > 0 && (
           <div className={s.roomUnread}>
-            {unread > 99 ? "99+" : unread}
+            {unread > 99 ? t("chat.sidebar.unreadMax") : unread}
           </div>
         )}
       </div>
@@ -94,6 +102,7 @@ function ChatRoomItem({
 }
 
 export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
+  const { t } = useTranslation();
   const rooms = useSelector((state) => state.chat.rooms);
   const activeRoomId = useSelector((state) => state.chat.activeRoomId);
   const currentUser = useSelector(
@@ -135,6 +144,7 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
   const [search, setSearch] = useState("");
   // Dropdown for create chat/group.
   const [menuOpen, setMenuOpen] = useState(false);
+  // Refs for menu positioning and outside click detection.
   const menuRef = useRef(null);
   const btnRef = useRef(null);
 
@@ -152,7 +162,7 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
     if (!Array.isArray(rooms)) return [];
 
     return rooms.map((room) => {
-      let displayName = "Чат";
+      let displayName = t("chat.sidebar.roomFallback");
       let avatarSource = "";
 
       if (room.type === "direct") {
@@ -171,11 +181,11 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
             .filter(Boolean)
             .join(" ");
           displayName =
-            fullName || u.email || u.userId || "Пользователь";
+            fullName || u.email || u.userId || t("chat.message.user");
           avatarSource = u.avatarUrl || room.avatarUrl || "";
         }
       } else {
-        displayName = room.title || "Группа";
+        displayName = room.title || t("chat.header.groupFallback");
         avatarSource = room.avatarUrl || "";
       }
 
@@ -191,7 +201,7 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
           typeof room.myUnreadCount === "number" ? room.myUnreadCount : 0,
       };
     });
-  }, [rooms, userMap, currentUserId]);
+  }, [rooms, userMap, currentUserId, t]);
 
   const filteredRooms = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -221,6 +231,11 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
     onCreateGroup && onCreateGroup();
   };
 
+  /** Placeholder settings action (UI only). */
+  const handleSettingsClick = () => {
+    closeMenu();
+  };
+
   useEffect(() => {
     if (!menuOpen) return;
 
@@ -248,10 +263,10 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
   }, [menuOpen]);
 
   return (
-    <div className={s.sidebar}>
+    <div className={s.sidebar} data-ui="chat-sidebar">
       {/* HEADER */}
       <div className={s.sidebarHeader}>
-        <div className={s.sidebarTitle}>Чаты</div>
+        <div className={s.sidebarTitle}>{t("chat.sidebar.title")}</div>
 
         <div className={s.sidebarHeaderRight}>
           <button
@@ -270,14 +285,21 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
                 className={s.newChatItem}
                 onClick={handleCreateGroupClick}
               >
-                <Users size={18} /> Создать группу
+                <Users size={18} /> {t("chat.sidebar.newGroup")}
               </button>
               <button
                 type="button"
                 className={s.newChatItem}
                 onClick={handleCreateDirectClick}
               >
-                <MessageSquare size={18} /> Создать чат
+                <MessageSquare size={18} /> {t("chat.sidebar.newDirect")}
+              </button>
+              <button
+                type="button"
+                className={s.newChatItem}
+                onClick={handleSettingsClick}
+              >
+                <Settings size={18} /> {t("chat.sidebar.settings")}
               </button>
             </div>
           )}
@@ -286,19 +308,30 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
 
       {/* SEARCH */}
       <div className={s.headerSearchWrap}>
-        <input
-          type="text"
-          className={s.searchInputHeader}
-          placeholder="Поиск (⌘K)"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className={s.searchInputWrap}>
+          <Search size={16} className={s.searchIcon} />
+          <input
+            type="text"
+            className={s.searchInputHeader}
+            placeholder={t("chat.sidebar.searchPlaceholder")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* ROOMS LIST */}
       <div className={s.roomsList}>
         {filteredRooms.length === 0 && (
-          <div className={s.roomsEmpty}>Нет чатов</div>
+          <div className={s.roomsEmpty}>
+            <MessageSquare size={32} className={s.roomsEmptyIcon} />
+            <div className={s.roomsEmptyTitle}>
+              {t("chat.sidebar.emptyTitle")}
+            </div>
+            <div className={s.roomsEmptySubtitle}>
+              {t("chat.sidebar.emptySubtitle")}
+            </div>
+          </div>
         )}
 
         {filteredRooms.map((room) => {

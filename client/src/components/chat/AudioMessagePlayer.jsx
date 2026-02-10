@@ -1,3 +1,5 @@
+// components/chat/AudioMessagePlayer.jsx
+// Telegram-like audio message bubble: play/pause, waveform, timer, and single-active behavior.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -6,6 +8,7 @@ import { setActiveAudio, clearActiveAudio } from "../../store/slices/chatSlice";
 import { generateWaveformBars } from "./audio/waveform";
 import s from "./AudioMessagePlayer.module.css";
 
+// Fixed number of waveform bars for stable layout.
 const BARS_COUNT = 48;
 
 const formatTime = (sec) => {
@@ -28,18 +31,28 @@ const normalizeUrl = (u) => {
 export default function AudioMessagePlayer({ fileId, filename }) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
+  // Global active audio id (only one player can be active at a time).
   const activeAudioFileId = useSelector((st) => st.chat?.activeAudioFileId);
 
+  // Audio element reference for play/pause/seek.
   const audioRef = useRef(null);
+  // Waveform container reference for click-to-seek.
   const waveRef = useRef(null);
+  // Lazy signed URL query (fetched only on first play).
   const [fetchSignedUrl] = useLazyGetSignedFileUrlQuery();
 
+  // Signed audio source URL (cached per fileId).
   const [audioSrc, setAudioSrc] = useState(null);
+  // Whether signed-url fetch is in progress.
   const [isSrcLoading, setIsSrcLoading] = useState(false);
+  // Playback error message (i18n).
   const [srcError, setSrcError] = useState(null);
 
+  // Total audio duration in seconds.
   const [duration, setDuration] = useState(0);
+  // Current playback time in seconds.
   const [currentTime, setCurrentTime] = useState(0);
+  // Local playing flag (derived from audio events).
   const [playing, setPlaying] = useState(false);
 
   const waveform = useMemo(

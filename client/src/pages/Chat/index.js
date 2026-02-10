@@ -1,6 +1,8 @@
 // src/pages/Chat/index.jsx
+// Chat page layout: sidebar + window, handles socket init and ESC behavior.
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 
 import { initSocket } from '../../sockets/io';
 import { useListRoomsQuery } from '../../store/rtk/chatApi';
@@ -17,11 +19,17 @@ import s from './ChatPage.module.css';
 
 export default function ChatPage({ accessToken: accessTokenProp }) {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
+  // Current mode for chat screen (room list vs create dialog).
   const [mode, setMode] = useState('room'); // 'room' | 'createDirect' | 'createGroup'
 
+  // Active room id from chat slice.
   const activeRoomId = useSelector((st) => st.chat.activeRoomId);
+  // Access token from auth slice.
   const accessTokenStore = useSelector((st) => st.auth.accessToken);
+  // Composer mode for ESC handling (edit vs normal).
   const composerMode = useSelector((st) => st.chat.composerMode);
+  // Info panel open state for current room.
   const infoPanelOpen = useSelector(
     (st) => st.chat.infoPanelOpenByRoomId?.[String(activeRoomId || '')]
   );
@@ -70,11 +78,6 @@ export default function ChatPage({ accessToken: accessTokenProp }) {
         setMode('room');
         return;
       }
-
-      if (activeRoomId) {
-        // если открыт чат — закрыть
-        dispatch(setActiveRoom(null));
-      }
     };
 
     window.addEventListener('keydown', onKey);
@@ -86,7 +89,7 @@ export default function ChatPage({ accessToken: accessTokenProp }) {
   };
 
   return (
-    <div className={s.wrap}>
+    <div className={s.wrap} data-ui="chat-root">
       <ChatSidebar
         onCreateDirect={() => {
           // при создании чата/группы можно сбросить активную комнату
@@ -109,7 +112,7 @@ export default function ChatPage({ accessToken: accessTokenProp }) {
         />
       ) : (
         <div className={s.empty}>
-          {isLoading ? 'Загружаем чаты…' : 'Выберите чат'}
+          {isLoading ? t('chat.messages.loadingRooms') : t('chat.emptyRoom')}
         </div>
       )}
     </div>

@@ -1,6 +1,8 @@
 // src/pages/Chat/components/MessageContextMenu.jsx
+// Context menu for message actions (reply/edit/pin/delete) with smart positioning.
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import s from "../../ChatPage.module.css";
 
 export default function MessageContextMenu({
@@ -24,11 +26,14 @@ export default function MessageContextMenu({
   canForward = true,
   canDelete = true,
   canShowOriginal = false,
-  showOriginalLabel = "Показать оригинал",
+  showOriginalLabel,
   deleteDisabled = false,
   isDeleting = false,
 }) {
+  const { t } = useTranslation();
+  // Menu DOM ref for measuring size.
   const menuRef = useRef(null);
+  // Calculated screen position for menu placement.
   const [pos, setPos] = useState({ x: -9999, y: -9999 });
 
   useEffect(() => {
@@ -98,7 +103,7 @@ export default function MessageContextMenu({
   };
 
   const isPinned = !!message?.isPinned;
-  const pinLabel = isPinned ? "Открепить" : "Закрепить";
+  const pinLabel = isPinned ? t("chat.menu.unpin") : t("chat.menu.pin");
   const editDisabled = !canEdit;
   const copyDisabled = !canCopy;
   const forwardDisabled = !canForward;
@@ -120,17 +125,17 @@ export default function MessageContextMenu({
           className={s.ctxMenuItem}
           onClick={handle(onReply)}
         >
-          Ответить
+          {t("chat.menu.reply")}
         </button>
 
-        {canCopy && (
+        {canForward && (
           <button
             type="button"
             className={s.ctxMenuItem}
-            onClick={copyDisabled ? undefined : handle(onCopy)}
-            disabled={copyDisabled}
+            onClick={forwardDisabled ? undefined : handle(onForward)}
+            disabled={forwardDisabled}
           >
-            Копировать
+            {t("chat.menu.forward")}
           </button>
         )}
 
@@ -141,17 +146,7 @@ export default function MessageContextMenu({
             onClick={editDisabled ? undefined : handle(onEdit)}
             disabled={editDisabled}
           >
-            Изменить
-          </button>
-        )}
-
-        {showOriginal && (
-          <button
-            type="button"
-            className={s.ctxMenuItem}
-            onClick={handle(onShowOriginal)}
-          >
-            {showOriginalLabel}
+            {t("chat.menu.edit")}
           </button>
         )}
 
@@ -163,14 +158,39 @@ export default function MessageContextMenu({
           {pinLabel}
         </button>
 
-        {canForward && (
+        {showDelete && (
+          <button
+            type="button"
+            className={`${s.ctxMenuItem} ${s.ctxMenuItemDanger}`}
+            onClick={deleteIsDisabled ? undefined : handle(onDelete)}
+            disabled={deleteIsDisabled}
+          >
+            {isDeleting ? t("chat.menu.deleting") : t("chat.menu.delete")}
+          </button>
+        )}
+
+        {(canCopy || showOriginal || onSelect) && (
+          <div className={s.ctxMenuSeparator} />
+        )}
+
+        {canCopy && (
           <button
             type="button"
             className={s.ctxMenuItem}
-            onClick={forwardDisabled ? undefined : handle(onForward)}
-            disabled={forwardDisabled}
+            onClick={copyDisabled ? undefined : handle(onCopy)}
+            disabled={copyDisabled}
           >
-            Переслать
+            {t("chat.menu.copy")}
+          </button>
+        )}
+
+        {showOriginal && (
+          <button
+            type="button"
+            className={s.ctxMenuItem}
+            onClick={handle(onShowOriginal)}
+          >
+            {showOriginalLabel || t("chat.menu.showOriginal")}
           </button>
         )}
 
@@ -179,19 +199,8 @@ export default function MessageContextMenu({
           className={s.ctxMenuItem}
           onClick={handle(onSelect)}
         >
-          Выбрать
+          {t("chat.menu.select")}
         </button>
-
-        {showDelete && (
-          <button
-            type="button"
-            className={`${s.ctxMenuItem} ${s.ctxMenuItemDanger}`}
-            onClick={deleteIsDisabled ? undefined : handle(onDelete)}
-            disabled={deleteIsDisabled}
-          >
-            {isDeleting ? "Удаляем…" : "Удалить"}
-          </button>
-        )}
       </div>
     </div>
   );

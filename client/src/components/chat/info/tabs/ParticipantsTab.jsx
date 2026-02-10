@@ -1,6 +1,7 @@
 // components/chat/info/tabs/ParticipantsTab.jsx
 // Participants list with local search and signed avatars.
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../../../hooks/useSignedFileUrl";
 import s from "../ChatInfoPanel.module.css";
 
@@ -9,6 +10,8 @@ import s from "../ChatInfoPanel.module.css";
  * @param {Object} props
  */
 function ParticipantRow({ item }) {
+  const { t } = useTranslation();
+  const fallback = t("common.none");
   const { url, onError } = useSignedFileUrl(item?.avatarUrl || "");
   return (
     <div className={s.infoRow}>
@@ -20,11 +23,11 @@ function ParticipantRow({ item }) {
         )}
       </div>
       <div className={s.infoRowTexts}>
-        <div className={s.infoRowTitle}>{item?.name || "—"}</div>
+        <div className={s.infoRowTitle}>{item?.name || fallback}</div>
         <div className={s.infoRowSub}>
           {[item?.email, item?.department, item?.role]
             .filter(Boolean)
-            .join(" · ") || "—"}
+            .join(" · ") || fallback}
         </div>
       </div>
     </div>

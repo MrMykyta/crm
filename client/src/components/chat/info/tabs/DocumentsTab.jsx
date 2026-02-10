@@ -35,6 +35,7 @@ function DocumentRow({ item, downloadLabel }) {
   const { t } = useTranslation();
   const [getSignedDownload, { isFetching }] = useLazyGetSignedDownloadUrlQuery();
   const sizeText = useMemo(() => prettySize(item?.size), [item?.size]);
+  const fallback = t("common.none");
 
   const handleDownload = async () => {
     try {
@@ -51,9 +52,9 @@ function DocumentRow({ item, downloadLabel }) {
   return (
     <div className={s.infoDocRow}>
       <div className={s.infoDocMeta}>
-        <div className={s.infoDocName}>{item?.filename || "—"}</div>
+        <div className={s.infoDocName}>{item?.filename || fallback}</div>
         <div className={s.infoDocSub}>
-          {item?.mime || "—"}
+          {item?.mime || fallback}
           {sizeText ? ` · ${sizeText}` : ""}
         </div>
       </div>
@@ -78,6 +79,7 @@ export default function DocumentsTab({
   isLoading,
   onLoadMore,
 }) {
+  const { t } = useTranslation();
   return (
     <div>
       {!items.length ? (
@@ -101,7 +103,7 @@ export default function DocumentsTab({
           disabled={isLoading}
           onClick={onLoadMore}
         >
-          {isLoading ? "…" : loadMoreLabel}
+          {isLoading ? t("common.loading") : loadMoreLabel}
         </button>
       )}
     </div>

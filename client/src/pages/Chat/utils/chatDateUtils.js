@@ -1,4 +1,6 @@
 // src/pages/Chat/utils/chatDateUtils.js
+// Date grouping helpers for chat messages (Today/Yesterday/localized date label).
+import i18n from "../../../i18n";
 
 export const formatDayKey = (date) => {
   const d = new Date(date);
@@ -19,10 +21,11 @@ export const formatDayLabel = (date) => {
     (startOf(today) - startOf(d)) / (24 * 60 * 60 * 1000)
   );
 
-  if (diffDays === 0) return "Сегодня";
-  if (diffDays === 1) return "Вчера";
+  if (diffDays === 0) return i18n.t("chat.date.today");
+  if (diffDays === 1) return i18n.t("chat.date.yesterday");
 
-  return d.toLocaleDateString("ru-RU", {
+  const locale = i18n.language || "en";
+  return d.toLocaleDateString(locale, {
     day: "numeric",
     month: "long",
   });

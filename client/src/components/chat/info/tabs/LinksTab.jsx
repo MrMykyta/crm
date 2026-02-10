@@ -1,6 +1,7 @@
 // components/chat/info/tabs/LinksTab.jsx
 // Links list extracted from message text.
 import React from "react";
+import { useTranslation } from "react-i18next";
 import s from "../ChatInfoPanel.module.css";
 
 export default function LinksTab({
@@ -12,6 +13,7 @@ export default function LinksTab({
   isLoading,
   onLoadMore,
 }) {
+  const { t } = useTranslation();
   return (
     <div>
       {!items.length ? (
@@ -36,7 +38,7 @@ export default function LinksTab({
           disabled={isLoading}
           onClick={onLoadMore}
         >
-          {isLoading ? "…" : loadMoreLabel}
+          {isLoading ? t("common.loading") : loadMoreLabel}
         </button>
       )}
     </div>

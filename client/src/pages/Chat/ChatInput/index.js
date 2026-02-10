@@ -1,4 +1,5 @@
 // src/pages/Chat/ChatWindow/ChatInput.jsx
+// Composer input: text, reply/edit banners, drag&drop attachments, and send actions.
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
@@ -121,10 +122,15 @@ export default function ChatInput({
   onRetrySend,
 }) {
   const { t } = useTranslation();
+  // Textarea ref for auto-resize and focus.
   const textareaRef = useRef(null);
+  // Previous textarea height for delta calculations.
   const prevTextHeightRef = useRef(0);
+  // Base height to detect when textarea grows beyond one line.
   const baseHeightRef = useRef(0); // высота одной строки
+  // Hidden file input ref for attachments.
   const fileInputRef = useRef(null);
+  // Drag state to show drop highlight.
   const [isDragging, setIsDragging] = useState(false);
 
   const handleSendClick = () => {
@@ -236,11 +242,11 @@ export default function ChatInput({
 
   const headerTitle = isForward
     ? replyTo?.authorName
-      ? `Переслать от ${replyTo.authorName}`
-      : "Переслать сообщение"
+      ? t("chat.composer.forwardFrom", { name: replyTo.authorName })
+      : t("chat.composer.forwardTitle")
     : replyTo?.authorName
-    ? `В ответ ${replyTo.authorName}`
-    : "Ответ на сообщение";
+    ? t("chat.composer.replyTo", { name: replyTo.authorName })
+    : t("chat.composer.replyTitle");
 
   const iconSymbol = isForward ? "↪︎" : "↩︎";
 
@@ -264,6 +270,7 @@ export default function ChatInput({
       className={[s.input, isDragging ? s.inputDragging : ""]
         .filter(Boolean)
         .join(" ")}
+      data-ui="chat-composer"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -293,7 +300,9 @@ export default function ChatInput({
             <div className={s.replyLeft}>
               <div className={s.replyIcon}>✎</div>
               <div className={s.replyTexts}>
-                <div className={s.replyTitle}>Редактирование</div>
+                <div className={s.replyTitle}>
+                  {t("chat.composer.editTitle")}
+                </div>
                 {editSnippet && (
                   <div className={s.replyText}>{editSnippet}</div>
                 )}
@@ -373,7 +382,7 @@ export default function ChatInput({
               className={s.textbox}
               rows={1}
               value={text}
-              placeholder="Сообщение…"
+              placeholder={t("chat.composer.placeholder")}
               onChange={handleChange}
               onKeyDown={handleKeyDown}
               disabled={isBusy}

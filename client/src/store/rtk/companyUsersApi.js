@@ -101,7 +101,7 @@ export const companyUsersApi = crmApi.injectEndpoints({
       query: (params = {}) => ({
         url: `/invitations/companies/${getCompanyId()}/invitations`,
         method: 'GET',
-        params,
+        params: stripCompanyId(params),
       }),
       transformResponse: (resp) =>
         Array.isArray(resp)
@@ -114,6 +114,7 @@ export const companyUsersApi = crmApi.injectEndpoints({
           ...items.map((i) => ({ type: 'CompanyUser', id: `invite:${i.id}` })),
         ];
       },
+      refetchOnMountOrArgChange: true,
       keepUnusedDataFor: 120,
     }),
 

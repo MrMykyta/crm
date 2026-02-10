@@ -1,0 +1,22 @@
+services:
+  api:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -lc "npm ci && npm run dev"
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+      - uploads:/app/uploads
+    environment:
+      NODE_ENV: development
+      PORT: "5001"
+    ports:
+      - "5001:5001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+
+volumes:
+  uploads:

@@ -67,6 +67,7 @@
     "reset": "Resetuj",
     "none": "—",
     "cancel": "Anuluj",
+    "delete": "Usuń",
     "primary": "Główny",
     "saved": "Zapisano",
     "unsaved": "Niezapisane zmiany"
@@ -366,7 +367,7 @@
     }
   },
   "companySettings": {
-    "title":"Ustawienia firmy",
+    "title": "Ustawienia firmy",
     "modules": "Moduły",
     "lists": "Listy",
     "deals": "Transakcje",
@@ -379,8 +380,7 @@
     "catalog": "Produkty / Usługi",
     "warehouse": "Magazyn",
     "other": "Inne",
-
-    "module" : {
+    "module": {
       "crm": "CRM",
       "oms": "OMS",
       "pim": "PIM",
@@ -496,15 +496,162 @@
       "tooLarge": "Plik jest za duży lub przekroczono limit",
       "unsupportedType": "Nieobsługiwany typ pliku",
       "download": "Pobierz",
+      "open": "Otwórz",
       "retry": "Ponów",
       "remove": "Usuń",
-      "sendFailed": "Wiadomość nie została wysłana"
+      "sendFailed": "Wiadomość nie została wysłana",
+      "file": "Plik",
+      "fileType": "plik",
+      "downloadFailed": "Nie udało się pobrać linku"
     },
     "audio": {
       "playbackError": "Nie można odtworzyć audio",
       "play": "Odtwórz",
       "pause": "Pauza",
       "loading": "Ładowanie audio…"
+    },
+    "sidebar": {
+      "title": "Czaty",
+      "searchPlaceholder": "Szukaj",
+      "noMessages": "Brak wiadomości",
+      "unreadMax": "99+",
+      "empty": "Brak czatów",
+      "newGroup": "Nowa grupa",
+      "newDirect": "Nowy czat",
+      "roomFallback": "Czat",
+      "settings": "Ustawienia",
+      "emptyTitle": "Brak czatów",
+      "emptySubtitle": "Rozpocznij nową rozmowę, aby zacząć"
+    },
+    "messages": {
+      "loading": "Ładowanie wiadomości…",
+      "loadingMore": "Ładowanie wcześniejszych wiadomości…",
+      "empty": "Brak wiadomości",
+      "loadingRooms": "Ładowanie czatów…"
+    },
+    "emptyRoom": "Wybierz czat",
+    "message": {
+      "user": "Użytkownik",
+      "someone": "Ktoś",
+      "deleted": "Wiadomość usunięta",
+      "attachment": "Załącznik",
+      "fallback": "Wiadomość",
+      "forwardedFrom": "Przekazano od {{name}}",
+      "status": {
+        "sent": "Wysłano",
+        "delivered": "Dostarczono",
+        "readSome": "Przeczytane przez część",
+        "readAll": "Przeczytane przez wszystkich",
+        "read": "Przeczytane"
+      }
+    },
+    "delete": {
+      "title": "Usuń wiadomość",
+      "text": "Czy na pewno?"
+    },
+    "system": {
+      "pin": "{{name}} przypiął(a) „{{text}}”"
+    },
+    "mediaItem": "Media",
+    "actions": {
+      "react": "Reakcja",
+      "more": "Więcej",
+      "scrollToBottom": "Przewiń w dół"
+    },
+    "header": {
+      "search": "Szukaj",
+      "more": "Więcej",
+      "members": "{{count}} uczestników",
+      "lastSeen": "ostatnio widziany",
+      "groupFallback": "Grupa",
+      "directSubtitle": "Wiadomość prywatna",
+      "groupMembersCount": "{{count}} uczestników",
+      "archived": "Zarchiwizowano",
+      "searchSoon": "Wkrótce",
+      "menu": {
+        "mute": "Wycisz powiadomienia",
+        "clear": "Wyczyść czat",
+        "leave": "Opuść grupę"
+      }
+    },
+    "search": {
+      "placeholder": "Szukaj w wiadomościach…"
+    },
+    "pinned": {
+      "title": "📌 Przypięta wiadomość",
+      "notFound": "Nie znaleziono wiadomości"
+    },
+    "select": {
+      "clear": "Wyczyść wybór",
+      "selectedCount": "Wybrano {{count}}",
+      "forward": "Przekaż"
+    },
+    "menu": {
+      "reply": "Odpowiedz",
+      "copy": "Kopiuj",
+      "edit": "Edytuj",
+      "pin": "Przypnij",
+      "unpin": "Odepnij",
+      "forward": "Przekaż",
+      "select": "Wybierz",
+      "delete": "Usuń",
+      "deleting": "Usuwanie…",
+      "showOriginal": "Pokaż oryginał"
+    },
+    "modal": {
+      "originalTitle": "Oryginał",
+      "beforeDelete": "Przed usunięciem",
+      "beforeEdit": "Przed edycją",
+      "deleteTitle": "Usunąć wiadomość?",
+      "deleteText": "Ta wiadomość zostanie usunięta dla wszystkich.",
+      "deleteConfirm": "Usuń",
+      "deleteCancel": "Anuluj"
+    },
+    "errors": {
+      "deleteForbidden": "Brak uprawnień do usunięcia",
+      "deleteFailed": "Nie udało się usunąć wiadomości",
+      "editForbidden": "Brak uprawnień do edycji",
+      "editFailed": "Nie udało się zapisać zmian"
+    },
+    "composer": {
+      "forwardFrom": "Przekazano od {{name}}",
+      "forwardTitle": "Przekaż wiadomość",
+      "replyTo": "Odpowiedź do {{name}}",
+      "replyTitle": "Odpowiedź na wiadomość",
+      "editTitle": "Edycja",
+      "placeholder": "Wiadomość…"
+    },
+    "typing": {
+      "you": "Ty",
+      "userFallback": "Użytkownik",
+      "single": "{{name}} pisze…",
+      "multi": "Kilka osób pisze…"
+    },
+    "date": {
+      "today": "Dzisiaj",
+      "yesterday": "Wczoraj"
+    },
+    "forward": {
+      "title": "Przekaż wiadomość",
+      "currentRoom": "Bieżący czat",
+      "groupTitle": "{{title}} · {{count}} osób",
+      "directFallback": "Czat"
+    },
+    "create": {
+      "directTitle": "Nowy czat",
+      "groupTitle": "Nowa grupa",
+      "directSubtitle": "Wybierz członka zespołu, aby rozpocząć rozmowę.",
+      "groupSubtitle": "Wybierz członków, aby utworzyć grupę.",
+      "directPlaceholder": "Z kim chcesz porozmawiać?",
+      "groupPlaceholder": "Kogo chcesz zaprosić?",
+      "directError": "Nie udało się utworzyć czatu",
+      "groupError": "Nie udało się utworzyć grupy",
+      "loadUsersError": "Nie udało się załadować użytkowników",
+      "loadingUsers": "Ładowanie uczestników…",
+      "emptyUsers": "Brak użytkowników",
+      "noName": "Bez imienia",
+      "groupNamePlaceholder": "Nazwa grupy",
+      "groupCreate": "Utwórz"
     },
     "info": {
       "title": "Informacje",
@@ -542,7 +689,24 @@
       "links": {
         "open": "Otwórz"
       }
+    },
+    "dropdown": {
+      "actions": {
+        "edit": "Edytuj",
+        "invite": "Zaproś",
+        "mute": "Wycisz",
+        "clear": "Wyczyść",
+        "leave": "Opuść",
+        "archive": "Archiwizuj",
+        "unarchive": "Przywróć"
+      },
+      "tabs": {
+        "participants": "Uczestnicy",
+        "profile": "Profil",
+        "media": "Media",
+        "links": "Linki",
+        "documents": "Dokumenty"
+      }
     }
   }
-
 }

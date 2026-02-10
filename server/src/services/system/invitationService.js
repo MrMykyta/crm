@@ -125,10 +125,13 @@ module.exports.create = async (user, company, body) => {
     status: 'pending',
   });
   console.log(company.name)
-  await sendInviteEmail({
+  // Отправка письма не должна блокировать ответ (чтобы UI не зависал).
+  sendInviteEmail({
     to: email,
     token,
-    companyName: company.name
+    companyName: company.name,
+  }).catch((e) => {
+    console.error('[INVITE mail failed]', e?.message || e);
   });
 
   return inv;
@@ -141,7 +144,11 @@ module.exports.resend = async (id, companyName, invitedByName) => {
   inv.token = genToken();
   inv.expiresAt = expiresAtFromNow();
   await inv.save();
-  await sendInviteEmail({ to: inv.email, token: inv.token, repeat: true, companyName, invitedByName });
+  // Отправка письма не должна блокировать ответ (чтобы UI не зависал).
+  sendInviteEmail({ to: inv.email, token: inv.token, repeat: true, companyName, invitedByName })
+    .catch((e) => {
+      console.error('[INVITE resend mail failed]', e?.message || e);
+    });
   return { ok: true };
 };
 
