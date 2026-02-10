@@ -1,6 +1,6 @@
 // src/pages/Chat/components/ChatAttachment.jsx
 // Attachment renderer for chat messages and composer: handles audio, files, and previews.
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../../../hooks/useSignedFileUrl";
 import { useLazyGetSignedDownloadUrlQuery } from "../../../../store/rtk/filesApi";
@@ -26,6 +26,8 @@ const OFFICE_MIME = new Set([
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 ]);
 
 // Zip mime types to force download-only behavior.
@@ -69,8 +71,13 @@ export default function ChatAttachment({
   mode = "message", // 'message' | 'composer'
   onRemove,
   forceFileCard = false,
+  onOpenMedia,
+  documentItems = [],
+  documentIndex = 0,
 }) {
   const { t } = useTranslation();
+  const [docPreviewUrl, setDocPreviewUrl] = useState("");
+  const [docPreviewError, setDocPreviewError] = useState(false);
   const fileId = attachment?.fileId || attachment?.id || null;
   const filename = attachment?.filename || attachment?.name || t("chat.attach.file");
   const mime = attachment?.mime || attachment?.mimeType || "";
@@ -87,8 +94,14 @@ export default function ChatAttachment({
     (OFFICE_MIME.has(mime) &&
       (mime.includes("excel") || mime === "application/vnd.ms-excel")) ||
     ["xls", "xlsx"].includes(ext);
+  const isPpt =
+    (OFFICE_MIME.has(mime) &&
+      (mime.includes("powerpoint") ||
+        mime === "application/vnd.ms-powerpoint" ||
+        mime.includes("presentation"))) ||
+    ["ppt", "pptx"].includes(ext);
   // Flag for any office document.
-  const isOfficeDoc = isDoc || isXls;
+  const isOfficeDoc = isDoc || isXls || isPpt;
   const isZip = ZIP_MIME.has(mime) || ext === "zip";
   const isPreviewable = PREVIEW_MIME.includes(mime);
   const isImage = mime.startsWith("image/");
@@ -96,20 +109,14 @@ export default function ChatAttachment({
   const isAudio = mime.startsWith("audio/");
   const isVideo = mime.startsWith("video/");
 
+  const isDocument = isPdf || isOfficeDoc;
   const shouldPreview =
     !forceFileCard && isPreviewable && !isAudio && !isOfficeDoc && !isZip;
-  const previewSource = shouldPreview ? fileId || directUrl || "" : "";
-  const { url: previewUrl, onError } = useSignedFileUrl(
-    shouldPreview ? previewSource : ""
+  const needsInlineUrl = Boolean(
+    fileId && (shouldPreview || isPdf)
   );
-  const hasPreview = !!(shouldPreview && previewUrl);
-  const cardClassName = [
-    s.attachmentCard,
-    hasPreview ? s.attachmentCardMedia : s.attachmentCardFile,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
+  const previewSource = needsInlineUrl ? fileId || directUrl || "" : "";
+  const { url: previewUrl, onError } = useSignedFileUrl(previewSource);
   const [getSignedDownload] = useLazyGetSignedDownloadUrlQuery();
   const sizeText = useMemo(() => prettySize(size), [size]);
   // Label used in the file badge for non-media items.
@@ -123,9 +130,48 @@ export default function ChatAttachment({
     ? ext === "xls"
       ? "XLS"
       : "XLSX"
+    : isPpt
+    ? ext === "ppt"
+      ? "PPT"
+      : "PPTX"
     : isZip
     ? "ZIP"
     : "FILE";
+
+  useEffect(() => {
+    let isActive = true;
+    if (!isOfficeDoc) {
+      setDocPreviewUrl("");
+      setDocPreviewError(false);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    const buildPreview = async () => {
+      try {
+        let url = directUrl ? normalizeUrl(directUrl) : "";
+        if (!url && fileId) {
+          const res = await getSignedDownload(fileId).unwrap();
+          url = normalizeUrl(res?.data?.url || res?.url || "");
+        }
+        const viewerUrl = url ? buildDocsViewerUrl(url) : "";
+        if (isActive) {
+          setDocPreviewUrl(viewerUrl);
+          setDocPreviewError(!viewerUrl);
+        }
+      } catch {
+        if (isActive) {
+          setDocPreviewError(true);
+        }
+      }
+    };
+
+    buildPreview();
+    return () => {
+      isActive = false;
+    };
+  }, [isOfficeDoc, directUrl, fileId, getSignedDownload]);
 
   if (isAudio && mode === "message") {
     return <AudioMessagePlayer fileId={fileId} filename={filename} />;
@@ -166,59 +212,59 @@ export default function ChatAttachment({
     }
   };
 
+  const handleOpenPreview = () => {
+    if (onOpenMedia && documentItems.length) {
+      const safeIndex =
+        typeof documentIndex === "number" ? documentIndex : 0;
+      onOpenMedia(documentItems, safeIndex);
+      return;
+    }
+    if (isPdf) {
+      const urlToOpen =
+        previewPdfUrl || (directUrl ? normalizeUrl(directUrl) : "");
+      if (urlToOpen) window.open(urlToOpen, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (isOfficeDoc) {
+      handleOpenDocument();
+    }
+  };
+
+  const previewPdfUrl = previewUrl || (directUrl ? normalizeUrl(directUrl) : "");
+  const showDocPreview = mode === "message" && isDocument && !isZip;
+  const hasPreview = !!(shouldPreview && previewUrl);
+  const cardClassName = [
+    s.attachmentCard,
+    hasPreview || showDocPreview
+      ? s.attachmentCardMedia
+      : s.attachmentCardFile,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <div className={cardClassName}>
-      {isPreviewable && previewUrl ? (
-        <div className={s.attachmentPreview}>
-          {isImage && (
-            <img
-              src={previewUrl}
-              alt={filename}
-              className={s.attachmentImg}
-              onError={onError}
-            />
-          )}
-          {isPdf && (
-            <iframe
-              title={filename}
-              src={previewUrl}
-              className={s.attachmentPdf}
-              loading="lazy"
-            />
-          )}
-          {isAudio && (
-            <audio controls src={previewUrl} className={s.attachmentAudio} />
-          )}
-          {isVideo && (
-            <video controls src={previewUrl} className={s.attachmentVideo} />
-          )}
-        </div>
-      ) : (
-        <div className={s.attachmentFileIcon}>
-          <span className={s.attachmentFileBadge}>{fileTypeLabel}</span>
-        </div>
-      )}
-
-      <div className={s.attachmentMeta}>
-        <div className={s.attachmentName}>{filename}</div>
-        <div className={s.attachmentSub}>
-          {mime ? mime : t("chat.attach.fileType")}
-          {sizeText ? ` · ${sizeText}` : ""}
-        </div>
-      </div>
-
-      <div className={s.attachmentActions}>
-        {mode === "message" && (
-          <>
-            {isOfficeDoc ? (
+      {showDocPreview ? (
+        <>
+          <div className={s.attachmentDocHeader}>
+            <div className={s.attachmentDocIcon}>
+              <span className={s.attachmentFileBadge}>{fileTypeLabel}</span>
+            </div>
+            <div className={s.attachmentMeta}>
+              <div className={s.attachmentName}>{filename}</div>
+              <div className={s.attachmentSub}>
+                {mime ? mime : t("chat.attach.fileType")}
+                {sizeText ? ` · ${sizeText}` : ""}
+              </div>
+            </div>
+            <div className={s.attachmentActions}>
               <button
                 type="button"
                 className={s.attachmentBtn}
-                onClick={handleOpenDocument}
+                onClick={handleOpenPreview}
               >
                 {t("chat.attach.open", "Open")}
               </button>
-            ) : (
               <button
                 type="button"
                 className={s.attachmentBtn}
@@ -226,19 +272,113 @@ export default function ChatAttachment({
               >
                 {t("chat.attach.download")}
               </button>
-            )}
-          </>
-        )}
-        {mode === "composer" && (
-          <button
-            type="button"
-            className={s.attachmentBtnDanger}
-            onClick={() => onRemove && onRemove()}
+            </div>
+          </div>
+
+          <div
+            className={s.attachmentDocPreview}
+            role="button"
+            tabIndex={0}
+            onClick={handleOpenPreview}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleOpenPreview();
+            }}
           >
-            {t("chat.attach.remove")}
-          </button>
-        )}
-      </div>
+            {isPdf && previewPdfUrl ? (
+              <iframe
+                title={filename}
+                src={previewPdfUrl}
+                className={s.attachmentDocFrame}
+                loading="lazy"
+              />
+            ) : isOfficeDoc && docPreviewUrl && !docPreviewError ? (
+              <iframe
+                title={filename}
+                src={docPreviewUrl}
+                className={s.attachmentDocFrame}
+                loading="lazy"
+              />
+            ) : (
+              <div className={s.attachmentDocFallback}>
+                {t("chat.attach.previewUnavailable", "Preview unavailable")}
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          {isPreviewable && previewUrl ? (
+            <div className={s.attachmentPreview}>
+              {isImage && (
+                <img
+                  src={previewUrl}
+                  alt={filename}
+                  className={s.attachmentImg}
+                  onError={onError}
+                />
+              )}
+              {isPdf && (
+                <iframe
+                  title={filename}
+                  src={previewUrl}
+                  className={s.attachmentPdf}
+                  loading="lazy"
+                />
+              )}
+              {isAudio && (
+                <audio controls src={previewUrl} className={s.attachmentAudio} />
+              )}
+              {isVideo && (
+                <video controls src={previewUrl} className={s.attachmentVideo} />
+              )}
+            </div>
+          ) : (
+            <div className={s.attachmentFileIcon}>
+              <span className={s.attachmentFileBadge}>{fileTypeLabel}</span>
+            </div>
+          )}
+
+          <div className={s.attachmentMeta}>
+            <div className={s.attachmentName}>{filename}</div>
+            <div className={s.attachmentSub}>
+              {mime ? mime : t("chat.attach.fileType")}
+              {sizeText ? ` · ${sizeText}` : ""}
+            </div>
+          </div>
+
+          <div className={s.attachmentActions}>
+            {mode === "message" && (
+              <>
+                {isOfficeDoc || isPdf ? (
+                  <button
+                    type="button"
+                    className={s.attachmentBtn}
+                    onClick={handleOpenPreview}
+                  >
+                    {t("chat.attach.open", "Open")}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className={s.attachmentBtn}
+                  onClick={handleDownload}
+                >
+                  {t("chat.attach.download")}
+                </button>
+              </>
+            )}
+            {mode === "composer" && (
+              <button
+                type="button"
+                className={s.attachmentBtnDanger}
+                onClick={() => onRemove && onRemove()}
+              >
+                {t("chat.attach.remove")}
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

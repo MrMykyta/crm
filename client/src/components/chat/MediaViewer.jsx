@@ -1,7 +1,7 @@
 // components/chat/MediaViewer.jsx
 // Fullscreen media viewer for images/videos opened from Info Panel.
 // Uses signed inline URLs and does not auto-download files.
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../hooks/useSignedFileUrl";
 import { useLazyGetSignedDownloadUrlQuery } from "../../store/rtk/filesApi";
@@ -34,21 +34,41 @@ export default function MediaViewer({
   activeIndex = 0,
   onChangeIndex,
   onClose,
+  inChat = false,
 }) {
   const { t } = useTranslation();
 
   // Active media item based on index.
   const activeItem = items[activeIndex] || null;
 
+  const fileExt = useMemo(() => {
+    const name = activeItem?.filename || "";
+    const parts = name.split(".");
+    return parts.length > 1 ? parts.pop().toLowerCase() : "";
+  }, [activeItem?.filename]);
+
+  const isVideo = Boolean(activeItem?.mime?.startsWith("video/"));
+  const isPdf =
+    activeItem?.mime === "application/pdf" || fileExt === "pdf";
+  const isOffice =
+    ["doc", "docx", "xls", "xlsx", "ppt", "pptx"].includes(fileExt) ||
+    [
+      "application/msword",
+      "application/vnd.ms-excel",
+      "application/vnd.ms-powerpoint",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ].includes(activeItem?.mime || "");
+
+  const shouldFetchInline = Boolean(activeItem?.fileId) && !isOffice;
   // Signed inline URL for the active item only (prevents mass requests).
   const { url: mediaUrl, onError } = useSignedFileUrl(
-    activeItem?.fileId || ""
+    shouldFetchInline ? activeItem?.fileId || "" : ""
   );
 
   // Lazy signed download (only on explicit user action).
   const [getSignedDownload] = useLazyGetSignedDownloadUrlQuery();
-
-  const isVideo = Boolean(activeItem?.mime?.startsWith("video/"));
 
   const canNavigate = items.length > 1;
 
@@ -92,42 +112,81 @@ export default function MediaViewer({
     return () => window.removeEventListener("keydown", onKey, true);
   }, [goNext, goPrev, onClose]);
 
-  /**
-   * Optional download action (no auto-download).
-   */
-  const handleDownload = useCallback(async () => {
-    if (!activeItem?.fileId) return;
-    try {
-      const res = await getSignedDownload(activeItem.fileId).unwrap();
-      const url = normalizeUrl(res?.data?.url || res?.url || "");
-      if (url) window.open(url, "_blank");
-    } catch {
-      // minimal feedback, no hard failure
-      if (typeof window !== "undefined") {
-        window.alert(t("common.error"));
-      }
+  const [docViewerUrl, setDocViewerUrl] = useState("");
+
+  useEffect(() => {
+    let isActive = true;
+    if (!isOffice || !activeItem) {
+      setDocViewerUrl("");
+      return () => {
+        isActive = false;
+      };
     }
-  }, [activeItem?.fileId, getSignedDownload, t]);
+
+    const build = async () => {
+      try {
+        let url = activeItem?.url ? normalizeUrl(activeItem.url) : "";
+        if (!url && activeItem?.fileId) {
+          const res = await getSignedDownload(activeItem.fileId).unwrap();
+          url = normalizeUrl(res?.data?.url || res?.url || "");
+        }
+        const viewer = url
+          ? `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(
+              url
+            )}`
+          : "";
+        if (isActive) setDocViewerUrl(viewer);
+      } catch {
+        if (isActive) setDocViewerUrl("");
+      }
+    };
+
+    build();
+    return () => {
+      isActive = false;
+    };
+  }, [activeItem, getSignedDownload, isOffice]);
 
   if (!activeItem) return null;
 
   return (
-    <div className={s.viewerLayer} onClick={onClose}>
-      <div className={s.viewerPanel} onClick={(e) => e.stopPropagation()}>
-        <div className={s.viewerHeader}>
-          <button type="button" className={s.viewerBtn} onClick={onClose}>
-            ✕
-          </button>
-          <div className={s.viewerTitle}>
-            {activeItem.filename || t("chat.info.media.open")}
-          </div>
-          <button type="button" className={s.viewerBtn} onClick={handleDownload}>
-            {t("chat.info.documents.download")}
-          </button>
-        </div>
+    <div
+      className={`${s.viewerLayer} ${inChat ? s.viewerLayerInChat : ""}`}
+      onClick={onClose}
+    >
+      <div
+        className={`${s.viewerPanel} ${inChat ? s.viewerPanelInChat : ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className={s.viewerClose}
+          onClick={onClose}
+          aria-label={t("common.close")}
+        >
+          ✕
+        </button>
 
         <div className={s.viewerBody}>
-          {mediaUrl ? (
+          {isPdf ? (
+            <iframe
+              className={s.viewerDocFrame}
+              title={activeItem?.filename || "document"}
+              src={mediaUrl || normalizeUrl(activeItem?.url || "")}
+            />
+          ) : isOffice ? (
+            docViewerUrl ? (
+              <iframe
+                className={s.viewerDocFrame}
+                title={activeItem?.filename || "document"}
+                src={docViewerUrl}
+              />
+            ) : (
+              <div className={s.viewerPlaceholder}>
+                {t("chat.attach.previewUnavailable", "Preview unavailable")}
+              </div>
+            )
+          ) : mediaUrl ? (
             isVideo ? (
               <video
                 className={s.viewerMedia}

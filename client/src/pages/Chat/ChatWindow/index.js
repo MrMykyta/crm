@@ -12,7 +12,10 @@ import {
   useDeleteMessageMutation,
   useToggleMessageReactionMutation,
 } from "../../../store/rtk/chatApi";
-import { useUploadFileMutation } from "../../../store/rtk/filesApi";
+import {
+  useUploadFileMutation,
+  useLazyGetSignedDownloadUrlQuery,
+} from "../../../store/rtk/filesApi";
 
 import { getSocket } from "../../../sockets/io";
 import {
@@ -80,6 +83,65 @@ const CHAT_ATTACH_MIME = new Set([
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ]);
 
+const OFFICE_MIME = new Set([
+  "application/msword",
+  "application/vnd.ms-excel",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+]);
+
+const DOC_EXTS = new Set(["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"]);
+
+const normalizeUrl = (u) => {
+  if (!u) return "";
+  if (/^https?:\/\//i.test(u)) return u;
+  const base =
+    (process.env.REACT_APP_API_URL || "http://localhost:5001").replace(/\/+$/, "");
+  if (u.startsWith("/")) return `${base}${u}`;
+  return u;
+};
+
+const normalizeAttachment = (att) => {
+  if (!att) return null;
+  return {
+    fileId: att.fileId || att.id || null,
+    filename: att.filename || att.name || "",
+    mime: att.mime || att.mimeType || "",
+    size: att.size || 0,
+    url: att.url || att.downloadUrl || "",
+  };
+};
+
+const getAttachmentExt = (name) => {
+  if (!name || typeof name !== "string") return "";
+  const parts = name.split(".");
+  return parts.length > 1 ? parts.pop().toLowerCase() : "";
+};
+
+const isMediaAttachment = (att) => {
+  if (!att?.mime) return false;
+  return att.mime.startsWith("image/") || att.mime.startsWith("video/");
+};
+
+const isAudioAttachment = (att) => {
+  if (!att?.mime) return false;
+  return att.mime.startsWith("audio/");
+};
+
+const isPdfAttachment = (att) =>
+  att?.mime === "application/pdf" || getAttachmentExt(att?.filename) === "pdf";
+
+const isOfficeAttachment = (att) => {
+  const ext = getAttachmentExt(att?.filename);
+  if (OFFICE_MIME.has(att?.mime)) return true;
+  return ["doc", "docx", "xls", "xlsx", "ppt", "pptx"].includes(ext);
+};
+
+const buildDocsViewerUrl = (url) =>
+  `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`;
+
 // ================= ОБЁРТКА =================
 export default function ChatWindow({ roomId, mode = "room", onExitCreate }) {
   const { t } = useTranslation();
@@ -113,6 +175,7 @@ export default function ChatWindow({ roomId, mode = "room", onExitCreate }) {
 function ChatRoomWindow({ roomId }) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
+  const chatMainRef = useRef(null);
 
   // Redux: current user and rooms list.
   const currentUser = useSelector((st) => st.auth.user || st.auth.currentUser);
@@ -136,7 +199,10 @@ function ChatRoomWindow({ roomId }) {
     : null;
 
   // первоначальная загрузка истории
-  const { data, isLoading } = useGetMessagesQuery({ roomId });
+  const { data, isLoading } = useGetMessagesQuery(
+    { roomId },
+    { skip: !roomId, refetchOnMountOrArgChange: true }
+  );
   const [markRead] = useMarkReadMutation();
   const [editMessage, { isLoading: isEditing }] = useEditMessageMutation();
   const [deleteMessage, { isLoading: isDeleting }] =
@@ -144,6 +210,7 @@ function ChatRoomWindow({ roomId }) {
   // Mutation for toggling message reactions.
   const [toggleReaction] = useToggleMessageReactionMutation();
   const [uploadFile] = useUploadFileMutation();
+  const [getSignedDownload] = useLazyGetSignedDownloadUrlQuery();
 
   // lazy-хук для подгрузки старых сообщений
   const [loadMoreMessages] = useLazyGetMessagesQuery();
@@ -991,6 +1058,67 @@ function ChatRoomWindow({ roomId }) {
     setActiveOverlay((prev) => (prev?.type === "viewer" ? null : prev));
   }, []);
 
+  const getMessageAttachments = useCallback((msg) => {
+    if (!msg) return [];
+    const raw = msg?.meta?.attachments || msg?.attachments || [];
+    const list = Array.isArray(raw) ? raw : [];
+    return list.map(normalizeAttachment).filter(Boolean);
+  }, []);
+
+  const handleDownloadAttachment = useCallback(
+    async (att) => {
+      if (!att) return;
+      try {
+        let url = att.url ? normalizeUrl(att.url) : "";
+        if (!url && att.fileId) {
+          const res = await getSignedDownload(att.fileId).unwrap();
+          url = normalizeUrl(res?.data?.url || res?.url || "");
+        }
+        if (url) window.open(url, "_blank", "noopener,noreferrer");
+      } catch {
+        if (typeof window !== "undefined") {
+          window.alert(t("chat.attach.downloadFailed"));
+        }
+      }
+    },
+    [getSignedDownload, t]
+  );
+
+  const handleOpenAttachment = useCallback(
+    async (att, mediaItems, docItems) => {
+      if (!att) return;
+      if (mediaItems && mediaItems.length) {
+        handleOpenMediaViewer(mediaItems, 0);
+        return;
+      }
+      if (isPdfAttachment(att)) {
+        handleOpenMediaViewer([att], 0);
+        return;
+      }
+
+      try {
+        let url = att.url ? normalizeUrl(att.url) : "";
+        if (!url && att.fileId) {
+          const res = await getSignedDownload(att.fileId).unwrap();
+          url = normalizeUrl(res?.data?.url || res?.url || "");
+        }
+        if (!url) return;
+        if (isOfficeAttachment(att)) {
+          window.open(buildDocsViewerUrl(url), "_blank", "noopener,noreferrer");
+        } else {
+          window.open(url, "_blank", "noopener,noreferrer");
+        }
+      } catch {
+        if (typeof window !== "undefined") {
+          window.alert(t("chat.attach.downloadFailed"));
+        }
+      } finally {
+        closeMenu();
+      }
+    },
+    [getSignedDownload, handleOpenMediaViewer, closeMenu, t]
+  );
+
   // ====== ВСПОМОГАТЕЛЬНОЕ ======
 
   const makeAuthorName = (msg) => {
@@ -1753,10 +1881,53 @@ function ChatRoomWindow({ roomId }) {
   ]);
 
   // ================= РЕНДЕР =================
+  const attachmentActions = useMemo(() => {
+    const msg = menuState.message;
+    if (!msg || msg.deletedAt) return null;
+    const attachments = getMessageAttachments(msg);
+    if (!attachments.length) return null;
+
+    const mediaItems = attachments.filter(isMediaAttachment);
+    const docItems = attachments.filter(
+      (att) => !isMediaAttachment(att) && !isAudioAttachment(att)
+    );
+
+    const primaryDoc = docItems[0] || null;
+    const primaryMedia = mediaItems[0] || null;
+
+    const canOpen = Boolean(primaryMedia || primaryDoc);
+    const canDownload = Boolean(primaryMedia || primaryDoc);
+
+    const openLabel = primaryDoc
+      ? t("chat.attach.preview", "Preview")
+      : t("chat.attach.open", "Open");
+
+    return {
+      canOpen,
+      canDownload,
+      openLabel,
+      onOpen: () =>
+        handleOpenAttachment(
+          primaryMedia || primaryDoc,
+          mediaItems,
+          docItems
+        ),
+      onDownload: () =>
+        handleDownloadAttachment(primaryMedia || primaryDoc),
+    };
+  }, [
+    menuState.message,
+    getMessageAttachments,
+    handleOpenAttachment,
+    handleDownloadAttachment,
+    t,
+  ]);
+
   const messagesClass = [
     s.messages,
     scrollState.scrollable ? s.messagesScrollable : "",
     scrollState.scrollable && scrollState.scrolled ? s.messagesScrolled : "",
+    messageViewer.open ? s.messagesBlocked : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -1816,10 +1987,18 @@ function ChatRoomWindow({ roomId }) {
     bar.classList.add(s.pinnedBarSwitch);
   }, [activePinnedIndex, currentPinned]);
 
+  useEffect(() => {
+    const node = chatMainRef.current;
+    if (!node) return;
+    node.classList.remove(s.chatMainSwap);
+    void node.offsetWidth;
+    node.classList.add(s.chatMainSwap);
+  }, [roomId]);
+
   return (
     <div className={s.window}>
       {/* Center column */}
-      <div className={s.chatMain}>
+      <div className={s.chatMain} ref={chatMainRef}>
         <ChatHeader
           initials={headerInfo.initials}
           avatar={headerInfo.avatar}
@@ -1899,6 +2078,18 @@ function ChatRoomWindow({ roomId }) {
             isLoadingMore={isLoadingMore}
             onLoadMore={handleLoadMore}
           />
+
+          {messageViewer.open && activeOverlay?.type === "viewer" && (
+            <MediaViewer
+              items={messageViewer.items}
+              activeIndex={messageViewer.index}
+              onChangeIndex={(idx) =>
+                setMessageViewer((prev) => ({ ...prev, index: idx }))
+              }
+              onClose={handleCloseMediaViewer}
+              inChat
+            />
+          )}
         </div>
 
         {showScrollDown && (
@@ -1919,6 +2110,7 @@ function ChatRoomWindow({ roomId }) {
           side={menuState.side}
           clickY={menuState.clickY}
           message={menuState.message}
+          attachmentActions={attachmentActions}
           canEdit={isMessageEditable(menuState.message)}
           canCopy={canCopyMessage(menuState.message)}
           canForward={canForwardMessage(menuState.message)}
@@ -1989,17 +2181,6 @@ function ChatRoomWindow({ roomId }) {
         >
           <div>{originalModal.text || t("common.none")}</div>
         </Modal>
-
-        {messageViewer.open && activeOverlay?.type === "viewer" && (
-          <MediaViewer
-            items={messageViewer.items}
-            activeIndex={messageViewer.index}
-            onChangeIndex={(idx) =>
-              setMessageViewer((prev) => ({ ...prev, index: idx }))
-            }
-            onClose={handleCloseMediaViewer}
-          />
-        )}
 
         <ConfirmDialog
           open={

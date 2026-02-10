@@ -12,6 +12,7 @@ export default function MessageContextMenu({
   side = "other", // 'me' | 'other'
   clickY, // clientY клика
   message,
+  attachmentActions,
   onClose,
   onReply,
   onCopy,
@@ -110,6 +111,9 @@ export default function MessageContextMenu({
   const showDelete = !!canDelete;
   const showOriginal = !!canShowOriginal;
   const deleteIsDisabled = deleteDisabled || isDeleting;
+  const hasAttachmentActions =
+    attachmentActions &&
+    (attachmentActions.canOpen || attachmentActions.canDownload);
 
   const menuNode = (
     <div className={s.ctxOverlay} onClick={onClose}>
@@ -157,6 +161,30 @@ export default function MessageContextMenu({
         >
           {pinLabel}
         </button>
+
+        {hasAttachmentActions && (
+          <>
+            <div className={s.ctxMenuSeparator} />
+            {attachmentActions.canOpen && (
+              <button
+                type="button"
+                className={s.ctxMenuItem}
+                onClick={handle(attachmentActions.onOpen)}
+              >
+                {attachmentActions.openLabel || t("chat.menu.open")}
+              </button>
+            )}
+            {attachmentActions.canDownload && (
+              <button
+                type="button"
+                className={s.ctxMenuItem}
+                onClick={handle(attachmentActions.onDownload)}
+              >
+                {t("chat.attach.download")}
+              </button>
+            )}
+          </>
+        )}
 
         {showDelete && (
           <button

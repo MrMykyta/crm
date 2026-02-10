@@ -101,7 +101,11 @@ function ChatRoomItem({
   );
 }
 
-export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
+export default function ChatSidebar({
+  onCreateDirect,
+  onCreateGroup,
+  onSelectRoom,
+}) {
   const { t } = useTranslation();
   const rooms = useSelector((state) => state.chat.rooms);
   const activeRoomId = useSelector((state) => state.chat.activeRoomId);
@@ -345,7 +349,13 @@ export default function ChatSidebar({ onCreateDirect, onCreateGroup }) {
               room={room}
               isActive={isActive}
               unread={unread}
-              onClick={() => dispatch(setActiveRoom(idStr))}
+              onClick={() => {
+                if (onSelectRoom) {
+                  onSelectRoom(idStr);
+                  return;
+                }
+                dispatch(setActiveRoom(idStr));
+              }}
             />
           );
         })}

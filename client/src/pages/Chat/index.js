@@ -100,6 +100,10 @@ export default function ChatPage({ accessToken: accessTokenProp }) {
           dispatch(setActiveRoom(null));
           setMode('createGroup');
         }}
+        onSelectRoom={(roomId) => {
+          dispatch(setActiveRoom(roomId));
+          setMode('room');
+        }}
       />
 
       {mode === 'createDirect' || mode === 'createGroup' ? (

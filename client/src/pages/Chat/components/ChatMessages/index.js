@@ -15,6 +15,16 @@ import ChatAttachment from "../ChatAttachment";
 
 const MEDIA_PREFIXES = ["image/", "video/"];
 const MAX_MEDIA_PREVIEW = 4;
+const DOC_EXTS = new Set(["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"]);
+const DOC_MIME = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.ms-excel",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+]);
 
 /**
  * Normalize raw attachment object to unified shape.
@@ -41,6 +51,33 @@ const isMediaAttachment = (att) => {
   if (!att?.mime) return false;
   return MEDIA_PREFIXES.some((prefix) => att.mime.startsWith(prefix));
 };
+
+/**
+ * Whether attachment should be treated as audio (kept inside bubble).
+ * @param {object} att
+ * @returns {boolean}
+ */
+const isAudioAttachment = (att) => {
+  if (!att?.mime) return false;
+  return String(att.mime).startsWith("audio/");
+};
+
+/**
+ * Whether attachment should be treated as a document (pdf/doc/xls/ppt).
+ * @param {object} att
+ * @returns {boolean}
+ */
+const isDocumentAttachment = (att) => {
+  if (!att) return false;
+  if (DOC_MIME.has(att.mime)) return true;
+  const name = att.filename || "";
+  const parts = name.split(".");
+  const ext = parts.length > 1 ? parts.pop().toLowerCase() : "";
+  return DOC_EXTS.has(ext);
+};
+
+const attachmentKey = (att) =>
+  `${att?.fileId || ""}|${att?.url || ""}|${att?.filename || ""}`;
 
 /**
  * Single media tile used inside message grid.
@@ -328,8 +365,9 @@ export default function ChatMessages({
               .filter(Boolean);
 
             const mediaAttachments = normalizedAttachments.filter(isMediaAttachment);
+            const audioAttachments = normalizedAttachments.filter(isAudioAttachment);
             const otherAttachments = normalizedAttachments.filter(
-              (att) => !isMediaAttachment(att)
+              (att) => !isMediaAttachment(att) && !isAudioAttachment(att)
             );
 
             const hasAttachments =
@@ -451,6 +489,15 @@ export default function ChatMessages({
               .filter(Boolean)
               .join(" ");
 
+            const hasTextContent =
+              isDeleted ||
+              Boolean((m.text || "").trim()) ||
+              showForward ||
+              Boolean(replyMsg) ||
+              showAuthorName;
+
+            const showBubble = hasTextContent || audioAttachments.length > 0;
+
             const mediaPreview = mediaAttachments.slice(0, MAX_MEDIA_PREVIEW);
             const extraMediaCount = mediaAttachments.length - mediaPreview.length;
             const reactions = getReactionEntries(m);
@@ -493,125 +540,263 @@ export default function ChatMessages({
                 )}
 
                 <div className={bodyClass}>
-                  {/* ПУЗЫРЬ */}
-                  <div className={bubbleClass} data-role="msg-bubble">
-                  {/* Hover actions */}
-                  {!selectMode && !isDeleted && (
-                    <div
-                      className={`${s.msgActions} ${
-                        isMe ? s.msgActionsMe : s.msgActionsOther
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        className={`${s.msgActionBtn} ${s.msgActionBtnReact}`}
-                        aria-label={t("chat.actions.react")}
-                        data-reaction-trigger
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleReactionPicker && onToggleReactionPicker(m._id);
-                        }}
-                      >
-                        <span className={s.msgActionPlus}>+</span>
-                        <span className={s.msgActionEmoji}>😊</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={s.msgActionBtn}
-                        aria-label={t("chat.actions.more")}
-                        onClick={(e) => {
-                          const anchor = e.currentTarget.closest(
-                            '[data-role="msg-bubble"]'
-                          );
-                          onMessageActionsClick &&
-                            onMessageActionsClick(m, e, anchor);
-                        }}
-                      >
-                        ⋯
-                      </button>
-                    </div>
-                  )}
-
-                  {showPicker && (
-                    <div
-                      ref={pickerRef}
-                      data-reaction-picker
-                      className={`${s.reactionPicker} ${
-                        isMe ? s.reactionPickerMe : s.reactionPickerOther
-                      }`}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {REACTION_EMOJI.map((emoji) => (
-                        <button
-                          key={`${m._id}-${emoji}`}
-                          type="button"
-                          className={s.reactionEmojiBtn}
-                          onClick={() => {
-                            onToggleReaction && onToggleReaction(m._id, emoji);
-                            onCloseReactionPicker && onCloseReactionPicker();
-                          }}
+                  {showBubble && (
+                    <div className={bubbleClass} data-role="msg-bubble">
+                      {/* Hover actions */}
+                      {!selectMode && !isDeleted && (
+                        <div
+                          className={`${s.msgActions} ${
+                            isMe ? s.msgActionsMe : s.msgActionsOther
+                          }`}
                         >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Переслано от ... */}
-                  {showForward && (
-                    <div className={s.msgForwardLabel}>
-                      {t("chat.message.forwardedFrom", {
-                        name: forwardAuthorName,
-                      })}
-                    </div>
-                  )}
-
-                  {/* Превью ответа (кликабельное: прыгаем к сообщению) */}
-                  {replyMsg && (
-                    <div
-                      className={s.msgReplyPreview}
-                      onClick={(e) => handleJumpToMessage(replyMsg, e)}
-                    >
-                      <div className={s.msgReplyPreviewBar} />
-                      <div className={s.msgReplyPreviewContent}>
-                        <div className={s.msgReplyPreviewTitle}>
-                          {replyAuthorName}
+                          <button
+                            type="button"
+                            className={`${s.msgActionBtn} ${s.msgActionBtnReact}`}
+                            aria-label={t("chat.actions.react")}
+                            data-reaction-trigger
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleReactionPicker &&
+                                onToggleReactionPicker(m._id);
+                            }}
+                          >
+                            <span className={s.msgActionPlus}>+</span>
+                            <span className={s.msgActionEmoji}>😊</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={s.msgActionBtn}
+                            aria-label={t("chat.actions.more")}
+                            onClick={(e) => {
+                              const anchor = e.currentTarget.closest(
+                                '[data-role="msg-bubble"]'
+                              );
+                              onMessageActionsClick &&
+                                onMessageActionsClick(m, e, anchor);
+                            }}
+                          >
+                            ⋯
+                          </button>
                         </div>
-                        {replyText && (
-                          <div className={s.msgReplyPreviewText}>
-                            {replyText}
+                      )}
+
+                      {showPicker && (
+                        <div
+                          ref={pickerRef}
+                          data-reaction-picker
+                          className={`${s.reactionPicker} ${
+                            isMe ? s.reactionPickerMe : s.reactionPickerOther
+                          }`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {REACTION_EMOJI.map((emoji) => (
+                            <button
+                              key={`${m._id}-${emoji}`}
+                              type="button"
+                              className={s.reactionEmojiBtn}
+                              onClick={() => {
+                                onToggleReaction &&
+                                  onToggleReaction(m._id, emoji);
+                                onCloseReactionPicker &&
+                                  onCloseReactionPicker();
+                              }}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Переслано от ... */}
+                      {showForward && (
+                        <div className={s.msgForwardLabel}>
+                          {t("chat.message.forwardedFrom", {
+                            name: forwardAuthorName,
+                          })}
+                        </div>
+                      )}
+
+                      {/* Превью ответа (кликабельное: прыгаем к сообщению) */}
+                      {replyMsg && (
+                        <div
+                          className={s.msgReplyPreview}
+                          onClick={(e) => handleJumpToMessage(replyMsg, e)}
+                        >
+                          <div className={s.msgReplyPreviewBar} />
+                          <div className={s.msgReplyPreviewContent}>
+                            <div className={s.msgReplyPreviewTitle}>
+                              {replyAuthorName}
+                            </div>
+                            {replyText && (
+                              <div className={s.msgReplyPreviewText}>
+                                {replyText}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Имя автора в группе */}
+                      {showAuthorName && (
+                        <div className={s.messageAuthorRow}>
+                          <span
+                            className={s.messageAuthorName}
+                            style={
+                              authorColor ? { color: authorColor } : undefined
+                            }
+                          >
+                            {authorName}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Текст сообщения */}
+                      {(isDeleted || (m.text || "").trim()) && (
+                        <div
+                          className={[
+                            s.msgText,
+                            isDeleted ? s.msgTextDeleted : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                        >
+                          {renderHighlightedText(
+                            isDeleted
+                              ? t("chat.message.deleted")
+                              : m.text || "",
+                            searchQuery,
+                            s.msgHighlight
+                          )}
+                        </div>
+                      )}
+
+                      {audioAttachments.length > 0 && (
+                        <div className={s.attachmentsWrap}>
+                          {audioAttachments.map((att, idx) => (
+                            <ChatAttachment
+                              key={`${m._id}-audio-${att.fileId || att.url || idx}`}
+                              attachment={att}
+                              mode="message"
+                              forceFileCard
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Время + галочки */}
+                      <div className={s.msgMetaRow}>
+                        {m.createdAt && (
+                          <div className={s.msgTime}>
+                            {new Date(m.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </div>
+                        )}
+
+                        {isMe && status && (
+                          <div className={s.msgStatus} title={statusTitle}>
+                            <span
+                              className={[
+                                s.msgCheckIcon,
+                                status === "sent"
+                                  ? s.msgCheckSent
+                                  : status === "readSome"
+                                  ? s.msgCheckPartial
+                                  : s.msgCheckRead,
+                              ]
+                                .filter(Boolean)
+                                .join(" ")}
+                            >
+                              {isDouble ? (
+                                <>
+                                  <span className={s.msgCheckLayer}>✓</span>
+                                  <span className={s.msgCheckLayer}>✓</span>
+                                </>
+                              ) : (
+                                <span className={s.msgCheckLayer}>✓</span>
+                              )}
+                            </span>
                           </div>
                         )}
                       </div>
                     </div>
                   )}
 
-                  {/* Имя автора в группе */}
-                  {showAuthorName && (
-                    <div className={s.messageAuthorRow}>
-                      <span
-                        className={s.messageAuthorName}
-                        style={authorColor ? { color: authorColor } : undefined}
-                      >
-                        {authorName}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Текст сообщения */}
-                  {(isDeleted || (m.text || "").trim()) && (
+                  {!showBubble && (
                     <div
                       className={[
-                        s.msgText,
-                        isDeleted ? s.msgTextDeleted : "",
+                        s.attachmentOnlyShell,
+                        jumpHighlightId === String(m._id)
+                          ? s.msgBubbleHighlight
+                          : "",
                       ]
                         .filter(Boolean)
                         .join(" ")}
+                      data-role="msg-bubble"
                     >
-                      {renderHighlightedText(
-                        isDeleted ? t("chat.message.deleted") : m.text || "",
-                        searchQuery,
-                        s.msgHighlight
+                      {!selectMode && !isDeleted && (
+                        <div
+                          className={`${s.msgActions} ${
+                            isMe ? s.msgActionsMe : s.msgActionsOther
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            className={`${s.msgActionBtn} ${s.msgActionBtnReact}`}
+                            aria-label={t("chat.actions.react")}
+                            data-reaction-trigger
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleReactionPicker &&
+                                onToggleReactionPicker(m._id);
+                            }}
+                          >
+                            <span className={s.msgActionPlus}>+</span>
+                            <span className={s.msgActionEmoji}>😊</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={s.msgActionBtn}
+                            aria-label={t("chat.actions.more")}
+                            onClick={(e) => {
+                              const anchor = e.currentTarget.closest(
+                                '[data-role="msg-bubble"]'
+                              );
+                              onMessageActionsClick &&
+                                onMessageActionsClick(m, e, anchor);
+                            }}
+                          >
+                            ⋯
+                          </button>
+                        </div>
+                      )}
+
+                      {showPicker && (
+                        <div
+                          ref={pickerRef}
+                          data-reaction-picker
+                          className={`${s.reactionPicker} ${
+                            isMe ? s.reactionPickerMe : s.reactionPickerOther
+                          }`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {REACTION_EMOJI.map((emoji) => (
+                            <button
+                              key={`${m._id}-${emoji}`}
+                              type="button"
+                              className={s.reactionEmojiBtn}
+                              onClick={() => {
+                                onToggleReaction &&
+                                  onToggleReaction(m._id, emoji);
+                                onCloseReactionPicker &&
+                                  onCloseReactionPicker();
+                              }}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
                       )}
                     </div>
                   )}
@@ -644,58 +829,73 @@ export default function ChatMessages({
                     </div>
                   )}
 
-                  {/* Прочие вложения (документы/аудио) */}
+                  {/* Прочие вложения (документы) */}
                   {otherAttachments.length > 0 && (
                     <div className={s.attachmentsWrap}>
-                      {otherAttachments.map((att, idx) => (
-                        <ChatAttachment
-                          key={`${m._id}-att-${att.fileId || att.id || idx}`}
-                          attachment={att}
-                          mode="message"
-                          forceFileCard
-                        />
-                      ))}
+                      {(() => {
+                        const normalized = otherAttachments
+                          .map(normalizeAttachment)
+                          .filter(Boolean);
+                        const docItems = normalized.filter(isDocumentAttachment);
+                        const docIndexMap = new Map(
+                          docItems.map((att, idx) => [
+                            attachmentKey(att),
+                            idx,
+                          ])
+                        );
+
+                        return normalized.map((att, idx) => (
+                          <ChatAttachment
+                            key={`${m._id}-att-${att.fileId || att.url || idx}`}
+                            attachment={att}
+                            mode="message"
+                            forceFileCard
+                            onOpenMedia={onOpenMedia}
+                            documentItems={docItems}
+                            documentIndex={docIndexMap.get(attachmentKey(att))}
+                          />
+                        ));
+                      })()}
                     </div>
                   )}
 
-                  {/* Время + галочки */}
-                  <div className={s.msgMetaRow}>
-                    {m.createdAt && (
-                      <div className={s.msgTime}>
-                        {new Date(m.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </div>
-                    )}
-
-                    {isMe && status && (
-                      <div className={s.msgStatus} title={statusTitle}>
-                        <span
-                          className={[
-                            s.msgCheckIcon,
-                            status === "sent"
-                              ? s.msgCheckSent
-                              : status === "readSome"
-                              ? s.msgCheckPartial
-                              : s.msgCheckRead,
-                          ]
-                            .filter(Boolean)
-                            .join(" ")}
-                        >
-                          {isDouble ? (
-                            <>
+                  {!showBubble && (
+                    <div className={s.attachmentMetaRow}>
+                      {m.createdAt && (
+                        <div className={s.msgTime}>
+                          {new Date(m.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                      )}
+                      {isMe && status && (
+                        <div className={s.msgStatus} title={statusTitle}>
+                          <span
+                            className={[
+                              s.msgCheckIcon,
+                              status === "sent"
+                                ? s.msgCheckSent
+                                : status === "readSome"
+                                ? s.msgCheckPartial
+                                : s.msgCheckRead,
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                          >
+                            {isDouble ? (
+                              <>
+                                <span className={s.msgCheckLayer}>✓</span>
+                                <span className={s.msgCheckLayer}>✓</span>
+                              </>
+                            ) : (
                               <span className={s.msgCheckLayer}>✓</span>
-                              <span className={s.msgCheckLayer}>✓</span>
-                            </>
-                          ) : (
-                            <span className={s.msgCheckLayer}>✓</span>
-                          )}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  </div>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {reactions.length > 0 && (
                     <div
