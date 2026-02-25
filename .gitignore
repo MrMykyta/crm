@@ -17,3 +17,5 @@ Report14012026.md
 Todo.md
 Caddyfile
 docs/
+!server/docs/
+!server/docs/**
