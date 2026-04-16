@@ -1,6 +1,7 @@
 // src/pages/Chat/hooks/useChatScrollFloatingDay.js
 import { useEffect, useRef, useState, useCallback } from "react";
 
+// Хук useChatScrollFloatingDay: инкапсулирует переиспользуемую логику и возвращает состояние/обработчики для компонентов.
 export function useChatScrollFloatingDay({
   listRef,
   groupedMessages,
@@ -111,8 +112,10 @@ export function useChatScrollFloatingDay({
     // первоначальный расчёт
     updateFromScroll(false);
 
-    const onScroll = () => updateFromScroll(true);
-    const onResize = () => updateFromScroll(false);
+        // onScroll: вспомогательная логика модуля.
+const onScroll = () => updateFromScroll(true);
+        // onResize: вспомогательная логика модуля.
+const onResize = () => updateFromScroll(false);
 
     el.addEventListener("scroll", onScroll);
     window.addEventListener("resize", onResize);

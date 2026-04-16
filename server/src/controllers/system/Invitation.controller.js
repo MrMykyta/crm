@@ -4,6 +4,7 @@
 const service = require('../../services/system/invitationService');
 const { Company } = require('../../models');
 
+// Возвращает список приглашений с учётом фильтров и доступа.
 exports.listInvitations = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -14,6 +15,7 @@ exports.listInvitations = async (req, res) => {
   }
 };
 
+// Создаёт новое приглашение пользователя в компанию.
 exports.createInvitation = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -27,6 +29,7 @@ exports.createInvitation = async (req, res) => {
   }
 };
 
+// Повторно отправляет приглашение выбранному пользователю.
 exports.resendInvitation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -37,6 +40,7 @@ exports.resendInvitation = async (req, res) => {
   }
 };
 
+// Отзывает активное приглашение.
 exports.revokeInvitation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -69,3 +73,4 @@ exports.acceptInvitation = async (req, res) => {
     res.status(400).json({ error: e.message });
   }
 };
+

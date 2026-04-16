@@ -3,10 +3,14 @@ const { sequelize, Company, UserCompany} = require('../../models');
 const ApplicationError = require('../../errors/ApplicationError');
 const { bootstrapCompanyAcl } = require('../system/aclBootstrap');
 const { addContacts } = require('./contactPointService');
+const { ensureDefaultUomsForCompany } = require('../pim/uomDefaults');
 
 const UUID_RE = /^[0-9a-fA-F-]{32,36}$/;
+// isFileApiUrl: проверяет бизнес-условие и возвращает boolean.
 const isFileApiUrl = (v) => typeof v === 'string' && v.includes('/api/files/');
+// isHttpUrl: проверяет бизнес-условие и возвращает boolean.
 const isHttpUrl = (v) => /^https?:\/\/.+/i.test(v);
+// validateFileIdField: валидирует входные данные и выбрасывает ошибку при нарушениях.
 const validateFileIdField = (field, value) => {
   if (value === undefined) return undefined;
   if (value === null || value === '') return null;
@@ -22,6 +26,7 @@ const validateFileIdField = (field, value) => {
   return value;
 };
 
+// validateAvatarField: валидирует входные данные и выбрасывает ошибку при нарушениях.
 const validateAvatarField = (field, value) => {
   if (value === undefined) return undefined;
   if (value === null || value === '') return null;
@@ -47,6 +52,7 @@ async function getUserRole(userId, companyId) {
   return membership ? membership.role : null;
 }
 
+// listForUser: возвращает список записей с фильтрами, сортировкой и пагинацией.
 module.exports.listForUser = async (userId) => {
   return await Company.findAll({
     include: [{
@@ -59,6 +65,7 @@ module.exports.listForUser = async (userId) => {
   });
 };
 
+// getByIdScoped: возвращает данные по входным параметрам сервиса.
 module.exports.getByIdScoped = async (userId, companyId) => {
   // видит только если состоит в компании
   return await Company.findOne({
@@ -73,6 +80,7 @@ module.exports.getByIdScoped = async (userId, companyId) => {
   });
 };
 
+// createWithOwner: создаёт новую запись и возвращает результат.
 module.exports.createWithOwner = async (ownerUserId, data = {}) => {
   const t = await sequelize.transaction();
   try {
@@ -108,6 +116,9 @@ module.exports.createWithOwner = async (ownerUserId, data = {}) => {
     // 4) bootstrap ACL (создаст owner/admin/manager/employee и назначит владельца)
     await bootstrapCompanyAcl({ companyId: company.id, ownerUserId, transaction: t });
 
+    // 5) базовый справочник единиц измерения для компании
+    await ensureDefaultUomsForCompany(company.id, { transaction: t });
+
 
     await t.commit();
     return company;
@@ -117,6 +128,7 @@ module.exports.createWithOwner = async (ownerUserId, data = {}) => {
   }
 };
 
+// updateCompany: обновляет запись и возвращает актуальные данные.
 module.exports.updateCompany = async (requesterId, companyId, payload = {}) => {
   // проверка роли до начала транзакции
   const role = await getUserRole(requesterId, companyId);
@@ -160,6 +172,7 @@ module.exports.updateCompany = async (requesterId, companyId, payload = {}) => {
 };
 
 
+// deleteCompany: удаляет запись с учётом бизнес-ограничений.
 module.exports.deleteCompany = async (requesterId, companyId) => {
   // удалять компанию — только owner
   const role = await getUserRole(requesterId, companyId);
@@ -171,3 +184,4 @@ module.exports.deleteCompany = async (requesterId, companyId) => {
   await company.destroy(); // paranoid: true — soft delete
   return true;
 };
+

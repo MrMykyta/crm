@@ -1,6 +1,7 @@
 import React from "react";
 import s from "./ChatInfoPanel.module.css";
 
+// Компонент ChatInfoTabs: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ChatInfoTabs({ tabs = [], activeTab, onChange }) {
   return (
     <div className={s.infoTabs}>
@@ -19,3 +20,4 @@ export default function ChatInfoTabs({ tabs = [], activeTab, onChange }) {
     </div>
   );
 }
+

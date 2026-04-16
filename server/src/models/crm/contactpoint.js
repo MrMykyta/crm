@@ -1,9 +1,11 @@
 'use strict';
 const { Model } = require('sequelize');
 
+// Инициализирует и возвращает Sequelize-модель текущей сущности.
 module.exports = (sequelize, DataTypes) => {
   class ContactPoint extends Model {
-    static associate(models) {
+        // Описывает associations этой модели с другими сущностями.
+static associate(models) {
       ContactPoint.belongsTo(models.Company, {
         foreignKey: { name: 'companyId', field: 'company_id' },
         as: 'company',

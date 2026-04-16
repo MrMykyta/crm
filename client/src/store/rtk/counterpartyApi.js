@@ -1,6 +1,7 @@
 // src/store/rtk/counterpartyApi.js
 import { crmApi } from './crmApi';
 
+// stripCompanyId: вспомогательная логика для слоя RTK Query.
 const stripCompanyId = (value) => {
   if (!value || typeof value !== 'object') return value;
   if (typeof FormData !== 'undefined' && value instanceof FormData) {
@@ -12,6 +13,7 @@ const stripCompanyId = (value) => {
   return rest;
 };
 
+// toQuery: вспомогательная логика для слоя RTK Query.
 const toQuery = (params = {}) => {
   const esc = encodeURIComponent;
   const src = params && params.constructor === Object ? params : {};
@@ -30,6 +32,7 @@ const toQuery = (params = {}) => {
   );
 };
 
+// normalizeLookupTerm: нормализует входные/выходные данные для слоя RTK Query.
 const normalizeLookupTerm = (term) => {
   const trimmed = String(term || '').trim();
   if (!trimmed) return { trimmed: '', digits: '', numeric: false };
@@ -49,15 +52,18 @@ function forEachListCache(getState, fn) {
 }
 
 export const counterpartyApi = crmApi.injectEndpoints({
-  endpoints: (build) => ({
+    // endpoints: описывает набор endpoint-ов RTK Query.
+endpoints: (build) => ({
 
     // ---------- LIST ----------
     listCounterparties: build.query({
-      query: (q = {}) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (q = {}) => ({
         url: `/counterparties${toQuery(stripCompanyId(q))}`,
         method: 'GET',
       }),
-      transformResponse: (resp) => {
+            // transformResponse: нормализует ответ API перед записью в кэш.
+transformResponse: (resp) => {
         if (Array.isArray(resp)) {
           return { items: resp, total: resp.length, page: 1, limit: resp.length };
         }
@@ -69,7 +75,8 @@ export const counterpartyApi = crmApi.injectEndpoints({
           limit: Number(resp?.limit ?? items.length) || items.length,
         };
       },
-      providesTags: (res) => {
+            // providesTags: возвращает теги кэша для автообновления данных.
+providesTags: (res) => {
         const ids = Array.isArray(res?.items) ? res.items.map((i) => i.id) : [];
         return [{ type: 'Counterparty', id: 'LIST' }, ...ids.map((id) => ({ type: 'Counterparty', id }))];
       },
@@ -78,7 +85,8 @@ export const counterpartyApi = crmApi.injectEndpoints({
 
     // ---------- LOOKUP (Autocomplete) ----------
     getCounterpartyLookup: build.query({
-      query: ({ term, limit = 12 } = {}) => {
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ term, limit = 12 } = {}) => {
         const { trimmed, digits, numeric } = normalizeLookupTerm(term);
         const params = { limit };
 
@@ -96,7 +104,8 @@ export const counterpartyApi = crmApi.injectEndpoints({
           method: 'GET',
         };
       },
-      transformResponse: (resp) => {
+            // transformResponse: нормализует ответ API перед записью в кэш.
+transformResponse: (resp) => {
         const items = Array.isArray(resp?.items)
           ? resp.items
           : Array.isArray(resp)
@@ -129,22 +138,26 @@ export const counterpartyApi = crmApi.injectEndpoints({
 
     // ---------- DETAIL ----------
     getCounterparty: build.query({
-      query: (id) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (id) => ({
         url: `/counterparties/${id}`,
         method: 'GET',
       }),
-      providesTags: (_res, _err, id) => [{ type: 'Counterparty', id }],
+            // providesTags: возвращает теги кэша для автообновления данных.
+providesTags: (_res, _err, id) => [{ type: 'Counterparty', id }],
       keepUnusedDataFor: 120,
     }),
 
     // ---------- CREATE ----------
     createCounterparty: build.mutation({
-      query: (body) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (body) => ({
         url: '/counterparties',
         method: 'POST',
         body: stripCompanyId(body),
       }),
-      async onQueryStarted(arg, { dispatch, queryFulfilled, getState }) {
+            // onQueryStarted: запускает побочные эффекты жизненного цикла запроса.
+async onQueryStarted(arg, { dispatch, queryFulfilled, getState }) {
         const patches = [];
         const safeArg = stripCompanyId(arg);
         const safePayload = safeArg && typeof safeArg === 'object' ? safeArg : {};
@@ -189,12 +202,14 @@ export const counterpartyApi = crmApi.injectEndpoints({
 
     // ---------- UPDATE (PUT/PATCH) ----------
     updateCounterparty: build.mutation({
-      query: ({ id, body, method = 'PUT' }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ id, body, method = 'PUT' }) => ({
         url: `/counterparties/${id}`,
         method,
         body: stripCompanyId(body),
       }),
-      async onQueryStarted({ id, body }, { dispatch, queryFulfilled, getState }) {
+            // onQueryStarted: запускает побочные эффекты жизненного цикла запроса.
+async onQueryStarted({ id, body }, { dispatch, queryFulfilled, getState }) {
         const undoers = [];
         const safeBody = stripCompanyId(body);
         const safePayload = safeBody && typeof safeBody === 'object' ? safeBody : {};
@@ -236,7 +251,8 @@ export const counterpartyApi = crmApi.injectEndpoints({
           undoers.forEach((p) => p.undo?.());
         }
       },
-      invalidatesTags: (_res, _err, { id }) => [
+            // invalidatesTags: помечает теги кэша для рефетча связанных данных.
+invalidatesTags: (_res, _err, { id }) => [
         { type: 'Counterparty', id },
         { type: 'Counterparty', id: 'LIST' },
       ],
@@ -244,11 +260,13 @@ export const counterpartyApi = crmApi.injectEndpoints({
 
     // ---------- DELETE ----------
     removeCounterparty: build.mutation({
-      query: (id) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (id) => ({
         url: `/counterparties/${id}`,
         method: 'DELETE',
       }),
-      async onQueryStarted(id, { dispatch, queryFulfilled, getState }) {
+            // onQueryStarted: запускает побочные эффекты жизненного цикла запроса.
+async onQueryStarted(id, { dispatch, queryFulfilled, getState }) {
         const patches = [];
 
         forEachListCache(getState, (originalArgs) => {
@@ -283,3 +301,4 @@ export const {
   useUpdateCounterpartyMutation,
   useRemoveCounterpartyMutation,
 } = counterpartyApi;
+

@@ -5,6 +5,7 @@ import s from "../../UserSettingsPage.module.css";
 import { useTranslation } from "react-i18next";
 import ThemedSelect from "../../../../../components/inputs/RadixSelect";
 
+// Компонент PreferencesForm: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function PreferencesForm({ initial, onSave }) {
   const { t, i18n } = useTranslation();
 

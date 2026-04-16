@@ -1,6 +1,7 @@
 import React from 'react';
 import s from './InfoRow.module.css';
 
+// Компонент InfoRow: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function InfoRow({ label, value, muted }) {
   return (
     <div className={s.row}>
@@ -9,3 +10,4 @@ export default function InfoRow({ label, value, muted }) {
     </div>
   );
 }
+

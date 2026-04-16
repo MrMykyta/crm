@@ -1,5 +1,6 @@
 const { Invoice, Order } = require('../../models');
 
+// issue: проверяет бизнес-условие и возвращает boolean.
 module.exports.issue = async (orderId, payload={}) => {
     const t = await Invoice.sequelize.transaction();
     try {
@@ -24,10 +25,13 @@ module.exports.issue = async (orderId, payload={}) => {
     }
 };
 
+// list: возвращает список записей с фильтрами, сортировкой и пагинацией.
 module.exports.list = async (q={}) => Invoice.findAll({ where:q, order:[['createdAt','DESC']] });
 
+// get: возвращает данные по входным параметрам сервиса.
 module.exports.get  = async (id) => Invoice.findByPk(id);
 
+// cancel: переводит счёт в статус cancelled.
 module.exports.cancel = async (id, payload={}) => {
     const inv = await Invoice.findByPk(id);
     if (!inv) {

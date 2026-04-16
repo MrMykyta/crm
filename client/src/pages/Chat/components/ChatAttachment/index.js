@@ -33,6 +33,7 @@ const OFFICE_MIME = new Set([
 // Zip mime types to force download-only behavior.
 const ZIP_MIME = new Set(["application/zip"]);
 
+// prettySize: вспомогательная логика компонента.
 const prettySize = (size) => {
   const n = Number(size || 0);
   if (!n || n <= 0) return "";
@@ -46,6 +47,7 @@ const prettySize = (size) => {
   return `${val.toFixed(val >= 10 || idx === 0 ? 0 : 1)} ${units[idx]}`;
 };
 
+// normalizeUrl: нормализует данные для отображения и ввода.
 const normalizeUrl = (u) => {
   if (!u) return "";
   if (/^https?:\/\//i.test(u)) return u;
@@ -66,14 +68,12 @@ const getExtension = (name) => {
 const buildDocsViewerUrl = (url) =>
   `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`;
 
+// Компонент ChatAttachment: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ChatAttachment({
   attachment,
   mode = "message", // 'message' | 'composer'
   onRemove,
   forceFileCard = false,
-  onOpenMedia,
-  documentItems = [],
-  documentIndex = 0,
 }) {
   const { t } = useTranslation();
   const [docPreviewUrl, setDocPreviewUrl] = useState("");
@@ -148,7 +148,8 @@ export default function ChatAttachment({
       };
     }
 
-    const buildPreview = async () => {
+        // buildPreview: собирает итоговую структуру данных в рамках UI-компонента.
+const buildPreview = async () => {
       try {
         let url = directUrl ? normalizeUrl(directUrl) : "";
         if (!url && fileId) {
@@ -177,59 +178,6 @@ export default function ChatAttachment({
     return <AudioMessagePlayer fileId={fileId} filename={filename} />;
   }
 
-  // Open office document via Google Docs Viewer (no auto-download).
-  const handleOpenDocument = async () => {
-    try {
-      let url = directUrl ? normalizeUrl(directUrl) : "";
-      if (fileId) {
-        const res = await getSignedDownload(fileId).unwrap();
-        url = normalizeUrl(res?.data?.url || res?.url || "");
-      }
-      const viewerUrl = url ? buildDocsViewerUrl(url) : "";
-      if (viewerUrl) window.open(viewerUrl, "_blank", "noopener,noreferrer");
-    } catch (e) {
-      if (typeof window !== "undefined") {
-        window.alert(t("chat.attach.downloadFailed"));
-      }
-    }
-  };
-
-  const handleDownload = async () => {
-    try {
-      if (fileId) {
-        const res = await getSignedDownload(fileId).unwrap();
-        const url = normalizeUrl(res?.data?.url || res?.url || "");
-        if (url) window.open(url, "_blank");
-        return;
-      }
-      if (directUrl) {
-        window.open(directUrl, "_blank");
-      }
-    } catch (e) {
-      if (typeof window !== "undefined") {
-        window.alert(t("chat.attach.downloadFailed"));
-      }
-    }
-  };
-
-  const handleOpenPreview = () => {
-    if (onOpenMedia && documentItems.length) {
-      const safeIndex =
-        typeof documentIndex === "number" ? documentIndex : 0;
-      onOpenMedia(documentItems, safeIndex);
-      return;
-    }
-    if (isPdf) {
-      const urlToOpen =
-        previewPdfUrl || (directUrl ? normalizeUrl(directUrl) : "");
-      if (urlToOpen) window.open(urlToOpen, "_blank", "noopener,noreferrer");
-      return;
-    }
-    if (isOfficeDoc) {
-      handleOpenDocument();
-    }
-  };
-
   const previewPdfUrl = previewUrl || (directUrl ? normalizeUrl(directUrl) : "");
   const showDocPreview = mode === "message" && isDocument && !isZip;
   const hasPreview = !!(shouldPreview && previewUrl);
@@ -257,33 +205,9 @@ export default function ChatAttachment({
                 {sizeText ? ` · ${sizeText}` : ""}
               </div>
             </div>
-            <div className={s.attachmentActions}>
-              <button
-                type="button"
-                className={s.attachmentBtn}
-                onClick={handleOpenPreview}
-              >
-                {t("chat.attach.open", "Open")}
-              </button>
-              <button
-                type="button"
-                className={s.attachmentBtn}
-                onClick={handleDownload}
-              >
-                {t("chat.attach.download")}
-              </button>
-            </div>
           </div>
 
-          <div
-            className={s.attachmentDocPreview}
-            role="button"
-            tabIndex={0}
-            onClick={handleOpenPreview}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleOpenPreview();
-            }}
-          >
+          <div className={s.attachmentDocPreview}>
             {isPdf && previewPdfUrl ? (
               <iframe
                 title={filename}
@@ -346,28 +270,8 @@ export default function ChatAttachment({
             </div>
           </div>
 
-          <div className={s.attachmentActions}>
-            {mode === "message" && (
-              <>
-                {isOfficeDoc || isPdf ? (
-                  <button
-                    type="button"
-                    className={s.attachmentBtn}
-                    onClick={handleOpenPreview}
-                  >
-                    {t("chat.attach.open", "Open")}
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className={s.attachmentBtn}
-                  onClick={handleDownload}
-                >
-                  {t("chat.attach.download")}
-                </button>
-              </>
-            )}
-            {mode === "composer" && (
+          {mode === "composer" && (
+            <div className={s.attachmentActions}>
               <button
                 type="button"
                 className={s.attachmentBtnDanger}
@@ -375,10 +279,11 @@ export default function ChatAttachment({
               >
                 {t("chat.attach.remove")}
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </>
       )}
     </div>
   );
 }
+

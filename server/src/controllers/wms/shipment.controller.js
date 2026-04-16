@@ -2,6 +2,7 @@
 // shipment.controller.js (generated)
 const svc = require('../../services/wms/shipmentService');
 
+// Создаёт новую сущность и возвращает результат создания.
 module.exports.create = async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
@@ -13,6 +14,7 @@ module.exports.create = async (req, res, next) => {
   }
 };
 
+// Проводит отгрузку выбранной позиции.
 module.exports.shipItem = async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
@@ -23,3 +25,4 @@ module.exports.shipItem = async (req, res, next) => {
     next(e);
   }
 };
+

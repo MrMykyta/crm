@@ -8,6 +8,7 @@ import {
   useUpdateCompanyUserMutation,
 } from '../../../store/rtk/companyUsersApi';
 
+// Компонент UserEntityPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function UserEntityPage() {
   const { userId } = useParams();
 
@@ -18,8 +19,10 @@ export default function UserEntityPage() {
   if (error)   return <div style={{ padding:16, color:'var(--danger)' }}>Не удалось загрузить пользователя</div>;
   if (isFetching || !base) return null;
 
-  const load = async () => base;
-  const save = async (_id, payload) => {
+    // load: загружает данные в рамках UI-компонента.
+const load = async () => base;
+    // save: сохраняет данные в рамках UI-компонента.
+const save = async (_id, payload) => {
     const saved = await updateUser({ userId, body: payload }).unwrap();
     return saved;
   };

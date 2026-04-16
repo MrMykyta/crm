@@ -91,7 +91,8 @@ export default function MediaViewer({
    * Uses capture to prevent global ESC handlers from closing chat.
    */
   useEffect(() => {
-    const onKey = (e) => {
+        // onKey: вспомогательная логика компонента.
+const onKey = (e) => {
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
@@ -123,7 +124,8 @@ export default function MediaViewer({
       };
     }
 
-    const build = async () => {
+        // build: собирает структуру данных для рендера или запроса.
+const build = async () => {
       try {
         let url = activeItem?.url ? normalizeUrl(activeItem.url) : "";
         if (!url && activeItem?.fileId) {
@@ -229,3 +231,4 @@ export default function MediaViewer({
     </div>
   );
 }
+

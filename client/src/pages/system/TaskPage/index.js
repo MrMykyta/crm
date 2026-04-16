@@ -12,12 +12,14 @@ import FilterToolbar from '../../../components/filters/FilterToolbar';
 import useGridPrefs from '../../../hooks/useGridPrefs';
 import useOpenAsModal from '../../../hooks/useOpenAsModal';
 
-import { TASK_STATUS } from '../../../schemas/task.schema';
+import { TASK_STATUS, formatTaskDate } from '../../../schemas/task.schema';
 import { buildTaskLookups } from '../../../utils/taskLookups';
 
 import TaskForm from './TaskForm';
 import { useCreateTaskMutation } from '../../../store/rtk/tasksApi';
+import s from './TaskListCells.module.css';
 
+// Компонент TasksPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function TasksPage(){
   const listRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -26,7 +28,19 @@ export default function TasksPage(){
   const navigate = useNavigate();
   const openAsModal = useOpenAsModal();
 
-  const { colWidths, colOrder, onColumnResize, onColumnOrderChange } = useGridPrefs('crm.tasks');
+  const {
+    colWidths,
+    colOrder,
+    colVisibility,
+    savedViews,
+    activeViewId,
+    onColumnResize,
+    onColumnOrderChange,
+    onColumnVisibilityChange,
+    onSavedViewsChange,
+    onActiveViewChange,
+    resetGridPrefs,
+  } = useGridPrefs('crm.tasks');
 
   // lookups (users/departments/contacts/counterparties/deals) и текущий пользователь
   const members = useSelector((s) => s.bootstrap?.companyUsers || []);
@@ -43,7 +57,8 @@ export default function TasksPage(){
   const columns = useMemo(()=>[
     {
       key:'title', title:t('crm.task.fields.title'), sortable:true, width:360,
-      render:(r)=> (
+            // render: описывает рендер соответствующего блока UI.
+render:(r)=> (
         <LinkCell
           primary={r.title}
           secondary={r.category || undefined}
@@ -52,17 +67,76 @@ export default function TasksPage(){
         />
       )
     },
-    { key:'status', title:t('crm.task.fields.status'), sortable:true, width:160, render:(r)=> t(`crm.task.enums.status.${r.status}`) },
+    { key:'status', title:t('crm.task.fields.status'), sortable:true, width:160,     // render : render.
+// render: описывает рендер соответствующего блока UI.
+render:(r)=> t(`crm.task.enums.status.${r.status}`) },
     { key:'priority', title:t('crm.task.fields.priority'), sortable:true, width:120 },
-    { key:'schedule', title:t('crm.task.fields.schedule'), width:260, render:(r)=>{
-        const s = r.startAt ? new Date(r.startAt) : null;
-        const e = r.endAt ? new Date(r.endAt) : null;
-        if(!s && !e) return '—';
-        const fmt = (d)=> d?.toLocaleString?.() || '';
-        return e ? `${fmt(s)} — ${fmt(e)}` : fmt(s);
+    { key:'schedule', title:t('crm.task.fields.schedule'), width:260,     // render : render.
+// render: описывает рендер соответствующего блока UI.
+render:(r)=>{
+        const start = formatTaskDate(r.startAt, r.plannedStartHasTime, undefined);
+        const end = formatTaskDate(r.endAt, r.plannedEndHasTime, undefined);
+        if (!r.startAt && !r.endAt) return '—';
+        if (r.startAt && r.endAt) return `${start} — ${end}`;
+        return r.startAt ? start : end;
       }
     },
-    { key:'assignees', title:t('crm.task.fields.assignees'), width:200, render:(r)=>{
+    {
+      key: 'counterparty',
+      title: t('crm.task.fields.counterparty'),
+      width: 220,
+            // render: описывает рендер соответствующего блока UI.
+render: (r) => {
+        const cpId = r.counterparty?.id || r.counterpartyId || null;
+        const cpName = r.counterparty?.shortName || r.counterparty?.fullName || null;
+        if (!cpId) return '—';
+        return (
+          <button
+            type="button"
+            className={s.inlineLink}
+            onClick={() => navigate(`/main/counterparties/${cpId}`)}
+          >
+            {cpName || cpId}
+          </button>
+        );
+      },
+    },
+    {
+      key: 'contacts',
+      title: t('crm.task.fields.contacts'),
+      width: 280,
+            // render: описывает рендер соответствующего блока UI.
+render: (r) => {
+        const contacts = Array.isArray(r.contacts) ? r.contacts : [];
+        if (!contacts.length) return '—';
+        const visible = contacts.slice(0, 2);
+        return (
+          <div className={s.inlineLinksWrap}>
+            {visible.map((contact) => {
+              const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ').trim()
+                || contact.displayName
+                || contact.email
+                || contact.id;
+
+              return (
+                <button
+                  key={contact.id}
+                  type="button"
+                  className={s.inlineLink}
+                  onClick={() => navigate(`/main/contacts/${contact.id}`)}
+                >
+                  {contactName}
+                </button>
+              );
+            })}
+            {contacts.length > 2 ? <span className={s.moreHint}>+{contacts.length - 2}</span> : null}
+          </div>
+        );
+      },
+    },
+    { key:'assignees', title:t('crm.task.fields.assignees'), width:200,     // render : render.
+// render: описывает рендер соответствующего блока UI.
+render:(r)=>{
         const users = Array.isArray(r.userParticipants) ? r.userParticipants.filter(u=>u?.TaskUserParticipant?.role==='assignee') : [];
         if (!users.length) return '—';
         const names = users
@@ -71,7 +145,7 @@ export default function TasksPage(){
         return names.slice(0,2).join(', ') + (names.length>2 ? ` +${names.length-2}` : '');
       }
     },
-  ], [t, openDetail]);
+  ], [t, openDetail, navigate]);
 
   const defaultQuery = useMemo(()=>({ sort:'createdAt', dir:'DESC', limit:25 }), []);
   const actions = useMemo(()=> (
@@ -102,6 +176,13 @@ export default function TasksPage(){
         onColumnResize={onColumnResize}
         columnOrder={colOrder}
         onColumnOrderChange={onColumnOrderChange}
+        columnVisibility={colVisibility}
+        onColumnVisibilityChange={onColumnVisibilityChange}
+        savedViews={savedViews}
+        activeViewId={activeViewId}
+        onSavedViewsChange={onSavedViewsChange}
+        onActiveViewChange={onActiveViewChange}
+        onResetColumns={resetGridPrefs}
         ToolbarComponent={(props)=> (
           <FilterToolbar
             {...props}
@@ -117,7 +198,7 @@ export default function TasksPage(){
         )}
       />
 
-      <Modal open={open} onClose={()=>setOpen(false)} title={t('crm.task.newTask')} size="lg" footer={footer}>
+      <Modal open={open} onClose={()=>setOpen(false)} title={t('crm.task.newTask')} size="xl" footer={footer}>
         <TaskForm
           id="task-create-form"
           loading={saving}
@@ -138,3 +219,4 @@ export default function TasksPage(){
     </>
   );
 }
+

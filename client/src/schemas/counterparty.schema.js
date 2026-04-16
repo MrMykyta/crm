@@ -210,6 +210,7 @@ export function counterpartyClientSchema(i18n) {
 const ENTITY_TYPES = ["partner", "supplier", "manufacturer"];
 
 
+// counterpartyEntitySchema: описывает схему валидации и преобразования данных.
 export function counterpartyEntitySchema(i18n) {
   const base = counterpartySchema(i18n);
 
@@ -226,7 +227,9 @@ export function counterpartyEntitySchema(i18n) {
 }
 
 // нормализация туда/обратно
-export const toFormCounterparty = (d) => ({
+export // toFormCounterparty : to form counterparty.
+// toFormCounterparty: описывает схему валидации и преобразования данных.
+const toFormCounterparty = (d) => ({
   shortName: d.shortName ?? "",
   fullName: d.fullName ?? "",
   nip: d.nip ?? "",
@@ -250,7 +253,9 @@ export const toFormCounterparty = (d) => ({
     : [],
 });
 
-export const toApiCounterparty = (v) => ({
+export // toApiCounterparty : to api counterparty.
+// toApiCounterparty: описывает схему валидации и преобразования данных.
+const toApiCounterparty = (v) => ({
   shortName: v.shortName.trim(),
   fullName: v.fullName.trim(),
   nip: trimOrNull(v.nip),
@@ -267,6 +272,7 @@ export const toApiCounterparty = (v) => ({
   isCompany: !!v.isCompany,
 });
 
+// trimOrNull: описывает схему валидации и преобразования данных.
 const trimOrNull = (x) => {
   if (x == null) return null;
   const s = String(x).trim();

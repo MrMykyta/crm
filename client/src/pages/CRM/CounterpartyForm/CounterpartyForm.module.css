@@ -18,12 +18,12 @@
 .field{ position: relative; display:flex; flex-direction:column; gap: 6px; }
 .label{
   display:flex; align-items:center; justify-content:space-between; gap: 10px;
-  font-size: 12px; letter-spacing:.2px; color: color-mix(in srgb, var(--muted) 90%, transparent);
+  font-size: var(--font-size-12); letter-spacing:.2px; color: color-mix(in srgb, var(--muted) 90%, transparent);
 }
 
 .counter{
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
+  font-size: var(--font-size-11);
   color: color-mix(in srgb, var(--muted) 80%, transparent);
   background: color-mix(in srgb, var(--card-bg) 85%, transparent);
   border: 1px solid color-mix(in srgb, var(--card-brd) 60%, transparent);
@@ -45,7 +45,7 @@
     box-shadow .14s ease,
     background .14s ease,
     transform .06s ease;
-  font-size: 14px; line-height: 1.35;
+  font-size: var(--font-size-14); line-height: 1.35;
   box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
 }
 .input:hover{
@@ -65,7 +65,7 @@ textarea.input{ min-height: 84px; resize: vertical; }
 .err{
   color:#ff8686;
   text-shadow: 0 1px 0 rgba(0,0,0,.1);
-  font-size: 12px;
+  font-size: var(--font-size-12);
 }
 
 /* Section header (Contacts) */
@@ -75,7 +75,7 @@ textarea.input{ min-height: 84px; resize: vertical; }
 }
 .sectionHeader h4{
   margin:0;
-  font-size: 15px; font-weight: 700; letter-spacing:.2px;
+  font-size: var(--font-size-15); font-weight: 700; letter-spacing:.2px;
 }
 
 /* Buttons */
@@ -114,7 +114,7 @@ textarea.input{ min-height: 84px; resize: vertical; }
 .contactsGrid{
   display:flex; flex-direction:column; gap: 10px;
 }
-.muted{ color: var(--muted); font-size: 13px; }
+.muted{ color: var(--muted); font-size: var(--font-size-13); }
 
 /* Contact row card */
 .contactRow{
@@ -131,8 +131,8 @@ textarea.input{ min-height: 84px; resize: vertical; }
   .contactRow{ grid-template-columns: 1fr; }
 }
 
-.chkPrimary{ display:flex; align-items:center; gap:8px; font-size: 13px; color: var(--muted); }
-.errRow{ grid-column: 1 / -1; color:#ff8686; font-size: 12px; }
+.chkPrimary{ display:flex; align-items:center; gap:8px; font-size: var(--font-size-13); color: var(--muted); }
+.errRow{ grid-column: 1 / -1; color:#ff8686; font-size: var(--font-size-12); }
 
 /* Footer actions (when withButtons=true) */
 .actions{

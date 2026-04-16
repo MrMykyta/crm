@@ -2,9 +2,11 @@
 const {
   Model
 } = require('sequelize');
+// Инициализирует и возвращает Sequelize-модель текущей сущности.
 module.exports = (sequelize, DataTypes) => {
   class Warehouse extends Model {
-    static associate(models) {
+        // Описывает associations этой модели с другими сущностями.
+static associate(models) {
       // define association here
       Warehouse.hasMany(models.Location, { 
         foreignKey:'warehouse_id', 

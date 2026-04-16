@@ -1,7 +1,8 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     // Unified files table (replaces legacy attachments)
     await queryInterface.createTable('files', {
       id: {
@@ -132,7 +133,8 @@ module.exports = {
       name: 'idx_files_purpose',
     });
   },
-  async down(queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface, Sequelize) {
     await queryInterface.removeIndex('files', 'idx_files_owner');
     await queryInterface.removeIndex('files', 'uniq_files_public_key');
     await queryInterface.removeIndex('files', 'idx_files_visibility');
@@ -143,3 +145,4 @@ module.exports = {
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_files_visibility";');
   },
 };
+

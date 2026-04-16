@@ -4,6 +4,7 @@ import * as Yup from "yup";
 import s from "../../UserSettingsPage.module.css";
 import { useTranslation } from "react-i18next";
 
+// Компонент SecurityForm: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function SecurityForm({ onSave }) {
   const { t } = useTranslation();
 
@@ -17,7 +18,8 @@ export default function SecurityForm({ onSave }) {
       .required(t("common.required")),
   });
 
-  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+    // handleSubmit: обработчик пользовательского действия.
+const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
       await onSave?.(values); // ожидается api.changePassword(values)
       resetForm();

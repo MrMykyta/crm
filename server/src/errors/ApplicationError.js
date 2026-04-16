@@ -1,11 +1,16 @@
-class ApplicationError extends Error{
+'use strict';
 
-  constructor (message, status) {
-    super();
-    Error.captureStackTrace(this, this.constructor);
-    this.name = this.constructor.name;
-    this.message = message || 'Something went wrong. Please try again';
-    this.code = status || 500;
+const AppError = require('./AppError');
+
+// Deprecated compatibility layer: use AppError directly for new code.
+class ApplicationError extends AppError {
+  // Совместимая обёртка над AppError для старого кода.
+  constructor(message, status, code, details) {
+    super(
+      status || 500,
+      message || 'Something went wrong. Please try again',
+      { code, details }
+    );
   }
 }
 

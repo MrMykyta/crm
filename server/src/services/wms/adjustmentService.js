@@ -4,6 +4,7 @@ const { withTx } = require('../../utils/tx');
 const Inventory = require('./inventoryService');
 const { Adjustment, AdjustmentItem } = require('../../models');
 
+// create: создаёт новую запись и возвращает результат.
 module.exports.create = async (companyId, data, outerTx=null) => {
   return await withTx(async (t) => {
     const { items=[], ...core } = data;
@@ -24,3 +25,4 @@ module.exports.create = async (companyId, data, outerTx=null) => {
     return adj;
   }, outerTx);
 };
+

@@ -1,7 +1,8 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     await queryInterface.createTable('packaging_units', {
       id:{ 
         type:Sequelize.UUID, 
@@ -89,7 +90,8 @@ module.exports = {
     });
     await queryInterface.addIndex('packaging_units', ['company_id','product_id','variant_id']);
   },
-  async down(queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('packaging_units');
   }
 };

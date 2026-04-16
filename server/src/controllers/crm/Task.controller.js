@@ -1,5 +1,6 @@
 const taskService = require('../../services/crm/taskService');
 
+// Возвращает список сущностей с учётом фильтров и пагинации.
 module.exports.list = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -11,10 +12,11 @@ module.exports.list = async (req, res) => {
     res.status(200).send({ items: rows, meta: { count, page, limit } });
   } catch (e) {
     console.error('[TaskController.list]', e);
-    res.status(400).send({ error: e.message });
+    res.status(e.status || 400).send({ error: e.message });
   }
 };
 
+// Возвращает задачи в формате календарного представления.
 module.exports.listCalendar = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -26,10 +28,11 @@ module.exports.listCalendar = async (req, res) => {
     res.status(200).send({ data });
   } catch (e) {
     console.error('[TaskController.listCalendar]', e);
-    res.status(400).send({ error: e.message });
+    res.status(e.status || 400).send({ error: e.message });
   }
 };
 
+// Возвращает одну сущность по её идентификатору.
 module.exports.getById = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -39,10 +42,11 @@ module.exports.getById = async (req, res) => {
     res.status(200).send({ data: item });
   } catch (e) {
     console.error('[TaskController.getById]', e);
-    res.status(400).send({ error: e.message });
+    res.status(e.status || 400).send({ error: e.message });
   }
 };
 
+// Создаёт новую сущность и возвращает результат создания.
 module.exports.create = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -54,10 +58,11 @@ module.exports.create = async (req, res) => {
     res.status(201).send({ data: item });
   } catch (e) {
     console.error('[TaskController.create]', e);
-    res.status(400).send({ error: e.message });
+    res.status(e.status || 400).send({ error: e.message });
   }
 };
 
+// Обновляет существующую сущность по идентификатору.
 module.exports.update = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -71,10 +76,11 @@ module.exports.update = async (req, res) => {
     res.status(200).send({ data: item });
   } catch (e) {
     console.error('[TaskController.update]', e);
-    res.status(400).send({ error: e.message });
+    res.status(e.status || 400).send({ error: e.message });
   }
 };
 
+// Удаляет сущность по идентификатору.
 module.exports.remove = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -83,10 +89,11 @@ module.exports.remove = async (req, res) => {
     res.status(204).send();
   } catch (e) {
     console.error('[TaskController.remove]', e);
-    res.status(400).send({ error: e.message });
+    res.status(e.status || 400).send({ error: e.message });
   }
 };
 
+// Восстанавливает ранее удалённую сущность.
 module.exports.restore = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -96,6 +103,7 @@ module.exports.restore = async (req, res) => {
     res.status(200).send({ data: item });
   } catch (e) {
     console.error('[TaskController.restore]', e);
-    res.status(400).send({ error: e.message });
+    res.status(e.status || 400).send({ error: e.message });
   }
 };
+

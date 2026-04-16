@@ -1,63 +1,57 @@
-// src/pages/system/TaskPage/TaskDetailPage/sections/DescriptionForm.jsx
-import { useEffect, useRef, useState } from "react";
-import { useUpdateTaskMutation } from "../../../../../store/rtk/tasksApi";
-// проверь путь к редактору; у тебя inputs/ чаще всего тут
-import HTMLEditor from "../../../../../components/inputs/HTMLEditor";
-import s from "../sections.module.css";
+import { useEffect, useState } from 'react';
+import HtmlDescriptionSection from '../../../../../components/data/HtmlDescriptionSection';
+import { useUpdateTaskMutation } from '../../../../../store/rtk/tasksApi';
 
-export default function DescriptionForm({ taskId, initialHtml = "", onSaved }) {
-  const [html, setHtml] = useState(initialHtml);
+// htmlToText: вспомогательная логика компонента.
+const htmlToText = (html = '') =>
+  String(html || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+// normalizeHtml: нормализует данные для отображения и ввода.
+const normalizeHtml = (html = '') => {
+  const text = htmlToText(html);
+  if (!text) return '';
+  return String(html || '').trim();
+};
+
+// Компонент DescriptionForm: отвечает за отображение UI и обработку взаимодействий пользователя.
+export default function DescriptionForm({ taskId, initialHtml = '', onSaved }) {
   const [updateTask, { isLoading }] = useUpdateTaskMutation();
-  const lastSavedRef = useRef(initialHtml);
-  const [message, setMessage] = useState("");
+
+  const [value, setValue] = useState(initialHtml || '');
 
   useEffect(() => {
-    // если деталь перезагрузилась снаружи — обновим состояние
-    setHtml(initialHtml);
-    lastSavedRef.current = initialHtml;
+    const next = initialHtml || '';
+    setValue(next);
   }, [initialHtml]);
 
-  const dirty = html !== lastSavedRef.current;
+    // save: сохраняет данные в рамках UI-компонента.
+const save = async (nextHtml) => {
+    const payloadHtml = normalizeHtml(nextHtml);
+    const saved = await updateTask({
+        id: taskId,
+        payload: { description: payloadHtml },
+      }).unwrap();
 
-  const save = async () => {
-    try {
-      setMessage("");
-      const saved = await updateTask({ id: taskId, payload: { description: html } }).unwrap();
-      lastSavedRef.current = saved?.description ?? html;
-      setMessage("Сохранено");
-      onSaved?.(lastSavedRef.current);
-    } catch (e) {
-      setMessage(e?.message || "Ошибка сохранения");
-    }
+    const finalHtml = saved?.description ?? payloadHtml;
+    setValue(finalHtml);
+    onSaved?.(finalHtml);
+    return finalHtml;
   };
 
   return (
-    <div className={s.sectionCard}>
-
-      <HTMLEditor
-        value={html}
-        onChange={setHtml}
-        placeholder="Опишите задачу: суть, чек-лист, ссылки, упоминания…"
-        minHeight={280}
-      />
-
-      <div className={s.actions}>
-          <button
-            type="button"
-            className={s.primaryBtn}
-            onClick={save}
-            disabled={!dirty || isLoading}
-          >
-            {isLoading ? "Сохранение…" : "Сохранить"}
-          </button>
-        </div>
-
-      <div className={s.footerRow}>
-        <span className={dirty ? s.dirty : s.clean}>
-          {isLoading ? "Сохранение…" : dirty ? "Есть несохранённые изменения" : "Все изменения сохранены"}
-        </span>
-        {message && <span className={s.message}>{message}</span>}
-      </div>
-    </div>
+    <HtmlDescriptionSection
+      title="Описание"
+      value={value}
+      onSave={save}
+      placeholder="Опишите задачу: цель, шаги, ссылки, чек-лист…"
+      emptyText="Описание пока пустое. Нажмите «Редактировать», чтобы добавить HTML-описание."
+      minHeight={320}
+      editable={!isLoading}
+    />
   );
 }
+

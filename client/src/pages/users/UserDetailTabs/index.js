@@ -5,6 +5,7 @@ import NotificationsForm from "../UserSettingsPage/sections/NotificationsForm";
 import PreferencesForm from "../UserSettingsPage/sections/PreferencesForm";
 import SecurityForm from "../UserSettingsPage/sections/SecurityForm";
 
+// Компонент UserDetailTabs: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function UserDetailTabs({ tab }) {
   const { data: prefs, isFetching } = useGetMyPreferencesQuery();
   const [saveMyPreferences] = useSaveMyPreferencesMutation();
@@ -13,7 +14,8 @@ export default function UserDetailTabs({ tab }) {
     return <div style={{padding:12, color:"var(--muted)"}}>Loading…</div>;
   }
 
-  const savePrefs = async (patch) => {
+    // savePrefs: сохраняет данные в рамках UI-компонента.
+const savePrefs = async (patch) => {
     const next = { ...(prefs || {}), ...(patch || {}) };
     await saveMyPreferences(next).unwrap();
   };
@@ -23,6 +25,8 @@ export default function UserDetailTabs({ tab }) {
       <AppearanceForm
         initial={{
           fontScale: prefs?.appearance?.fontScale ?? 100,
+          textSize: prefs?.appearance?.textSize ?? "medium",
+          density: prefs?.appearance?.density ?? "comfortable",
           backgroundPath: prefs?.appearance?.backgroundPath ?? prefs?.background?.url ?? "",
         }}
       />
@@ -53,3 +57,4 @@ export default function UserDetailTabs({ tab }) {
 
   return <div style={{padding:16, color:"var(--muted)"}}>Тут будет описание пользователя.</div>;
 }
+

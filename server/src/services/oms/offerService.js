@@ -1,15 +1,18 @@
 const { Sequelize, Offer, OfferItem, Discount, ProductVariant, Uom } = require('../../models');
 
+// parsePaging: парсит и нормализует входные параметры.
 const parsePaging = (q={}) => {
   const page = Math.max(parseInt(q.page||'1',10),1);
   const limit = Math.min(Math.max(parseInt(q.limit||'20',10),1),200);
   return { page, limit, offset:(page-1)*limit };
 };
+// buildOrder: собирает служебную структуру для выполнения запроса.
 const buildOrder = (q={}) =>
   String(q.sort||'created_at:desc').split(',').filter(Boolean).map(s=>{
     const[a,b]=s.split(':');
     return [a,(b||'asc').toUpperCase()];
   });
+// buildWhere: собирает служебную структуру для выполнения запроса.
 const buildWhere = (q={}, user={}) => {
   const w = {};
   if (q.companyId) w.companyId = q.companyId;
@@ -21,6 +24,7 @@ const buildWhere = (q={}, user={}) => {
   ];
   return w;
 };
+// calcTotals: выполняет вспомогательную бизнес-логику сервиса.
 const calcTotals = (items=[]) => {
   let net=0,gross=0,tax=0;
   for (const it of items) {
@@ -33,6 +37,7 @@ const calcTotals = (items=[]) => {
   return { totalNet:+net.toFixed(2), totalGross:+gross.toFixed(2), totalTax:+tax.toFixed(2) };
 };
 
+// list: возвращает список записей с фильтрами, сортировкой и пагинацией.
 module.exports.list = async (query={}, user={}) => {
   const { page, limit, offset } = parsePaging(query);
   const where = buildWhere(query, user);
@@ -43,6 +48,7 @@ module.exports.list = async (query={}, user={}) => {
   return { page, limit, total: rows.count, rows: rows.rows };
 };
 
+// get: возвращает данные по входным параметрам сервиса.
 module.exports.get = async (id) => {
   return Offer.findByPk(id, {
     include: [
@@ -55,6 +61,7 @@ module.exports.get = async (id) => {
   });
 };
 
+// create: создаёт новую запись и возвращает результат.
 module.exports.create = async (payload, user) => {
   const t = await Offer.sequelize.transaction();
   try {
@@ -74,6 +81,7 @@ module.exports.create = async (payload, user) => {
   } catch (e) { await t.rollback(); throw e; }
 };
 
+// update: обновляет запись и возвращает актуальные данные.
 module.exports.update = async (id, payload) => {
   const t = await Offer.sequelize.transaction();
   try {
@@ -94,6 +102,7 @@ module.exports.update = async (id, payload) => {
   } catch (e) { await t.rollback(); throw e; }
 };
 
+// remove: удаляет запись с учётом бизнес-ограничений.
 module.exports.remove = async (id) => {
   await Offer.destroy({ where:{ id } });
   return { success:true };

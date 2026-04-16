@@ -14,8 +14,10 @@ const FileController = require('../../controllers/system/File.controller');
 fs.mkdirSync(TMP_ROOT, { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, TMP_ROOT),
-  filename: (_req, file, cb) => {
+  // Складывает временные файлы в общий temp-каталог.
+destination: (_req, _file, cb) => cb(null, TMP_ROOT),
+  // Генерирует уникальное имя файла с сохранением расширения.
+filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase().slice(0, 10);
     const rnd = crypto.randomBytes(6).toString('hex');
     cb(null, `${Date.now()}-${rnd}${ext}`);

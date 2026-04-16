@@ -1,0 +1,108 @@
+.layout {
+  grid-template-columns: minmax(620px, 1.35fr) minmax(420px, 1fr);
+  gap: 18px;
+  height: calc(100dvh - var(--topbar-h, 64px) - 24px);
+}
+
+.leftPane {
+  padding: 16px;
+}
+
+.leftPane :global(.grid) {
+  gap: 14px;
+}
+
+.relatedPanel {
+  margin-bottom: 14px;
+  display: grid;
+  gap: 10px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 72%, transparent);
+  border-radius: 12px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+}
+
+.relatedBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.relatedLabel {
+  font-size: var(--font-size-12);
+  letter-spacing: 0.2px;
+  color: color-mix(in srgb, var(--muted) 86%, transparent);
+}
+
+.relatedEmpty {
+  font-size: var(--font-size-13);
+  color: color-mix(in srgb, var(--muted) 86%, transparent);
+}
+
+.entityChipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.entityChip {
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+  color: color-mix(in srgb, var(--text) 92%, transparent);
+  padding: 0 12px;
+  font-size: var(--font-size-13);
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, transform .06s ease;
+}
+
+.entityChip:hover {
+  border-color: color-mix(in srgb, var(--focus) 66%, transparent);
+  background: color-mix(in srgb, var(--sidebar-hover) 66%, transparent);
+}
+
+.entityChip:active {
+  transform: translateY(1px);
+}
+
+.rightPane {
+  padding: 12px;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.tabsArea {
+  top: 0;
+  margin: 0;
+}
+
+.panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  padding: 0;
+  gap: 0;
+  background: color-mix(in srgb, var(--card-bg) 72%, #000 28%);
+}
+
+@media (max-width: 1260px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+
+  .rightPane {
+    min-height: 520px;
+  }
+}
+
+@media (max-width: 760px) {
+  .leftPane {
+    padding: 12px;
+  }
+
+  .rightPane {
+    padding: 10px;
+  }
+}

@@ -2,16 +2,21 @@
 // Date grouping helpers for chat messages (Today/Yesterday/localized date label).
 import i18n from "../../../i18n";
 
-export const formatDayKey = (date) => {
+export // formatDayKey : format day key.
+// formatDayKey: форматирует данные для отображения.
+const formatDayKey = (date) => {
   const d = new Date(date);
   return d.toISOString().slice(0, 10); // yyyy-mm-dd
 };
 
-export const formatDayLabel = (date) => {
+export // formatDayLabel : format day label.
+// formatDayLabel: форматирует данные для отображения.
+const formatDayLabel = (date) => {
   const d = new Date(date);
   const today = new Date();
 
-  const startOf = (x) => {
+    // startOf: вспомогательная логика компонента.
+const startOf = (x) => {
     const n = new Date(x);
     n.setHours(0, 0, 0, 0);
     return n.getTime();
@@ -31,7 +36,9 @@ export const formatDayLabel = (date) => {
   });
 };
 
-export const groupMessagesByDay = (messages) => {
+export // groupMessagesByDay : group messages by day.
+// groupMessagesByDay: вспомогательная логика компонента.
+const groupMessagesByDay = (messages) => {
   if (!Array.isArray(messages)) return [];
 
   const byKey = new Map();
@@ -52,3 +59,4 @@ export const groupMessagesByDay = (messages) => {
     items: byKey.get(key),
   }));
 };
+

@@ -3,7 +3,9 @@ import Modal from "../../Modal";
 import s from "../../../pages/styles/CrmUsers.module.css";
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from "../../../config/taskOptions";
 import ThemedSelect from "../../inputs/RadixSelect"; // ← новый селект
+import DateTimePicker from "../../inputs/DateTimePicker";
 
+// Компонент CreateTaskModal: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
   const [form, setForm] = useState({
     title: "",
@@ -26,24 +28,28 @@ export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
   const [titleError, setTitleError] = useState("");
   const [descError, setDescError] = useState("");
 
-  const change = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+    // change: вспомогательная логика компонента.
+const change = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const busy = useMemo(() => sending, [sending]);
 
-  const validateTitle = (v) => {
+    // validateTitle: валидирует введённые данные.
+const validateTitle = (v) => {
     const val = String(v || "").trim();
     if (!val) { setTitleError("Укажите название задачи"); return false; }
     if (val.length > 300) { setTitleError("Название слишком длинное (макс. 300)"); return false; }
     setTitleError(""); return true;
   };
 
-  const validateDesc = (v) => {
+    // validateDesc: валидирует введённые данные.
+const validateDesc = (v) => {
     const val = String(v ?? "").trim();
     if (!val) { setDescError("Описание обязательно"); return false; }
     setDescError(""); return true;
   };
 
-  const buildPayload = () => {
+    // buildPayload: собирает структуру данных для рендера или запроса.
+const buildPayload = () => {
     const priority = Number(form.priority) || 3;
     const dueDate = form.dueDate || null;
 
@@ -79,7 +85,8 @@ export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
     };
   };
 
-  const submit = async (e) => {
+    // submit: вспомогательная логика компонента.
+const submit = async (e) => {
     e?.preventDefault();
     setErr("");
 
@@ -171,12 +178,12 @@ export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
 
         <label className={s.label}>
           Дедлайн (по дню)
-          <input
+          <DateTimePicker
             className={s.input}
-            type="date"
             value={form.dueDate}
-            onChange={(e) => change("dueDate", e.target.value)}
+            onChange={(nextValue) => change("dueDate", nextValue)}
             disabled={busy}
+            withTime={false}
           />
         </label>
 
@@ -241,34 +248,34 @@ export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
               {form.isAllDay ? (
                 <label className={s.label}>
                   Дата события (eventDate)
-                  <input
+                  <DateTimePicker
                     className={s.input}
-                    type="date"
                     value={form.eventDate}
-                    onChange={(e) => change("eventDate", e.target.value)}
+                    onChange={(nextValue) => change("eventDate", nextValue)}
                     disabled={busy}
+                    withTime={false}
                   />
                 </label>
               ) : (
                 <>
                   <label className={s.label}>
                     Начало (startAt)
-                    <input
+                    <DateTimePicker
                       className={s.input}
-                      type="datetime-local"
                       value={form.startAt}
-                      onChange={(e) => change("startAt", e.target.value)}
+                      onChange={(nextValue) => change("startAt", nextValue)}
                       disabled={busy}
+                      withTime
                     />
                   </label>
                   <label className={s.label}>
                     Конец (endAt)
-                    <input
+                    <DateTimePicker
                       className={s.input}
-                      type="datetime-local"
                       value={form.endAt}
-                      onChange={(e) => change("endAt", e.target.value)}
+                      onChange={(nextValue) => change("endAt", nextValue)}
                       disabled={busy}
+                      withTime
                     />
                   </label>
                 </>
@@ -282,3 +289,4 @@ export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
     </Modal>
   );
 }
+

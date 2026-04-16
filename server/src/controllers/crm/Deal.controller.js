@@ -1,5 +1,6 @@
 const dealService = require('../../services/crm/dealService');
 
+// Возвращает список сущностей с учётом фильтров и пагинации.
 module.exports.list = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -15,6 +16,7 @@ module.exports.list = async (req, res) => {
   }
 };
 
+// Возвращает одну сущность по её идентификатору.
 module.exports.getById = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -29,6 +31,7 @@ module.exports.getById = async (req, res) => {
   }
 };
 
+// Создаёт новую сущность и возвращает результат создания.
 module.exports.create = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -42,6 +45,7 @@ module.exports.create = async (req, res) => {
   }
 };
 
+// Обновляет существующую сущность по идентификатору.
 module.exports.update = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -58,6 +62,7 @@ module.exports.update = async (req, res) => {
   }
 };
 
+// Удаляет сущность по идентификатору.
 module.exports.remove = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -71,3 +76,4 @@ module.exports.remove = async (req, res) => {
     res.status(400).send({ error: e.message });
   }
 };
+

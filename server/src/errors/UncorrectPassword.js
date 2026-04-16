@@ -1,10 +1,10 @@
-const ApplicationError = require('./ApplicationError');
+const AppError = require('./AppError');
 
-class UncorrectPassword extends ApplicationError{
+// Ошибка неверного пароля (HTTP 406).
+class UncorrectPassword extends AppError {
   constructor (message) {
-    super(message || 'uncorrect password', 406);
+    super(406, message || 'uncorrect password');
   }
 }
 
 module.exports = UncorrectPassword;
-

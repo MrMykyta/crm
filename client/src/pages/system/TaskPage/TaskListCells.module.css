@@ -1,0 +1,30 @@
+.inlineLinksWrap {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.inlineLink {
+  border: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--focus) 76%, var(--text) 24%);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--focus) 52%, transparent);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  font-size: var(--font-size-13);
+  line-height: 1.25;
+  padding: 0;
+}
+
+.inlineLink:hover {
+  color: color-mix(in srgb, var(--focus) 88%, #fff 12%);
+  text-decoration-color: color-mix(in srgb, var(--focus) 78%, transparent);
+}
+
+.moreHint {
+  font-size: var(--font-size-12);
+  color: color-mix(in srgb, var(--muted) 84%, transparent);
+}

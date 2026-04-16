@@ -1,7 +1,8 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     await queryInterface.createTable('user_companies', {
       id: {
         allowNull: false,
@@ -88,7 +89,8 @@ module.exports = {
 
 
 
-  async down(queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface, Sequelize) {
     await queryInterface.removeConstraint('user_companies', 'user_company_unique');
     await queryInterface.removeIndex('user_companies', 'uc_company_role_idx');
     await queryInterface.removeIndex('user_companies', 'uc_user_status_idx');

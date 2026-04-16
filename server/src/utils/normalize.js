@@ -6,6 +6,7 @@ module.exports.normalizeEmail = (email) => {
     return String(email).trim().toLowerCase();
 };
 
+// Нормализует телефон: оставляет только цифры и символ "+".
 module.exports.normalizePhone = (raw) => {
     if (!raw) {
         return null;

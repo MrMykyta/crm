@@ -32,6 +32,7 @@ const MEMBER_STATUS_OPTIONS = [
   { value: "suspended", label: "Заблокирован" },
 ];
 
+// roleOptions: вспомогательная логика компонента.
 function roleOptions() {
   return [
     { value:"",        label:"Все роли" },
@@ -42,6 +43,7 @@ function roleOptions() {
   ];
 }
 
+// statusOptionsByMode: вспомогательная логика компонента.
 function statusOptionsByMode(mode) {
   if (mode === "invites") {
     return [
@@ -59,6 +61,7 @@ function statusOptionsByMode(mode) {
   ];
 }
 
+// Компонент Avatar: отвечает за отображение UI и обработку взаимодействий пользователя.
 function Avatar({ name = "", email = "", url = "" }) {
   const initials =
     (name || email || "U")
@@ -81,13 +84,25 @@ function Avatar({ name = "", email = "", url = "" }) {
   );
 }
 
+// Компонент CompanyUsers: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CompanyUsers() {
   const [mode, setMode] = useState("members"); // 'members' | 'invites'
   const listRef = useRef(null);
   const navigate = useNavigate();
 
-  const { colWidths, colOrder, onColumnResize, onColumnOrderChange } =
-    useGridPrefs("companyUsers", { mode });
+  const {
+    colWidths,
+    colOrder,
+    colVisibility,
+    savedViews,
+    activeViewId,
+    onColumnResize,
+    onColumnOrderChange,
+    onColumnVisibilityChange,
+    onSavedViewsChange,
+    onActiveViewChange,
+    resetGridPrefs,
+  } = useGridPrefs("companyUsers", { mode });
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [confirm, setConfirm] = useState(null); // {title, text, onYes}
@@ -114,7 +129,8 @@ export default function CompanyUsers() {
           key: "user",
           title: "Пользователь",
           sortable: true,
-          render: (row) => (
+                    // render: описывает рендер соответствующего блока UI.
+render: (row) => (
             <div className={s.userCell}
               onClick={() => navigate(`/main/users/${row.userId}`)}
               style={{ cursor: "pointer" }}
@@ -138,7 +154,8 @@ export default function CompanyUsers() {
         {
           key: "role",
           title: "Роль",
-          render: (row) => (
+                    // render: описывает рендер соответствующего блока UI.
+render: (row) => (
             <RadixSelect
               className={s.select}
               value={row.role}
@@ -154,7 +171,8 @@ export default function CompanyUsers() {
         {
           key: "status",
           title: "Статус",
-          render: (row) => (
+                    // render: описывает рендер соответствующего блока UI.
+render: (row) => (
             <RadixSelect
               className={s.select}
               value={row.status || "active"}
@@ -170,7 +188,8 @@ export default function CompanyUsers() {
         {
           key: "isLead",
           title: "Лидер отдела",
-          render: (row) => (
+                    // render: описывает рендер соответствующего блока UI.
+render: (row) => (
             <span className={row.isLead ? s.yes : s.no}>
               {row.isLead ? "Да" : "Нет"}
             </span>
@@ -179,7 +198,8 @@ export default function CompanyUsers() {
         {
           key: "lastLoginAt",
           title: "Последний вход",
-          render: (row) =>
+                    // render: описывает рендер соответствующего блока UI.
+render: (row) =>
             row.lastLoginAt
               ? new Date(row.lastLoginAt).toLocaleString("ru-RU", {
                   dateStyle: "short",
@@ -190,7 +210,8 @@ export default function CompanyUsers() {
         {
           key: "createdAt",
           title: "Добавлен",
-          render: (row) =>
+                    // render: описывает рендер соответствующего блока UI.
+render: (row) =>
             row.createdAt
               ? new Date(row.createdAt).toLocaleDateString("ru-RU")
               : "—",
@@ -199,14 +220,16 @@ export default function CompanyUsers() {
           key: "actions",
           title: "Действия",
           sortable: false,
-          render: (row) => (
+                    // render: описывает рендер соответствующего блока UI.
+render: (row) => (
             <button
               className={s.linkDanger}
               onClick={() =>
                 setConfirm({
                   title: "Удаление участника",
                   text: `Удалить пользователя ${row.email} из компании?`,
-                  onYes: async () => {
+                                    // onYes: вспомогательная логика компонента.
+onYes: async () => {
                     await removeUser(row.userId).unwrap();
                     setConfirm(null);
                     listRef.current?.refetch?.();
@@ -226,18 +249,21 @@ export default function CompanyUsers() {
       {
         key: "person",
         title: "Имя",
-        render: (row) =>
+                // render: описывает рендер соответствующего блока UI.
+render: (row) =>
           [row.firstName, row.lastName].filter(Boolean).join(" ") || "—",
       },
       { 
         key: "email", 
         title: "E-mail",
-        render: (row) => row.email || "—",
+                // render: описывает рендер соответствующего блока UI.
+render: (row) => row.email || "—",
       },
       {
         key: "role",
         title: "Роль",
-        render: (row) =>
+                // render: описывает рендер соответствующего блока UI.
+render: (row) =>
           ROLE_OPTIONS.find((r) => r.value === row.role)?.label || row.role,
       },
       { key: "status", title: "Статус" },
@@ -245,7 +271,8 @@ export default function CompanyUsers() {
         key: "actions",
         title: "Действие",
         sortable: false,
-        render: (row) => {
+                // render: описывает рендер соответствующего блока UI.
+render: (row) => {
           if (row.status !== "pending") {
             return <span className={s.muted}>—</span>;
           }
@@ -267,7 +294,8 @@ export default function CompanyUsers() {
                   setConfirm({
                     title: "Отзыв приглашения",
                     text: `Отозвать приглашение для ${row.email}?`,
-                    onYes: async () => {
+                                        // onYes: вспомогательная логика компонента.
+onYes: async () => {
                       await revokeInvitation(row.id).unwrap();
                       setConfirm(null);
                       listRef.current?.refetch?.();
@@ -334,7 +362,8 @@ export default function CompanyUsers() {
               {
                 type: "search",
                 key: "search",
-                placeholder: (m) =>
+                                // placeholder: вспомогательная логика компонента.
+placeholder: (m) =>
                   m === "invites"
                     ? "Поиск по e-mail получателя"
                     : "Поиск по имени / e-mail",
@@ -350,6 +379,13 @@ export default function CompanyUsers() {
         onColumnResize={onColumnResize}
         columnOrder={colOrder}
         onColumnOrderChange={onColumnOrderChange}
+        columnVisibility={colVisibility}
+        onColumnVisibilityChange={onColumnVisibilityChange}
+        savedViews={savedViews}
+        activeViewId={activeViewId}
+        onSavedViewsChange={onSavedViewsChange}
+        onActiveViewChange={onActiveViewChange}
+        onResetColumns={resetGridPrefs}
       />
 
       {inviteOpen && (
@@ -375,3 +411,4 @@ export default function CompanyUsers() {
     </div>
   );
 }
+

@@ -16,6 +16,7 @@ import { setAuth } from "../../../store/slices/authSlice";
 import { setApiSession } from "../../../store/rtk/crmApi";
 import { bootstrapLoad } from "../../../store/slices/bootstrapSlice";
 
+// Компонент InviteAcceptPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function InviteAcceptPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();

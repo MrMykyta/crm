@@ -7,6 +7,10 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState, useMemo } from "react";
 import useTabsPrefs from "../../hooks/useTabsPrefs";
 
+/**
+ * Базовый scaffold для detail-страниц:
+ * слева — master form с автосохранением, справа — связанные вкладки.
+ */
 export default function EntityDetailPage({
   id,
   load, save,
@@ -20,6 +24,13 @@ export default function EntityDetailPage({
   clearDraftOnUnmount = true,
   payloadDeps = [],
   RightTabsComponent = DetailTabs,
+  layoutClassName = "",
+  leftPaneClassName = "",
+  rightPaneClassName = "",
+  tabsClassName = "",
+  panelClassName = "",
+  formClassName = "",
+  formVariant = "",
 
   /** 👇 уникальный namespace для prefs табов (по странице) */
   tabsNamespace = "entity.detail",
@@ -35,7 +46,6 @@ export default function EntityDetailPage({
   // prefs табов: порядок+разворачивание
   const {
     orderedItems: tabsOrdered,
-    orderKeys,
     setOrderKeys,
     expanded,
     setExpanded,
@@ -66,11 +76,15 @@ export default function EntityDetailPage({
   const debounceMs = autosave?.debounceMs ?? 500;
 
   const schema = useMemo(() => schemaBuilder(i18n), [schemaBuilder, i18n]);
+  // Вспомогательный timestamp для draft/метаданных сохранения.
   const stamp = () => new Date().toISOString();
 
+  // Детерминированная сериализация payload:
+  // нужна, чтобы корректно сравнивать "что изменилось" без ложных срабатываний.
   const stableStringify = (obj) => {
     const seen = new WeakSet();
-    const stringify = (o) => {
+        // stringify: вспомогательная логика компонента.
+const stringify = (o) => {
       if (o === null || typeof o !== 'object') return JSON.stringify(o);
       if (seen.has(o)) return '"[Circular]"';
       seen.add(o);
@@ -81,10 +95,14 @@ export default function EntityDetailPage({
     return stringify(obj);
   };
 
+  // Читает черновик формы из localStorage.
   const readDraft = () => { try { const raw = localStorage.getItem(storageKey); return raw ? JSON.parse(raw) : null; } catch { return null; } };
+  // Сохраняет черновик формы в localStorage.
   const writeDraft = (obj) => { try { localStorage.setItem(storageKey, JSON.stringify(obj)); } catch {} };
+  // Удаляет черновик после успешного сохранения/размонтирования.
   const clearDraft = () => { try { localStorage.removeItem(storageKey); } catch {} };
 
+  // Собирает API-payload из формы и выравнивает пустые строковые поля.
   const makePayload = (vals) => {
     const base = toApi(vals) || {};
     const out = { ...base };
@@ -99,6 +117,7 @@ export default function EntityDetailPage({
     return buildPayload ? buildPayload(out) : out;
   };
 
+  // Базовая клиентская валидация перед autosave.
   const validate = (vals) => {
     const e = {};
     (Array.isArray(schema) ? schema : []).forEach(f => {
@@ -109,6 +128,7 @@ export default function EntityDetailPage({
     return e;
   };
 
+  // Выполняет фактическое сохранение (с защитой от параллельных запросов и no-op изменений).
   const flushSave = async () => {
     if (unmounted.current) return;
     if (inFlight.current) return;
@@ -145,6 +165,7 @@ export default function EntityDetailPage({
     }
   };
 
+  // Ставит сохранение в debounce-очередь и пишет текущий draft локально.
   const scheduleSave = () => {
     const payload = makePayload(values);
     const nowJSON = stableStringify(payload);
@@ -161,6 +182,7 @@ export default function EntityDetailPage({
 
   useEffect(() => {
     unmounted.current = false;
+    // Первая загрузка detail: тянем серверные данные и при необходимости поднимаем свежий draft.
     (async () => {
       const d = await load(id);
       setData(d);
@@ -187,13 +209,17 @@ export default function EntityDetailPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // Автосохранение при изменении формы.
   useEffect(() => { if (data != null) scheduleSave(); /* eslint-disable-next-line */ }, [values]);
+  // Автосохранение при изменении внешних зависимостей payload.
   useEffect(() => { if (data != null) scheduleSave(); /* eslint-disable-next-line */ }, payloadDeps);
 
   useEffect(() => {
     if (!saveOnExit) return;
+    // На уход со страницы сохраняем draft, чтобы не терять несохранённые изменения.
     const onBeforeUnload = () => { if (!dirtyRef.current) return; writeDraft({ values, updatedAt: stamp(), serverUpdatedAt: data?.updatedAt || null }); };
-    const onVisibilityChange = () => {
+        // onVisibilityChange: вспомогательная логика компонента.
+const onVisibilityChange = () => {
       if (document.visibilityState === "hidden" && dirtyRef.current) {
         writeDraft({ values, updatedAt: stamp(), serverUpdatedAt: data?.updatedAt || null });
       }
@@ -207,32 +233,41 @@ export default function EntityDetailPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [values, data]);
 
+  // Унифицированный setter для полей SmartForm.
   const onChange = (name, val) => setValues(v => ({ ...v, [name]: val }));
 
   if (!data) return null;
 
   return (
-    <div className={styles.wrap}>
-      <div className={styles.left}>
-        {typeof leftTop === 'function' ? leftTop({ values, onChange }) : leftTop}
+    <div className={`${styles.wrap} ${layoutClassName}`}>
+      <div
+        className={`${styles.left} ${leftPaneClassName}`}
+        data-select-boundary="1"
+        data-autocomplete-boundary="1"
+      >
+        {typeof leftTop === 'function'
+          ? leftTop({ values, onChange })
+          : leftTop}
         <FieldRenderer
           values={values}
           errors={errors}
           onChange={onChange}
           schema={schema}
           i18n={{ t }}
+          className={formClassName}
+          variant={formVariant}
         />
         {leftExtras}
         <div className={styles.autosaveHint}>
           {saving
-            ? t("common.saving")
-            : (dirtyRef.current ? t("common.unsaved") : t("common.saved"))}
+            ? t("common.saving", "Сохранение...")
+            : (dirtyRef.current ? t("common.unsaved", "Есть несохранённые изменения") : t("common.saved", "Сохранено"))}
           {saveError && <span className={styles.saveErr}> • {saveError}</span>}
         </div>
       </div>
 
-      <div className={styles.right}>
-        <div className={styles.tabsSticky}>
+      <div className={`${styles.right} ${rightPaneClassName}`}>
+        <div className={`${styles.tabsSticky} ${tabsClassName}`}>
           <TabBar
             items={tabsOrdered}
             activeKey={active}
@@ -245,10 +280,11 @@ export default function EntityDetailPage({
             animationMs={260}
           />
         </div>
-        <div className={styles.panel}>
+        <div className={`${styles.panel} ${panelClassName}`}>
           <RightTabsComponent tab={active} data={data} values={values} onChange={onChange} />
         </div>
       </div>
     </div>
   );
 }
+

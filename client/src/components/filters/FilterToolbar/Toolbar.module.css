@@ -2,25 +2,38 @@
 .toolbar{
   display:flex;
   align-items:center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-3);
-  border-bottom:1px solid var(--card-brd);
-  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  gap: var(--ui-toolbar-gap);
+  padding: var(--ui-toolbar-pad-y) var(--space-3);
+  border-bottom:1px solid var(--ui-border-soft);
+  background: color-mix(in srgb, var(--ui-surface-soft) 88%, transparent);
   -webkit-backdrop-filter: blur(var(--glass-blur));
   backdrop-filter: blur(var(--glass-blur));
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   flex-wrap: wrap; /* чтобы на узких не ломалось */
 }
 
+.inline {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-radius: 0;
+}
+
+.inline .spacer {
+  display: none;
+}
+
 /* Общие контролы */
 .input, .select{
-  height: 2.25rem; /* 36px */
+  min-height: var(--ui-control-height-md);
   box-sizing:border-box;
   font-size: var(--fs-sm);
   line-height: var(--lh-normal);
-  color: var(--text);
-  background: var(--input-bg);
-  border: 1px solid var(--card-brd);
+  color: var(--text-primary);
+  background: var(--ui-field-bg);
+  border: 1px solid var(--ui-field-border);
   border-radius: var(--radius-md);
   outline: none;
   transition: border-color var(--tr-fast), box-shadow var(--tr-fast), background var(--tr-fast);
@@ -31,15 +44,15 @@
 }
 
 .input{
-  padding: var(--space-2) var(--space-3);
+  padding: var(--ui-control-padding-y) var(--ui-control-padding-x);
   min-width: 16.25rem;  /* ~260px */
   flex: 1 1 20rem;      /* тянется, занимает остаток */
   max-width: 35rem;     /* ограничим сверху, чтобы ряд не плавал */
 }
-.input::placeholder{ color: color-mix(in srgb, var(--text) 45%, transparent); }
+.input::placeholder{ color: color-mix(in srgb, var(--text-secondary) 75%, transparent); }
 
 .select{
-  padding: calc(var(--space-2) - 2px) var(--space-3);
+  padding: calc(var(--ui-control-padding-y) - 2px) var(--ui-control-padding-x);
   min-width: 9.5rem;
   /* убираем псевдо-стрелки и нативный вид */
   background-image: none !important;
@@ -56,11 +69,12 @@
 
 /* hover/focus остаются как были */
 .input:hover, .select:hover{
-  border-color: color-mix(in srgb, var(--card-brd) 70%, var(--focus));
+  border-color: var(--ui-field-border-hover);
+  background: var(--ui-field-bg-hover);
 }
 .input:focus, .select:focus{
-  border-color: var(--focus);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus) 32%, transparent);
+  border-color: var(--ui-field-border-focus);
+  box-shadow: var(--ui-focus-ring);
 }
 
 /* Раздвигалка/правый блок */

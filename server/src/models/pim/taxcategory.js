@@ -2,6 +2,7 @@
 const {
   Model
 } = require('sequelize');
+// Инициализирует и возвращает Sequelize-модель текущей сущности.
 module.exports = (sequelize, DataTypes) => {
   class TaxCategory extends Model {
     /**
@@ -16,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
         as:'company' 
       });
       TaxCategory.hasMany(models.Product, { 
-        foreignKey:'tax_category_id', 
+        foreignKey:'taxCategoryId', 
         as:'products' 
       });
     }
@@ -61,3 +62,4 @@ module.exports = (sequelize, DataTypes) => {
   });
   return TaxCategory;
 };
+

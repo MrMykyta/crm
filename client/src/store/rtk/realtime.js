@@ -6,12 +6,14 @@ const API_ROOT =
 
 let currentES = null;
 
+// normIds: вспомогательная логика для слоя RTK Query.
 function normIds(raw) {
   if (raw == null) return [];
   if (Array.isArray(raw)) return raw.map(String);
   return [String(raw)];
 }
 
+// mapEventToTags: преобразует данные в нужный формат для слоя RTK Query.
 function mapEventToTags(msg) {
   const ids = normIds(msg.ids ?? msg.id);
 
@@ -72,6 +74,7 @@ function mapEventToTags(msg) {
   return [];
 }
 
+// initRealtime: вспомогательная логика для слоя RTK Query.
 export function initRealtime(store, { url = `${API_ROOT}/sse` } = {}) {
   try { currentES?.close(); } catch {}
   currentES = null;
@@ -93,7 +96,8 @@ export function initRealtime(store, { url = `${API_ROOT}/sse` } = {}) {
     window.dispatchEvent(new CustomEvent('realtime:ready', { detail: { es } }));
   }
 
-  const handle = (raw) => {
+    // handle: обрабатывает пользовательское действие для слоя RTK Query.
+const handle = (raw) => {
     let msg = null;
     try { msg = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return; }
     if (!msg || typeof msg !== 'object') return;
@@ -106,12 +110,14 @@ export function initRealtime(store, { url = `${API_ROOT}/sse` } = {}) {
     }
   };
 
-  es.onmessage = (e) => handle(e.data);
+    // onmessage: вспомогательная логика для слоя RTK Query.
+es.onmessage = (e) => handle(e.data);
   es.addEventListener('entity', (e) => handle(e.data));
   es.addEventListener('ready', () => {});
   es.addEventListener('ping', () => {});
 
-  es.onerror = () => {
+    // onerror: вспомогательная логика для слоя RTK Query.
+es.onerror = () => {
     // тут можно залогировать если надо
   };
 

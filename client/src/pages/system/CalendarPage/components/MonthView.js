@@ -4,6 +4,7 @@ import s from "../CalendarPage.module.css";
 import WeekdaysHeader from "./WeekdaysHeader";
 import MonthGridMonth from "./MonthGridMonth";
 
+// Компонент MonthView: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function MonthView({ baseDate, today, setCursor, onEventOpen }) {
   return (
     <div className={s.monthShell}>

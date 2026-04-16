@@ -2,9 +2,11 @@
 'use strict';
 const { Model } = require('sequelize');
 
+// Инициализирует и возвращает Sequelize-модель текущей сущности.
 module.exports = (sequelize, DataTypes) => {
   class TaskUserParticipant extends Model {
-    static associate() {}
+        // Описывает associations этой модели с другими сущностями.
+static associate() {}
   }
 
   TaskUserParticipant.init(

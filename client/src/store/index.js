@@ -22,7 +22,8 @@ const listenerMiddleware = createListenerMiddleware();
 
 listenerMiddleware.startListening({
   actionCreator: setAuth,
-  effect: (action, api) => {
+    // effect: вспомогательная логика модуля.
+effect: (action, api) => {
     const prevCompanyId = api.getOriginalState()?.auth?.companyId ?? null;
     const hasCompanyId = Object.prototype.hasOwnProperty.call(action.payload || {}, 'companyId');
     const nextCompanyId = hasCompanyId ? action.payload.companyId : prevCompanyId;
@@ -34,7 +35,8 @@ listenerMiddleware.startListening({
 
 listenerMiddleware.startListening({
   actionCreator: logout,
-  effect: (_action, api) => {
+    // effect: вспомогательная логика модуля.
+effect: (_action, api) => {
     api.dispatch(crmApi.util.resetApiState());
   },
 });
@@ -48,11 +50,14 @@ const rootReducer = (state, action) => {
 };
 
 // экшен для ресета (будем дергать из sessionApi.logout)
-export const resetApp = () => ({ type: 'APP/RESET' });
+export // resetApp : reset app.
+// resetApp: вспомогательная логика модуля.
+const resetApp = () => ({ type: 'APP/RESET' });
 
 const store = configureStore({
   reducer: rootReducer,
-  middleware: (getDefault) => getDefault().prepend(listenerMiddleware.middleware).concat(crmApi.middleware),
+    // middleware: перехватывает запрос и применяет правила обработки.
+middleware: (getDefault) => getDefault().prepend(listenerMiddleware.middleware).concat(crmApi.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 
@@ -60,9 +65,11 @@ setupListeners(store.dispatch);
 
 // SSE после логина (когда есть токен и companyId)
 let stopRealtime = null;
+// startRealtime: вспомогательная логика модуля.
 export function startRealtime() {
   if (stopRealtime) stopRealtime();
   stopRealtime = initRealtime(store);
 }
 
 export default store;
+

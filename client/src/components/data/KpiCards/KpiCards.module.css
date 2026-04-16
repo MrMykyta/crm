@@ -42,11 +42,11 @@
 }
 
 .kpiVal {
-  font-size: 22px;
+  font-size: var(--font-size-22);
   font-weight: 800;
 }
 
 .kpiLabel {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--font-size-12);
 }

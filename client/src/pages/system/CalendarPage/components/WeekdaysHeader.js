@@ -2,6 +2,7 @@
 import React from "react";
 import s from "../CalendarPage.module.css";
 
+// Компонент WeekdaysHeader: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function WeekdaysHeader() {
   const days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
   return (

@@ -38,16 +38,19 @@ export default function AvatarEditable({
   useEffect(() => {
     if (!safeValue) return;
     const img = new Image();
-    img.onload = () => {
+        // onload: вспомогательная логика компонента.
+img.onload = () => {
       if (img.naturalWidth && img.naturalHeight) {
         setRatio(img.naturalWidth / img.naturalHeight);
       }
     };
-    img.onerror = () => setRatio(1);
+        // onerror: вспомогательная логика компонента.
+img.onerror = () => setRatio(1);
     img.src = safeValue;
   }, [safeValue]);
 
-  const extractUrl = (out) => {
+    // extractUrl: вспомогательная логика компонента.
+const extractUrl = (out) => {
     if (!out) return "";
     if (typeof out === "string") return out;
     const id = out.id || out.data?.id;
@@ -55,17 +58,21 @@ export default function AvatarEditable({
     return out.url || out.data?.url || out.path || out.location || "";
   };
 
-  const openModal = () => {
+    // openModal: открывает связанный UI-элемент.
+const openModal = () => {
     setErr("");
     setUrlDraft("");
     setOpen(true);
   };
-  const closeModal = () => {
+    // closeModal: закрывает связанный UI-элемент.
+const closeModal = () => {
     if (!busy) setOpen(false);
   };
-  const pickFile = () => fileRef.current?.click();
+    // pickFile: вспомогательная логика компонента.
+const pickFile = () => fileRef.current?.click();
 
-  const handleFile = async (f) => {
+    // handleFile: обработчик пользовательского действия.
+const handleFile = async (f) => {
     if (!f || !uploader) return;
     setErr("");
     setBusy(true);
@@ -81,7 +88,8 @@ export default function AvatarEditable({
     }
   };
 
-  const applyUrl = async () => {
+    // applyUrl: вспомогательная логика компонента.
+const applyUrl = async () => {
     const u = String(urlDraft || "").trim();
     if (!u) return;
     setErr("");
@@ -192,3 +200,4 @@ export default function AvatarEditable({
     </>
   );
 }
+

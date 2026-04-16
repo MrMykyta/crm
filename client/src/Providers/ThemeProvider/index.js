@@ -15,8 +15,19 @@ import {
 } from "../../store/rtk/userApi";
 
 const ThemeCtx = createContext(null);
-export const useTheme = () => useContext(ThemeCtx);
+export // useTheme : use theme.
+// useTheme: инкапсулирует переиспользуемую логику.
+const useTheme = () => useContext(ThemeCtx);
 
+const TEXT_SIZE_MULTIPLIERS = {
+  small: 0.94,
+  medium: 1,
+  large: 1.1,
+};
+
+const DENSITY_VALUES = new Set(["compact", "comfortable", "spacious"]);
+
+// ThemeProvider: вспомогательная логика модуля.
 export default function ThemeProvider({ children }) {
   // ждём авторизацию из redux
   const accessToken = useSelector((s) => s.auth?.accessToken);
@@ -53,7 +64,8 @@ export default function ThemeProvider({ children }) {
   useEffect(() => {
     if (typeof matchMedia === "undefined") return;
     const mq = matchMedia("(prefers-color-scheme: dark)");
-    const onChange = (e) => setSystem(e.matches ? "dark" : "light");
+        // onChange: вспомогательная логика модуля.
+const onChange = (e) => setSystem(e.matches ? "dark" : "light");
     mq.addEventListener?.("change", onChange);
     return () => mq.removeEventListener?.("change", onChange);
   }, []);
@@ -68,9 +80,18 @@ export default function ThemeProvider({ children }) {
 
   useEffect(() => {
     const scale = Number(appearance?.fontScale ?? 100);
-    const mult = Math.min(200, Math.max(70, scale)) / 100;
+    const textSize = String(appearance?.textSize || "medium");
+    const textSizeMult = TEXT_SIZE_MULTIPLIERS[textSize] ?? TEXT_SIZE_MULTIPLIERS.medium;
+    const mult = (Math.min(200, Math.max(70, scale)) / 100) * textSizeMult;
     document.documentElement.style.setProperty("--font-multiplier", mult);
-  }, [appearance?.fontScale]);
+    document.documentElement.setAttribute("data-text-size", textSize);
+  }, [appearance?.fontScale, appearance?.textSize]);
+
+  useEffect(() => {
+    const density = String(appearance?.density || "comfortable");
+    const normalized = DENSITY_VALUES.has(density) ? density : "comfortable";
+    document.documentElement.setAttribute("data-density", normalized);
+  }, [appearance?.density]);
 
   const companyId = companyIdRedux;
 
@@ -110,7 +131,8 @@ export default function ThemeProvider({ children }) {
 
   useEffect(() => () => clearTimeout(saveTimerRef.current), []);
 
-  const parsePrefs = (raw) => {
+    // parsePrefs: парсит входные данные.
+const parsePrefs = (raw) => {
     const pref = raw?.pref ?? raw ?? {};
     const themeMode = pref.themeMode ?? pref.theme ?? undefined;
     const nextAppearance = { ...(pref.appearance || {}) };
@@ -134,25 +156,30 @@ export default function ThemeProvider({ children }) {
     }
   }, [serverPrefs]);
 
-  const setMode = (m) => {
+  const setMode = useCallback((m) => {
     setModeState(m);
     saveToBackend();
-  };
-  const setAppearance = (partial) => {
+  }, [saveToBackend]);
+
+  const setAppearance = useCallback((partialOrUpdater) => {
     setAppearanceState((prev) => {
-      const next = { ...prev, ...(partial || {}) };
-      saveToBackend(partial);
+      const patch = typeof partialOrUpdater === 'function'
+        ? (partialOrUpdater(prev) || {})
+        : (partialOrUpdater || {});
+      const next = { ...prev, ...patch };
+      saveToBackend(patch);
       return next;
     });
-  };
-  const setBackground = (urlOrNull) => {
+  }, [saveToBackend]);
+
+  const setBackground = useCallback((urlOrNull) => {
     setAppearanceState((prev) => {
       const patch = { backgroundPath: urlOrNull || "" };
       const next = { ...prev, ...patch };
       saveToBackend(patch);
       return next;
     });
-  };
+  }, [saveToBackend]);
 
   const value = useMemo(
     () => ({
@@ -163,8 +190,9 @@ export default function ThemeProvider({ children }) {
       setAppearance,
       setBackground,
     }),
-    [mode, resolved, appearance]
+    [appearance, mode, resolved, setAppearance, setBackground, setMode]
   );
 
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;
 }
+

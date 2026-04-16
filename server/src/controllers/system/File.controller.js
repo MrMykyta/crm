@@ -10,18 +10,34 @@ const { File } = require('../../models');
 const { STORAGE_ROOT, SIGNING_SECRET, SIGNED_URL_TTL_SEC } = require('../../config/files');
 
 const INLINE_PREVIEW_MIME = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
   'application/pdf',
+  'text/plain',
+  'text/csv',
+  'application/json',
+  'text/json',
+  'application/xml',
+  'text/xml',
   'audio/mpeg',
   'audio/ogg',
   'audio/wav',
+  'audio/mp4',
+  'audio/x-m4a',
   'video/mp4',
   'video/webm',
+  'video/quicktime',
+  'video/x-msvideo',
+  'video/x-matroska',
 ]);
 
+// Проверяет, можно ли безопасно отдавать файл в inline-просмотр.
+function canInlinePreview(mime = '') {
+  const normalized = String(mime || '').toLowerCase();
+  if (!normalized) return false;
+  if (normalized.startsWith('image/')) return true;
+  return INLINE_PREVIEW_MIME.has(normalized);
+}
+
+// Проверяет и разбирает параметры подписанного URL.
 function parseSignedQuery(req) {
   const { id } = req.params;
   const expStr = String(req.query?.exp || '').trim();
@@ -51,19 +67,33 @@ function parseSignedQuery(req) {
   return { id, exp, cid };
 }
 
+// Формирует абсолютный путь к файлу в файловом хранилище.
 function absolutePath(storagePath) {
   // storagePath хранится как относительный путь от STORAGE_ROOT
   return path.join(STORAGE_ROOT, storagePath);
 }
 
+// Определяет корректный Content-Disposition по MIME-типу файла.
 function dispositionForMime(mime = '') {
-  if (!mime) return 'attachment';
-  if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/')) {
+  const normalized = String(mime || '').toLowerCase();
+  if (!normalized) return 'attachment';
+  if (normalized.startsWith('image/') || normalized.startsWith('video/') || normalized.startsWith('audio/')) {
+    return 'inline';
+  }
+  if (
+    normalized === 'application/pdf' ||
+    normalized.startsWith('text/') ||
+    normalized === 'application/json' ||
+    normalized === 'text/json' ||
+    normalized === 'application/xml' ||
+    normalized === 'text/xml'
+  ) {
     return 'inline';
   }
   return 'attachment';
 }
 
+// Подписывает URL для временного inline-доступа к файлу.
 function signInlineUrl(id, exp, cid) {
   return crypto
     .createHmac('sha256', SIGNING_SECRET)
@@ -71,6 +101,7 @@ function signInlineUrl(id, exp, cid) {
     .digest('hex');
 }
 
+// Сравнивает подписи безопасным способом без утечки по времени.
 function timingSafeEqual(a, b) {
   try {
     const ba = Buffer.from(String(a));
@@ -82,6 +113,7 @@ function timingSafeEqual(a, b) {
   }
 }
 
+// Нормализует ownerType файла к поддерживаемому формату.
 function normalizeOwnerType(value) {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -89,6 +121,7 @@ function normalizeOwnerType(value) {
   return lower === 'chatmessage' ? 'chatMessage' : lower;
 }
 
+// Обрабатывает загрузку файла и сохраняет метаданные.
 module.exports.upload = async (req, res, next) => {
   try {
     const user = req.user;
@@ -123,6 +156,7 @@ module.exports.upload = async (req, res, next) => {
   }
 };
 
+// Возвращает список сущностей с учётом фильтров и пагинации.
 module.exports.list = async (req, res, next) => {
   try {
     const user = req.user;
@@ -146,6 +180,7 @@ module.exports.list = async (req, res, next) => {
   }
 };
 
+// Возвращает подписанный URL для безопасного доступа к файлу.
 module.exports.signedUrl = async (req, res, next) => {
   try {
     const user = req.user;
@@ -165,7 +200,7 @@ module.exports.signedUrl = async (req, res, next) => {
     if (row.visibility === 'public') {
       throw new ApplicationError('VALIDATION_ERROR: public files use /api/public-files', 400);
     }
-    if (!row.mime || !INLINE_PREVIEW_MIME.has(row.mime)) {
+    if (!canInlinePreview(row.mime)) {
       throw new ApplicationError('VALIDATION_ERROR: inline preview not allowed for this mime', 415);
     }
 
@@ -187,6 +222,7 @@ module.exports.signedUrl = async (req, res, next) => {
   }
 };
 
+// Отдаёт файл по подписанному URL в режиме скачивания.
 module.exports.signedDownload = async (req, res, next) => {
   try {
     const user = req.user;
@@ -225,6 +261,7 @@ module.exports.signedDownload = async (req, res, next) => {
   }
 };
 
+// Отдаёт приватный файл после проверки доступа.
 module.exports.downloadPrivate = async (req, res, next) => {
   try {
     const user = req.user;
@@ -256,6 +293,7 @@ module.exports.downloadPrivate = async (req, res, next) => {
   }
 };
 
+// Отдаёт файл для встроенного просмотра в браузере.
 module.exports.inline = async (req, res, next) => {
   try {
     const { id, exp, cid } = parseSignedQuery(req);
@@ -270,7 +308,7 @@ module.exports.inline = async (req, res, next) => {
     if (row.visibility === 'public') {
       throw new ApplicationError('VALIDATION_ERROR: public files use /api/public-files', 400);
     }
-    if (!row.mime || !INLINE_PREVIEW_MIME.has(row.mime)) {
+    if (!canInlinePreview(row.mime)) {
       throw new ApplicationError('VALIDATION_ERROR: inline preview not allowed for this mime', 415);
     }
 
@@ -292,6 +330,7 @@ module.exports.inline = async (req, res, next) => {
   }
 };
 
+// Отдаёт файл c inline-disposition через защищённый endpoint.
 module.exports.downloadInline = async (req, res, next) => {
   try {
     const { id, exp, cid } = parseSignedQuery(req);
@@ -325,6 +364,7 @@ module.exports.downloadInline = async (req, res, next) => {
   }
 };
 
+// Отдаёт публичный файл без авторизационной проверки.
 module.exports.downloadPublic = async (req, res, next) => {
   try {
     const { publicKey } = req.params;
@@ -348,6 +388,7 @@ module.exports.downloadPublic = async (req, res, next) => {
   }
 };
 
+// Удаляет сущность по идентификатору.
 module.exports.remove = async (req, res, next) => {
   try {
     const user = req.user;
@@ -362,3 +403,4 @@ module.exports.remove = async (req, res, next) => {
     next(err);
   }
 };
+

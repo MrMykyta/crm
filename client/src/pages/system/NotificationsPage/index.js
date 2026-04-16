@@ -18,10 +18,12 @@ import s from "./NotificationsPage.module.css";
 
 const PAGE_SIZE = 100;
 
+// mapEntityLabel: преобразует данные в формат компонента.
 function mapEntityLabel(t, et) {
   return getNotificationEntityLabel(t, et);
 }
 
+// groupByDate: вспомогательная логика компонента.
 function groupByDate(items) {
   const now = new Date();
   const todayStr = now.toDateString();
@@ -53,6 +55,7 @@ function groupByDate(items) {
   return out;
 }
 
+// Компонент NotificationsPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function NotificationsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -138,17 +141,20 @@ export default function NotificationsPage() {
   const hasNextPage = items.length === PAGE_SIZE;
   const hasPrevPage = page > 1;
 
-  const goPrev = () => {
+    // goPrev: вспомогательная логика компонента.
+const goPrev = () => {
     if (!hasPrevPage) return;
     setPage((p) => Math.max(1, p - 1));
   };
 
-  const goNext = () => {
+    // goNext: вспомогательная логика компонента.
+const goNext = () => {
     if (!hasNextPage || isFetching) return;
     setPage((p) => p + 1);
   };
 
-  const handleMarkAll = async () => {
+    // handleMarkAll: обработчик пользовательского действия.
+const handleMarkAll = async () => {
     if (!unreadCount) return;
     try {
       await markAll().unwrap();
@@ -158,13 +164,15 @@ export default function NotificationsPage() {
     }
   };
 
-  const formatDateTime = (iso) => {
+    // formatDateTime: форматирует данные для отображения.
+const formatDateTime = (iso) => {
     if (!iso) return "";
     const d = new Date(iso);
     return d.toLocaleString();
   };
 
-  const openEntity = (n) => {
+    // openEntity: открывает связанный UI-элемент.
+const openEntity = (n) => {
     const type = (n.entityType || "").toLowerCase();
     const id = n.entityId;
     if (!type || !id) return;
@@ -174,14 +182,14 @@ export default function NotificationsPage() {
         navigate(`/main/tasks/${id}`);
         break;
       case "counterparty":
-        navigate(`/main/crm/counterparties/${id}`);
+        navigate(`/main/counterparties/${id}`);
         break;
       case "lead":
-        navigate(`/main/crm/leads/${id}`);
+        navigate(`/main/leads/${id}`);
         break;
       case "client":
       case "contact":
-        navigate(`/main/crm/clients/${id}`);
+        navigate(`/main/clients/${id}`);
         break;
       case "user":
         navigate(`/main/users/${id}`);
@@ -191,7 +199,8 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleClickItem = async (n) => {
+    // handleClickItem: обработчик пользовательского действия.
+const handleClickItem = async (n) => {
     if (!n.isRead) {
       try {
         await markRead(n.id).unwrap();
@@ -203,17 +212,20 @@ export default function NotificationsPage() {
     openEntity(n);
   };
 
-  const toggleUnread = () => {
+    // toggleUnread: переключает состояние компонента.
+const toggleUnread = () => {
     setPage(1);
     setUnreadOnly((v) => !v);
   };
 
-  const changeTypeFilter = (val) => {
+    // changeTypeFilter: вспомогательная логика компонента.
+const changeTypeFilter = (val) => {
     setPage(1);
     setTypeFilter(val);
   };
 
-  const renderGroupTitle = (key) => {
+    // renderGroupTitle: описывает рендер соответствующего блока UI.
+const renderGroupTitle = (key) => {
     switch (key) {
       case "today":
         return t("notifications.group.today", "Сегодня");

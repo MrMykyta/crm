@@ -218,7 +218,7 @@
   display: grid;
   place-items: center;
   font-weight: 800;
-  letter-spacing: .02em;
+  letter-spacing: .2px;
   font-size: clamp(10px, calc(var(--fs-lg) * .9), calc(var(--icon-box, 40px) * .42));
   color: #fff;
   background: linear-gradient(135deg, var(--primary-start), var(--primary-end));

@@ -4,6 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useVerifyEmailMutation } from '../../../store/rtk/authApi';
 import s from './Verify.module.css';
 
+// Компонент VerifyEmail: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function VerifyEmail() {
   const [sp] = useSearchParams();
   const token = sp.get('token');

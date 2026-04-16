@@ -10,8 +10,11 @@ const { addContacts } = require('./contactPointService');
 const tokenService = require('../../utils/tokenService');
 
 const UUID_RE = /^[0-9a-fA-F-]{32,36}$/;
+// isFileApiUrl: проверяет бизнес-условие и возвращает boolean.
 const isFileApiUrl = (v) => typeof v === 'string' && v.includes('/api/files/');
+// isHttpUrl: проверяет бизнес-условие и возвращает boolean.
 const isHttpUrl = (v) => /^https?:\/\/.+/i.test(v);
+// validateFileIdField: валидирует входные данные и выбрасывает ошибку при нарушениях.
 const validateFileIdField = (field, value) => {
   if (value === undefined) return undefined;
   if (value === null || value === '') return null;
@@ -27,6 +30,7 @@ const validateFileIdField = (field, value) => {
   return value;
 };
 
+// validateAvatarField: валидирует входные данные и выбрасывает ошибку при нарушениях.
 const validateAvatarField = (field, value) => {
   if (value === undefined) return undefined;
   if (value === null || value === '') return null;
@@ -42,6 +46,7 @@ const validateAvatarField = (field, value) => {
 };
 
 
+// toPublic: выполняет вспомогательную бизнес-логику сервиса.
 function toPublic(u) {
   if (!u) return null;
   return {
@@ -54,6 +59,7 @@ function toPublic(u) {
 }
 
 
+// register: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.register = async ({ email, password, firstName, lastName, verificationToken, expiresAt}, meta={}) => {
   const exists = await User.findOne({ where: { email } });
   if (exists) {
@@ -81,6 +87,7 @@ module.exports.register = async ({ email, password, firstName, lastName, verific
   return { accessToken, refreshToken };
 };
 
+// login: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.login = async ({ email, password, companyId }, meta = {}) => {
   let user = await User.findOne({ where: { email } });
   if (!user) throw new Error('errors.loginFailed');
@@ -184,6 +191,7 @@ module.exports.login = async ({ email, password, companyId }, meta = {}) => {
   };
 };
 
+// loginFromCompany: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.loginFromCompany = async ({userId, companyId}) => {
   try{
     const user = await User.findByPk(userId, {
@@ -234,6 +242,7 @@ module.exports.loginFromCompany = async ({userId, companyId}) => {
   
 }
 
+// getMe: возвращает данные по входным параметрам сервиса.
 module.exports.getMe = async (userId) => {
   const user = await User.findByPk(userId, {
     attributes: ['id', 'email', 'firstName', 'lastName', 'isActive', 'lastLoginAt', 'emailVerifiedAt','avatarUrl', 'createdBy', 'createdAt'],
@@ -264,6 +273,7 @@ module.exports.getMe = async (userId) => {
   return safeUser;
 };
 
+// updateMe: обновляет запись и возвращает актуальные данные.
 module.exports.updateMe = async (userId, companyId, data = {}) => {
   if (companyId) {
     const membership = await UserCompany.findOne({
@@ -324,6 +334,7 @@ module.exports.updateMe = async (userId, companyId, data = {}) => {
   }
 };
 
+// getUserCompanies: возвращает данные по входным параметрам сервиса.
 module.exports.getUserCompanies = async (userId) => {
   return Company.findAll({
     include: [
@@ -344,6 +355,7 @@ module.exports.getUserCompanies = async (userId) => {
   });
 };
 
+// findPublicByEmail: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.findPublicByEmail = async (email) => {
   const user = await User.findOne({
     where: { email: email.toLowerCase() },
@@ -471,3 +483,4 @@ exports.updateById = async (userId, companyId, payload = {}) => {
     throw e;
   }
 };
+

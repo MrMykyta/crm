@@ -1,7 +1,8 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     await queryInterface.createTable('role_permissions', {
       roleId: {
         type: Sequelize.UUID,
@@ -45,7 +46,8 @@ module.exports = {
       name: 'role_permissions_pkey'
     });
   },
-  async down(queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('role_permissions');
   }
 };

@@ -2,6 +2,7 @@
 import React from "react";
 import s from "../CalendarPage.module.css";
 
+// Компонент MiniMonth: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function MiniMonth({ date, today, onPick }) {
   const monthLabel = date.toLocaleString("ru-RU", {
     month: "long",
@@ -29,6 +30,7 @@ export default function MiniMonth({ date, today, onPick }) {
   );
 }
 
+// Компонент MiniMonthGrid: отвечает за отображение UI и обработку взаимодействий пользователя.
 function MiniMonthGrid({ baseDate, today, onPick }) {
   const year = baseDate.getFullYear();
   const month = baseDate.getMonth();

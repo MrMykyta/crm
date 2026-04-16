@@ -1,23 +1,23 @@
 # ARCHITECTURE QUICKMAP
 
 ## 1) TL;DR
-1. Backend entrypoint: [`server/index.js`](../index.js), app assembly: [`server/app.js`](../app.js).
-2. API mounts in `app.js`: `app.use('/api', rootRouter)` + `mountAll(app, '/api')`.
-3. Chat HTTP module mounts via registry as `/api/chat` (not via `rootRouter`).
-4. Smoke checks: [`server/scripts/smoke.js`](../scripts/smoke.js), run `cd server && npm run smoke`.
-5. Main non-break contracts: auth+validation error format, chat legacy payloads for reactions/markRead.
+1. Точка входа backend: [`server/index.js`](../index.js), сборка приложения: [`server/app.js`](../app.js).
+2. API монтируется в `app.js`: `app.use('/api', rootRouter)` + `mountAll(app, '/api')`.
+3. HTTP-модуль чата монтируется через registry как `/api/chat` (не через `rootRouter`).
+4. Smoke-проверки: [`server/scripts/smoke.js`](../scripts/smoke.js), запуск `cd server && npm run smoke`.
+5. Критичные контракты: формат auth/validation ошибок и legacy payload у chat reactions/markRead.
 
-## 2) Repository Map (key folders)
-- Server: [`server/`](../)
+## 2) Карта репозитория (ключевые папки)
+- Сервер: [`server/`](../)
   - [`server/src/routes`](../src/routes)
   - [`server/src/controllers`](../src/controllers)
   - [`server/src/services`](../src/services)
   - [`server/src/middleware`](../src/middleware)
   - [`server/src/socket`](../src/socket)
   - [`server/src/system`](../src/system), [`server/src/wms`](../src/wms)
-- Client chat UI: [`client/src/pages/Chat`](../../client/src/pages/Chat)
+- Chat UI клиента: [`client/src/pages/Chat`](../../client/src/pages/Chat)
 
-### Directory tree (depth 3): `server/src`
+### Дерево каталогов (depth 3): `server/src`
 ```txt
 server/src
 server/src/acl
@@ -82,7 +82,7 @@ server/src/wms
 server/src/wms/schemas
 ```
 
-### Directory tree (depth 3): `client/src/pages/Chat`
+### Дерево каталогов (depth 3): `client/src/pages/Chat`
 ```txt
 client/src/pages/Chat
 client/src/pages/Chat/ChatCreateDirect
@@ -100,59 +100,59 @@ client/src/pages/Chat/hooks
 client/src/pages/Chat/utils
 ```
 
-## 3) Server Entrypoints
+## 3) Точки входа сервера
 - HTTP server/bootstrap: [`server/index.js`](../index.js)
   - `http.createServer(app)`
-  - socket init via `initSocket(server)`
-- Express app composition: [`server/app.js`](../app.js)
+  - инициализация сокетов через `initSocket(server)`
+- Сборка Express-приложения: [`server/app.js`](../app.js)
   - security middleware, parsers, routes, errorHandler
   - `/health`, `/api/health`
-  - `/api` root mount + module registry mount
+  - монтирование `/api` + module registry
 
-## 4) Request Pipeline (current order)
-1. `requestContext` (requestId/log context): [`server/src/middleware/requestContext.js`](../src/middleware/requestContext.js)
+## 4) Request pipeline (текущий порядок)
+1. `requestContext` (requestId/лог-контекст): [`server/src/middleware/requestContext.js`](../src/middleware/requestContext.js)
 2. security/misc (`helmet`, `compression`, rate-limit, `cors`): [`server/app.js`](../app.js)
 3. body parsers (`express.json`, `express.urlencoded`)
 4. routes (`/api` rootRouter + module registry)
-5. global `errorHandler` last: [`server/src/middleware/errorHandler.js`](../src/middleware/errorHandler.js)
+5. глобальный `errorHandler` последним: [`server/src/middleware/errorHandler.js`](../src/middleware/errorHandler.js)
 
-Where auth context is built:
+Где формируется auth-контекст:
 - [`server/src/middleware/auth.js`](../src/middleware/auth.js)
-  - sets `req.companyId`
-  - sets `req.user = { id, role, permissions, membership, companyId }`
+  - выставляет `req.companyId`
+  - выставляет `req.user = { id, role, permissions, membership, companyId }`
 
-Where `companyId` is guarded:
+Где guard по `companyId`:
 - [`server/src/middleware/companyIdGuard.js`](../src/middleware/companyIdGuard.js)
-  - rejects explicit `companyId` in `body/query/params`.
+  - запрещает явный `companyId` в `body/query/params`.
 
-## 5) Error/Response Contracts
+## 5) Контракты ошибок/ответов
 - Response helper: [`server/src/http/response.js`](../src/http/response.js)
   - `ok(res, data) -> { data }`
   - `created(res, data) -> { data }`
   - `noContent(res) -> 204`
   - `fail(res, status, message, details?, code?) -> { message, code?, details? }`
-- Global error JSON: [`server/src/middleware/errorHandler.js`](../src/middleware/errorHandler.js)
-  - normalized output: `{ message, code?, details? }`
-  - no stack in production.
-- Base error class: [`server/src/errors/AppError.js`](../src/errors/AppError.js)
-- Compatibility layer (deprecated): [`server/src/errors/ApplicationError.js`](../src/errors/ApplicationError.js)
+- Глобальный формат ошибок: [`server/src/middleware/errorHandler.js`](../src/middleware/errorHandler.js)
+  - нормализованный output: `{ message, code?, details? }`
+  - в production без stack.
+- Базовый класс ошибки: [`server/src/errors/AppError.js`](../src/errors/AppError.js)
+- Compatibility-слой (deprecated): [`server/src/errors/ApplicationError.js`](../src/errors/ApplicationError.js)
 
-## 6) Routing Map
+## 6) Routing map
 Root API router: [`server/src/routes/rootRouter.js`](../src/routes/rootRouter.js)
 
-Main domains mounted under `/api`:
+Основные домены под `/api`:
 - `/auth` -> `system/authRouter`
 - `/users`, `/companies`, `/members`, `/departments`, `/counterparties`, `/contact*`, `/deals`, `/tasks`, `/notes`
 - `/warehouses`, `/locations`, `/inventory-*`, `/receipts`, `/transfers`, `/shipments`, `/adjustments`, `/cycle-counts`
-- `/products`, `/brands`, `/categories`, `/attributes`, `/channels`, `/price-lists`, etc.
+- `/products`, `/brands`, `/categories`, `/attributes`, `/channels`, `/price-lists`, и т.д.
 - `/files`, `/public-files`, `/notifications`, `/acl`, `/system`
 
-Chat mount:
-- module registration: [`server/src/modules/systemChatModule.js`](../src/modules/systemChatModule.js)
+Монтирование чата:
+- регистрация модуля: [`server/src/modules/systemChatModule.js`](../src/modules/systemChatModule.js)
 - registry: [`server/src/lib/moduleRegistry.js`](../src/lib/moduleRegistry.js)
-- final URL prefix: `/api/chat/*`
+- итоговый префикс: `/api/chat/*`
 
-Critical routes (do not break):
+Критичные маршруты (не ломать):
 - `POST /api/auth/login`
 - `POST /api/auth/refresh`
 - `GET /api/warehouses`
@@ -160,18 +160,18 @@ Critical routes (do not break):
 - `POST /api/chat/rooms/:roomId/messages`
 - `GET /api/health`
 
-## 7) Smoke Tests
-- Script: [`server/scripts/smoke.js`](../scripts/smoke.js)
-- Checks:
+## 7) Smoke tests
+- Скрипт: [`server/scripts/smoke.js`](../scripts/smoke.js)
+- Проверяет:
   - `GET /api/health -> 200`
-  - `POST /api/auth/login` empty body -> `400`
-  - `POST /api/auth/refresh` empty body -> `400`
-  - `GET /api/warehouses` no token -> `401`
-  - `GET /api/chat/rooms` no token -> `401`
-- Why useful: validates route wiring, auth middleware, validation, error format.
-- Extend pattern: add `{ method, path, expectedStatus, body?, expectData?, expectMessage? }` in `checks`.
+  - `POST /api/auth/login` с пустым body -> `400`
+  - `POST /api/auth/refresh` с пустым body -> `400`
+  - `GET /api/warehouses` без токена -> `401`
+  - `GET /api/chat/rooms` без токена -> `401`
+- Зачем: проверяет роутинг, auth middleware, валидацию и формат ошибок.
+- Как расширять: добавлять записи в `checks` вида `{ method, path, expectedStatus, body?, expectData?, expectMessage? }`.
 
-## 8) Chat Module Map (server)
+## 8) Карта chat module (server)
 HTTP flow:
 1. Router: [`server/src/routes/system/chat/index.js`](../src/routes/system/chat/index.js)
 2. Controller: [`server/src/controllers/system/chat/Chat.controller.js`](../src/controllers/system/chat/Chat.controller.js)
@@ -183,7 +183,7 @@ Socket flow:
 - chat handlers: [`server/src/socket/chatSocket.js`](../src/socket/chatSocket.js)
 - emit helper: [`server/src/socket/chatEmitter.js`](../src/socket/chatEmitter.js)
 
-Chat endpoints (mounted as `/api/chat`):
+Chat endpoints (монтируются как `/api/chat`):
 - `GET /rooms`
 - `POST /direct`
 - `POST /group`
@@ -200,30 +200,29 @@ Chat endpoints (mounted as `/api/chat`):
 - `DELETE /messages/:messageId/reactions/:emoji`
 - `PATCH /rooms/:roomId`
 
-Legacy payloads intentionally preserved (frontend contract):
+Legacy payload (осознанно сохранены для фронтового контракта):
 - `GET /messages/:messageId/reactions` -> `{ reactions }`
 - `POST /messages/:messageId/reactions` -> legacy `payload`
 - `DELETE /messages/:messageId/reactions/:emoji` -> legacy `payload`
 - `POST /rooms/:roomId/read` -> legacy `result`
 
-## 9) Chat UI Map (client)
-- Chat container/orchestration: [`client/src/pages/Chat/ChatWindow/index.js`](../../client/src/pages/Chat/ChatWindow/index.js)
-- Context menu (absolute in chat container): [`client/src/pages/Chat/components/MessageContextMenu/index.js`](../../client/src/pages/Chat/components/MessageContextMenu/index.js)
-- Position calculator (clamp/overflow rules): [`client/src/pages/Chat/utils/calcFloatingPosition.js`](../../client/src/pages/Chat/utils/calcFloatingPosition.js)
-- Linkify util (safe, no `dangerouslySetInnerHTML`): [`client/src/utils/linkifyMessage.js`](../../client/src/utils/linkifyMessage.js)
-- Message text renderer: [`client/src/pages/Chat/components/ChatMessages/index.js`](../../client/src/pages/Chat/components/ChatMessages/index.js)
-- CSS for links/menu/reactions: [`client/src/pages/Chat/ChatPage.module.css`](../../client/src/pages/Chat/ChatPage.module.css)
+## 9) Карта Chat UI (client)
+- Контейнер/оркестрация чата: [`client/src/pages/Chat/ChatWindow/index.js`](../../client/src/pages/Chat/ChatWindow/index.js)
+- Контекстное меню (absolute в chat container): [`client/src/pages/Chat/components/MessageContextMenu/index.js`](../../client/src/pages/Chat/components/MessageContextMenu/index.js)
+- Калькулятор позиционирования (clamp/overflow): [`client/src/pages/Chat/utils/calcFloatingPosition.js`](../../client/src/pages/Chat/utils/calcFloatingPosition.js)
+- Linkify util (безопасно, без `dangerouslySetInnerHTML`): [`client/src/utils/linkifyMessage.js`](../../client/src/utils/linkifyMessage.js)
+- Рендер текста сообщений: [`client/src/pages/Chat/components/ChatMessages/index.js`](../../client/src/pages/Chat/components/ChatMessages/index.js)
+- Стили ссылок/меню/реакций: [`client/src/pages/Chat/ChatPage.module.css`](../../client/src/pages/Chat/ChatPage.module.css)
 
-## 10) Where To Change What
-| Task | File(s) |
+## 10) Где править что
+| Задача | Файл(ы) |
 |---|---|
-| JWT/auth issues | `server/src/middleware/auth.js`, `server/src/utils/tokenService.js` |
-| company scope/context issues | `server/src/middleware/companyIdGuard.js`, `server/src/middleware/auth.js` |
-| API error format | `server/src/middleware/errorHandler.js`, `server/src/errors/AppError.js`, `server/src/http/response.js` |
-| Validation errors | `server/src/middleware/validate.js` + Joi schemas in `server/src/system/**/schemas`, `server/src/wms/schemas` |
-| Router mount problems | `server/app.js`, `server/src/routes/rootRouter.js`, `server/src/lib/moduleRegistry.js` |
-| Chat HTTP behavior | `server/src/routes/system/chat/index.js`, `server/src/controllers/system/chat/Chat.controller.js`, `server/src/services/system/chat/*` |
-| Socket chat problems | `server/src/socket/index.js`, `server/src/socket/chatSocket.js`, `server/src/socket/chatEmitter.js` |
-| Menu goes out of chat window | `client/src/pages/Chat/utils/calcFloatingPosition.js`, `client/src/pages/Chat/components/MessageContextMenu/index.js`, `client/src/pages/Chat/ChatWindow/index.js` |
-| Links not clickable/safe | `client/src/utils/linkifyMessage.js`, `client/src/pages/Chat/components/ChatMessages/index.js`, `client/src/pages/Chat/ChatPage.module.css` |
-
+| Проблемы JWT/auth | `server/src/middleware/auth.js`, `server/src/utils/tokenService.js` |
+| Проблемы company scope/context | `server/src/middleware/companyIdGuard.js`, `server/src/middleware/auth.js` |
+| Формат API ошибок | `server/src/middleware/errorHandler.js`, `server/src/errors/AppError.js`, `server/src/http/response.js` |
+| Ошибки валидации | `server/src/middleware/validate.js` + Joi схемы в `server/src/system/**/schemas`, `server/src/wms/schemas` |
+| Проблемы монтирования роутов | `server/app.js`, `server/src/routes/rootRouter.js`, `server/src/lib/moduleRegistry.js` |
+| Поведение chat HTTP | `server/src/routes/system/chat/index.js`, `server/src/controllers/system/chat/Chat.controller.js`, `server/src/services/system/chat/*` |
+| Проблемы chat socket | `server/src/socket/index.js`, `server/src/socket/chatSocket.js`, `server/src/socket/chatEmitter.js` |
+| Меню вылезает за chat window | `client/src/pages/Chat/utils/calcFloatingPosition.js`, `client/src/pages/Chat/components/MessageContextMenu/index.js`, `client/src/pages/Chat/ChatWindow/index.js` |
+| Ссылки не кликаются/небезопасны | `client/src/utils/linkifyMessage.js`, `client/src/pages/Chat/components/ChatMessages/index.js`, `client/src/pages/Chat/ChatPage.module.css` |

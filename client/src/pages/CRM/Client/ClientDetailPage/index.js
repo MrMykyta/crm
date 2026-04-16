@@ -9,6 +9,7 @@ import {
 } from "../../../../schemas/counterparty.schema";
 import ContactsEditor from "../../../../components/forms/SmartForm/ContactsEditor";
 import { buildContactsPayload } from "../../../../utils/buildContactsPayload";
+import CounterpartyContactsSection from "../../../../components/contacts/CounterpartyContactsSection";
 
 import {
   useGetCounterpartyQuery,
@@ -16,6 +17,7 @@ import {
   useUpdateCounterpartyMutation,
 } from "../../../../store/rtk/counterpartyApi";
 
+// Компонент Skeleton: отвечает за отображение UI и обработку взаимодействий пользователя.
 function Skeleton() {
   return (
     <div style={{ padding: 16 }}>
@@ -64,8 +66,13 @@ const DEFAULT_QUERY = {
   type: "client",
 };
 
+// Компонент ClientDetailPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ClientDetailPage() {
   const { id } = useParams();
+  const schemaBuilder = useCallback(
+    (i18n) => counterpartyClientSchema(i18n).filter((field) => field?.name !== "description"),
+    []
+  );
 
   // 1) пробуем взять клиента из списка клиентов (если список уже был открыт)
   const { data: listData } = useListCounterpartiesQuery(
@@ -98,7 +105,8 @@ export default function ClientDetailPage() {
     setContacts(Array.isArray(initial) ? initial : []);
   }, [base]);
 
-  const onChangeContacts = (list) => setContacts(list);
+    // onChangeContacts: вспомогательная логика компонента.
+const onChangeContacts = (list) => setContacts(list);
 
   const save = useCallback(
     async (entityId, payload) => {
@@ -129,7 +137,7 @@ export default function ClientDetailPage() {
       id={id}
       tabs={TABS}
       tabsNamespace="crm.client.detail"
-      schemaBuilder={counterpartyClientSchema}
+      schemaBuilder={schemaBuilder}
       toForm={(d) => ({ ...toFormCounterparty(d), contacts: undefined })}
       toApi={toApiCounterparty}
       isSaving={saving}
@@ -145,8 +153,15 @@ export default function ClientDetailPage() {
       clearDraftOnUnmount={true}
       payloadDeps={[contacts]}
       leftExtras={
-        <ContactsEditor value={contacts} onChange={onChangeContacts} />
+        <>
+          <CounterpartyContactsSection
+            counterpartyId={id}
+            counterpartyName={base?.shortName || base?.fullName || ''}
+          />
+          <ContactsEditor value={contacts} onChange={onChangeContacts} />
+        </>
       }
     />
   );
 }
+

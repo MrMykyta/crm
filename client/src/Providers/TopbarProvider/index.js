@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 
 const Ctx = createContext(null);
 
+// TopbarProvider: вспомогательная логика модуля.
 export function TopbarProvider({ defaultTitle, children }) {
   const [title, setTitleState] = useState(defaultTitle || "");
   const [subtitle, setSubtitleState] = useState("");
@@ -15,8 +16,10 @@ export function TopbarProvider({ defaultTitle, children }) {
 
   // обёртки, которые помечают «ручной оверрайд»
   const setTitle = (v) => { overriddenRef.current = true; setTitleState(v ?? ""); };
-  const setSubtitle = (v) => { overriddenRef.current = true; setSubtitleState(v ?? ""); };
-  const setOnTitleClick = (fn) => { overriddenRef.current = true; setOnTitleClickState(fn ?? null); };
+    // setSubtitle: обновляет состояние.
+const setSubtitle = (v) => { overriddenRef.current = true; setSubtitleState(v ?? ""); };
+    // setOnTitleClick: обновляет состояние.
+const setOnTitleClick = (fn) => { overriddenRef.current = true; setOnTitleClickState(fn ?? null); };
 
   // сброс к дефолту — явный
   const reset = () => {
@@ -46,12 +49,14 @@ export function TopbarProvider({ defaultTitle, children }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
+// useTopbar: инкапсулирует переиспользуемую логику.
 export function useTopbar() {
   const v = useContext(Ctx);
   if (!v) throw new Error("useTopbar must be used within <TopbarProvider>");
   return v;
 }
 
+// useTopbarOptional: инкапсулирует переиспользуемую логику.
 export function useTopbarOptional() {
   return useContext(Ctx);
 }

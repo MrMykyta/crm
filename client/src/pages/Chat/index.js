@@ -17,6 +17,7 @@ import ChatSidebar from './ChatSidebar';
 import ChatWindow from './ChatWindow';
 import s from './ChatPage.module.css';
 
+// Компонент ChatPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ChatPage({ accessToken: accessTokenProp }) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -59,7 +60,8 @@ export default function ChatPage({ accessToken: accessTokenProp }) {
 
   // ESC: выйти из создания или закрыть активный чат
   useEffect(() => {
-    const onKey = (e) => {
+        // onKey: вспомогательная логика компонента.
+const onKey = (e) => {
       if (e.key !== 'Escape') return;
       if (e.defaultPrevented) return;
 
@@ -84,7 +86,8 @@ export default function ChatPage({ accessToken: accessTokenProp }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [mode, activeRoomId, dispatch, composerMode]);
 
-  const handleExitCreate = () => {
+    // handleExitCreate: обработчик пользовательского действия.
+const handleExitCreate = () => {
     setMode('room');
   };
 
@@ -122,3 +125,4 @@ export default function ChatPage({ accessToken: accessTokenProp }) {
     </div>
   );
 }
+

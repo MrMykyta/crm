@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import s from "../ChatPage.module.css";
 
+// Хук useChatSearch: инкапсулирует переиспользуемую логику и возвращает состояние/обработчики для компонентов.
 export function useChatSearch({ roomId, messages, listRef }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -135,7 +136,8 @@ export function useChatSearch({ roomId, messages, listRef }) {
         let scrollTimerId = null;
         let scrollStable = false;
 
-        const cleanup = () => {
+                // cleanup: вспомогательная логика модуля.
+const cleanup = () => {
           if (done) return;
           done = true;
           if (rafId) cancelAnimationFrame(rafId);
@@ -144,7 +146,8 @@ export function useChatSearch({ roomId, messages, listRef }) {
           container.removeEventListener("scroll", onScroll);
         };
 
-        const markStableSoon = () => {
+                // markStableSoon: вспомогательная логика модуля.
+const markStableSoon = () => {
           scrollStable = false;
           if (scrollTimerId) clearTimeout(scrollTimerId);
           scrollTimerId = setTimeout(() => {
@@ -152,11 +155,13 @@ export function useChatSearch({ roomId, messages, listRef }) {
           }, 120);
         };
 
-        const onScroll = () => {
+                // onScroll: вспомогательная логика модуля.
+const onScroll = () => {
           markStableSoon();
         };
 
-        const isInView = () => {
+                // isInView: проверяет условие.
+const isInView = () => {
           const el = document.getElementById(`msg-${messageId}`);
           if (!el) return false;
           const cRect = container.getBoundingClientRect();
@@ -164,7 +169,8 @@ export function useChatSearch({ roomId, messages, listRef }) {
           return mRect.bottom >= cRect.top && mRect.top <= cRect.bottom;
         };
 
-        const tick = () => {
+                // tick: вспомогательная логика модуля.
+const tick = () => {
           if (done) return;
           if (jumpTokenRef.current !== token) {
             cleanup();
@@ -252,3 +258,4 @@ export function useChatSearch({ roomId, messages, listRef }) {
     gotoNextMatch,
   };
 }
+

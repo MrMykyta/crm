@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../../../hooks/useSignedFileUrl";
 import s from "../../ChatPage.module.css";
 
+// Компонент ChatHeader: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ChatHeader({
   initials,
   avatar,
@@ -148,3 +149,4 @@ export default function ChatHeader({
     </div>
   );
 }
+

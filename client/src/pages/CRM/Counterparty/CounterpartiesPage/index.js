@@ -21,6 +21,7 @@ import {
 // контрагенты на этой странице: только партнёры / поставщики / производители
 const CONTRAGENT_TYPES = ['partner', 'supplier', 'manufacturer'];
 
+// Компонент CounterpartiesPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CounterpartiesPage() {
   const listRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -30,15 +31,26 @@ export default function CounterpartiesPage() {
   const openAsModal = useOpenAsModal();
 
   // prefs таблицы
-  const { colWidths, colOrder, onColumnResize, onColumnOrderChange } =
-    useGridPrefs('crm.counterparties');
+  const {
+    colWidths,
+    colOrder,
+    colVisibility,
+    savedViews,
+    activeViewId,
+    onColumnResize,
+    onColumnOrderChange,
+    onColumnVisibilityChange,
+    onSavedViewsChange,
+    onActiveViewChange,
+    resetGridPrefs,
+  } = useGridPrefs('crm.counterparties');
 
   const [createCounterparty, { isLoading: creating }] = useCreateCounterpartyMutation();
 
   const openDetail = useCallback(
     (id) => {
       const suffix = openAsModal ? '?modal=1' : '';
-      navigate(`/main/crm/counterparties/${id}${suffix}`);
+      navigate(`/main/counterparties/${id}${suffix}`);
     },
     [navigate, openAsModal]
   );
@@ -50,7 +62,8 @@ export default function CounterpartiesPage() {
         title: t('crm.table.columns.name'),
         sortable: true,
         width: 280,
-        render: (r) => (
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => (
           <LinkCell
             primary={r.shortName || r.fullName}
             secondary={r.fullName && r.fullName !== r.shortName ? r.fullName : null}
@@ -66,13 +79,15 @@ export default function CounterpartiesPage() {
         title: t('crm.table.columns.nip'),
         sortable: true,
         width: 160,
-        render: (r) => r.nip || '—',
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => r.nip || '—',
       },
       {
         key: 'address',
         title: t('crm.table.columns.address'),
         width: 360,
-        render: (r) => (
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => (
           <AddressCell
             street={r.street}
             postcode={r.postalCode || r.postcode}
@@ -86,20 +101,23 @@ export default function CounterpartiesPage() {
         title: t('crm.table.columns.type'),
         sortable: true,
         width: 140,
-        render: (r) => t(`crm.enums.type.${r.type}`),
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => t(`crm.enums.type.${r.type}`),
       },
       {
         key: 'status',
         title: t('crm.table.columns.status'),
         sortable: true,
         width: 140,
-        render: (r) => t(`crm.enums.status.${r.status}`),
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => t(`crm.enums.status.${r.status}`),
       },
       {
         key: 'owner',
         title: t('crm.table.columns.owner'),
         width: 200,
-        render: (r) => r.mainResponsibleUser || '—',
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => r.mainResponsibleUser || '—',
       },
     ],
     [t, i18n.language, openDetail]
@@ -161,6 +179,13 @@ export default function CounterpartiesPage() {
         onColumnResize={onColumnResize}
         columnOrder={colOrder}
         onColumnOrderChange={onColumnOrderChange}
+        columnVisibility={colVisibility}
+        onColumnVisibilityChange={onColumnVisibilityChange}
+        savedViews={savedViews}
+        activeViewId={activeViewId}
+        onSavedViewsChange={onSavedViewsChange}
+        onActiveViewChange={onActiveViewChange}
+        onResetColumns={resetGridPrefs}
         ToolbarComponent={(props) => (
           <FilterToolbar
             {...props}
@@ -233,3 +258,4 @@ export default function CounterpartiesPage() {
     </>
   );
 }
+

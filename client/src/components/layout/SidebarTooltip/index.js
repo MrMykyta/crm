@@ -2,6 +2,7 @@
 import { createPortal } from "react-dom";
 import styles from "./SidebarTooltip.module.css";
 
+// Компонент SidebarTooltip: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function SidebarTooltip({ visible, text, x, y }) {
   if (!visible) return null;
   return createPortal(

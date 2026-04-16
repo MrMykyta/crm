@@ -1,40 +1,47 @@
-// единый список всех прав в системе (глобальный справочник)
+// Глобальный справочник всех permission-ключей системы.
+// Используется для:
+// - валидации прав в ACL/UI,
+// - формирования дефолтных role-наборов,
+// - централизованного контроля доступных действий.
 module.exports.PERMISSIONS = [
-  // company
+  // Компания
   'company:read', 'company:update',
 
-  // users
+  // Пользователи
   'user:create', 'user:read', 'user:read:own', 'user:update', 'user:update:own', 'user:delete',
 
-  // members
+  // Участники/членство в компании
   'member:create', 'member:read', 'member:read:own', 'member:update', 'member:update:own', 'member:delete',
 
-  // counterparties
+  // Контрагенты
   'counterparty:read','counterparty:create','counterparty:update','counterparty:delete',
 
-  // deals
+  // Сделки
   'deal:read','deal:create','deal:update','deal:update:own','deal:delete',
 
-  // tasks
+  // Задачи
   'task:read','task:create','task:update','task:update:own','task:delete',
 
-  // contact points
+  // Контактные лица/точки контакта
   'contact:read', 'contact:read:own', 'contact:create','contact:update', 'contact:update:own', 'contact:delete',
 
-  // products
+  // Товары
   'product:read','product:create','product:update','product:delete',
 
-  // offers
+  // Коммерческие предложения
   'offer:read','offer:create','offer:update','offer:delete','offer:convert',
 
-  // orders
+  // Заказы
   'order:read','order:create','order:update','order:delete','order:from_offer',
 
-  // notes
+  // Заметки
   'note:read','note:create','note:update','note:delete',
+
+  // Чат
+  'chat.read','chat.write',
   
-  // files (unified)
+  // Файлы (единая файловая подсистема)
   'file:read','file:upload','file:delete',
-  // legacy attachments (kept for compatibility while migrating)
+  // Legacy-attachments: временная обратная совместимость во время миграции.
   'attachment:read','attachment:upload','attachment:delete'
 ];

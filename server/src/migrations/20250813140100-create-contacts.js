@@ -2,7 +2,8 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     await queryInterface.createTable('contacts', {
       id: {
         type: Sequelize.UUID,
@@ -103,7 +104,8 @@ module.exports = {
     `);
   },
 
-  async down(queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface, Sequelize) {
     await queryInterface.sequelize.query('DROP INDEX IF EXISTS contacts_primary_per_counterparty_uq;');
     await queryInterface.removeIndex('contacts', 'contacts_company_jobtitle_idx');
     await queryInterface.removeIndex('contacts', 'contacts_company_lastname_idx');

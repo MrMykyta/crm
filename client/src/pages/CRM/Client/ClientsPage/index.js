@@ -19,6 +19,10 @@ import {
   useCreateCounterpartyMutation,
 } from '../../../../store/rtk/counterpartyApi';
 
+/**
+ * Страница списка клиентов:
+ * настраивает колонки, фильтры, сохранённые представления и модалку создания.
+ */
 export default function ClientsPage() {
   const listRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -28,21 +32,34 @@ export default function ClientsPage() {
   const openAsModal = useOpenAsModal();
 
   // prefs таблицы — отдельный ключ под клиентов
-  const { colWidths, colOrder, onColumnResize, onColumnOrderChange } =
-    useGridPrefs('crm.clients');
+  const {
+    colWidths,
+    colOrder,
+    colVisibility,
+    savedViews,
+    activeViewId,
+    onColumnResize,
+    onColumnOrderChange,
+    onColumnVisibilityChange,
+    onSavedViewsChange,
+    onActiveViewChange,
+    resetGridPrefs,
+  } = useGridPrefs('crm.clients');
 
   const [createCounterparty, { isLoading: creating }] =
     useCreateCounterpartyMutation();
 
+  // Открывает карточку клиента в обычном режиме или в modal-route режиме.
   const openDetail = useCallback(
     (id) => {
       const suffix = openAsModal ? '?modal=1' : '';
       // клиенты → на страницу деталей клиентов
-      navigate(`/main/crm/clients/${id}${suffix}`);
+      navigate(`/main/clients/${id}${suffix}`);
     },
     [navigate, openAsModal]
   );
 
+  // Конфигурация колонок таблицы клиентов.
   const columns = useMemo(
     () => [
       {
@@ -50,7 +67,8 @@ export default function ClientsPage() {
         title: t('crm.table.columns.name'),
         sortable: true,
         width: 280,
-        render: (r) => (
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => (
           <LinkCell
             primary={r.shortName || r.fullName}
             secondary={
@@ -68,13 +86,15 @@ export default function ClientsPage() {
         title: t('crm.table.columns.nip'),
         sortable: true,
         width: 160,
-        render: (r) => r.nip || '—',
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => r.nip || '—',
       },
       {
         key: 'address',
         title: t('crm.table.columns.address'),
         width: 360,
-        render: (r) => (
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => (
           <AddressCell
             street={r.street}
             postcode={r.postalCode || r.postcode}
@@ -88,20 +108,23 @@ export default function ClientsPage() {
         title: t('crm.table.columns.type'),
         sortable: true,
         width: 140,
-        render: (r) => t(`crm.enums.type.${r.type}`),
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => t(`crm.enums.type.${r.type}`),
       },
       {
         key: 'status',
         title: t('crm.table.columns.status'),
         sortable: true,
         width: 140,
-        render: (r) => t(`crm.enums.status.${r.status}`),
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => t(`crm.enums.status.${r.status}`),
       },
       {
         key: 'owner',
         title: t('crm.table.columns.owner'),
         width: 200,
-        render: (r) => r.mainResponsibleUser || '—',
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => r.mainResponsibleUser || '—',
       },
     ],
     [t, i18n.language, openDetail]
@@ -118,6 +141,7 @@ export default function ClientsPage() {
     []
   );
 
+  // Основное action-меню страницы (кнопка создания клиента).
   const actions = useMemo(
     () => (
       <AddButton
@@ -130,6 +154,7 @@ export default function ClientsPage() {
     [t]
   );
 
+  // Кнопки футера модалки создания клиента.
   const footer = useMemo(
     () => (
       <>
@@ -163,6 +188,13 @@ export default function ClientsPage() {
         onColumnResize={onColumnResize}
         columnOrder={colOrder}
         onColumnOrderChange={onColumnOrderChange}
+        columnVisibility={colVisibility}
+        onColumnVisibilityChange={onColumnVisibilityChange}
+        savedViews={savedViews}
+        activeViewId={activeViewId}
+        onSavedViewsChange={onSavedViewsChange}
+        onActiveViewChange={onActiveViewChange}
+        onResetColumns={resetGridPrefs}
         ToolbarComponent={(props) => (
           <FilterToolbar
             {...props}
@@ -206,6 +238,7 @@ export default function ClientsPage() {
           loading={saving || creating}
           withButtons={false}
           onCancel={() => setOpen(false)}
+          // Создаёт клиента и обновляет список после успешного сохранения.
           onSubmit={async (values) => {
             setSaving(true);
             try {
@@ -225,3 +258,4 @@ export default function ClientsPage() {
     </>
   );
 }
+

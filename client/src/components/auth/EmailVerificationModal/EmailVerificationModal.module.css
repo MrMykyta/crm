@@ -17,9 +17,9 @@
   text-align: center;
 }
 
-.icon { font-size: 36px; margin-bottom: 6px; }
-.title { margin: 4px 4px 2px; font-size: 18px; font-weight: 700; }
-.subtitle { margin: 0 4px 10px; color:#c6cbf7; opacity:.9; font-size:14px; }
+.icon { font-size: var(--font-size-36); margin-bottom: 6px; }
+.title { margin: 4px 4px 2px; font-size: var(--font-size-18); font-weight: 700; }
+.subtitle { margin: 0 4px 10px; color:#c6cbf7; opacity:.9; font-size: var(--font-size-14); }
 
 .actions {
   display:flex; align-items:center; justify-content:center; gap: 10px;
@@ -38,4 +38,4 @@
   background: none; border: none; color:#c6ceff; text-decoration: underline; cursor: pointer;
 }
 
-.hint { margin-top: 10px; color:#aab2d6; font-size: 13px; opacity: .9; }
+.hint { margin-top: 10px; color:#aab2d6; font-size: var(--font-size-13); opacity: .9; }

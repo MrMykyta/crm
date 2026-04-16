@@ -2,6 +2,7 @@
 // inventory.controller.js (generated)
 const svc = require('../../services/wms/inventoryService');
 
+// Возвращает фактический доступный остаток по складу/товару.
 module.exports.onHand = async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
@@ -12,6 +13,7 @@ module.exports.onHand = async (req, res, next) => {
   }
 };
 
+// Резервирует количество товара в остатках.
 module.exports.reserve = async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
@@ -22,6 +24,7 @@ module.exports.reserve = async (req, res, next) => {
   }
 };
 
+// Снимает резерв и возвращает количество в доступный остаток.
 module.exports.release = async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
@@ -32,3 +35,4 @@ module.exports.release = async (req, res, next) => {
     next(e);
   }
 };
+

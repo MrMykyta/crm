@@ -1,8 +1,9 @@
-const ApplicationError = require('./ApplicationError');
+const AppError = require('./AppError');
 
-class ServerError extends ApplicationError{
+// Ошибка загрузки файла (HTTP 409).
+class ServerError extends AppError {
   constructor (message) {
-    super(message || 'upload error', 409);
+    super(409, message || 'upload error');
   }
 }
 

@@ -1,5 +1,6 @@
 const contactPointService = require('../../services/crm/contactPointService');
 
+// Возвращает список контактных точек компании с учётом query-параметров.
 module.exports.list = async (req, res) => {
     try {
         const rows = await contactPointService.list(req.user.companyId, req.query);
@@ -9,6 +10,7 @@ module.exports.list = async (req, res) => {
     }
 };
 
+// Создаёт новую контактную точку от имени текущего пользователя.
 module.exports.create = async (req, res) => {
     try {
         const row = await contactPointService.create(req.user.id, req.user.companyId, req.body);
@@ -18,6 +20,7 @@ module.exports.create = async (req, res) => {
     }
 };
 
+// Обновляет контактную точку; если запись не найдена — возвращает 404.
 module.exports.update = async (req, res) => {
     try {
         const row = await contactPointService.update(req.user.id, req.user.companyId, req.body);
@@ -30,6 +33,7 @@ module.exports.update = async (req, res) => {
     }
 };
 
+// Удаляет контактную точку по id в пределах компании.
 module.exports.remove = async (req, res) => {
     try {
         const ok = await contactPointService.remove(req.user.companyId, req.params.id);

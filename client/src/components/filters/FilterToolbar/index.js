@@ -5,6 +5,7 @@ import ThemedSelect from '../../inputs/RadixSelect';
 
 // — утилиты нормализации
 const norm = (v) => (v ?? '').trim();
+// toQueryValue: вспомогательная логика компонента.
 const toQueryValue = (v) => (v ? v : undefined);
 
 /**
@@ -32,6 +33,8 @@ export default function FilterToolbar({
   mode,
   onModeChange,
   extra,
+  variant = 'default',
+  className = '',
 }) {
   // локальная «только для поиска» дебаунс-состояние по ключу 'search'
   const searchCfg = useMemo(() => controls.find(c => c.type === 'search'), [controls]);
@@ -133,10 +136,11 @@ export default function FilterToolbar({
   };
 
   return (
-    <div className={s.toolbar}>
+    <div className={`${s.toolbar} ${variant === 'inline' ? s.inline : ''} ${className}`}>
       {controls.map(renderControl)}
       <div className={s.spacer} />
       {extra ? <div className={s.extra}>{extra}</div> : null}
     </div>
   );
 }
+

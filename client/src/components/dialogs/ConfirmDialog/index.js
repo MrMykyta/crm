@@ -1,5 +1,6 @@
 import Modal from '../../Modal';
 
+// Компонент ConfirmDialog: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ConfirmDialog({ open, title, text, onOk, onCancel, okText='Подтвердить', cancelText='Отмена' }) {
   const footer = (
     <>

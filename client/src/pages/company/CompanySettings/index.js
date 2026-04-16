@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useTopbar } from "../../../Providers/TopbarProvider";
 import s from "./CompanySettings.module.css";
 
+// Компонент CompanySettings: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CompanySettings(){
   const { setTitle, setSubtitle, reset } = useTopbar(); // ← получаем методы провайдера
   const { t } = useTranslation();

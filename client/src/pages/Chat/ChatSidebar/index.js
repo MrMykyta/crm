@@ -101,6 +101,7 @@ function ChatRoomItem({
   );
 }
 
+// Компонент ChatSidebar: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ChatSidebar({
   onCreateDirect,
   onCreateGroup,
@@ -243,7 +244,8 @@ export default function ChatSidebar({
   useEffect(() => {
     if (!menuOpen) return;
 
-    const onClick = (e) => {
+        // onClick: вспомогательная логика компонента.
+const onClick = (e) => {
       if (
         menuRef.current &&
         !menuRef.current.contains(e.target) &&
@@ -254,7 +256,8 @@ export default function ChatSidebar({
       }
     };
 
-    const onKey = (e) => {
+        // onKey: вспомогательная логика компонента.
+const onKey = (e) => {
       if (e.key === "Escape") closeMenu();
     };
 
@@ -363,3 +366,4 @@ export default function ChatSidebar({
     </div>
   );
 }
+

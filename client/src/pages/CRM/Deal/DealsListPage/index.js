@@ -21,6 +21,7 @@ import { useGetCounterpartyLookupQuery } from '../../../../store/rtk/counterpart
 
 import s from './DealsListPage.module.css';
 
+// buildStatusLabels: собирает итоговую структуру данных в рамках UI-компонента.
 const buildStatusLabels = (t) => ({
   new: t('deals.status.new', 'New'),
   in_progress: t('deals.status.inProgress', 'In progress'),
@@ -28,6 +29,7 @@ const buildStatusLabels = (t) => ({
   lost: t('deals.status.lost', 'Lost'),
 });
 
+// buildStatusOptions: собирает итоговую структуру данных в рамках UI-компонента.
 const buildStatusOptions = (t, labels, includeAll = false) => {
   const options = [
     { value: 'new', label: labels.new },
@@ -42,6 +44,7 @@ const buildStatusOptions = (t, labels, includeAll = false) => {
   ];
 };
 
+// formatMoney: форматирует данные для отображения.
 function formatMoney(value, currency, noneLabel = '—') {
   if (value === null || value === undefined || value === '') return noneLabel;
   const num = Number(value);
@@ -50,6 +53,7 @@ function formatMoney(value, currency, noneLabel = '—') {
   return `${num.toLocaleString()} ${cur}`;
 }
 
+// Компонент DealForm: отвечает за отображение UI и обработку взаимодействий пользователя.
 function DealForm({ onSubmit, onCancel, loading }) {
   const { t } = useTranslation();
   const { options: ownerOptions } = useCompanyMembersOptions();
@@ -85,9 +89,11 @@ function DealForm({ onSubmit, onCancel, loading }) {
       { skip: !debouncedTerm }
     );
 
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+    // set: обновляет состояние компонента.
+const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const submit = (e) => {
+    // submit: вспомогательная логика компонента.
+const submit = (e) => {
     e?.preventDefault();
     setError('');
     if (!form.title.trim()) {
@@ -266,13 +272,25 @@ function DealForm({ onSubmit, onCancel, loading }) {
   );
 }
 
+// Компонент DealsListPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function DealsListPage() {
   const listRef = useRef(null);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const openAsModal = useOpenAsModal();
-  const { colWidths, colOrder, onColumnResize, onColumnOrderChange } =
-    useGridPrefs('crm.deals');
+  const {
+    colWidths,
+    colOrder,
+    colVisibility,
+    savedViews,
+    activeViewId,
+    onColumnResize,
+    onColumnOrderChange,
+    onColumnVisibilityChange,
+    onSavedViewsChange,
+    onActiveViewChange,
+    resetGridPrefs,
+  } = useGridPrefs('crm.deals');
 
   const [open, setOpen] = useState(false);
   const [createDeal, { isLoading: creating }] = useCreateDealMutation();
@@ -296,7 +314,8 @@ export default function DealsListPage() {
       title: t('deals.columns.title', 'Deal'),
       sortable: true,
       width: 320,
-      render: (r) => (
+            // render: описывает рендер соответствующего блока UI.
+render: (r) => (
         <LinkCell
           primary={r.title}
           secondary={r.counterparty?.fullName || r.counterparty?.shortName || undefined}
@@ -313,20 +332,23 @@ export default function DealsListPage() {
       title: t('deals.columns.amount', 'Amount'),
       sortable: true,
       width: 160,
-      render: (r) => formatMoney(r.value, r.currency, t('common.none', '—')),
+            // render: описывает рендер соответствующего блока UI.
+render: (r) => formatMoney(r.value, r.currency, t('common.none', '—')),
     },
     {
       key: 'status',
       title: t('deals.columns.status', 'Status'),
       sortable: true,
       width: 140,
-      render: (r) => statusLabels[r.status] || r.status || t('common.none', '—'),
+            // render: описывает рендер соответствующего блока UI.
+render: (r) => statusLabels[r.status] || r.status || t('common.none', '—'),
     },
     {
       key: 'responsible',
       title: t('deals.columns.owner', 'Owner'),
       width: 200,
-      render: (r) => {
+            // render: описывает рендер соответствующего блока UI.
+render: (r) => {
         const u = r.responsible;
         return u
           ? [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email
@@ -338,7 +360,8 @@ export default function DealsListPage() {
       title: t('deals.columns.updated', 'Updated'),
       sortable: true,
       width: 180,
-      render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('common.none', '—')),
+            // render: описывает рендер соответствующего блока UI.
+render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('common.none', '—')),
     },
   ]), [openDetail, statusLabels, t]);
 
@@ -396,6 +419,13 @@ export default function DealsListPage() {
         onColumnResize={onColumnResize}
         columnOrder={colOrder}
         onColumnOrderChange={onColumnOrderChange}
+        columnVisibility={colVisibility}
+        onColumnVisibilityChange={onColumnVisibilityChange}
+        savedViews={savedViews}
+        activeViewId={activeViewId}
+        onSavedViewsChange={onSavedViewsChange}
+        onActiveViewChange={onActiveViewChange}
+        onResetColumns={resetGridPrefs}
         ToolbarComponent={(props) => (
           <FilterToolbar
             {...props}
@@ -432,7 +462,8 @@ export default function DealsListPage() {
               },
               {
                 type: 'custom',
-                render: ({ query, onChange }) => (
+                                // render: описывает рендер соответствующего блока UI.
+render: ({ query, onChange }) => (
                   <div className={s.dateRange}>
                     <input
                       className={s.dateInput}
@@ -483,3 +514,4 @@ export default function DealsListPage() {
     </>
   );
 }
+

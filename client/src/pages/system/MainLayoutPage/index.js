@@ -18,6 +18,7 @@ import { applyUserPatch } from '../../../store/slices/authSlice';
 import { initSocket } from '../../../sockets/io';
 import { useChatSocket } from '../../../sockets/useChatSocket';
 
+// Компонент MainLayoutPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function MainLayoutPage() {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -38,7 +39,8 @@ export default function MainLayoutPage() {
     skip: !accessToken,
   });
 
-  const handleLogout = async () => {
+    // handleLogout: обработчик пользовательского действия.
+const handleLogout = async () => {
     try { await logout().unwrap(); } catch {}
     navigate('/auth', { replace: true });
   };
@@ -67,7 +69,8 @@ export default function MainLayoutPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const checkWallpaper = () => {
+        // checkWallpaper: вспомогательная логика компонента.
+const checkWallpaper = () => {
       const val = getComputedStyle(document.documentElement)
         .getPropertyValue('--custom-bg-layer')
         .trim();
@@ -128,3 +131,4 @@ export default function MainLayoutPage() {
     </div>
   );
 }
+

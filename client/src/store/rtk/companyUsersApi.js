@@ -1,5 +1,6 @@
 import { crmApi, getCompanyId } from './crmApi';
 
+// stripCompanyId: вспомогательная логика для слоя RTK Query.
 const stripCompanyId = (value) => {
   if (!value || typeof value !== 'object') return value;
   if (typeof FormData !== 'undefined' && value instanceof FormData) {
@@ -12,20 +13,24 @@ const stripCompanyId = (value) => {
 };
 
 export const companyUsersApi = crmApi.injectEndpoints({
-  endpoints: (build) => ({
+    // endpoints: описывает набор endpoint-ов RTK Query.
+endpoints: (build) => ({
 
     // ---------- MEMBERS LIST ----------
     listCompanyUsers: build.query({
-      query: (params = {}) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (params = {}) => ({
         url: '/members/users',
         method: 'GET',
         params: stripCompanyId(params),
       }),
-      transformResponse: (resp) =>
+            // transformResponse: нормализует ответ API перед записью в кэш.
+transformResponse: (resp) =>
         Array.isArray(resp)
           ? { items: resp, total: resp.length, page: 1, limit: resp.length }
           : resp,
-      providesTags: (res) => {
+            // providesTags: возвращает теги кэша для автообновления данных.
+providesTags: (res) => {
         const items = Array.isArray(res?.items) ? res.items : [];
         return [
           { type: 'CompanyUser', id: 'LIST' },
@@ -42,8 +47,10 @@ export const companyUsersApi = crmApi.injectEndpoints({
         url: `/users/${encodeURIComponent(userId)}`,
         method: 'GET',
       }),
-      transformResponse: (resp) => resp?.data ?? resp,
-      providesTags: (_res, _err, userId) => [{ type: 'CompanyUser', id: userId }],
+            // transformResponse: нормализует ответ API перед записью в кэш.
+transformResponse: (resp) => resp?.data ?? resp,
+            // providesTags: возвращает теги кэша для автообновления данных.
+providesTags: (_res, _err, userId) => [{ type: 'CompanyUser', id: userId }],
       keepUnusedDataFor: 120,
     }),
 
@@ -55,8 +62,10 @@ export const companyUsersApi = crmApi.injectEndpoints({
         method: 'PATCH',
         body: stripCompanyId(body),
       }),
-      transformResponse: (resp) => resp?.data ?? resp,
-      invalidatesTags: (_res, _err, { userId }) => [
+            // transformResponse: нормализует ответ API перед записью в кэш.
+transformResponse: (resp) => resp?.data ?? resp,
+            // invalidatesTags: помечает теги кэша для рефетча связанных данных.
+invalidatesTags: (_res, _err, { userId }) => [
         { type: 'CompanyUser', id: userId },
         { type: 'CompanyUser', id: 'LIST' },
       ],
@@ -64,7 +73,8 @@ export const companyUsersApi = crmApi.injectEndpoints({
 
     // ---------- ADD MEMBER ----------
     addMember: build.mutation({
-      query: (body) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (body) => ({
         url: '/members/users',
         method: 'POST',
         body: stripCompanyId(body),
@@ -90,7 +100,8 @@ export const companyUsersApi = crmApi.injectEndpoints({
         method: 'PUT',
         body: { role, status },
       }),
-      invalidatesTags: (res, err, arg) => [
+            // invalidatesTags: помечает теги кэша для рефетча связанных данных.
+invalidatesTags: (res, err, arg) => [
         { type: 'CompanyUser', id: arg.userId },
         { type: 'CompanyUser', id: 'LIST' },
       ],
@@ -98,16 +109,19 @@ export const companyUsersApi = crmApi.injectEndpoints({
 
     // ---------- INVITATIONS LIST ----------
     listInvitations: build.query({
-      query: (params = {}) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (params = {}) => ({
         url: `/invitations/companies/${getCompanyId()}/invitations`,
         method: 'GET',
         params: stripCompanyId(params),
       }),
-      transformResponse: (resp) =>
+            // transformResponse: нормализует ответ API перед записью в кэш.
+transformResponse: (resp) =>
         Array.isArray(resp)
           ? { items: resp, total: resp.length, page: 1, limit: resp.length }
           : resp,
-      providesTags: (res) => {
+            // providesTags: возвращает теги кэша для автообновления данных.
+providesTags: (res) => {
         const items = Array.isArray(res?.items) ? res.items : [];
         return [
           { type: 'CompanyUser', id: 'INVITES' },
@@ -120,7 +134,8 @@ export const companyUsersApi = crmApi.injectEndpoints({
 
     // ---------- INVITE / RESEND / REVOKE ----------
     inviteUser: build.mutation({
-      query: (body) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (body) => ({
         url: `/invitations/companies/${getCompanyId()}/invitations`,
         method: 'POST',
         body,
@@ -128,14 +143,16 @@ export const companyUsersApi = crmApi.injectEndpoints({
       invalidatesTags: [{ type: 'CompanyUser', id: 'INVITES' }],
     }),
     resendInvitation: build.mutation({
-      query: (inviteId) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (inviteId) => ({
         url: `/invitations/${encodeURIComponent(inviteId)}/resend`,
         method: 'POST',
       }),
       invalidatesTags: [{ type: 'CompanyUser', id: 'INVITES' }],
     }),
     revokeInvitation: build.mutation({
-      query: (inviteId) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (inviteId) => ({
         url: `/invitations/${encodeURIComponent(inviteId)}/revoke`,
         method: 'POST',
       }),
@@ -144,14 +161,16 @@ export const companyUsersApi = crmApi.injectEndpoints({
 
     // ---------- PUBLIC INVITATION ENDPOINTS ----------
     checkInvitation: build.query({
-      query: (token) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (token) => ({
         url: `/invitations/check`,
         method: 'GET',
         params: { token },
       }),
     }),
     acceptInvitation: build.mutation({
-      query: (body) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (body) => ({
         url: `/invitations/accept`,
         method: 'POST',
         body,
@@ -181,3 +200,4 @@ export const {
   useCheckInvitationQuery,
   useAcceptInvitationMutation,
 } = companyUsersApi;
+

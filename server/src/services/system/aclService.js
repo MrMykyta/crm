@@ -1,15 +1,18 @@
 const { Op } = require('sequelize');
 const { User, Role, Permission, RolePermission,CompanyDepartment, UserPermission, UserRole, UserCompany } = require('../../models');
 
+// toPublicUser: выполняет вспомогательную бизнес-логику сервиса.
 const toPublicUser = (u) => u ? ({
   id: u.id, email: u.email, firstName: u.firstName || '', lastName: u.lastName || '', avatarUrl: u.avatarUrl || null,
 }) : null;
 
+// createRole: создаёт новую запись и возвращает результат.
 module.exports.createRole = async ({ companyId, name, description }) => {
   if (!companyId || !name) throw new Error('companyId & name required');
   return Role.create({ companyId, name, description });
 };
 
+// listRoles: возвращает список записей с фильтрами, сортировкой и пагинацией.
 module.exports.listRoles = async ({ companyId, query = {} }) => {
   const where = { companyId };
   if (query.q) where.name = { [Op.iLike]: `%${query.q}%` };
@@ -21,6 +24,7 @@ module.exports.listRoles = async ({ companyId, query = {} }) => {
   });
 };
 
+// getRole: возвращает данные по входным параметрам сервиса.
 module.exports.getRole = async ({ companyId, roleId }) => {
   return Role.findOne({
     where: { id: roleId, companyId },
@@ -28,6 +32,7 @@ module.exports.getRole = async ({ companyId, roleId }) => {
   });
 };
 
+// updateRole: обновляет запись и возвращает актуальные данные.
 module.exports.updateRole = async ({ companyId, roleId, data }) => {
   const role = await Role.findOne({ where: { id: roleId, companyId } });
   if (!role) return null;
@@ -35,6 +40,7 @@ module.exports.updateRole = async ({ companyId, roleId, data }) => {
   return this.getRole({ companyId, roleId });
 };
 
+// deleteRole: удаляет запись с учётом бизнес-ограничений.
 module.exports.deleteRole = async ({ companyId, roleId }) => {
   return Role.destroy({ where: { id: roleId, companyId } });
 };
@@ -46,6 +52,7 @@ module.exports.assignPermToRole = async ({ companyId, roleId, permId }) => {
   await RolePermission.findOrCreate({ where: { roleId, permissionId: permId } });
 };
 
+// removePermFromRole: удаляет запись с учётом бизнес-ограничений.
 module.exports.removePermFromRole = async ({ companyId, roleId, permId }) => {
   const role = await Role.findOne({ where: { id: roleId, companyId } });
   if (!role) throw new Error('Role not found in company');
@@ -59,6 +66,7 @@ module.exports.assignRoleToUser = async ({ userId, companyId, roleId }) => {
   await UserRole.findOrCreate({ where: { userId, companyId, roleId } });
 };
 
+// removeRoleFromUser: удаляет запись с учётом бизнес-ограничений.
 module.exports.removeRoleFromUser = async ({ userId, companyId, roleId }) => {
   await UserRole.destroy({ where: { userId, companyId, roleId } });
 };
@@ -68,6 +76,7 @@ module.exports.grantPermToUser = async ({ userId, permId }) => {
   await UserPermission.findOrCreate({ where: { userId, permissionId: permId } });
 };
 
+// revokePermFromUser: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.revokePermFromUser = async ({ userId, permId }) => {
   await UserPermission.destroy({ where: { userId, permissionId: permId } });
 };
@@ -78,13 +87,16 @@ module.exports.createPermission = async ({ name, description }) => {
   return Permission.create({ name, description });
 };
 
+// listPermissions: возвращает список записей с фильтрами, сортировкой и пагинацией.
 module.exports.listPermissions = async ({ query = {} }) => {
   const where = {};
   if (query.q) where.name = { [Op.iLike]: `%${query.q}%` };
   return Permission.findAll({ where, order: [['name', 'ASC']] });
 };
+// getPermission: возвращает данные по входным параметрам сервиса.
 module.exports.getPermission = async (permId) => Permission.findByPk(permId);
 
+// updatePermission: обновляет запись и возвращает актуальные данные.
 module.exports.updatePermission = async (permId, data) => {
   const p = await Permission.findByPk(permId);
   if (!p) return null;
@@ -92,8 +104,10 @@ module.exports.updatePermission = async (permId, data) => {
   return p;
 };
 
+// deletePermission: удаляет запись с учётом бизнес-ограничений.
 module.exports.deletePermission = async (permId) => Permission.destroy({ where: { id: permId } });
 
+// getUserPermissionSummary: возвращает данные по входным параметрам сервиса.
 module.exports.getUserPermissionSummary = async ({ companyId, userId }) => {
   // 0) сам пользователь (краткая публичная инфа)
   const u = await User.findByPk(userId, {
@@ -214,6 +228,7 @@ module.exports.getUserPermissionSummary = async ({ companyId, userId }) => {
 };
 
 
+// allowPermForUser: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.allowPermForUser = async ({ userId, companyId, permId }) => {
   if (!companyId) throw new Error('companyId required');
   const [row, created] = await UserPermission.findOrCreate({

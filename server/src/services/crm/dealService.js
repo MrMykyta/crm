@@ -9,6 +9,7 @@ const {
   CrmPipelineStage,
 } = require('../../models');
 
+// requireCompanyId: выполняет вспомогательную бизнес-логику сервиса.
 function requireCompanyId(companyId) {
   if (!companyId) {
     const err = new Error('companyId is required');
@@ -18,6 +19,7 @@ function requireCompanyId(companyId) {
   return companyId;
 }
 
+// assertCounterpartyInCompany: выполняет вспомогательную бизнес-логику сервиса.
 async function assertCounterpartyInCompany(counterpartyId, companyId) {
   if (!counterpartyId) return;
   const row = await Counterparty.findOne({ where: { id: counterpartyId, companyId } });
@@ -28,6 +30,7 @@ async function assertCounterpartyInCompany(counterpartyId, companyId) {
   }
 }
 
+// assertMemberInCompany: выполняет вспомогательную бизнес-логику сервиса.
 async function assertMemberInCompany(userId, companyId) {
   if (!userId) return;
   const row = await UserCompany.findOne({
@@ -41,6 +44,7 @@ async function assertMemberInCompany(userId, companyId) {
   }
 }
 
+// assertPipelineInCompany: выполняет вспомогательную бизнес-логику сервиса.
 async function assertPipelineInCompany(pipelineId, companyId) {
   if (!pipelineId) return;
   const row = await CrmPipeline.findOne({
@@ -54,6 +58,7 @@ async function assertPipelineInCompany(pipelineId, companyId) {
   }
 }
 
+// assertStageInCompany: выполняет вспомогательную бизнес-логику сервиса.
 async function assertStageInCompany(stageId, companyId, pipelineId = null) {
   if (!stageId) return;
   const where = { id: stageId, companyId };
@@ -69,6 +74,7 @@ async function assertStageInCompany(stageId, companyId, pipelineId = null) {
   }
 }
 
+// buildDefaultInclude: собирает служебную структуру для выполнения запроса.
 const buildDefaultInclude = (companyId) => ([
   {
     model: Counterparty,
@@ -93,6 +99,7 @@ const parsePaging = (query = {}) => {
     return { page, limit, offset };
 };
 
+// buildOrder: собирает служебную структуру для выполнения запроса.
 const buildOrder = (query = {}) => {
     // sort=createdAt:desc,status:asc
     const sort = (query.sort || '').split(',').filter(Boolean);
@@ -103,6 +110,7 @@ const buildOrder = (query = {}) => {
     });
 };
 
+// buildWhere: собирает служебную структуру для выполнения запроса.
 const buildWhere = (query = {}, companyId) => {
     const where = { companyId };
     if (query.status) {
@@ -167,6 +175,7 @@ module.exports.list = async ({ query = {}, user, companyId } = {}) => {
   return { rows, count, page, limit };
 };
 
+// getById: возвращает данные по входным параметрам сервиса.
 module.exports.getById = async (id, opts = {}) => {
     if (!id) return null;
     const cid = requireCompanyId(opts.companyId || opts.user?.companyId);
@@ -185,6 +194,7 @@ module.exports.getById = async (id, opts = {}) => {
     });
 };
 
+// create: создаёт новую запись и возвращает результат.
 module.exports.create = async (payload = {}, opts = {}) => {
     const cid = requireCompanyId(opts.companyId || opts.user?.companyId || payload.companyId);
     const counterpartyId = payload.counterpartyId || null;
@@ -203,6 +213,7 @@ module.exports.create = async (payload = {}, opts = {}) => {
     return Deal.create({ ...toCreate, companyId: cid });
 };
 
+// update: обновляет запись и возвращает актуальные данные.
 module.exports.update = async (id, payload = {}, opts = {}) => {
     if (!id) throw new Error('id is required');
     const cid = requireCompanyId(opts.companyId || opts.user?.companyId || payload.companyId);
@@ -222,8 +233,10 @@ module.exports.update = async (id, payload = {}, opts = {}) => {
     return module.exports.getById(id, { companyId: cid });
 };
 
+// remove: удаляет запись с учётом бизнес-ограничений.
 module.exports.remove = async (id, opts = {}) => {
     if (!id) throw new Error('id is required');
     const cid = requireCompanyId(opts.companyId || opts.user?.companyId);
     return Deal.destroy({ where: { id, companyId: cid } });
 };
+

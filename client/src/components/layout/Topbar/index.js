@@ -17,6 +17,7 @@ import {
   useMarkAllNotificationsReadMutation,
 } from "../../../store/rtk/notificationApi";
 
+// readCssVarUrl: вспомогательная логика компонента.
 function readCssVarUrl(name) {
   if (typeof window === "undefined") return "";
   const raw = getComputedStyle(document.documentElement)
@@ -26,6 +27,7 @@ function readCssVarUrl(name) {
   return m ? m[1] : "";
 }
 
+// Компонент Topbar: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function Topbar({
   collapsed = false,
   title = "menu.pulpit",
@@ -74,7 +76,8 @@ export default function Topbar({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const unlock = () => {
+        // unlock: вспомогательная логика компонента.
+const unlock = () => {
       if (audioUnlockedRef.current) return;
       const audio = notifySoundRef.current;
       if (!audio) return;
@@ -103,10 +106,12 @@ export default function Topbar({
 
     const currentUserId = String(user.id);
 
-    const attach = (es) => {
+        // attach: вспомогательная логика компонента.
+const attach = (es) => {
       if (!es) return () => {};
 
-      const handler = (evt) => {
+            // handler: обработчик пользовательского действия.
+const handler = (evt) => {
         try {
           const payload = JSON.parse(evt.data);
           if (!payload?.type) return;
@@ -170,7 +175,8 @@ export default function Topbar({
   useEffect(() => {
     if (!notifOpen) return;
 
-    const close = (e) => {
+        // close: закрывает связанный UI-элемент.
+const close = (e) => {
       if (!notifRootRef.current) return;
       if (!notifRootRef.current.contains(e.target)) {
         setNotifOpen(false);
@@ -192,15 +198,15 @@ export default function Topbar({
         break;
 
       case "lead":
-        navigate(`/main/crm/leads/${id}`);
+        navigate(`/main/leads/${id}`);
         break;
 
       case "client":
-        navigate(`/main/crm/clients/${id}`);
+        navigate(`/main/clients/${id}`);
         break;
 
       case "counterparty":
-        navigate(`/main/crm/counterparties/${id}`);
+        navigate(`/main/counterparties/${id}`);
         break;
 
       default:
@@ -208,7 +214,8 @@ export default function Topbar({
     }
   };
 
-  const handleNotifClick = async (n) => {
+    // handleNotifClick: обработчик пользовательского действия.
+const handleNotifClick = async (n) => {
     if (!n.isRead) {
       try {
         await markRead(n.id).unwrap();
@@ -218,19 +225,22 @@ export default function Topbar({
     navigateByNotification(n);
   };
 
-  const handleClearAll = async () => {
+    // handleClearAll: обработчик пользовательского действия.
+const handleClearAll = async () => {
     if (!unreadCount) return;
     try {
       await markAll().unwrap();
     } catch {}
   };
 
-  const handleShowAll = () => {
+    // handleShowAll: обработчик пользовательского действия.
+const handleShowAll = () => {
     setNotifOpen(false);
     navigate("/main/notifications");
   };
 
-  const handleMarkRead = async (n) => {
+    // handleMarkRead: обработчик пользовательского действия.
+const handleMarkRead = async (n) => {
     if (!n?.id || n.isRead) return;
 
     try {
@@ -247,7 +257,8 @@ export default function Topbar({
   // user:avatar-ready now updates CSS var; signed URL is derived from user/var directly
 
   useEffect(() => {
-    const h = (e) => {
+        // h: вспомогательная логика компонента.
+const h = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         inputRef.current?.focus();
@@ -368,3 +379,4 @@ export default function Topbar({
     </header>
   );
 }
+

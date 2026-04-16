@@ -47,8 +47,10 @@ export default function useBrandAndBackground(
     const img = new Image();
     bgImgRef.current = img;
     img.crossOrigin = "anonymous";
-    img.onload = () => root.style.setProperty("--custom-bg-layer", `url("${safeBgUrl}")`);
-    img.onerror = () => { onBgError(); root.style.removeProperty("--custom-bg-layer"); };
+        // onload: вспомогательная логика модуля.
+img.onload = () => root.style.setProperty("--custom-bg-layer", `url("${safeBgUrl}")`);
+        // onerror: вспомогательная логика модуля.
+img.onerror = () => { onBgError(); root.style.removeProperty("--custom-bg-layer"); };
     img.src = safeBgUrl;
 
     return () => {
@@ -57,19 +59,22 @@ export default function useBrandAndBackground(
     };
   }, [safeBgUrl]);
 
-  const ensureImage = (url, cssVar, eventName, refHolder, onErr) =>
+    // ensureImage: вспомогательная логика модуля.
+const ensureImage = (url, cssVar, eventName, refHolder, onErr) =>
     new Promise((resolve) => {
       if (!url) return resolve(false);
       const root = document.documentElement;
       const img = new Image();
       refHolder.current = img;
       img.crossOrigin = "anonymous";
-      img.onload = () => {
+            // onload: вспомогательная логика модуля.
+img.onload = () => {
         root.style.setProperty(cssVar, `url("${url}")`);
         if (eventName) window.dispatchEvent(new CustomEvent(eventName, { detail: { url } }));
         resolve(true);
       };
-      img.onerror = () => { if (onErr) onErr(); root.style.removeProperty(cssVar); resolve(false); };
+            // onerror: вспомогательная логика модуля.
+img.onerror = () => { if (onErr) onErr(); root.style.removeProperty(cssVar); resolve(false); };
       img.src = url;
     });
 
@@ -115,3 +120,4 @@ export default function useBrandAndBackground(
     };
   }, [userAvatarUrl, onUserAvatarError]);
 }
+

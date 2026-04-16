@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 
+// Собирает MongoDB URI из переменных окружения.
+// Если MONGO_URI задан явно — использует его как приоритетный источник.
 function buildMongoUri() {
   if (process.env.MONGO_URI) return process.env.MONGO_URI;
 
@@ -19,6 +21,7 @@ function buildMongoUri() {
   return `mongodb://${host}:${port}/${db}`;
 }
 
+// Инициализирует подключение mongoose и возвращает объект активного connection.
 export async function initMongo() {
   const uri = buildMongoUri();
   await mongoose.connect(uri, { autoIndex: true });

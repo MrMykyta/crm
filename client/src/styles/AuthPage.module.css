@@ -110,14 +110,14 @@
 }
 .title{
   margin:0;
-  font-size:22px;
+  font-size: var(--font-size-22);
   font-weight:700;
   color: var(--text);
 }
 .subtitle{
   margin:6px 0 0;
   color: var(--muted);
-  font-size:14px;
+  font-size: var(--font-size-14);
   opacity:.9;
 }
 

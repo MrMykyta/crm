@@ -2,9 +2,12 @@ const { UserPreferences } = require('../../models');
 const ApplicationError = require('../../errors/ApplicationError');
 
 const UUID_RE = /^[0-9a-fA-F-]{32,36}$/;
+// isFileApiUrl: проверяет бизнес-условие и возвращает boolean.
 const isFileApiUrl = (v) => typeof v === 'string' && v.includes('/api/files/');
+// isHttpUrl: проверяет бизнес-условие и возвращает boolean.
 const isHttpUrl = (v) => /^https?:\/\//i.test(v);
 
+// validateBackgroundRef: валидирует входные данные и выбрасывает ошибку при нарушениях.
 const validateBackgroundRef = (value) => {
   if (value === undefined) return undefined;
   if (value === null || value === '') return null;
@@ -18,6 +21,7 @@ const validateBackgroundRef = (value) => {
   throw new ApplicationError('VALIDATION_ERROR: backgroundPath must be uuid|url|null', 400);
 };
 
+// getByUserId: возвращает данные по входным параметрам сервиса.
 async function getByUserId(userId) {
     try {
         const pref = await UserPreferences.findOne({ where: { userId } });
@@ -28,6 +32,7 @@ async function getByUserId(userId) {
     }
 }
 
+// upsertByUserId: выполняет вспомогательную бизнес-логику сервиса.
 async function upsertByUserId(userId, payload) {
   // Белый список полей, чтобы не перезаписать что-то лишнее
   const existing = await UserPreferences.findOne({ where: { userId } });
@@ -81,3 +86,4 @@ async function upsertByUserId(userId, payload) {
 }
 
 module.exports = { getByUserId, upsertByUserId };
+

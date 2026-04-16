@@ -6,13 +6,16 @@ const { User, PasswordResetTokens } = require('../../models');
 
 const RESET_TTL_HOURS = Number(process.env.PASSWORD_RESET_TTL_HOURS || 24);
 
+// makeRawToken: выполняет вспомогательную бизнес-логику сервиса.
 function makeRawToken() {
   return crypto.randomBytes(32).toString('hex'); // 64 символа
 }
+// hashToken: проверяет наличие данных и возвращает результат проверки.
 function hashToken(raw) {
   return crypto.createHash('sha256').update(raw).digest('hex');
 }
 
+// requestReset: выполняет вспомогательную бизнес-логику сервиса.
 async function requestReset(email, mailer, meta = {}) {
   // не раскрываем существование пользователя
   const user = await User.findOne({ where: { email } });
@@ -53,6 +56,7 @@ async function requestReset(email, mailer, meta = {}) {
   return { ok: true };
 }
 
+// resetPassword: выполняет вспомогательную бизнес-логику сервиса.
 async function resetPassword(rawToken, newPassword) {
   if (!rawToken || !newPassword) {
     const err = new Error('Invalid payload'); err.code = 'BAD_REQUEST'; throw err;

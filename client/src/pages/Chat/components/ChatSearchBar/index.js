@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import s from "../../ChatPage.module.css";
 
+// Компонент ChatSearchBar: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ChatSearchBar({
   open,
   query,
@@ -61,3 +62,4 @@ export default function ChatSearchBar({
     </div>
   );
 }
+

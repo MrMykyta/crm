@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import ThemeSwitcher from '../../../components/layout/ThemeSwitcher';
 import s from '../../../styles/AuthPage.module.css';
 
+// Компонент CompanySetupPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CompanySetupPage({setUser}) {
   const { t } = useTranslation();
   return (

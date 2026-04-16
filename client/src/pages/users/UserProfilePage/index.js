@@ -6,6 +6,7 @@ import UserAvatarHeader from "../../../components/user/UserAvatarHeader";
 import UserDetailTabs from "../UserDetailTabs";
 import { useGetMeQuery, useUpdateMeMutation } from "../../../store/rtk/userApi";
 
+// Компонент UserProfilePage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function UserProfilePage() {
   const { data: me, isFetching } = useGetMeQuery();
   const [updateMe, { isLoading: saving }] = useUpdateMeMutation();
@@ -22,9 +23,11 @@ export default function UserProfilePage() {
   );
 
   const base = me || null;
-  const load = async () => base;
+    // load: загружает данные в рамках UI-компонента.
+const load = async () => base;
 
-  const save = async (_id, payload) => {
+    // save: сохраняет данные в рамках UI-компонента.
+const save = async (_id, payload) => {
     const body = toApiUser(payload);
     const saved = await updateMe(body).unwrap();
     return saved;

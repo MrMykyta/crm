@@ -1,16 +1,28 @@
 'use strict';
+
 const { Op } = require('sequelize');
 const {
   sequelize,
   Contact,
-  ContactPoint,
   Counterparty,
   UserCompany,
   User,
 } = require('../../models');
 
-/* ========== helpers ========== */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const SORT_MAP = {
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  firstName: 'firstName',
+  lastName: 'lastName',
+  email: 'email',
+  phone: 'phone',
+  position: 'jobTitle',
+  isMain: 'isPrimary',
+};
+
+// requireCompanyId: выполняет вспомогательную бизнес-логику сервиса.
 function requireCompanyId(companyId) {
   if (!companyId) {
     const err = new Error('companyId is required');
@@ -19,11 +31,148 @@ function requireCompanyId(companyId) {
   }
 }
 
-async function assertCounterpartyInCompany(counterpartyId, companyId, tx) {
+// normalizeText: приводит значения к единому формату для сервиса.
+function normalizeText(value) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const text = String(value).trim();
+  return text || null;
+}
+
+// normalizeBoolean: приводит значения к единому формату для сервиса.
+function normalizeBoolean(value) {
+  if (value === undefined) return undefined;
+  if (typeof value === 'boolean') return value;
+  const lowered = String(value).toLowerCase();
+  return lowered === 'true' || lowered === '1';
+}
+
+// normalizeAvatarRef: приводит значения к единому формату для сервиса.
+function normalizeAvatarRef(value) {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string') {
+    const err = new Error('avatarUrl must be fileId(uuid) or external URL');
+    err.status = 400;
+    throw err;
+  }
+
+  const text = String(value).trim();
+  if (!text) return null;
+
+  if (text.includes('/api/files/')) {
+    const err = new Error('avatarUrl must be fileId(uuid) or external URL');
+    err.status = 400;
+    throw err;
+  }
+  if (UUID_RE.test(text)) return text;
+  if (/^https?:\/\/.+/i.test(text)) return text;
+
+  const err = new Error('avatarUrl must be fileId(uuid) or external URL');
+  err.status = 400;
+  throw err;
+}
+
+// buildSort: собирает служебную структуру для выполнения запроса.
+function buildSort(query = {}) {
+  const key = query.sortBy || query.sort || 'createdAt';
+  const dirRaw = String(query.sortOrder || query.dir || 'DESC').toUpperCase();
+  const direction = dirRaw === 'ASC' ? 'ASC' : 'DESC';
+  const column = SORT_MAP[key] || SORT_MAP.createdAt;
+  return [column, direction];
+}
+
+// parsePagination: парсит и нормализует входные параметры.
+function parsePagination(query = {}) {
+  const page = Math.max(1, Number(query.page || 1));
+  const limit = Math.min(100, Math.max(1, Number(query.limit || 25)));
+  const offset = (page - 1) * limit;
+  return { page, limit, offset };
+}
+
+// baseIncludes: выполняет вспомогательную бизнес-логику сервиса.
+function baseIncludes(companyId) {
+  return [
+    {
+      model: Counterparty,
+      as: 'counterparty',
+      attributes: ['id', 'shortName', 'fullName', 'type', 'status'],
+      required: false,
+      where: { companyId },
+    },
+    {
+      model: User,
+      as: 'creator',
+      attributes: ['id', 'firstName', 'lastName', 'email'],
+      required: false,
+    },
+    {
+      model: User,
+      as: 'responsible',
+      attributes: ['id', 'firstName', 'lastName', 'email'],
+      required: false,
+    },
+  ];
+}
+
+// toContactDto: выполняет вспомогательную бизнес-логику сервиса.
+function toContactDto(item) {
+  const row = item?.toJSON ? item.toJSON() : item;
+  if (!row) return null;
+
+  const first = String(row.firstName || '').trim();
+  const last = String(row.lastName || '').trim();
+  const fullName = [first, last].filter(Boolean).join(' ').trim() || row.displayName || first || last || null;
+
+  return {
+    ...row,
+    fullName,
+    position: row.jobTitle || null,
+    note: row.notes || null,
+    isMain: !!row.isPrimary,
+  };
+}
+
+// buildWhere: собирает служебную структуру для выполнения запроса.
+function buildWhere({ companyId, query = {} }) {
+  const where = { companyId };
+
+  if (query.counterpartyId) where.counterpartyId = query.counterpartyId;
+
+  const isMain = normalizeBoolean(query.isMain);
+  if (isMain !== undefined) where.isPrimary = isMain;
+
+  const search = String(query.search || '').trim();
+  if (search) {
+    const s = `%${search}%`;
+    where[Op.or] = [
+      { firstName: { [Op.iLike]: s } },
+      { lastName: { [Op.iLike]: s } },
+      { email: { [Op.iLike]: s } },
+      { phone: { [Op.iLike]: s } },
+      { jobTitle: { [Op.iLike]: s } },
+      { department: { [Op.iLike]: s } },
+      { notes: { [Op.iLike]: s } },
+    ];
+  }
+
+  return where;
+}
+
+// assertCounterpartyInCompany: выполняет вспомогательную бизнес-логику сервиса.
+async function assertCounterpartyInCompany(counterpartyId, companyId, transaction) {
+  if (!counterpartyId) {
+    const err = new Error('counterpartyId is required');
+    err.status = 400;
+    throw err;
+  }
+
   const row = await Counterparty.findOne({
     where: { id: counterpartyId, companyId },
-    transaction: tx,
+    transaction,
+    attributes: ['id'],
   });
+
   if (!row) {
     const err = new Error('counterpartyId is invalid');
     err.status = 400;
@@ -31,11 +180,13 @@ async function assertCounterpartyInCompany(counterpartyId, companyId, tx) {
   }
 }
 
-async function assertMemberInCompany(userId, companyId, tx) {
+// assertMemberInCompany: выполняет вспомогательную бизнес-логику сервиса.
+async function assertMemberInCompany(userId, companyId, transaction) {
   if (!userId) return;
   const row = await UserCompany.findOne({
     where: { userId, companyId },
-    transaction: tx,
+    transaction,
+    attributes: ['id'],
   });
   if (!row) {
     const err = new Error('mainResponsibleUserId is invalid');
@@ -44,247 +195,325 @@ async function assertMemberInCompany(userId, companyId, tx) {
   }
 }
 
-function buildWhere({ companyId, query }) {
-  const where = { companyId };
+// buildPatch: собирает служебную структуру для выполнения запроса.
+function buildPatch(payload = {}) {
+  const patch = {};
 
-  if (query.status) where.status = query.status;
-  if (query.counterpartyId) where.counterpartyId = query.counterpartyId;
-  if (query.department) where.department = query.department;
-  if (query.jobTitle) where.jobTitle = query.jobTitle;
-
-  if (query.search) {
-    const s = `%${query.search}%`;
-    where[Op.or] = [
-      { firstName:  { [Op.iLike]: s } },
-      { lastName:   { [Op.iLike]: s } },
-      { middleName: { [Op.iLike]: s } },
-      { displayName:{ [Op.iLike]: s } },
-      { notes:      { [Op.iLike]: s } },
-    ];
+  if (Object.prototype.hasOwnProperty.call(payload, 'counterpartyId')) {
+    patch.counterpartyId = payload.counterpartyId;
   }
-  return where;
+  if (Object.prototype.hasOwnProperty.call(payload, 'firstName')) {
+    patch.firstName = normalizeText(payload.firstName);
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'lastName')) {
+    patch.lastName = normalizeText(payload.lastName);
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'email')) {
+    patch.email = normalizeText(payload.email);
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'phone')) {
+    patch.phone = normalizeText(payload.phone);
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'avatarUrl')) {
+    patch.avatarUrl = normalizeAvatarRef(payload.avatarUrl);
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'position')) {
+    patch.jobTitle = normalizeText(payload.position);
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'jobTitle')) {
+    patch.jobTitle = normalizeText(payload.jobTitle);
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'department')) {
+    patch.department = normalizeText(payload.department);
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'note')) {
+    patch.notes = normalizeText(payload.note);
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'notes')) {
+    patch.notes = normalizeText(payload.notes);
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'isMain')) {
+    patch.isPrimary = !!payload.isMain;
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'isPrimary')) {
+    patch.isPrimary = !!payload.isPrimary;
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'mainResponsibleUserId')) {
+    patch.mainResponsibleUserId = payload.mainResponsibleUserId || null;
+  }
+
+  return patch;
 }
 
-async function syncContactPoints({ companyId, contactId, points = [], userId, tx }) {
-  // points: [{channel, valueRaw, label?, isPrimary?, isPublic?, notes?}]
-  if (!Array.isArray(points)) return;
-
-  // грузим существующие
-  const rows = await ContactPoint.findAll({
-    where: { companyId, ownerType: 'contact', ownerId: contactId },
-    transaction: tx,
-  });
-
-  const byKey = (p) => `${p.channel}::${(p.valueNorm || p.valueRaw || '').trim().toLowerCase()}`;
-  const normVal = (s) => (s || '').trim();
-  // простая стратегия: удаляем всё и создаём заново (проще и безопасно)
-  if (rows.length) {
-    await ContactPoint.destroy({
-      where: { companyId, ownerType: 'contact', ownerId: contactId },
-      transaction: tx,
-      force: false,
-    });
-  }
-
-  if (points.length) {
-    const toInsert = points.map(p => ({
-      companyId,
-      ownerType: 'contact',
-      ownerId: contactId,
-      channel: p.channel,
-      valueRaw: normVal(p.valueRaw || p.valueNorm),
-      valueNorm: normVal(p.valueNorm || p.valueRaw) || null,
-      label: p.label || null,
-      isPrimary: !!p.isPrimary,
-      isPublic: p.isPublic != null ? !!p.isPublic : true,
-      notes: p.notes || null,
-      createdBy: userId || null,
-    }));
-    await ContactPoint.bulkCreate(toInsert, { transaction: tx });
-  }
-}
-
-/* ========== service ========== */
-
-module.exports.list = async ({ companyId, query = {} }) => {
+// getContacts: возвращает данные по входным параметрам сервиса.
+module.exports.getContacts = async ({ companyId, query = {} }) => {
   requireCompanyId(companyId);
 
-  const page  = Math.max(1, Number(query.page || 1));
-  const limit = Math.min(100, Math.max(1, Number(query.limit || 25)));
-  const offset = (page - 1) * limit;
-
+  const { page, limit, offset } = parsePagination(query);
   const where = buildWhere({ companyId, query });
-
-  const include = [];
-  if (query.withCounterparty === '1') {
-    include.push({
-      model: Counterparty,
-      as: 'counterparty',
-      attributes: ['id','shortName','fullName','type','status'],
-      where: { companyId },
-      required: false,
-    });
-  }
-  if (query.withPoints === '1') {
-    include.push({
-      model: ContactPoint,
-      as: 'contactPoints',
-      attributes: ['id','channel','valueRaw','valueNorm','label','isPrimary','isPublic'],
-      where: { companyId },
-      required: false,
-    });
-  }
-
-  const sortKey = query.sort || 'createdAt';
-  const sortDir = (query.dir || 'DESC').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+  const [sortColumn, sortDir] = buildSort(query);
 
   const { rows, count } = await Contact.findAndCountAll({
     where,
-    include,
-    order: [[sortKey, sortDir]],
+    include: baseIncludes(companyId),
+    order: [[sortColumn, sortDir]],
     offset,
     limit,
     distinct: true,
   });
 
-  return { rows, count, page, limit };
+  return {
+    rows: rows.map(toContactDto),
+    count,
+    page,
+    limit,
+    totalPages: Math.max(1, Math.ceil(Number(count || 0) / limit)),
+  };
 };
 
-module.exports.getOne = async ({ companyId, id, query = {} }) => {
+// getContactsByCounterparty: возвращает данные по входным параметрам сервиса.
+module.exports.getContactsByCounterparty = async ({ companyId, counterpartyId, query = {} }) => {
   requireCompanyId(companyId);
-  const include = [
-    {
-      model: Counterparty,
-      as: 'counterparty',
-      attributes: ['id','shortName','fullName','type','status'],
-      where: { companyId },
-      required: false,
-    },
-    { model: User, as: 'responsible', attributes: ['id','firstName','lastName','email'] },
-    { model: User, as: 'creator', attributes: ['id','firstName','lastName','email'] },
-    { model: User, as: 'updater', attributes: ['id','firstName','lastName','email'] },
-  ];
-  if (query.withPoints !== '0') {
-    include.push({
-      model: ContactPoint,
-      as: 'contactPoints',
-      attributes: ['id','channel','valueRaw','valueNorm','label','isPrimary','isPublic','notes'],
-      where: { companyId },
-      required: false,
-    });
+  await assertCounterpartyInCompany(counterpartyId, companyId);
+
+  return module.exports.getContacts({
+    companyId,
+    query: { ...query, counterpartyId },
+  });
+};
+
+// getContactById: возвращает данные по входным параметрам сервиса.
+module.exports.getContactById = async ({ companyId, contactId, transaction }) => {
+  requireCompanyId(companyId);
+
+  const item = await Contact.findOne({
+    where: { id: contactId, companyId },
+    include: baseIncludes(companyId),
+    transaction,
+  });
+
+  if (!item) {
+    const err = new Error('Contact not found');
+    err.status = 404;
+    throw err;
   }
 
-  const item = await Contact.findOne({ where: { id, companyId }, include });
-  if (!item) throw new Error('Contact not found');
-  return item;
+  return toContactDto(item);
 };
 
-module.exports.create = async ({ companyId, user, payload }) => {
+// createContact: создаёт новую запись и возвращает результат.
+module.exports.createContact = async ({ companyId, payload = {}, user }) => {
   requireCompanyId(companyId);
-  if (!user?.id) throw new Error('auth required');
-  if (!payload?.counterpartyId) throw new Error('counterpartyId is required');
+  if (!user?.id) {
+    const err = new Error('auth required');
+    err.status = 401;
+    throw err;
+  }
 
-  const data = {
-    companyId,
-    counterpartyId: payload.counterpartyId,
-    mainResponsibleUserId: payload.mainResponsibleUserId || null,
+  const patch = buildPatch(payload);
+  if (!patch.firstName) {
+    const err = new Error('firstName is required');
+    err.status = 400;
+    throw err;
+  }
 
-    firstName:  payload.firstName?.trim() || null,
-    lastName:   payload.lastName?.trim() || null,
-    middleName: payload.middleName?.trim() || null,
-    displayName:payload.displayName?.trim() || null,
+  return sequelize.transaction(async (transaction) => {
+    await assertCounterpartyInCompany(payload.counterpartyId, companyId, transaction);
+    await assertMemberInCompany(patch.mainResponsibleUserId, companyId, transaction);
 
-    jobTitle:   payload.jobTitle?.trim() || null,
-    department: payload.department?.trim() || null,
+    const isPrimary = !!patch.isPrimary;
+    const counterpartyId = payload.counterpartyId;
 
-    status:     payload.status || 'active',
-    isPrimary:  !!payload.isPrimary,
-
-    notes: payload.notes || null,
-
-    createdBy: user.id,
-    updatedBy: user.id,
-  };
-
-  return sequelize.transaction(async (tx) => {
-    await assertCounterpartyInCompany(payload.counterpartyId, companyId, tx);
-    await assertMemberInCompany(payload.mainResponsibleUserId, companyId, tx);
-
-    // если ставим primary — снимем флаг у прочих по тому же контрагенту
-    if (data.isPrimary) {
+    if (isPrimary) {
       await Contact.update(
         { isPrimary: false },
-        { where: { companyId, counterpartyId: data.counterpartyId, deletedAt: null }, transaction: tx }
+        {
+          where: { companyId, counterpartyId, deletedAt: null },
+          transaction,
+          validate: false,
+        }
       );
     }
 
-    const contact = await Contact.create(data, { transaction: tx });
+    const created = await Contact.create(
+      {
+        companyId,
+        counterpartyId,
+        firstName: patch.firstName,
+        lastName: patch.lastName || null,
+        email: patch.email || null,
+        phone: patch.phone || null,
+        avatarUrl: patch.avatarUrl || null,
+        jobTitle: patch.jobTitle || null,
+        department: patch.department || null,
+        notes: patch.notes || null,
+        isPrimary,
+        mainResponsibleUserId: patch.mainResponsibleUserId || null,
+        status: 'active',
+        createdBy: user.id,
+        updatedBy: user.id,
+      },
+      { transaction }
+    );
 
-    if (Array.isArray(payload.contactPoints) && payload.contactPoints.length) {
-      await syncContactPoints({ companyId, contactId: contact.id, points: payload.contactPoints, userId: user.id, tx });
-    }
-
-    return module.exports.getOne({ companyId, id: contact.id });
+    return module.exports.getContactById({
+      companyId,
+      contactId: created.id,
+      transaction,
+    });
   });
 };
 
-module.exports.update = async ({ companyId, id, user, payload }) => {
+// updateContact: обновляет запись и возвращает актуальные данные.
+module.exports.updateContact = async ({ companyId, contactId, payload = {}, user }) => {
   requireCompanyId(companyId);
-  if (!user?.id) throw new Error('auth required');
+  if (!user?.id) {
+    const err = new Error('auth required');
+    err.status = 401;
+    throw err;
+  }
 
-  const contact = await Contact.findOne({ where: { id, companyId } });
-  if (!contact) throw new Error('Contact not found');
+  const contact = await Contact.findOne({ where: { id: contactId, companyId } });
+  if (!contact) {
+    const err = new Error('Contact not found');
+    err.status = 404;
+    throw err;
+  }
 
-  const patch = {
-    mainResponsibleUserId: payload.mainResponsibleUserId !== undefined ? payload.mainResponsibleUserId : contact.mainResponsibleUserId,
+  const patch = buildPatch(payload);
 
-    firstName:  payload.firstName  !== undefined ? (payload.firstName?.trim()  || null) : contact.firstName,
-    lastName:   payload.lastName   !== undefined ? (payload.lastName?.trim()   || null) : contact.lastName,
-    middleName: payload.middleName !== undefined ? (payload.middleName?.trim() || null) : contact.middleName,
-    displayName:payload.displayName!== undefined ? (payload.displayName?.trim()|| null) : contact.displayName,
+  if (Object.prototype.hasOwnProperty.call(patch, 'firstName') && !patch.firstName) {
+    const err = new Error('firstName is required');
+    err.status = 400;
+    throw err;
+  }
 
-    jobTitle:   payload.jobTitle   !== undefined ? (payload.jobTitle?.trim()   || null) : contact.jobTitle,
-    department: payload.department !== undefined ? (payload.department?.trim() || null) : contact.department,
+  return sequelize.transaction(async (transaction) => {
+    const nextCounterpartyId = patch.counterpartyId || contact.counterpartyId;
 
-    status:     payload.status !== undefined ? payload.status : contact.status,
-    isPrimary:  payload.isPrimary !== undefined ? !!payload.isPrimary : contact.isPrimary,
-
-    notes: payload.notes !== undefined ? payload.notes : contact.notes,
-
-    updatedBy: user.id,
-  };
-
-  return sequelize.transaction(async (tx) => {
-    if (payload.mainResponsibleUserId !== undefined) {
-      await assertMemberInCompany(payload.mainResponsibleUserId, companyId, tx);
+    if (Object.prototype.hasOwnProperty.call(patch, 'counterpartyId')) {
+      await assertCounterpartyInCompany(nextCounterpartyId, companyId, transaction);
     }
 
-    if (patch.isPrimary && !contact.isPrimary) {
+    if (Object.prototype.hasOwnProperty.call(patch, 'mainResponsibleUserId')) {
+      await assertMemberInCompany(patch.mainResponsibleUserId, companyId, transaction);
+    }
+
+    if (patch.isPrimary) {
       await Contact.update(
         { isPrimary: false },
-        { where: { companyId, counterpartyId: contact.counterpartyId, id: { [Op.ne]: id }, deletedAt: null }, transaction: tx }
+        {
+          where: {
+            companyId,
+            counterpartyId: nextCounterpartyId,
+            id: { [Op.ne]: contactId },
+            deletedAt: null,
+          },
+          transaction,
+          validate: false,
+        }
       );
     }
 
-    await contact.update(patch, { transaction: tx });
+    await contact.update(
+      {
+        ...patch,
+        updatedBy: user.id,
+      },
+      {
+        transaction,
+        validate: false,
+      }
+    );
 
-    if (Array.isArray(payload.contactPoints)) {
-      await syncContactPoints({ companyId, contactId: contact.id, points: payload.contactPoints, userId: user.id, tx });
-    }
-
-    return module.exports.getOne({ companyId, id: contact.id });
+    return module.exports.getContactById({
+      companyId,
+      contactId,
+      transaction,
+    });
   });
 };
 
-module.exports.remove = async ({ companyId, id }) => {
+// deleteContact: удаляет запись с учётом бизнес-ограничений.
+module.exports.deleteContact = async ({ companyId, contactId }) => {
   requireCompanyId(companyId);
-  const contact = await Contact.findOne({ where: { id, companyId } });
-  if (!contact) throw new Error('Contact not found');
+
+  const contact = await Contact.findOne({ where: { id: contactId, companyId } });
+  if (!contact) {
+    const err = new Error('Contact not found');
+    err.status = 404;
+    throw err;
+  }
+
   await contact.destroy();
+  return true;
 };
 
-module.exports.restore = async ({ companyId, id }) => {
+// setMainContact: изменяет состояние сущности по правилам сервиса.
+module.exports.setMainContact = async ({ companyId, contactId, user }) => {
   requireCompanyId(companyId);
-  await Contact.restore({ where: { id, companyId } });
-  return module.exports.getOne({ companyId, id });
+
+  const contact = await Contact.findOne({ where: { id: contactId, companyId } });
+  if (!contact) {
+    const err = new Error('Contact not found');
+    err.status = 404;
+    throw err;
+  }
+
+  return sequelize.transaction(async (transaction) => {
+    await Contact.update(
+      { isPrimary: false },
+      {
+        where: {
+          companyId,
+          counterpartyId: contact.counterpartyId,
+          deletedAt: null,
+        },
+        transaction,
+        validate: false,
+      }
+    );
+
+    await Contact.update(
+      {
+        isPrimary: true,
+        updatedBy: user?.id || contact.updatedBy || null,
+      },
+      {
+        where: {
+          id: contact.id,
+          companyId,
+        },
+        transaction,
+        validate: false,
+      }
+    );
+
+    return module.exports.getContactById({
+      companyId,
+      contactId: contact.id,
+      transaction,
+    });
+  });
 };
+
+// restoreContact: выполняет вспомогательную бизнес-логику сервиса.
+module.exports.restoreContact = async ({ companyId, contactId }) => {
+  requireCompanyId(companyId);
+  await Contact.restore({ where: { id: contactId, companyId } });
+  return module.exports.getContactById({ companyId, contactId });
+};
+
+/* Backward-compatible aliases */
+module.exports.list = ({ companyId, query = {} }) => module.exports.getContacts({ companyId, query });
+// getOne: возвращает данные по входным параметрам сервиса.
+module.exports.getOne = ({ companyId, id }) => module.exports.getContactById({ companyId, contactId: id });
+// create: создаёт новую запись и возвращает результат.
+module.exports.create = ({ companyId, payload, user }) => module.exports.createContact({ companyId, payload, user });
+// update: обновляет запись и возвращает актуальные данные.
+module.exports.update = ({ companyId, id, payload, user }) => module.exports.updateContact({ companyId, contactId: id, payload, user });
+// remove: удаляет запись с учётом бизнес-ограничений.
+module.exports.remove = ({ companyId, id }) => module.exports.deleteContact({ companyId, contactId: id });
+// restore: выполняет вспомогательную бизнес-логику сервиса.
+module.exports.restore = ({ companyId, id }) => module.exports.restoreContact({ companyId, contactId: id });
+

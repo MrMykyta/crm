@@ -14,6 +14,7 @@ export const COMPANY_MAX = {
   description: 2000,
 };
 
+// companySchema: описывает схему валидации и преобразования данных.
 export function companySchema(i18n) {
   const countryOpts = getCountryOptions(i18n.language).map(c => ({ value: c.code, label: c.label }));
 
@@ -45,7 +46,9 @@ export function companySchema(i18n) {
   ];
 }
 
-export const toFormCompany = (d) => ({
+export // toFormCompany : to form company.
+// toFormCompany: описывает схему валидации и преобразования данных.
+const toFormCompany = (d) => ({
   name:        d?.name ?? '',
   website:     d?.website ?? '',
   email:       d?.email ?? '',
@@ -62,7 +65,9 @@ export const toFormCompany = (d) => ({
   avatarUrl:   d?.avatarUrl || '', // ← берём то, что вернул API
 });
 
-export const toApiCompany = (v) => ({
+export // toApiCompany : to api company.
+// toApiCompany: описывает схему валидации и преобразования данных.
+const toApiCompany = (v) => ({
   name:        v.name?.trim(),
   website:     trimOrNull(v.website),
   email:       trimOrNull(v.email),
@@ -79,6 +84,7 @@ export const toApiCompany = (v) => ({
   avatarUrl:   trimOrNull(v.avatarUrl), // ← сохраняем, если юзер руками подставил ссылку
 });
 
+// trimOrNull: описывает схему валидации и преобразования данных.
 const trimOrNull = (x) => {
   if (x == null) return null;
   const s = String(x).trim();

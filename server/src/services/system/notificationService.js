@@ -44,6 +44,7 @@ module.exports.createForUser = async function createForUser({
   }
 };
 
+// createForManyUsers: создаёт новую запись и возвращает результат.
 module.exports.createForManyUsers = async function createForManyUsers({
   companyId,
   userIds,
@@ -95,6 +96,7 @@ module.exports.notifyUser = async function notifyUser(params) {
   return row;
 };
 
+// notifyManyUsers: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.notifyManyUsers = async function notifyManyUsers(params) {
   const rows = await module.exports.createForManyUsers(params);
   if (!rows.length) return rows;
@@ -166,6 +168,7 @@ module.exports.markOneRead = async function markOneRead(companyId, userId, id) {
   return n > 0;
 };
 
+// markAllRead: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.markAllRead = async function markAllRead(companyId, userId) {
   const [n] = await Notification.update(
     { isRead: true },
@@ -173,3 +176,4 @@ module.exports.markAllRead = async function markAllRead(companyId, userId) {
   );
   return n;
 };
+

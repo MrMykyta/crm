@@ -9,11 +9,13 @@ import { resetApp } from '..'; // <-- импортируем из store/index.js
 const LS_RT = 'rt';
 const LS_CID = 'cid';
 
+// saveRT: сохраняет данные для RTK Query.
 const saveRT = (rt) => {
   try {
     rt ? localStorage.setItem(LS_RT, rt) : localStorage.removeItem(LS_RT);
   } catch {}
 };
+// loadRT: загружает данные для RTK Query.
 const loadRT = () => {
   try {
     return localStorage.getItem(LS_RT) || null;
@@ -22,6 +24,7 @@ const loadRT = () => {
   }
 };
 
+// saveCID: сохраняет данные для RTK Query.
 const saveCID = (cid) => {
   try {
     cid
@@ -29,6 +32,7 @@ const saveCID = (cid) => {
       : localStorage.removeItem(LS_CID);
   } catch {}
 };
+// loadCID: загружает данные для RTK Query.
 const loadCID = () => {
   try {
     return localStorage.getItem(LS_CID) || null;
@@ -38,11 +42,14 @@ const loadCID = () => {
 };
 
 export const sessionApi = crmApi.injectEndpoints({
-  endpoints: (build) => ({
+    // endpoints: описывает набор endpoint-ов RTK Query.
+endpoints: (build) => ({
     /** ====== LOGIN ====== */
     login: build.mutation({
-      query: (body) => ({ url: '/auth/login', method: 'POST', body }),
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (body) => ({ url: '/auth/login', method: 'POST', body }),
+            // onQueryStarted: запускает побочные эффекты жизненного цикла запроса.
+async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         try {
           const { data = {} } = await queryFulfilled;
 
@@ -79,12 +86,14 @@ export const sessionApi = crmApi.injectEndpoints({
 
     /** ====== REFRESH ====== */
     refresh: build.mutation({
-      query: ({ refreshToken, companyId }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ refreshToken, companyId }) => ({
         url: '/auth/refresh',
         method: 'POST',
         body: { refreshToken, companyId },
       }),
-      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+            // onQueryStarted: запускает побочные эффекты жизненного цикла запроса.
+async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         const silent = !!arg?.silent;
         try {
           const { data = {} } = await queryFulfilled;
@@ -144,7 +153,8 @@ export const sessionApi = crmApi.injectEndpoints({
 
     /** ====== LOGOUT ====== */
     logout: build.mutation({
-      query: () => {
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: () => {
         const rt = loadRT();
         return {
           url: '/auth/logout',
@@ -152,7 +162,8 @@ export const sessionApi = crmApi.injectEndpoints({
           body: rt ? { refreshToken: rt } : {},
         };
       },
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+            // onQueryStarted: запускает побочные эффекты жизненного цикла запроса.
+async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         try {
           await queryFulfilled;
         } catch (err) {

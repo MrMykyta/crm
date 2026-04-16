@@ -1,6 +1,7 @@
 // middlewares/requireMember.js
 const { UserCompany } = require('../models');
 
+// Проверяет, что пользователь состоит в текущей компании, и сохраняет membership в req.
 module.exports.requireMember = async (req, res, next) => {
     try {
       const companyId = req.companyId;

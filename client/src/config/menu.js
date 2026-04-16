@@ -28,13 +28,13 @@ export const MENU = [
   { key: "pulpit", icon: Home, labelKey: "menu.pulpit", route: "/main/pulpit", type: "item" },
 
   { key: "crm", icon: Users, labelKey: "menu.crm", type: "section" },
-  { key: "counterparties", icon: Building2, labelKey: "menu.counterparties", route: "/main/crm/counterparties", type: "item" },
-  { key: "leads", icon: Sprout, labelKey: "menu.leads", route: "/main/crm/leads", type: "item", filterFlyout: true },
-  { key: "clients", icon: Users, labelKey: "menu.clients", route: "/main/crm/clients", type: "item", filterFlyout: true },
+  { key: "counterparties", icon: Building2, labelKey: "menu.counterparties", route: "/main/counterparties", type: "item" },
+  { key: "leads", icon: Sprout, labelKey: "menu.leads", route: "/main/leads", type: "item", filterFlyout: true },
+  { key: "clients", icon: Users, labelKey: "menu.clients", route: "/main/clients", type: "item", filterFlyout: true },
   { key: "deals", icon: LineChart, labelKey: "menu.deals", route: "/main/deals", type: "item" },
   { key: "tasks", icon: CheckSquare, labelKey: "menu.tasks", route: "/main/tasks", type: "item" },
   { key: "notes", icon: ClipboardList, labelKey: "menu.notes", route: "/main/notes", type: "item" },
-  { key: "contactperson", icon: Users, labelKey: "menu.contactsperson", route: "/main/contactsperson", type: "item" },
+  { key: "contacts", icon: Users, labelKey: "menu.contacts", route: "/main/contacts", type: "item" },
   { key: "calendar", icon: Calendar, labelKey: "menu.calendar", route: "/main/calendar", type: "item" },
   { key: "chat", icon: MessagesSquare, labelKey: "menu.chat", route: "/main/chat", type: "item" },
 
@@ -48,7 +48,7 @@ export const MENU = [
   { key: "shipments", icon: Truck, labelKey: "menu.shipments", route: "/main/oms/shipments", type: "item" },
 
   { key: "pim", icon: ShoppingBag, labelKey: "menu.pim", type: "section" },
-  { key: "products", icon: Package, labelKey: "menu.products", route: "/main/pim/products", type: "item", filterFlyout: true },
+  { key: "products", icon: Package, labelKey: "menu.products", route: "/main/products", type: "item", filterFlyout: true },
   { key: "services", icon: Wrench, labelKey: "menu.services", route: "/main/pim/services", type: "item" },
 
   { key: "wms", icon: Warehouse, labelKey: "menu.wms", type: "section" },

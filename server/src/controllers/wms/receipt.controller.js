@@ -2,6 +2,7 @@
 // receipt.controller.js (generated)
 const svc = require('../../services/wms/receiptService');
 
+// Создаёт новую сущность и возвращает результат создания.
 module.exports.create = async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
@@ -13,6 +14,7 @@ module.exports.create = async (req, res, next) => {
   }
 };
 
+// Проводит приёмку отдельной строки в документе поступления.
 module.exports.receiveLine = async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
@@ -23,3 +25,4 @@ module.exports.receiveLine = async (req, res, next) => {
     next(e);
   }
 };
+

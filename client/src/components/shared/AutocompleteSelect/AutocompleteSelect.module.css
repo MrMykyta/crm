@@ -5,94 +5,246 @@
 
 .input {
   width: 100%;
-  padding: 10px 36px 10px 12px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--card-bg) 70%, var(--text) 20%);
-  background: var(--card-bg);
-  color: var(--text);
-  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+  min-height: 40px;
+  padding: 9px 36px 9px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--ui-field-border);
+  background: var(--ui-field-bg);
+  color: var(--ui-text-1);
+  transition: border-color .14s ease, box-shadow .14s ease, background .14s ease;
+}
+
+.input::placeholder {
+  color: color-mix(in srgb, var(--ui-text-3) 94%, transparent);
+}
+
+.input:hover {
+  border-color: var(--ui-field-border-hover);
+  background: var(--ui-field-bg-hover);
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--focus);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 22%, transparent);
+  border-color: var(--ui-field-border-focus);
+  box-shadow: var(--ui-focus-ring);
 }
 
 .caret {
   position: absolute;
   right: 12px;
   top: 50%;
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 6px solid var(--muted);
-  transform: translateY(-35%);
+  width: 10px;
+  height: 10px;
+  border-left: 2px solid color-mix(in srgb, var(--ui-text-3) 92%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--ui-text-3) 92%, transparent);
+  transform: translateY(-60%) rotate(-45deg);
   pointer-events: none;
+  transition: border-color .14s ease;
+}
+
+.caretOpen {
+  transform: translateY(-40%) rotate(135deg);
+}
+
+.wrap:focus-within .caret {
+  border-color: color-mix(in srgb, var(--ui-text-1) 86%, transparent);
 }
 
 .menuFixed {
   position: fixed;
-  z-index: 9999;
-  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
-  border: 1px solid color-mix(in srgb, var(--card-brd, var(--card-bg)) 75%, transparent);
+  z-index: 10015;
   border-radius: 12px;
-  box-shadow: 0 12px 32px color-mix(in srgb, var(--shadow-clr, #000) 38%, transparent);
+  border: 1px solid var(--ui-overlay-border);
+  background: var(--ui-overlay-bg);
+  box-shadow: var(--ui-overlay-shadow);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   overflow: hidden;
+  transform-origin: top center;
+  animation: menuIn .12s ease-out;
+}
+
+.menuOpaque {
+  background: var(--ui-overlay-bg-strong);
 }
 
 .state {
-  padding: 12px 12px;
-  font-size: 13px;
-  color: var(--muted);
+  padding: 12px;
+  font-size: var(--font-size-12);
+  color: color-mix(in srgb, var(--ui-text-2) 96%, transparent);
+}
+
+.createRow {
+  padding: 8px 8px 0;
+}
+
+.createAction {
+  width: 100%;
+  min-height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--ui-action-primary-border);
+  background: color-mix(in srgb, var(--primary-start) 16%, transparent);
+  color: color-mix(in srgb, var(--ui-text-1) 96%, transparent);
+  font-size: var(--font-size-13);
+  text-align: left;
+  padding: 0 12px;
+  cursor: pointer;
+  transition: background .14s ease, border-color .14s ease;
+}
+
+.createAction:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary-start) 24%, transparent);
+  border-color: color-mix(in srgb, var(--primary-start) 64%, transparent);
+}
+
+.createAction:disabled {
+  opacity: .72;
+  cursor: default;
+}
+
+.createActionOpaque {
+  background: color-mix(in srgb, var(--ui-surface-2) 92%, var(--primary-start) 8%);
 }
 
 .list {
   display: grid;
-  gap: 4px;
-  padding: 6px;
-  max-height: 320px;
+  gap: 6px;
+  max-height: var(--ac-menu-max-height, 320px);
   overflow: auto;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-overlay-scrollbar-thumb) var(--ui-overlay-scrollbar-track);
+}
+
+.list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.list::-webkit-scrollbar-track {
+  background: var(--ui-overlay-scrollbar-track);
+}
+
+.list::-webkit-scrollbar-thumb {
+  background: var(--ui-overlay-scrollbar-thumb);
+  border-radius: 999px;
 }
 
 .option {
   width: 100%;
-  text-align: left;
+  min-height: 48px;
+  border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
-  border-radius: 10px;
-  cursor: pointer;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  text-align: left;
+  cursor: pointer;
+  color: color-mix(in srgb, var(--ui-text-1) 96%, transparent);
+  transition: border-color .14s ease, background .14s ease, color .14s ease;
+}
+
+.optionOpaque {
+  background: transparent;
 }
 
 .option:hover {
-  background: color-mix(in srgb, var(--sidebar-hover) 70%, transparent);
+  border-color: color-mix(in srgb, var(--ui-border-focus) 66%, transparent);
+  background: var(--ui-overlay-hover);
+}
+
+.optionOpaque:hover {
+  background: var(--ui-overlay-hover);
 }
 
 .optionActive {
-  background: color-mix(in srgb, var(--sidebar-hover) 70%, transparent);
-  border-color: color-mix(in srgb, var(--focus) 30%, transparent);
+  border-color: color-mix(in srgb, var(--ui-border-focus) 72%, transparent);
+  background: var(--ui-overlay-hover);
 }
 
 .optionSelected {
-  border-color: color-mix(in srgb, var(--primary-start) 35%, transparent);
+  border-color: color-mix(in srgb, var(--primary-start) 54%, transparent);
+  background: var(--ui-overlay-selected);
 }
 
 .optionPrimary {
-  font-weight: 600;
-  color: var(--text);
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: var(--font-size-13);
+  font-weight: 600;
+  color: color-mix(in srgb, var(--ui-text-1) 94%, transparent);
+}
+
+.optionRight {
+  flex: 0 0 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 .optionSecondary {
-  font-size: 12px;
-  color: var(--muted);
+  max-width: 230px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: var(--font-size-11);
+  color: color-mix(in srgb, var(--ui-text-2) 94%, transparent);
+  text-align: right;
+}
+
+.optionEditBtn,
+.optionDeleteBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid var(--ui-border-soft);
+  background: color-mix(in srgb, var(--ui-surface-2) 94%, transparent);
+  color: color-mix(in srgb, var(--ui-text-2) 96%, transparent);
+  font-size: var(--font-size-12);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color .14s ease, background .14s ease;
+}
+
+.optionEditBtn:hover {
+  border-color: color-mix(in srgb, var(--ui-border-focus) 72%, transparent);
+  background: color-mix(in srgb, var(--primary-start) 14%, transparent);
+}
+
+.optionDeleteBtn {
+  border-color: var(--ui-action-danger-border);
+  color: var(--ui-action-danger-text);
+  background: var(--ui-action-danger-bg);
+}
+
+.optionDeleteBtn:hover {
+  background: var(--ui-action-danger-bg-hover);
+}
+
+.optionEditBtn[aria-disabled="true"],
+.optionDeleteBtn[aria-disabled="true"] {
+  opacity: .68;
+  cursor: default;
+}
+
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px) scale(.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }

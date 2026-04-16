@@ -4,7 +4,9 @@ import React from "react";
 import i18n from "../../../i18n";
 
 // детерминированный цвет по userId
-export const getUserColor = (userId) => {
+export // getUserColor : get user color.
+// getUserColor: возвращает вычисленное значение для UI.
+const getUserColor = (userId) => {
   if (!userId) return undefined;
 
   let hash = 0;
@@ -18,7 +20,9 @@ export const getUserColor = (userId) => {
 };
 
 // helpers для автора / аватарки
-export const getAuthorInfo = (m, companyUsers = []) => {
+export // getAuthorInfo : get author info.
+// getAuthorInfo: возвращает вычисленное значение для UI.
+const getAuthorInfo = (m, companyUsers = []) => {
   const authorId = m.authorId ? String(m.authorId) : null;
 
   if (!authorId) {
@@ -56,7 +60,9 @@ export const getAuthorInfo = (m, companyUsers = []) => {
 };
 
 // расчёт статуса сообщений (sent / readSome / readAll)
-export const getMessageStatus = (m, room, meId, participantsFromProps) => {
+export // getMessageStatus : get message status.
+// getMessageStatus: возвращает вычисленное значение для UI.
+const getMessageStatus = (m, room, meId, participantsFromProps) => {
   if (!room || !meId) return "sent";
 
   const participants = participantsFromProps || room.participants || [];
@@ -80,7 +86,9 @@ export const getMessageStatus = (m, room, meId, participantsFromProps) => {
 };
 
 // подсветка совпадений в тексте
-export const renderHighlightedText = (text, query, highlightClass) => {
+export // renderHighlightedText : render highlighted text.
+// renderHighlightedText: описывает рендер соответствующего блока UI.
+const renderHighlightedText = (text, query, highlightClass) => {
   if (!query) return text;
   const q = query.toLowerCase();
   const lower = (text || "").toLowerCase();
@@ -108,3 +116,4 @@ export const renderHighlightedText = (text, query, highlightClass) => {
 
   return parts;
 };
+

@@ -2,6 +2,7 @@ import React from 'react';
 import clsx from 'clsx';
 import s from './LinkCell.module.css';
 
+// Компонент LinkCell: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function LinkCell({
   primary,
   secondary,

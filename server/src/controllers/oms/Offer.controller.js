@@ -1,6 +1,7 @@
 const service = require('../../services/oms/offerService');
 const orderService = require('../../services/oms/orderService');
 
+// Возвращает список сущностей с учётом фильтров и пагинации.
 module.exports.list = async (req,res,next) => { 
     try{ 
         const query = { ...req.query };
@@ -10,6 +11,7 @@ module.exports.list = async (req,res,next) => {
         next(e);
     } 
 };
+// Возвращает одну сущность по её идентификатору.
 module.exports.get = async (req,res,next) => { 
     try{ 
         const r=await service.get(req.params.id); 
@@ -20,6 +22,7 @@ module.exports.get = async (req,res,next) => {
     } 
 };
 
+// Создаёт новую сущность и возвращает результат создания.
 module.exports.create = async (req,res,next) => { 
     try{ 
         const payload = { ...req.body, companyId: req.user.companyId };
@@ -29,6 +32,7 @@ module.exports.create = async (req,res,next) => {
     } 
 };
 
+// Обновляет существующую сущность по идентификатору.
 module.exports.update = async (req,res,next) => { 
     try{ 
         const payload = { ...req.body };
@@ -39,6 +43,7 @@ module.exports.update = async (req,res,next) => {
     } 
 };
 
+// Удаляет сущность по идентификатору.
 module.exports.remove = async (req,res,next)=>{ 
     try{ 
         res.json(await service.remove(req.params.id)); 
@@ -46,6 +51,7 @@ module.exports.remove = async (req,res,next)=>{
         next(e);
     } 
 };
+// Конвертирует предложение в следующий бизнес-документ.
 module.exports.convert= async (req,res,next)=>{ 
     try{ 
         const payload = { ...req.body };
@@ -55,3 +61,4 @@ module.exports.convert= async (req,res,next)=>{
         next(e);
     } 
 };
+

@@ -2,6 +2,7 @@
 const companyService = require('../../services/crm/companyService');
 const tokenService = require('../../utils/tokenService');
 
+// Возвращает список компаний, доступных текущему пользователю.
 exports.listForMe = async (req, res) => {
   try {
     const data = await companyService.listForUser(req.user.id);
@@ -11,6 +12,7 @@ exports.listForMe = async (req, res) => {
   }
 };
 
+// Возвращает одну сущность по её идентификатору.
 exports.getOne = async (req, res) => {
   try {
     const item = await companyService.getByIdScoped(req.user.id, req.user.companyId);
@@ -23,6 +25,7 @@ exports.getOne = async (req, res) => {
   }
 };
 
+// Создаёт новую сущность и возвращает результат создания.
 exports.create = async (req, res) => {
   try {
     const company = await companyService.createWithOwner(req.user.id, req.body);
@@ -34,6 +37,7 @@ exports.create = async (req, res) => {
   }
 };
 
+// Обновляет существующую сущность по идентификатору.
 exports.update = async (req, res) => {
   try {
     const updated = await companyService.updateCompany(req.user.id, req.user.companyId, req.body);
@@ -46,6 +50,7 @@ exports.update = async (req, res) => {
   }
 };
 
+// Удаляет сущность по идентификатору.
 exports.remove = async (req, res) => {
     try {
       const ok = await companyService.deleteCompany(req.user.id,  req.user.companyId);
@@ -57,3 +62,4 @@ exports.remove = async (req, res) => {
       res.status(400).send({ error: e.message }); 
     }
 };
+

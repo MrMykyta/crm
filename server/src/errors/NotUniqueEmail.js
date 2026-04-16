@@ -1,8 +1,9 @@
-const ApplicationError = require('./ApplicationError');
+const AppError = require('./AppError');
 
-class NotUniqueEmail extends ApplicationError{
+// Ошибка уникальности email (HTTP 409 Conflict).
+class NotUniqueEmail extends AppError {
   constructor (message) {
-    super(message || 'this email were already exist', 409);
+    super(409, message || 'this email were already exist');
   }
 }
 

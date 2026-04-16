@@ -100,7 +100,7 @@
   gap:12px;
   padding-top:10px;
 }
-.ctrlLabel{ font-size:13px; color:var(--muted); }
+.ctrlLabel{ font-size: var(--font-size-13); color:var(--muted); }
 
 .select{
   height:34px;

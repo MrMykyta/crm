@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../../../hooks/useSignedFileUrl";
 import s from "../ChatInfoPanel.module.css";
 
+// Компонент ProfileTab: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ProfileTab({ profile, emptyText }) {
   const { t } = useTranslation();
   const fallback = t("common.none");
@@ -36,3 +37,4 @@ export default function ProfileTab({ profile, emptyText }) {
     </div>
   );
 }
+

@@ -1,5 +1,6 @@
 const { SystemEvent } = require('../../models');
 
+// create: создаёт новую запись и возвращает результат.
 module.exports.create = async (companyId, type, payload = {}, entity = {}) => {
   return SystemEvent.create({
     companyId,
@@ -10,6 +11,7 @@ module.exports.create = async (companyId, type, payload = {}, entity = {}) => {
   });
 };
 
+// list: возвращает список записей с фильтрами, сортировкой и пагинацией.
 module.exports.list = async (companyId, query = {}) => {
   const where = { companyId };
   if (query.type) where.type = query.type;

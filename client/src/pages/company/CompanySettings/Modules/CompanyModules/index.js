@@ -5,8 +5,10 @@ import { useGetCompanyQuery } from "../../../../../store/rtk/companyApi";
 import { useTranslation } from "react-i18next";
 import s from "./CompanyModules.module.css";
 
+// Компонент Switch: отвечает за отображение UI и обработку взаимодействий пользователя.
 function Switch({ checked, onChange, color = "success", ariaLabel, disabled = false }) {
-  const handleClick = () => { if (!disabled) onChange?.(!checked); };
+    // handleClick: обработчик пользовательского действия.
+const handleClick = () => { if (!disabled) onChange?.(!checked); };
   return (
     <button
       type="button"
@@ -22,6 +24,7 @@ function Switch({ checked, onChange, color = "success", ariaLabel, disabled = fa
   );
 }
 
+// Компонент CompanyModules: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CompanyModules() {
   const { t } = useTranslation();
   const companyId = useSelector((s) => s.auth.companyId);
@@ -69,7 +72,8 @@ export default function CompanyModules() {
     })();
   }, [companyId, t]);
 
-  const persist = async (next) => {
+    // persist: вспомогательная логика компонента.
+const persist = async (next) => {
     setMods(next);
     // TODO: вызвать RTK-мутацию saveCompanyModules({ modules: next })
   };

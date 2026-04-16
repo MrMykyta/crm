@@ -1,5 +1,6 @@
 import { crmApi } from './crmApi';
 
+// stripCompanyId: вспомогательная логика для слоя RTK Query.
 const stripCompanyId = (value) => {
   if (!value || typeof value !== 'object') return value;
   if (typeof FormData !== 'undefined' && value instanceof FormData) {
@@ -11,6 +12,7 @@ const stripCompanyId = (value) => {
   return rest;
 };
 
+// buildListParams: собирает итоговую структуру данных для слоя RTK Query.
 const buildListParams = (args = {}) => {
   const src = stripCompanyId(args) || {};
   const { filters, sort, dir, q, search, ...rest } = src;
@@ -33,14 +35,17 @@ const buildListParams = (args = {}) => {
 };
 
 export const dealsApi = crmApi.injectEndpoints({
-  endpoints: (build) => ({
+    // endpoints: описывает набор endpoint-ов RTK Query.
+endpoints: (build) => ({
     getDeals: build.query({
-      query: (args = {}) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (args = {}) => ({
         url: '/deals',
         method: 'GET',
         params: buildListParams(args),
       }),
-      transformResponse: (resp) => {
+            // transformResponse: нормализует ответ API перед записью в кэш.
+transformResponse: (resp) => {
         const items = Array.isArray(resp?.data)
           ? resp.data
           : Array.isArray(resp?.items)
@@ -56,7 +61,8 @@ export const dealsApi = crmApi.injectEndpoints({
           limit: Number(meta.limit ?? resp?.limit ?? items.length) || items.length,
         };
       },
-      providesTags: (res) => [
+            // providesTags: возвращает теги кэша для автообновления данных.
+providesTags: (res) => [
         { type: 'DealList', id: 'LIST' },
         ...(res?.items || []).map((d) => ({ type: 'Deal', id: d.id })),
       ],
@@ -64,12 +70,15 @@ export const dealsApi = crmApi.injectEndpoints({
     }),
 
     getDealById: build.query({
-      query: (dealId) => ({ url: `/deals/${encodeURIComponent(dealId)}`, method: 'GET' }),
-      providesTags: (_res, _err, id) => [{ type: 'Deal', id }],
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (dealId) => ({ url: `/deals/${encodeURIComponent(dealId)}`, method: 'GET' }),
+            // providesTags: возвращает теги кэша для автообновления данных.
+providesTags: (_res, _err, id) => [{ type: 'Deal', id }],
     }),
 
     createDeal: build.mutation({
-      query: (payload) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (payload) => ({
         url: '/deals',
         method: 'POST',
         body: stripCompanyId(payload),
@@ -78,19 +87,22 @@ export const dealsApi = crmApi.injectEndpoints({
     }),
 
     updateDeal: build.mutation({
-      query: ({ dealId, payload }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ dealId, payload }) => ({
         url: `/deals/${encodeURIComponent(dealId)}`,
         method: 'PUT',
         body: stripCompanyId(payload),
       }),
-      invalidatesTags: (_res, _err, { dealId }) => [
+            // invalidatesTags: помечает теги кэша для рефетча связанных данных.
+invalidatesTags: (_res, _err, { dealId }) => [
         { type: 'Deal', id: dealId },
         { type: 'DealList', id: 'LIST' },
       ],
     }),
 
     deleteDeal: build.mutation({
-      query: (dealId) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (dealId) => ({
         url: `/deals/${encodeURIComponent(dealId)}`,
         method: 'DELETE',
       }),
@@ -98,24 +110,28 @@ export const dealsApi = crmApi.injectEndpoints({
     }),
 
     markWon: build.mutation({
-      query: (dealId) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (dealId) => ({
         url: `/deals/${encodeURIComponent(dealId)}`,
         method: 'PUT',
         body: { status: 'won' },
       }),
-      invalidatesTags: (_res, _err, dealId) => [
+            // invalidatesTags: помечает теги кэша для рефетча связанных данных.
+invalidatesTags: (_res, _err, dealId) => [
         { type: 'Deal', id: dealId },
         { type: 'DealList', id: 'LIST' },
       ],
     }),
 
     markLost: build.mutation({
-      query: (dealId) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (dealId) => ({
         url: `/deals/${encodeURIComponent(dealId)}`,
         method: 'PUT',
         body: { status: 'lost' },
       }),
-      invalidatesTags: (_res, _err, dealId) => [
+            // invalidatesTags: помечает теги кэша для рефетча связанных данных.
+invalidatesTags: (_res, _err, dealId) => [
         { type: 'Deal', id: dealId },
         { type: 'DealList', id: 'LIST' },
       ],
@@ -133,3 +149,4 @@ export const {
   useMarkWonMutation,
   useMarkLostMutation,
 } = dealsApi;
+

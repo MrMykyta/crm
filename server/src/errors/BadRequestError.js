@@ -1,8 +1,9 @@
-const ApplicationError = require('./ApplicationError');
+const AppError = require('./AppError');
 
-class BadRequestError extends ApplicationError{
+// Ошибка валидации входных данных (HTTP 400).
+class BadRequestError extends AppError {
   constructor (message) {
-    super(message || 'bad request', 400);
+    super(400, message || 'bad request');
   }
 }
 

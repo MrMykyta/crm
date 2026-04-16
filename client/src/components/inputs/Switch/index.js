@@ -16,7 +16,8 @@ export default function Switch({
   ariaLabel,
   className = "",
 }) {
-  const handleClick = () => {
+    // handleClick: обработчик пользовательского действия.
+const handleClick = () => {
     if (!disabled) onChange?.(!checked);
   };
 

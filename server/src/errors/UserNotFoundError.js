@@ -1,8 +1,9 @@
-const ApplicationError = require('./ApplicationError');
+const AppError = require('./AppError');
 
-class UserNotFoundError extends ApplicationError{
+// Ошибка отсутствия пользователя (HTTP 404).
+class UserNotFoundError extends AppError {
   constructor (message) {
-    super(message || 'user with email not found', 404);
+    super(404, message || 'user with email not found');
   }
 }
 

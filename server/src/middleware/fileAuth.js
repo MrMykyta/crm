@@ -1,6 +1,6 @@
 'use strict';
 
-const ApplicationError = require('../errors/ApplicationError');
+const AppError = require('../errors/AppError');
 const { verifyAccess } = require('../utils/tokenService');
 const { getPermissionsAndRole } = require('./permissionResolver');
 
@@ -12,7 +12,7 @@ module.exports = async (req, _res, next) => {
     const token = bearer || (req.query?.token ? String(req.query.token) : null);
 
     if (!token) {
-      return next(new ApplicationError('Unauthorized', 401));
+      return next(new AppError(401, 'Unauthorized', { code: 'UNAUTHORIZED' }));
     }
 
     const payload = await verifyAccess(token);
@@ -20,7 +20,7 @@ module.exports = async (req, _res, next) => {
     const companyId = payload.cid || null;
 
     if (!userId || !companyId) {
-      return next(new ApplicationError('Unauthorized', 401));
+      return next(new AppError(401, 'Unauthorized', { code: 'UNAUTHORIZED' }));
     }
 
     const ctx = await getPermissionsAndRole({ userId, companyId });
@@ -34,6 +34,6 @@ module.exports = async (req, _res, next) => {
 
     return next();
   } catch (e) {
-    return next(new ApplicationError('Unauthorized', 401));
+    return next(new AppError(401, 'Unauthorized', { code: 'UNAUTHORIZED' }));
   }
 };

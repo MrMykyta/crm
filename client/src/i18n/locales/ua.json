@@ -97,6 +97,8 @@
     "clients": "Клієнти",
     "deals": "Угоди",
     "tasks": "Завдання",
+    "notes": "Нотатки",
+    "contacts": "Контактні особи",
     "calendar": "Календар",
     "oms": "OMS",
     "invoices": "Рахунки",
@@ -187,7 +189,15 @@
       "push": "Push-сповіщення"
     },
     "appearance": {
-      "title": "Вигляд"
+      "title": "Вигляд",
+      "textSize": "Розмір тексту",
+      "density": "Щільність інтерфейсу",
+      "textSizeSmall": "Малий",
+      "textSizeMedium": "Середній (типово)",
+      "textSizeLarge": "Великий",
+      "densityCompact": "Компактно",
+      "densityComfortable": "Комфортно",
+      "densitySpacious": "Просторо"
     },
     "preferences": {
       "language": "Мова",
@@ -200,7 +210,129 @@
     "refresh": "Оновити",
     "back": "Назад",
     "forward": "Вперед",
-    "pageLabel": "стор. {{page}} / {{pages}}"
+    "pageLabel": "стор. {{page}} / {{pages}}",
+    "columns": {
+      "configure": "Налаштувати колонки",
+      "configureShort": "Колонки",
+      "searchPlaceholder": "Пошук колонок",
+      "groupMain": "Основні",
+      "groupAdditional": "Додаткові",
+      "groupSystem": "Системні",
+      "visibleCount": "Видимі колонки: {{count}}",
+      "emptySearch": "Колонки не знайдено",
+      "reset": "Скинути",
+      "resetHint": "Скинути порядок, ширини та видимість",
+      "groupCustom": "Користувацькі",
+      "drawerHint": "Оберіть, які дані відображати в таблиці",
+      "visibleOfTotal": "Показано {{visible}} з {{total}}",
+      "recommended": "Рекомендовані",
+      "hideAdditional": "Сховати додаткові"
+    },
+    "views": {
+      "title": "Подання",
+      "default": "За замовчуванням",
+      "untitled": "Без назви",
+      "select": "Обрати подання",
+      "saveAs": "Зберегти як нове",
+      "saveAsShort": "Зберегти",
+      "updateCurrent": "Оновити поточне подання",
+      "updateShort": "Оновити",
+      "rename": "Перейменувати",
+      "renameShort": "Назва",
+      "delete": "Видалити",
+      "deleteShort": "Видалити",
+      "create": "Зберегти подання",
+      "name": "Назва подання",
+      "namePlaceholder": "Наприклад: Угоди тижня",
+      "nameRequired": "Вкажіть назву подання",
+      "nameTaken": "Подання з такою назвою вже існує",
+      "deleteTitle": "Видалити подання",
+      "deleteConfirm": "Видалити подання «{{name}}»?"
+    }
+  },
+  "contacts": {
+    "title": "Контактні особи",
+    "actions": {
+      "add": "Додати контакт",
+      "makeMain": "Зробити основним",
+      "call": "Подзвонити",
+      "email": "Написати",
+      "open": "Відкрити",
+      "toList": "До списку"
+    },
+    "dialogs": {
+      "create": "Новий контакт",
+      "edit": "Редагування контакту"
+    },
+    "fields": {
+      "counterparty": "Контрагент",
+      "firstName": "Ім'я",
+      "lastName": "Прізвище",
+      "position": "Посада",
+      "department": "Відділ",
+      "phone": "Телефон",
+      "email": "Email",
+      "note": "Нотатка",
+      "isMain": "Основний контакт"
+    },
+    "placeholders": {
+      "counterparty": "Почніть вводити назву...",
+      "firstName": "Ім'я",
+      "lastName": "Прізвище",
+      "position": "Посада",
+      "department": "Відділ",
+      "phone": "+48 ...",
+      "email": "name@example.com",
+      "note": "Коментар по контактній особі"
+    },
+    "filters": {
+      "search": "Пошук за ім'ям, email або телефоном",
+      "counterparty": "Контрагент",
+      "main": "Основний",
+      "allMain": "Усі",
+      "allCounterparties": "Усі контрагенти"
+    },
+    "table": {
+      "name": "Ім'я та прізвище",
+      "counterparty": "Контрагент",
+      "phone": "Телефон",
+      "email": "Email",
+      "main": "Основний",
+      "updatedAt": "Оновлено"
+    },
+    "values": {
+      "main": "Основний",
+      "no": "Не основний"
+    },
+    "validation": {
+      "counterpartyRequired": "Оберіть контрагента",
+      "firstNameRequired": "Введіть ім'я",
+      "emailInvalid": "Некоректний email"
+    },
+    "messages": {
+      "emptyCounterparty": "Для цього контрагента поки немає контактних осіб",
+      "notFound": "Контакт не знайдено"
+    },
+    "hints": {
+      "counterparty": "Почніть вводити назву контрагента",
+      "searching": "Пошук...",
+      "empty": "Нічого не знайдено"
+    },
+    "meta": {
+      "createdAt": "Створено",
+      "updatedAt": "Оновлено",
+      "main": "Основний"
+    },
+    "section": {
+      "title": "Контактні особи",
+      "detailsTitle": "Контактні дані"
+    },
+    "confirm": {
+      "delete": "Видалити контакт?"
+    },
+    "aria": {
+      "open": "Відкрити контакт"
+    }
   },
   "crm": {
     "titles": {

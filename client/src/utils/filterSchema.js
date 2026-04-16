@@ -2,7 +2,8 @@
 export function filterSchema(schema, allowNames = []) {
   const allow = new Set(allowNames);
 
-  const keepItem = (it) => {
+    // keepItem: вспомогательная логика модуля.
+const keepItem = (it) => {
     if (!it) return false;
     if (it.kind === 'section') return true;           // обработаем отдельно
     if (it.kind === 'spacer') return true;            // разрешаем спейсер
@@ -14,7 +15,8 @@ export function filterSchema(schema, allowNames = []) {
   let currentSection = null;        // { ...section, _pushed?:bool }
   let hasFieldsInSection = false;
 
-  const pushSectionHeaderIfNeeded = () => {
+    // pushSectionHeaderIfNeeded: вспомогательная логика модуля.
+const pushSectionHeaderIfNeeded = () => {
     if (currentSection && !currentSection._pushed) {
       out.push({ ...currentSection }); // без служебных полей
       currentSection._pushed = true;

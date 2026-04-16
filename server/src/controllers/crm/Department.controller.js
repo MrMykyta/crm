@@ -1,5 +1,6 @@
 const departmentService = require('../../services/crm/depatmentService');
 
+// Возвращает список сущностей с учётом фильтров и пагинации.
 module.exports.list = async (req, res) => {
     try {
         const rows = await departmentService.list(req.user.companyId);
@@ -9,6 +10,7 @@ module.exports.list = async (req, res) => {
     }
 };
 
+// Создаёт новую сущность и возвращает результат создания.
 module.exports.create = async (req, res) => {
     try {
         const row = await departmentService.create( req.user.companyId, req.userId, req.body);
@@ -18,6 +20,7 @@ module.exports.create = async (req, res) => {
     }
 };
 
+// Обновляет существующую сущность по идентификатору.
 module.exports.update = async (req, res) => {
     try {
         const row = await departmentService.update(req.user.companyId, req.userId, req.params.id, req.body);
@@ -30,6 +33,7 @@ module.exports.update = async (req, res) => {
     }
 };
 
+// Удаляет сущность по идентификатору.
 module.exports.remove = async (req, res) => {
     try {
         const ok = await departmentService.remove(req.user.companyId, req.params.id);
@@ -41,3 +45,4 @@ module.exports.remove = async (req, res) => {
         res.status(400).send({ error: e.message }); 
     }
 };
+

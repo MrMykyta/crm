@@ -1,124 +1,164 @@
-// src/schemas/taskSchema.js
-const { Joi, uuid, paging, dateISO } = require('./_common');
+'use strict';
 
-// Базовые enum’ы
-const status = Joi.string().valid('pending', 'in_progress', 'done', 'cancelled').required();
-const priority = Joi.string().valid('low', 'medium', 'high').required();
+const { Joi, uuid } = require('./_common');
+
+const STATUS_VALUES = ['todo', 'in_progress', 'done', 'blocked', 'canceled'];
+const MODE_VALUES = ['none', 'all', 'lists'];
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+const isoOrDateOnly = Joi.alternatives().try(
+  Joi.date().iso(),
+  Joi.string().trim().pattern(DATE_ONLY_RE)
+);
+
+const nullableDateInput = isoOrDateOnly.allow(null, '');
 
 const base = {
-  companyId: uuid.required(),
-  userId: uuid.required(), // ← ОБЯЗАТЕЛЕН: кто создал (creatorId)
-  title: Joi.string().min(1).max(256).required(),
-  description: Joi.string().allow('', null).required(),
-  status,
-  priority,
+  title: Joi.string().trim().min(1).max(300),
+  category: Joi.string().trim().max(64).allow('', null),
+  description: Joi.string().trim().max(10000).allow('', null),
+  status: Joi.string().valid(...STATUS_VALUES),
+  priority: Joi.number().integer().min(0).max(100),
 
-  // всё ниже — ОПЦИОНАЛЬНО:
-  assigneeId: uuid.allow(null),
-  counterpartyId: uuid.allow(null),
-  dealId: uuid.allow(null),
+  startAt: nullableDateInput,
+  endAt: nullableDateInput,
+  plannedStartAt: nullableDateInput,
+  plannedEndAt: nullableDateInput,
+  actualStartAt: nullableDateInput,
+  actualEndAt: nullableDateInput,
 
-  // мягкие планировочные поля (не обязательные)
-  isAllDay: Joi.boolean().optional(),
-  eventDate: dateISO.allow(null),
-  startAt: dateISO.allow(null),
-  endAt: dateISO.allow(null),
+  plannedStartHasTime: Joi.boolean(),
+  plannedEndHasTime: Joi.boolean(),
+  actualStartHasTime: Joi.boolean(),
+  actualEndHasTime: Joi.boolean(),
+  startAtHasTime: Joi.boolean(),
+  endAtHasTime: Joi.boolean(),
 
-  // орг/владение
-  ownerType: Joi.string().valid('user', 'department').optional(),
-  ownerId: uuid.allow(null),
-  tags: Joi.array().items(Joi.string().trim()).default([]),
+  timezone: Joi.string().trim().max(64).allow('', null),
 
-  // дедлайны/план
-  dueDate: dateISO.allow(null),
-  plannedDate: dateISO.allow(null),
+  participantMode: Joi.string().valid(...MODE_VALUES),
+  watcherMode: Joi.string().valid(...MODE_VALUES),
+  statusAggregate: Joi.boolean(),
+
+  counterpartyId: uuid.allow(null, ''),
+  dealId: uuid.allow(null, ''),
+  assigneeIds: Joi.array().items(uuid).unique(),
+  watcherIds: Joi.array().items(uuid).unique(),
+  departmentIds: Joi.array().items(uuid).unique(),
+  contactIds: Joi.array().items(uuid).unique(),
+  memberStatuses: Joi.array().items(
+    Joi.object({
+      userId: uuid.required(),
+      memberStatus: Joi.string()
+        .valid(...STATUS_VALUES)
+        .required(),
+    })
+  ),
 };
 
 module.exports.create = Joi.object({
-  companyId: base.companyId,
-  userId: base.userId,           // пишем в createdBy на сервисе
+  companyId: Joi.forbidden(),
+  createdBy: Joi.forbidden(),
+  userId: Joi.forbidden(),
+
+  title: base.title.required(),
+  category: base.category,
+  description: base.description,
+  status: base.status.default('todo'),
+  priority: base.priority.default(50),
+
+  startAt: base.startAt,
+  endAt: base.endAt,
+  plannedStartAt: base.plannedStartAt,
+  plannedEndAt: base.plannedEndAt,
+  actualStartAt: base.actualStartAt,
+  actualEndAt: base.actualEndAt,
+
+  plannedStartHasTime: base.plannedStartHasTime,
+  plannedEndHasTime: base.plannedEndHasTime,
+  actualStartHasTime: base.actualStartHasTime,
+  actualEndHasTime: base.actualEndHasTime,
+  startAtHasTime: base.startAtHasTime,
+  endAtHasTime: base.endAtHasTime,
+
+  timezone: base.timezone,
+  participantMode: base.participantMode,
+  watcherMode: base.watcherMode,
+  statusAggregate: base.statusAggregate,
+
+  counterpartyId: base.counterpartyId,
+  dealId: base.dealId,
+  assigneeIds: base.assigneeIds.default([]),
+  watcherIds: base.watcherIds.default([]),
+  departmentIds: base.departmentIds.default([]),
+  contactIds: base.contactIds.default([]),
+  memberStatuses: base.memberStatuses.default([]),
+});
+
+module.exports.update = Joi.object({
+  companyId: Joi.forbidden(),
+  createdBy: Joi.forbidden(),
+  userId: Joi.forbidden(),
+
   title: base.title,
+  category: base.category,
   description: base.description,
   status: base.status,
   priority: base.priority,
 
-  assigneeId: base.assigneeId.optional(),
-  counterpartyId: base.counterpartyId.optional(),
-  dealId: base.dealId.optional(),
-
-  // опционально, без жёстких требований
-  isAllDay: base.isAllDay,
-  eventDate: base.eventDate,
   startAt: base.startAt,
   endAt: base.endAt,
+  plannedStartAt: base.plannedStartAt,
+  plannedEndAt: base.plannedEndAt,
+  actualStartAt: base.actualStartAt,
+  actualEndAt: base.actualEndAt,
 
-  ownerType: base.ownerType,
-  ownerId: base.ownerId,
-  tags: base.tags,
-  dueDate: base.dueDate,
-  plannedDate: base.plannedDate,
-});
+  plannedStartHasTime: base.plannedStartHasTime,
+  plannedEndHasTime: base.plannedEndHasTime,
+  actualStartHasTime: base.actualStartHasTime,
+  actualEndHasTime: base.actualEndHasTime,
+  startAtHasTime: base.startAtHasTime,
+  endAtHasTime: base.endAtHasTime,
 
-module.exports.update = Joi.object({
-  // companyId менять нельзя (если очень нужно — убери запрет)
-  title: base.title.optional(),
-  description: base.description.optional(),
-  status: base.status.optional(),
-  priority: base.priority.optional(),
+  timezone: base.timezone,
+  participantMode: base.participantMode,
+  watcherMode: base.watcherMode,
+  statusAggregate: base.statusAggregate,
 
-  assigneeId: base.assigneeId.optional(),
-  counterpartyId: base.counterpartyId.optional(),
-  dealId: base.dealId.optional(),
-
-  isAllDay: base.isAllDay,
-  eventDate: base.eventDate,
-  startAt: base.startAt,
-  endAt: base.endAt,
-
-  ownerType: base.ownerType,
-  ownerId: base.ownerId,
-  tags: base.tags,
-  dueDate: base.dueDate,
-  plannedDate: base.plannedDate,
+  counterpartyId: base.counterpartyId,
+  dealId: base.dealId,
+  assigneeIds: base.assigneeIds,
+  watcherIds: base.watcherIds,
+  departmentIds: base.departmentIds,
+  contactIds: base.contactIds,
+  memberStatuses: base.memberStatuses,
 }).min(1);
 
-module.exports.listQuery = paging.keys({
-  companyId: uuid,       // можно прокинуть явно, но обычный scope возьмём из req.params/req.user
-  q: Joi.string().max(200),
+module.exports.listQuery = Joi.object({
+  companyId: Joi.forbidden(),
+  q: Joi.string().trim().max(200).allow('', null),
+  search: Joi.string().trim().max(200).allow('', null),
 
-  status: Joi.string().valid('pending', 'in_progress', 'done', 'cancelled'),
-  priority: Joi.alternatives().try(
-    Joi.string().valid('low', 'medium', 'high'),
-    Joi.number().integer().min(1).max(5)
-  ),
-
-  assigneeId: uuid,
-  creatorId: uuid,
+  status: Joi.string().valid(...STATUS_VALUES),
+  category: Joi.string().trim().max(64),
   counterpartyId: uuid,
   dealId: uuid,
 
-  ownerType: Joi.string().valid('user', 'department'),
-  ownerId: uuid,
+  date: isoOrDateOnly,
+  from: isoOrDateOnly,
+  to: isoOrDateOnly,
 
-  dueFrom: dateISO,
-  dueTo: dateISO,
-
-  plannedFrom: dateISO,
-  plannedTo: dateISO,
-
-  // “мягкие” события (если вдруг фильтровать)
-  from: dateISO, // для календаря
-  to: dateISO,
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(200).default(20),
+  sort: Joi.string()
+    .valid('createdAt', 'updatedAt', 'title', 'status', 'priority', 'startAt', 'endAt')
+    .default('createdAt'),
+  dir: Joi.string().valid('ASC', 'DESC', 'asc', 'desc').default('DESC'),
 });
 
 module.exports.calendarQuery = Joi.object({
-  from: dateISO.required(),
-  to: dateISO.required(),
-  companyId: uuid.optional(),
-  assigneeId: uuid.optional(),
-  ownerType: Joi.string().valid('user', 'department').optional(),
-  ownerId: uuid.optional(),
-  q: Joi.string().max(200).optional(),
-  page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(200).default(200),
+  companyId: Joi.forbidden(),
+  from: isoOrDateOnly.required(),
+  to: isoOrDateOnly.required(),
 });
+

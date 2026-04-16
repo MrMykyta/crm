@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import styles from './ImagePicker.module.css';
 
+// Компонент ImagePicker: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ImagePicker({
   value,
   onChange,
@@ -15,9 +16,11 @@ export default function ImagePicker({
   const fileRef = useRef(null);
   const [urlDraft, setUrlDraft] = useState('');
 
-  const onPickFile = () => fileRef.current?.click();
+    // onPickFile: вспомогательная логика компонента.
+const onPickFile = () => fileRef.current?.click();
 
-  const handleFile = async (file) => {
+    // handleFile: обработчик пользовательского действия.
+const handleFile = async (file) => {
     if (!file || disabled) return;
     setErr('');
     setBusy(true);
@@ -31,13 +34,15 @@ export default function ImagePicker({
     }
   };
 
-  const onFileChange = (e) => {
+    // onFileChange: вспомогательная логика компонента.
+const onFileChange = (e) => {
     const f = e.target.files?.[0];
     if (f) handleFile(f);
     e.target.value = '';
   };
 
-  const applyUrl = async () => {
+    // applyUrl: вспомогательная логика компонента.
+const applyUrl = async () => {
     const url = urlDraft.trim();
     if (!url) return;
     setErr('');

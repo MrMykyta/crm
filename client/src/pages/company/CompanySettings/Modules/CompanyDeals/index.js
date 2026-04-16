@@ -22,6 +22,7 @@ import ThemedSelect from "../../../../../components/inputs/RadixSelect";
 
 /* ===== helpers ===== */
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+// stepColor: вспомогательная логика компонента.
 function stepColor(i, total) {
   const h = 110, s = "60%";
   const lStart = 60, lEnd = 32;
@@ -98,7 +99,8 @@ export default function CompanyDeals() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const addFunnel = () => {
+    // addFunnel: добавляет элемент в локальное состояние компонента.
+const addFunnel = () => {
     const n = funnels.length + 1;
     const newFunnel = {
       id: `f-${Date.now()}`,
@@ -114,15 +116,19 @@ export default function CompanyDeals() {
     setSelectedStageByFunnel(m => ({ ...m, [newFunnel.id]: newFunnel.stages[0].id }));
   };
 
-  const deleteFunnel = (fid) => setFunnels(fs => fs.filter(f => f.id !== fid));
-  const addStage = (fid) => setFunnels(fs => fs.map(f => {
+    // deleteFunnel: удаляет сущность в рамках UI-компонента.
+const deleteFunnel = (fid) => setFunnels(fs => fs.filter(f => f.id !== fid));
+    // addStage: добавляет элемент в локальное состояние компонента.
+const addStage = (fid) => setFunnels(fs => fs.map(f => {
     if (f.id !== fid) return f;
     const idx = f.stages.length + 1;
     return { ...f, stages: [...f.stages, { id: uid(), name: `Этап ${idx}`, color: "#8fdb60" }] };
   }));
-  const toggleExpanded = (fid) => setFunnels(fs => fs.map(f => f.id === fid ? { ...f, expanded: !f.expanded } : f));
+    // toggleExpanded: переключает состояние компонента.
+const toggleExpanded = (fid) => setFunnels(fs => fs.map(f => f.id === fid ? { ...f, expanded: !f.expanded } : f));
 
-  const handleDragEnd = (fid) => (e) => {
+    // handleDragEnd: обработчик пользовательского действия.
+const handleDragEnd = (fid) => (e) => {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
     setFunnels(fs => fs.map(f => {
@@ -135,15 +141,19 @@ export default function CompanyDeals() {
     }));
   };
 
-  const startRenameFunnel = (fid) => setEditingFunnelId(fid);
-  const commitRenameFunnel = (fid, value, fallback) => {
+    // startRenameFunnel: вспомогательная логика компонента.
+const startRenameFunnel = (fid) => setEditingFunnelId(fid);
+    // commitRenameFunnel: вспомогательная логика компонента.
+const commitRenameFunnel = (fid, value, fallback) => {
     const name = (value ?? "").trim() || fallback;
     setFunnels(fs => fs.map(f => f.id === fid ? { ...f, name } : f));
     setEditingFunnelId(null);
   };
 
-  const startRenameStage = (fid, sid) => setEditingStageKey(`${fid}:${sid}`);
-  const commitRenameStage = (fid, sid, value, fallback) => {
+    // startRenameStage: вспомогательная логика компонента.
+const startRenameStage = (fid, sid) => setEditingStageKey(`${fid}:${sid}`);
+    // commitRenameStage: вспомогательная логика компонента.
+const commitRenameStage = (fid, sid, value, fallback) => {
     const name = (value ?? "").trim() || fallback;
     setFunnels(fs => fs.map(f => {
       if (f.id !== fid) return f;
@@ -152,7 +162,8 @@ export default function CompanyDeals() {
     setEditingStageKey(null);
   };
 
-  const changeColor = (fid, sid, color) =>
+    // changeColor: вспомогательная логика компонента.
+const changeColor = (fid, sid, color) =>
     setFunnels(fs =>
       fs.map(f => f.id !== fid ? f : ({
         ...f,

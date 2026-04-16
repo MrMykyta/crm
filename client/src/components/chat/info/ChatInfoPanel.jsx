@@ -53,6 +53,7 @@ const extractLinks = (text) => {
   return res;
 };
 
+// Компонент ChatInfoPanel: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ChatInfoPanel({
   roomId,
   room,
@@ -644,3 +645,4 @@ export default function ChatInfoPanel({
     </>
   );
 }
+

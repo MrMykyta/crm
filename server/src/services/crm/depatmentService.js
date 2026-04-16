@@ -1,6 +1,7 @@
 const { sequelize, CompanyDepartment } = require('../../models');
 const { addContacts } = require('./contactPointService');
 
+// list: возвращает список записей с фильтрами, сортировкой и пагинацией.
 module.exports.list = async (companyId) => {
     return CompanyDepartment.findAll({ 
         where: { 
@@ -10,6 +11,7 @@ module.exports.list = async (companyId) => {
     });
 };
 
+// create: создаёт новую запись и возвращает результат.
 module.exports.create = async (companyId, userId = null, data = {}) => {
   const t = await sequelize.transaction();
   console.log('Creating department:', data);
@@ -38,6 +40,7 @@ module.exports.create = async (companyId, userId = null, data = {}) => {
   }
 };
 
+// update: обновляет запись и возвращает актуальные данные.
 module.exports.update = async (companyId, userId = null, id, data = {}) => {
   const t = await sequelize.transaction();
   try {
@@ -76,6 +79,7 @@ module.exports.update = async (companyId, userId = null, id, data = {}) => {
   }
 };
 
+// remove: удаляет запись с учётом бизнес-ограничений.
 module.exports.remove = async (companyId, id) => {
     const row = await CompanyDepartment.findOne({ where: { 
         id, 
@@ -88,3 +92,4 @@ module.exports.remove = async (companyId, id) => {
     await row.destroy();
     return true;
 };
+

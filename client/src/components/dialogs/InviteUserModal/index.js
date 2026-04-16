@@ -5,6 +5,7 @@ import RadixSelect from "../../../components/inputs/RadixSelect";
 import s from "../../../pages/styles/CrmUsers.module.css";
 import { useLazyLookupUserByEmailQuery } from "../../../store/rtk/userApi";
 
+// Компонент InviteUserModal: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function InviteUserModal({ roles, onSubmit, onClose }) {
   const [form, setForm] = useState({
     email: "",
@@ -32,7 +33,8 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
     return (v) => re.test(String(v || "").trim());
   }, []);
 
-  const validateEmail = (val) => {
+    // validateEmail: валидирует введённые данные.
+const validateEmail = (val) => {
     const v = String(val || "").trim();
     if (!v) {
       setEmailError("Укажите e-mail");
@@ -46,7 +48,8 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
     return true;
   };
 
-  const change = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+    // change: вспомогательная логика компонента.
+const change = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   useEffect(() => {
     const value = form.email.trim();
@@ -98,7 +101,8 @@ export default function InviteUserModal({ roles, onSubmit, onClose }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.email]);
 
-  const submit = async (e) => {
+    // submit: вспомогательная логика компонента.
+const submit = async (e) => {
     e?.preventDefault();
     setErr("");
 

@@ -2,7 +2,8 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up (queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up (queryInterface, Sequelize) {
     /**
      * Add altering commands here.
      *
@@ -38,7 +39,8 @@ module.exports = {
     });
   },
 
-  async down (queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down (queryInterface, Sequelize) {
     /**
      * Add reverting commands here.
      *
@@ -51,3 +53,4 @@ module.exports = {
     await queryInterface.removeColumn('deals','pipeline_id');
   }
 };
+

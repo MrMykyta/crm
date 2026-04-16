@@ -2,7 +2,8 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     await queryInterface.createTable('task_department_participants', {
       id: {
         type: Sequelize.UUID,
@@ -62,7 +63,8 @@ module.exports = {
     });
   },
 
-  async down(queryInterface) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface) {
     await queryInterface.removeIndex('task_department_participants', 'tdp_department_task_idx');
     await queryInterface.removeConstraint('task_department_participants', 'uniq_task_department_participant');
     await queryInterface.dropTable('task_department_participants');

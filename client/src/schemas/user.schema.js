@@ -9,6 +9,7 @@ export const USER_MAX = {
   about    : 1000,
 };
 
+// userSchema: описывает схему валидации и преобразования данных.
 export function userSchema(_i18n) {
   return [
     { kind: "section", title: "Основное" },
@@ -38,7 +39,9 @@ export function userSchema(_i18n) {
 }
 
 // нормализация туда/обратно
-export const toFormUser = (d) => {
+export // toFormUser : to form user.
+// toFormUser: описывает схему валидации и преобразования данных.
+const toFormUser = (d) => {
  const u = d?.user ? d.user : d || {};
     return {
       firstName:  u.firstName ?? "",
@@ -52,7 +55,9 @@ export const toFormUser = (d) => {
     };
   };
 
-export const toApiUser = (v) => ({
+export // toApiUser : to api user.
+// toApiUser: описывает схему валидации и преобразования данных.
+const toApiUser = (v) => ({
   firstName:  v.firstName?.trim(),
   lastName:   v.lastName?.trim(),
   email:      trimOrNull(v.email),
@@ -63,6 +68,7 @@ export const toApiUser = (v) => ({
   avatarUrl:  trimOrNull(v.avatarUrl),
 });
 
+// trimOrNull: описывает схему валидации и преобразования данных.
 const trimOrNull = (x) => {
   if (x == null) return null;
   const s = String(x).trim();

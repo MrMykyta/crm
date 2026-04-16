@@ -10,6 +10,7 @@ import styles from "./Sidebar.module.css";
 // RTK Query — данные компании
 import { useGetCompanyQuery } from "../../../store/rtk/companyApi";
 
+// Компонент Sidebar: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function Sidebar({ collapsed = false, onToggle, onNavigate, t }) {
   const { pathname } = useLocation();
   const brandWrapRef = useRef(null);
@@ -35,7 +36,8 @@ export default function Sidebar({ collapsed = false, onToggle, onNavigate, t }) 
   const [menuCompanyOpen, setMenuCompanyOpen] = useState(false);
 
   useEffect(() => {
-    const onReady = (e) => setPreAvatar(e?.detail?.url || "");
+        // onReady: вспомогательная логика компонента.
+const onReady = (e) => setPreAvatar(e?.detail?.url || "");
     window.addEventListener("company:avatar-ready", onReady);
     return () => window.removeEventListener("company:avatar-ready", onReady);
   }, []);
@@ -67,11 +69,13 @@ export default function Sidebar({ collapsed = false, onToggle, onNavigate, t }) 
     return res;
   }, []);
 
-  const tr = (key) => (t ? t(key) : key);
+    // tr: вспомогательная логика компонента.
+const tr = (key) => (t ? t(key) : key);
 
   // ---- tooltip state
   const [tip, setTip] = useState({ visible: false, text: "", x: 0, y: 0 });
-  const showTip = (label, el) => {
+    // showTip: вспомогательная логика компонента.
+const showTip = (label, el) => {
     if (!collapsed || !el) return;
     const r = el.getBoundingClientRect();
     setTip({
@@ -81,7 +85,8 @@ export default function Sidebar({ collapsed = false, onToggle, onNavigate, t }) 
       y: Math.round(r.top + r.height / 2),
     });
   };
-  const hideTip = () => setTip((s) => ({ ...s, visible: false }));
+    // hideTip: вспомогательная логика компонента.
+const hideTip = () => setTip((s) => ({ ...s, visible: false }));
 
   return (
     <>
@@ -210,3 +215,4 @@ export default function Sidebar({ collapsed = false, onToggle, onNavigate, t }) 
     </>
   );
 }
+

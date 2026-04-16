@@ -9,6 +9,7 @@ import {
   formatNotificationBody,
 } from "../../../utils/notificationHelpers";
 
+// formatTime: форматирует данные для отображения.
 function formatTime(iso) {
   if (!iso) return "";
   const d = new Date(iso);
@@ -18,6 +19,7 @@ function formatTime(iso) {
   });
 }
 
+// Компонент NotificationsMenu: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function NotificationsMenu({
   notifications = [],
   unreadCount = 0,
@@ -38,10 +40,12 @@ export default function NotificationsMenu({
 
   // закрытие кликом вне
   useEffect(() => {
-    const handler = (e) => {
+        // handler: обработчик пользовательского действия.
+const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) onClose?.();
     };
-    const esc = (e) => e.key === "Escape" && onClose?.();
+        // esc: вспомогательная логика компонента.
+const esc = (e) => e.key === "Escape" && onClose?.();
 
     document.addEventListener("mousedown", handler);
     document.addEventListener("keydown", esc);
@@ -131,3 +135,4 @@ export default function NotificationsMenu({
     </div>
   );
 }
+

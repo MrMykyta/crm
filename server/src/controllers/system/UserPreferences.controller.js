@@ -1,5 +1,6 @@
 const userPreferencesService = require('../../services/system/userPreferencesService');
 
+// Возвращает пользовательские настройки текущего пользователя.
 exports.getMyPreferences = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -13,6 +14,7 @@ exports.getMyPreferences = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
+// Создаёт или обновляет пользовательские настройки.
 exports.upsertMyPreferences = async (req, res, next) => {
   try {
     const userId = req.user.id;

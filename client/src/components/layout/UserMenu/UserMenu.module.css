@@ -3,14 +3,15 @@
   top: 44px; 
   right: 0; 
   min-width: 240px;
-  background: color-mix(in srgb, var(--bg) 85%, transparent);
-  border: 1px solid var(--card-brd);
+  background: var(--ui-overlay-bg);
+  border: 1px solid var(--ui-overlay-border);
   border-radius: var(--radius-lg); 
-  box-shadow: var(--shadow); 
-  color: var(--text);
+  box-shadow: var(--ui-overlay-shadow); 
+  color: var(--ui-text-1);
   padding: 8px; 
   z-index: 5;
-  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 .menu::before{
   content: ""; 
@@ -19,8 +20,8 @@
   right: 14px; 
   width: 14px; 
   height: 14px;
-  background: var(--card-bg); 
-  border: 1px solid var(--card-brd);
+  background: var(--ui-overlay-bg-strong); 
+  border: 1px solid var(--ui-overlay-border);
   border-bottom: none; 
   border-right: none; 
   transform: rotate(45deg);
@@ -49,13 +50,13 @@
 }
 .name{ 
   font-weight: 800; 
-  font-size: 14px; 
+  font-size: var(--font-size-14); 
   white-space: nowrap; 
   overflow: hidden; 
   text-overflow: ellipsis; 
 }
 .email{ 
-  font-size: 12px; 
+  font-size: var(--font-size-12); 
   color: var(--muted); 
   white-space: nowrap; 
   overflow: hidden; 
@@ -76,8 +77,8 @@
   transition: background .15s ease, border-color .15s ease;
 }
 .item:hover{ 
-  background: var(--sidebar-hover); 
-  border-color: var(--card-brd); 
+  background: var(--ui-overlay-hover); 
+  border-color: color-mix(in srgb, var(--ui-border-focus) 60%, transparent); 
 }
 .sep{ 
   height: 8px; 

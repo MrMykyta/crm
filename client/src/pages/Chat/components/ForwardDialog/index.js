@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import s from "../../ChatPage.module.css";
 import { getAuthorInfo } from "../../utils/chatMessageUtils";
 
+// getRoomTitle: возвращает вычисленное значение для UI.
 function getRoomTitle(room, meId, companyUsers, t) {
   if (!room) return t("chat.sidebar.roomFallback");
 
@@ -26,6 +27,7 @@ function getRoomTitle(room, meId, companyUsers, t) {
   return name || t("chat.forward.directFallback");
 }
 
+// Компонент ForwardDialog: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ForwardDialog({
   open,
   onClose,
@@ -40,7 +42,8 @@ export default function ForwardDialog({
 
   const root = document.getElementById("modal-root") || document.body;
 
-  const handleItemClick = (roomId) => () => {
+    // handleItemClick: обработчик пользовательского действия.
+const handleItemClick = (roomId) => () => {
     onSelectRoom && onSelectRoom(roomId);
   };
 
@@ -92,3 +95,4 @@ export default function ForwardDialog({
     root
   );
 }
+

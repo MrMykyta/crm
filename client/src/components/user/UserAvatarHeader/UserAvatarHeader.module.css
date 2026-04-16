@@ -23,7 +23,7 @@
 .avatarFallback{
   width:100%; height:100%;
   display:flex; align-items:center; justify-content:center;
-  font-weight:800; font-size:28px; color:#fff;
+  font-weight:800; font-size: var(--font-size-28); color:#fff;
   background:linear-gradient(135deg,#6a8cff,#8a6bff);
 }
 
@@ -50,7 +50,7 @@
 .hoverText{
   color:#fff;
   font-weight: 700;
-  font-size: 12px;
+  font-size: var(--font-size-12);
   letter-spacing: .2px;
   text-shadow: 0 1px 2px rgba(0,0,0,.6);
 }
@@ -69,12 +69,12 @@
 }
 
 .title{
-  font-size:20px;
+  font-size: var(--font-size-20);
   font-weight:700;
 }
 
 .subtitle{
-  font-size:13px;
+  font-size: var(--font-size-13);
   color:var(--muted);
 }
 
@@ -110,7 +110,7 @@
 
 .modalTitle{
   margin:0 0 12px;
-  font-size:18px;
+  font-size: var(--font-size-18);
 }
 
 .row{
@@ -161,11 +161,11 @@
   border-radius:10px;
   background:var(--danger-weak);color:var(--danger);
   border:1px solid color-mix(in srgb,var(--danger) 40%,transparent);
-  font-size:13px;
+  font-size: var(--font-size-13);
 }
 
 .hint{
   margin-top:8px;
-  font-size:12px;
+  font-size: var(--font-size-12);
   color:var(--muted);
 }

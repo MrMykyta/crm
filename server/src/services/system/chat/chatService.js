@@ -28,8 +28,10 @@ const CHAT_ATTACHMENT_MIME = new Set([
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ]);
 
+// buildRoomKey: собирает служебную структуру для выполнения запроса.
 const buildRoomKey = (companyId, roomId) =>
   `room:${String(companyId)}:${String(roomId)}`;
+// buildUserKey: собирает служебную структуру для выполнения запроса.
 const buildUserKey = (companyId, userId) =>
   `user:${String(companyId)}:${String(userId)}`;
 
@@ -117,10 +119,12 @@ function emitReactionUpdate({ companyId, room, payload, event }) {
   io.to(buildRoomKey(companyId, room._id)).emit(event, payload);
 }
 
+// toUniqueIds: выполняет вспомогательную бизнес-логику сервиса.
 function toUniqueIds(ids = []) {
   return Array.from(new Set(ids.map((id) => String(id)).filter(Boolean)));
 }
 
+// assertUsersInCompany: выполняет вспомогательную бизнес-логику сервиса.
 async function assertUsersInCompany(userIds, companyId) {
   const ids = toUniqueIds(userIds);
   if (!ids.length) return;
@@ -138,6 +142,7 @@ async function assertUsersInCompany(userIds, companyId) {
   }
 }
 
+// getRoomForUser: возвращает данные по входным параметрам сервиса.
 async function getRoomForUser({ companyId, roomId, userId }) {
   if (!companyId || !roomId || !userId) {
     throw new ApplicationError("Room access requires companyId and userId", 400);
@@ -161,12 +166,14 @@ async function getRoomForUser({ companyId, roomId, userId }) {
   return room;
 }
 
+// getParticipant: возвращает данные по входным параметрам сервиса.
 function getParticipant(room, userId) {
   return (room?.participants || []).find(
     (p) => String(p.userId) === String(userId)
   );
 }
 
+// assertGroupAdmin: выполняет вспомогательную бизнес-логику сервиса.
 function assertGroupAdmin(room, userId) {
   if (room.type !== "group") {
     throw new ApplicationError("Group admin required", 400);
@@ -178,11 +185,13 @@ function assertGroupAdmin(room, userId) {
   return p;
 }
 
+// assertCanPin: выполняет вспомогательную бизнес-логику сервиса.
 function assertCanPin(room, userId) {
   if (room.type === "direct") return;
   assertGroupAdmin(room, userId);
 }
 
+// getMessageInRoom: возвращает данные по входным параметрам сервиса.
 async function getMessageInRoom({ companyId, roomId, messageId }) {
   if (!mongoose.isValidObjectId(messageId)) {
     throw new ApplicationError("Message not found", 404);
@@ -228,6 +237,7 @@ async function getMessageForReaction({ companyId, messageId, userId }) {
   return { msg, room };
 }
 
+// getUserDisplayName: возвращает данные по входным параметрам сервиса.
 async function getUserDisplayName(userId) {
   if (!userId) return "Пользователь";
   const row = await User.findOne({
@@ -239,6 +249,7 @@ async function getUserDisplayName(userId) {
   return full || row?.email || "Пользователь";
 }
 
+// buildPinnedPreview: собирает служебную структуру для выполнения запроса.
 function buildPinnedPreview(msg) {
   const raw = (msg?.text || "").trim();
   if (raw) {
@@ -248,11 +259,13 @@ function buildPinnedPreview(msg) {
   return name || "сообщение";
 }
 
+// isSystemPrivileged: проверяет бизнес-условие и возвращает boolean.
 function isSystemPrivileged(user) {
   const role = user?.role || null;
   return role === "admin" || role === "owner";
 }
 
+// canViewAudit: определяет, можно ли пользователю смотреть аудит комнаты.
 function canViewAudit({ user, room, participant }) {
   if (!room || !user) return false;
   if (room.type !== "group") return false;
@@ -262,6 +275,7 @@ function canViewAudit({ user, room, participant }) {
   return false;
 }
 
+// loadMembershipRolesMap: загружает роли участников компании по списку userId.
 async function loadMembershipRolesMap(companyId, userIds = []) {
   const ids = toUniqueIds(userIds);
   if (!ids.length) return new Map();
@@ -279,6 +293,7 @@ async function loadMembershipRolesMap(companyId, userIds = []) {
   return map;
 }
 
+// resolveAuditUser: выполняет вспомогательную бизнес-логику сервиса.
 async function resolveAuditUser({ user, userId, companyId }) {
   if (user && user.id) {
     return { id: String(user.id), role: user.role || null };
@@ -293,6 +308,7 @@ async function resolveAuditUser({ user, userId, companyId }) {
   return { id: String(userId), role: row?.role || null };
 }
 
+// sanitizeMessageAudit: выполняет вспомогательную бизнес-логику сервиса.
 function sanitizeMessageAudit(message, canView) {
   if (canView) {
     return message?.toObject ? message.toObject() : { ...message };
@@ -309,6 +325,7 @@ function sanitizeMessageAudit(message, canView) {
   return obj;
 }
 
+// findOrCreateDirectRoom: выполняет вспомогательную бизнес-логику сервиса.
 async function findOrCreateDirectRoom({ companyId, userId, otherUserId }) {
   await assertUsersInCompany([userId, otherUserId], companyId);
 
@@ -331,6 +348,7 @@ async function findOrCreateDirectRoom({ companyId, userId, otherUserId }) {
   });
 }
 
+// createGroupRoom: создаёт новую запись и возвращает результат.
 async function createGroupRoom({
   companyId,
   creatorId,
@@ -414,6 +432,7 @@ async function recomputeLastPinnedForRoom(room, { pinnedMessage } = {}) {
   await room.save();
 }
 
+// pinMessage: выполняет вспомогательную бизнес-логику сервиса.
 async function pinMessage({ companyId, roomId, messageId, userId, user }) {
   const room = await getRoomForUser({ companyId, roomId, userId });
   if (room.type === "group" && room.isArchived) {
@@ -485,6 +504,7 @@ async function pinMessage({ companyId, roomId, messageId, userId, user }) {
   return sanitizeMessageAudit(msg, canAudit);
 }
 
+// unpinMessage: выполняет вспомогательную бизнес-логику сервиса.
 async function unpinMessage({ companyId, roomId, messageId, userId, user }) {
   const room = await getRoomForUser({ companyId, roomId, userId });
   if (room.type === "group" && room.isArchived) {
@@ -771,6 +791,7 @@ async function sendMessage({
   return withReactions(sanitizeMessageAudit(msg, canAudit), {});
 }
 
+// getMessages: возвращает данные по входным параметрам сервиса.
 async function getMessages({
   companyId,
   roomId,
@@ -949,6 +970,7 @@ async function getMessageReactions({ companyId, messageId, userId }) {
   return reactionsMap.get(String(msg._id)) || {};
 }
 
+// markAsRead: выполняет вспомогательную бизнес-логику сервиса.
 async function markAsRead({ companyId, roomId, userId, messageId }) {
   const room = await getRoomForUser({ companyId, roomId, userId });
 
@@ -987,6 +1009,7 @@ async function markAsRead({ companyId, roomId, userId, messageId }) {
   }
 }
 
+// editMessage: выполняет вспомогательную бизнес-логику сервиса.
 async function editMessage({ companyId, roomId, messageId, userId, user, text }) {
   const nextText = text != null ? String(text).trim() : "";
   if (!nextText) {
@@ -1078,6 +1101,7 @@ async function editMessage({ companyId, roomId, messageId, userId, user, text })
   return sanitizeMessageAudit(msg, canAudit);
 }
 
+// deleteMessage: удаляет запись с учётом бизнес-ограничений.
 async function deleteMessage({ companyId, roomId, messageId, userId, user }) {
   const room = await getRoomForUser({ companyId, roomId, userId });
   if (room.type === "group" && room.isArchived) {
@@ -1308,6 +1332,7 @@ async function deleteMessage({ companyId, roomId, messageId, userId, user }) {
   return sanitizeMessageAudit(msg, canAudit);
 }
 
+// updateRoom: обновляет запись и возвращает актуальные данные.
 async function updateRoom({ companyId, roomId, userId, patch = {} }) {
   const room = await getRoomForUser({ companyId, roomId, userId });
   assertGroupAdmin(room, userId);

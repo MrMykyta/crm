@@ -16,6 +16,7 @@ const normalizePrefs = (raw) => {
   return { themeMode, lang, appearance };
 };
 
+// buildSaveBody: собирает итоговую структуру данных для слоя RTK Query.
 const buildSaveBody = ({ themeMode, lang, appearance } = {}) => {
   const body = {};
 
@@ -38,6 +39,7 @@ const buildSaveBody = ({ themeMode, lang, appearance } = {}) => {
   return body;
 };
 
+// stripCompanyId: вспомогательная логика для слоя RTK Query.
 const stripCompanyId = (value) => {
   if (!value || typeof value !== 'object') return value;
   if (typeof FormData !== 'undefined' && value instanceof FormData) {
@@ -50,20 +52,25 @@ const stripCompanyId = (value) => {
 };
 
 export const userApi = crmApi.injectEndpoints({
-  endpoints: (build) => ({
+    // endpoints: описывает набор endpoint-ов RTK Query.
+endpoints: (build) => ({
 
     getMyPreferences: build.query({
-      query: () => ({ url: '/system/me/preferences', method: 'GET' }),
-      transformResponse: (resp) => normalizePrefs(resp),
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: () => ({ url: '/system/me/preferences', method: 'GET' }),
+            // transformResponse: нормализует ответ API перед записью в кэш.
+transformResponse: (resp) => normalizePrefs(resp),
       providesTags: [{ type: 'Preferences', id: 'me' }],
     }),
 
     saveMyPreferences: build.mutation({
-      query: (payload) => {
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (payload) => {
         const body = buildSaveBody(payload || {});
         return { url: '/system/me/preferences', method: 'PUT', body };
       },
-      transformResponse: (resp) => normalizePrefs(resp),
+            // transformResponse: нормализует ответ API перед записью в кэш.
+transformResponse: (resp) => normalizePrefs(resp),
       invalidatesTags: [
         { type: 'Preferences', id: 'me' },
         { type: 'User', id: 'me' },
@@ -71,7 +78,8 @@ export const userApi = crmApi.injectEndpoints({
     }),
 
     getMe: build.query({
-      query: () => ({ url: '/users/me', method: 'GET' }),
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: () => ({ url: '/users/me', method: 'GET' }),
       providesTags: [{ type: 'User', id: 'me' }],
     }),
 
@@ -86,24 +94,29 @@ export const userApi = crmApi.injectEndpoints({
     }),
 
     getUserById: build.query({
-      query: (userId) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (userId) => ({
         url: `/users/${encodeURIComponent(userId)}`,
         method: 'GET',
       }),
-      providesTags: (_r, _e, id) => [{ type: 'User', id }],
+            // providesTags: возвращает теги кэша для автообновления данных.
+providesTags: (_r, _e, id) => [{ type: 'User', id }],
     }),
 
     updateUserById: build.mutation({
-      query: ({ userId, body }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ userId, body }) => ({
         url: `/users/${encodeURIComponent(userId)}`,
         method: 'PATCH',
         body: stripCompanyId(body),
       }),
-      invalidatesTags: (_r, _e, { userId }) => [{ type: 'User', id: userId }],
+            // invalidatesTags: помечает теги кэша для рефетча связанных данных.
+invalidatesTags: (_r, _e, { userId }) => [{ type: 'User', id: userId }],
     }),
 
     addMyContact: build.mutation({
-      query: (body) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (body) => ({
         url: '/users/me/contacts',
         method: 'POST',
         body: stripCompanyId(body),
@@ -113,7 +126,8 @@ export const userApi = crmApi.injectEndpoints({
 
     /** 👇 НОВОЕ: lookup по email */
     lookupUserByEmail: build.query({
-      query: (email) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (email) => ({
         url: '/users/lookup',
         method: 'GET',
         params: { email },      // crmApi сам подставит ?email=
@@ -137,3 +151,4 @@ export const {
   useLookupUserByEmailQuery,
   useLazyLookupUserByEmailQuery,
 } = userApi;
+

@@ -1,7 +1,8 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     await queryInterface.createTable('system_webhook_deliveries', {
       id: { 
         type:Sequelize.UUID, 
@@ -84,7 +85,8 @@ module.exports = {
       ['company_id','status','next_attempt_at'],
       { name:'idx_webhook_deliveries_retry' });
   },
-  async down(queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('system_webhook_deliveries');
   }
 };

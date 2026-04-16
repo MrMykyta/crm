@@ -7,6 +7,7 @@ import i18n from "../../../i18n";
 const DEFAULT_TYPING_EMIT_THROTTLE = 2000;
 const DEFAULT_TYPING_STALE_MS = 8000;
 
+// Хук useChatTyping: инкапсулирует переиспользуемую логику и возвращает состояние/обработчики для компонентов.
 export function useChatTyping({
   roomId,
   currentUser,
@@ -22,7 +23,8 @@ export function useChatTyping({
     const socket = getSocket();
     if (!socket) return;
 
-    const handleTyping = (payload = {}) => {
+        // handleTyping: обрабатывает пользовательское действие.
+const handleTyping = (payload = {}) => {
       const { roomId: rId, userId, isTyping, userName } = payload;
       if (!userId || String(rId) !== String(roomId)) return;
 
@@ -129,3 +131,4 @@ export function useChatTyping({
     notifyTyping,
   };
 }
+

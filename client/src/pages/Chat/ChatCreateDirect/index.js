@@ -10,6 +10,7 @@ import {
 import { useListCompanyUsersQuery } from '../../../store/rtk/companyUsersApi';
 import s from '../ChatPage.module.css';
 
+// Компонент ChatCreateDirect: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
   const { t } = useTranslation();
   const authUser = useSelector((st) => st.auth.user || st.auth.currentUser);
@@ -68,7 +69,8 @@ export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
     });
   }, [users, query]);
 
-  const toggleSelect = (userId) => {
+    // toggleSelect: переключает состояние компонента.
+const toggleSelect = (userId) => {
     setSelectedIds((prev) =>
       prev.includes(userId)
         ? prev.filter((id) => id !== userId)
@@ -76,7 +78,8 @@ export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
     );
   };
 
-  const handlePickUser = async (u) => {
+    // handlePickUser: обработчик пользовательского действия.
+const handlePickUser = async (u) => {
     const userId = u.userId || u.id;
     if (!userId) return;
 
@@ -100,7 +103,8 @@ export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
     toggleSelect(userId);
   };
 
-  const handleCreateGroup = async () => {
+    // handleCreateGroup: обработчик пользовательского действия.
+const handleCreateGroup = async () => {
     const title = groupTitle.trim();
     if (!title || !selectedIds.length) return;
 
@@ -226,3 +230,4 @@ export default function ChatCreateDirect({ onChatCreated, mode = 'direct' }) {
     </div>
   );
 }
+

@@ -2,16 +2,19 @@
 import { crmApi } from "./crmApi";
 
 export const chatApi = crmApi.injectEndpoints({
-  endpoints: (build) => ({
+    // endpoints: описывает набор endpoint-ов RTK Query.
+endpoints: (build) => ({
     // список комнат
     listRooms: build.query({
-      query: () => "/chat/rooms",
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: () => "/chat/rooms",
       providesTags: ["ChatRooms"],
     }),
 
     // найти/создать личный чат
     getOrCreateDirect: build.mutation({
-      query: (otherUserId) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (otherUserId) => ({
         url: "/chat/direct",
         method: "POST",
         body: { otherUserId },
@@ -21,7 +24,8 @@ export const chatApi = crmApi.injectEndpoints({
 
     // СОЗДАТЬ ГРУППУ
     createGroup: build.mutation({
-      query: ({ title, participantIds }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ title, participantIds }) => ({
         url: "/chat/group",
         method: "POST",
         body: { title, participantIds },
@@ -32,7 +36,8 @@ export const chatApi = crmApi.injectEndpoints({
 
     // сообщения комнаты (с поддержкой before + limit)
     getMessages: build.query({
-      query: ({ roomId, before, limit }) => {
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ roomId, before, limit }) => {
         const params = {};
 
         if (before) params.before = before;
@@ -43,7 +48,8 @@ export const chatApi = crmApi.injectEndpoints({
           params,
         };
       },
-      providesTags: (result, error, arg) => [
+            // providesTags: возвращает теги кэша для автообновления данных.
+providesTags: (result, error, arg) => [
         { type: "ChatMessages", id: String(arg.roomId) },
       ],
     }),
@@ -51,12 +57,14 @@ export const chatApi = crmApi.injectEndpoints({
     // отправка сообщения (REST, сейчас в основном используем сокет,
     // но пусть останется — может пригодиться)
     sendMessage: build.mutation({
-      query: ({ roomId, text, attachments, replyTo, forwardFrom }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ roomId, text, attachments, replyTo, forwardFrom }) => ({
         url: `/chat/rooms/${roomId}/messages`,
         method: "POST",
         body: { text, attachments, replyTo, forwardFrom },
       }),
-      invalidatesTags: (r, e, arg) => [
+            // invalidatesTags: помечает теги кэша для рефетча связанных данных.
+invalidatesTags: (r, e, arg) => [
         { type: "ChatMessages", id: String(arg.roomId) },
         "ChatRooms",
       ],
@@ -64,7 +72,8 @@ export const chatApi = crmApi.injectEndpoints({
 
     // редактирование сообщения
     editMessage: build.mutation({
-      query: ({ roomId, messageId, text }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ roomId, messageId, text }) => ({
         url: `/chat/rooms/${roomId}/messages/${messageId}`,
         method: "PATCH",
         body: { text },
@@ -72,7 +81,8 @@ export const chatApi = crmApi.injectEndpoints({
     }),
 
     deleteMessage: build.mutation({
-      query: ({ roomId, messageId }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ roomId, messageId }) => ({
         url: `/chat/rooms/${roomId}/messages/${messageId}`,
         method: "DELETE",
       }),
@@ -80,7 +90,8 @@ export const chatApi = crmApi.injectEndpoints({
 
     // отметка прочитанным
     markRead: build.mutation({
-      query: ({ roomId, messageId }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ roomId, messageId }) => ({
         url: `/chat/rooms/${roomId}/read`,
         method: "POST",
         body: { messageId },
@@ -89,7 +100,8 @@ export const chatApi = crmApi.injectEndpoints({
 
     // реакция на сообщение (toggle add/remove)
     toggleMessageReaction: build.mutation({
-      query: ({ messageId, emoji }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ messageId, emoji }) => ({
         url: `/chat/messages/${messageId}/reactions`,
         method: "POST",
         body: { emoji },
@@ -98,7 +110,8 @@ export const chatApi = crmApi.injectEndpoints({
 
     // удалить реакцию (idempotent)
     removeMessageReaction: build.mutation({
-      query: ({ messageId, emoji }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ messageId, emoji }) => ({
         url: `/chat/messages/${messageId}/reactions/${encodeURIComponent(
           emoji || ""
         )}`,
@@ -108,30 +121,35 @@ export const chatApi = crmApi.injectEndpoints({
 
     // получить реакции для сообщения
     getMessageReactions: build.query({
-      query: ({ messageId }) => `/chat/messages/${messageId}/reactions`,
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ messageId }) => `/chat/messages/${messageId}/reactions`,
     }),
 
     // список закреплённых сообщений комнаты
     getPinned: build.query({
-      query: ({ roomId }) => `/chat/rooms/${roomId}/pins`,
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ roomId }) => `/chat/rooms/${roomId}/pins`,
     }),
 
     pinMessage: build.mutation({
-      query: ({ roomId, messageId }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ roomId, messageId }) => ({
         url: `/chat/rooms/${roomId}/pin/${messageId}`,
         method: "POST",
       }),
     }),
 
     unpinMessage: build.mutation({
-      query: ({ roomId, messageId }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ roomId, messageId }) => ({
         url: `/chat/rooms/${roomId}/unpin/${messageId}`,
         method: "POST",
       }),
     }),
 
     updateRoom: build.mutation({
-      query: ({ roomId, patch }) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ roomId, patch }) => ({
         url: `/chat/rooms/${roomId}`,
         method: "PATCH",
         body: patch || {},
@@ -160,3 +178,4 @@ export const {
   useUnpinMessageMutation,
   useUpdateRoomMutation,
 } = chatApi;
+

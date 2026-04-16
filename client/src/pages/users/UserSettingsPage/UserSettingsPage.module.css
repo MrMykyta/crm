@@ -148,7 +148,7 @@
   gap: 8px;
   height: var(--h);
   padding: 0 12px;
-  font-size: 14px;
+  font-size: var(--font-size-14);
   line-height: 1;
   color: var(--text);
   background: var(--card-bg);
@@ -170,5 +170,5 @@
     0 0 0 2px color-mix(in srgb, var(--focus) 45%, transparent),
     0 6px 18px color-mix(in srgb, var(--primary-start) 22%, transparent);
 }
-.ghostSm{ --h: 30px; font-size: 13px; padding: 0 10px; }
+.ghostSm{ --h: 30px; font-size: var(--font-size-13); padding: 0 10px; }
 .ghost :where(svg){ pointer-events: none; }

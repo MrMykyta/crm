@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "smoke": "node scripts/smoke.js",
     "start": "nodemon index.js",
     "dev": "nodemon index.js"
   },

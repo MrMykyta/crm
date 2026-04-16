@@ -2,6 +2,7 @@
 const {
   Model
 } = require('sequelize');
+// Инициализирует и возвращает Sequelize-модель текущей сущности.
 module.exports = (sequelize, DataTypes) => {
   class Uom extends Model {
     /**
@@ -45,10 +46,36 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(128), 
       allowNull:false
     },
+    symbol: {
+      type: DataTypes.STRING(32),
+      allowNull: true,
+    },
+    family: {
+      type: DataTypes.STRING(32),
+      allowNull: false,
+      defaultValue: 'piece',
+    },
+    baseUnitCode: {
+      type: DataTypes.STRING(32),
+      allowNull: false,
+      field: 'base_unit_code',
+      defaultValue: 'pcs',
+    },
+    factor: {
+      type: DataTypes.DECIMAL(20, 8),
+      allowNull: false,
+      defaultValue: 1,
+    },
     precision: {
       type: DataTypes.INTEGER, 
       allowNull:false, 
       defaultValue: 2 
+    },
+    isDefault: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      field: 'is_default',
+      defaultValue: false,
     },
     isActive: { 
       type: DataTypes.BOOLEAN,
@@ -65,3 +92,4 @@ module.exports = (sequelize, DataTypes) => {
   });
   return Uom;
 };
+

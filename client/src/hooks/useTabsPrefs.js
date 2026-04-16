@@ -71,7 +71,8 @@ export default function useTabsPrefs(
     });
   };
 
-  const setExpanded = (val) => {
+    // setExpanded: обновляет состояние.
+const setExpanded = (val) => {
     const next = !!val;
     setExpandedState((prev) => (prev === next ? prev : next));
     const tabs = appearance?.tabs || {};

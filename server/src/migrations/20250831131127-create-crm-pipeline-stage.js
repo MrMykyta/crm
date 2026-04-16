@@ -1,7 +1,8 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     await queryInterface.createTable('crm_pipeline_stages', {
       id: { 
         type:Sequelize.UUID, 
@@ -66,7 +67,8 @@ module.exports = {
       name:'idx_crm_stages_company_pipeline_position' 
     });
   },
-  async down(queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface, Sequelize) {
     await queryInterface.sequelize.query(
     'ALTER TABLE "deals" DROP CONSTRAINT IF EXISTS "deals_stage_id_fkey";'
   );

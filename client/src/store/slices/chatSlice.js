@@ -51,7 +51,8 @@ const chatSlice = createSlice({
   initialState,
 
   reducers: {
-    setRooms(state, action) {
+        // setRooms: обновляет состояние.
+setRooms(state, action) {
       const rooms = Array.isArray(action.payload) ? action.payload : [];
       // если сервер уже прислал myUnreadCount — просто принимаем
       state.rooms = rooms.map((r) => ({
@@ -61,7 +62,8 @@ const chatSlice = createSlice({
       }));
     },
 
-    setActiveRoom(state, action) {
+        // setActiveRoom: обновляет состояние.
+setActiveRoom(state, action) {
       state.activeRoomId = action.payload ? String(action.payload) : null;
       state.activeAudioFileId = null;
     },
@@ -202,15 +204,18 @@ const chatSlice = createSlice({
       });
     },
 
-    setActiveAudio(state, action) {
+        // setActiveAudio: обновляет состояние.
+setActiveAudio(state, action) {
       state.activeAudioFileId = action.payload || null;
     },
 
-    clearActiveAudio(state) {
+        // clearActiveAudio: вспомогательная логика модуля.
+clearActiveAudio(state) {
       state.activeAudioFileId = null;
     },
 
-    openInfoPanel(state, action) {
+        // openInfoPanel: открывает UI-элемент.
+openInfoPanel(state, action) {
       const { roomId, tab } = action.payload || {};
       if (!roomId) return;
       const key = String(roomId);
@@ -218,7 +223,8 @@ const chatSlice = createSlice({
       if (tab) state.infoPanelActiveTabByRoomId[key] = tab;
     },
 
-    closeInfoPanel(state, action) {
+        // closeInfoPanel: закрывает UI-элемент.
+closeInfoPanel(state, action) {
       const roomId = action.payload;
       if (!roomId) return;
       const key = String(roomId);
@@ -226,7 +232,8 @@ const chatSlice = createSlice({
       delete state.infoPanelActiveTabByRoomId[key];
     },
 
-    setInfoPanelTab(state, action) {
+        // setInfoPanelTab: обновляет состояние.
+setInfoPanelTab(state, action) {
       const { roomId, tab } = action.payload || {};
       if (!roomId || !tab) return;
       state.infoPanelActiveTabByRoomId[String(roomId)] = tab;
@@ -296,31 +303,36 @@ const chatSlice = createSlice({
       return initialState;
     },
 
-    setEditTarget(state, action) {
+        // setEditTarget: обновляет состояние.
+setEditTarget(state, action) {
       const payload = action.payload || null;
       if (!payload || !payload.messageId || !payload.roomId) return;
       state.editTarget = payload;
       state.composerMode = "edit";
     },
 
-    clearEditTarget(state) {
+        // clearEditTarget: вспомогательная логика модуля.
+clearEditTarget(state) {
       state.editTarget = null;
       state.composerMode = "new";
     },
 
-    setPinned(state, action) {
+        // setPinned: обновляет состояние.
+setPinned(state, action) {
       const { roomId, pinned } = action.payload || {};
       if (!roomId) return;
       state.pinned[String(roomId)] = pinned;
     },
 
-    removePinned(state, action) {
+        // removePinned: удаляет сущность.
+removePinned(state, action) {
       const { roomId } = action.payload || {};
       if (!roomId) return;
       delete state.pinned[String(roomId)];
     },
 
-    setActivePinnedIndex(state, action) {
+        // setActivePinnedIndex: обновляет состояние.
+setActivePinnedIndex(state, action) {
       const { roomId, index } = action.payload || {};
       if (!roomId || index == null) return;
       state.activePinnedIndexByRoomId[String(roomId)] = Math.max(0, index);
@@ -427,3 +439,4 @@ export const {
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
+

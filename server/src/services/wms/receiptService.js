@@ -4,6 +4,7 @@ const { withTx } = require('../../utils/tx');
 const Inventory = require('./inventoryService');
 const { Receipt, ReceiptItem } = require('../../models');
 
+// create: создаёт новую запись и возвращает результат.
 module.exports.create = async (companyId, data, outerTx=null) => {
   return await withTx(async (t) => {
     const { items=[], ...core } = data;
@@ -15,6 +16,7 @@ module.exports.create = async (companyId, data, outerTx=null) => {
   }, outerTx);
 };
 
+// receiveLine: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.receiveLine = async (companyId, receiptItemId, { qty, toLocationId, lotId=null }, outerTx=null) => {
   return await withTx(async (t) => {
     const item = await ReceiptItem.findOne({ where:{ companyId, id: receiptItemId }, transaction:t });
@@ -30,3 +32,4 @@ module.exports.receiveLine = async (companyId, receiptItemId, { qty, toLocationI
     return item;
   }, outerTx);
 };
+

@@ -1,8 +1,9 @@
-const ApplicationError = require('./ApplicationError');
+const AppError = require('./AppError');
 
-class ServerError extends ApplicationError{
+// Общая серверная ошибка (HTTP 500).
+class ServerError extends AppError {
   constructor (message) {
-    super(message || 'server error', 500);
+    super(500, message || 'server error');
   }
 }
 

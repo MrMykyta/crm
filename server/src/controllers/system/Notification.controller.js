@@ -3,6 +3,7 @@
 
 const notificationService = require("../../services/system/notificationService");
 
+// Возвращает список уведомлений текущего пользователя.
 module.exports.listMy = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -21,6 +22,7 @@ module.exports.listMy = async (req, res) => {
   }
 };
 
+// Помечает выбранное уведомление как прочитанное.
 module.exports.markOneRead = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -41,6 +43,7 @@ module.exports.markOneRead = async (req, res) => {
   }
 };
 
+// Помечает все уведомления пользователя как прочитанные.
 module.exports.markAllRead = async (req, res) => {
   try {
     const companyId = req.user.companyId;
@@ -80,3 +83,4 @@ module.exports.createForUser = async (req, res) => {
     res.status(400).send({ error: e.message });
   }
 };
+

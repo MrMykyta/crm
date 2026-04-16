@@ -3,23 +3,29 @@ import { useState, useMemo } from "react";
 import { Formik, Form } from "formik";
 import { Image as ImageIcon, Download as DownloadIcon } from "lucide-react";
 import * as Yup from "yup";
+import { useTranslation } from "react-i18next";
 
 import page from "../../UserSettingsPage.module.css";
 import st from "./AppearanceForm.module.css";
 import { useUploadFileMutation } from "../../../../../store/rtk/filesApi";
 import { useTheme } from "../../../../../Providers/ThemeProvider";
 import { useSaveMyPreferencesMutation } from "../../../../../store/rtk/userApi";
+import ThemedSelect from "../../../../../components/inputs/RadixSelect";
 
 const MAX_BG_MB = 5;
 
 const Schema = Yup.object().shape({
   fontScale: Yup.number().min(70).max(160).required(),
+  textSize: Yup.mixed().oneOf(["small", "medium", "large"]).required(),
+  density: Yup.mixed().oneOf(["compact", "comfortable", "spacious"]).required(),
   backgroundPath: Yup.string().trim().nullable(),
   urlDraft: Yup.string().trim().nullable(),
 });
 
+// Компонент AppearanceForm: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function AppearanceForm({ initial }) {
-  const { appearance, setAppearance, mode, lang } = useTheme();
+  const { appearance, setAppearance, mode } = useTheme();
+  const { t, i18n } = useTranslation();
   const userId = useSelector((s) => s.auth?.currentUser?.id);
   const [saveMyPreferences] = useSaveMyPreferencesMutation();
 
@@ -30,9 +36,29 @@ export default function AppearanceForm({ initial }) {
 
   const [uploadFile] = useUploadFileMutation();
 
+  const textSizeOptions = useMemo(
+    () => [
+      { value: "small", label: t("settings.appearance.textSizeSmall", "Small") },
+      { value: "medium", label: t("settings.appearance.textSizeMedium", "Medium (default)") },
+      { value: "large", label: t("settings.appearance.textSizeLarge", "Large") },
+    ],
+    [t]
+  );
+
+  const densityOptions = useMemo(
+    () => [
+      { value: "compact", label: t("settings.appearance.densityCompact", "Compact") },
+      { value: "comfortable", label: t("settings.appearance.densityComfortable", "Comfortable") },
+      { value: "spacious", label: t("settings.appearance.densitySpacious", "Spacious") },
+    ],
+    [t]
+  );
+
   const initValues = useMemo(
     () => ({
       fontScale: initial?.fontScale ?? appearance.fontScale ?? 100,
+      textSize: initial?.textSize ?? appearance.textSize ?? "medium",
+      density: initial?.density ?? appearance.density ?? "comfortable",
       backgroundPath: initial?.backgroundPath ?? appearance.backgroundPath ?? "",
       urlDraft: "",
     }),
@@ -51,7 +77,8 @@ export default function AppearanceForm({ initial }) {
     return msg || "Ошибка загрузки файла";
   };
 
-  const uploadBG = async (file, setFieldValue) => {
+    // uploadBG: вспомогательная логика компонента.
+const uploadBG = async (file, setFieldValue) => {
     setUploadError("");
     setSaveOk("");
     if (!file) return;
@@ -79,7 +106,8 @@ export default function AppearanceForm({ initial }) {
     }
   };
 
-  const persistByUrl = async (urlDraft, setFieldValue) => {
+    // persistByUrl: вспомогательная логика компонента.
+const persistByUrl = async (urlDraft, setFieldValue) => {
     setUploadError("");
     setSaveOk("");
     const src = String(urlDraft || "").trim();
@@ -99,22 +127,27 @@ export default function AppearanceForm({ initial }) {
     }
   };
 
-  const handleSubmit = async (values, { setSubmitting }) => {
+    // handleSubmit: обработчик пользовательского действия.
+const handleSubmit = async (values, { setSubmitting }) => {
     setSaveError("");
     setSaveOk("");
     try {
       await saveMyPreferences({
         themeMode: mode,
-        lang,
+        lang: i18n.language,
         appearance: {
           ...appearance,
           fontScale: values.fontScale,
+          textSize: values.textSize,
+          density: values.density,
           backgroundPath: values.backgroundPath || null,
         },
       }).unwrap();
 
       setAppearance({
         fontScale: values.fontScale,
+        textSize: values.textSize,
+        density: values.density,
         backgroundPath: values.backgroundPath || null,
       });
       setSaveOk("Сохранено");
@@ -131,6 +164,40 @@ export default function AppearanceForm({ initial }) {
       {({ values, setFieldValue, isSubmitting, isValid }) => (
         <Form noValidate>
           <div className={page.grid}>
+            <div className={page.field}>
+              <label className={page.label}>
+                {t("settings.appearance.textSize", "Размер текста")}
+              </label>
+              <ThemedSelect
+                className={page.input}
+                value={values.textSize}
+                options={textSizeOptions}
+                size="sm"
+                onChange={(value) => {
+                  const next = String(value || "medium");
+                  setFieldValue("textSize", next);
+                  setAppearance({ textSize: next });
+                }}
+              />
+            </div>
+
+            <div className={page.field}>
+              <label className={page.label}>
+                {t("settings.appearance.density", "Плотность интерфейса")}
+              </label>
+              <ThemedSelect
+                className={page.input}
+                value={values.density}
+                options={densityOptions}
+                size="sm"
+                onChange={(value) => {
+                  const next = String(value || "comfortable");
+                  setFieldValue("density", next);
+                  setAppearance({ density: next });
+                }}
+              />
+            </div>
+
             <div className={page.field}>
               <label className={page.label}>Шрифт: {values.fontScale}%</label>
               <input
@@ -209,3 +276,4 @@ export default function AppearanceForm({ initial }) {
     </Formik>
   );
 }
+

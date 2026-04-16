@@ -2,6 +2,7 @@
 // priceList.extras.controller.js (generated)
 const svc = require('../../services/pim/priceListService.extras');
 
+// Массово обновляет позиции в прайс-листе.
 module.exports.setItems = async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
@@ -12,6 +13,7 @@ module.exports.setItems = async (req, res, next) => {
   }
 };
 
+// Возвращает лучшую доступную цену по заданным условиям.
 module.exports.bestPrice = async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
@@ -21,3 +23,4 @@ module.exports.bestPrice = async (req, res, next) => {
     next(e);
   }
 };
+

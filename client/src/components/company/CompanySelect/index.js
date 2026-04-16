@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import styles from './CompanySelect.module.css';
 
+// Компонент CompanySelectModal: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CompanySelectModal({ open, companies = [], onConfirm, onCancel }) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState(companies[0]?.companyId || null);

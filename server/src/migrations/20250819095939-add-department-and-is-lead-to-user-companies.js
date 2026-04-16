@@ -2,7 +2,8 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up (queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up (queryInterface, Sequelize) {
     await queryInterface.addColumn('user_companies', 'department_id', {
       type: Sequelize.UUID,
       allowNull: true,
@@ -26,9 +27,11 @@ module.exports = {
     });
   },
 
-  async down (queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down (queryInterface, Sequelize) {
     await queryInterface.removeIndex('user_companies', 'uc_company_department_idx').catch(()=>{});
     await queryInterface.removeColumn('user_companies', 'is_lead');
     await queryInterface.removeColumn('user_companies', 'department_id');
   }
 };
+

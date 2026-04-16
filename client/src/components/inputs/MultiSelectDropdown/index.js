@@ -29,6 +29,8 @@ export default function MultiSelectDropdown({
   allowCreate = false,
   createText = (q) => `Добавить «${q}»`,
   className = '',
+  single = false,
+  onOpenChange,
 }) {
   const [open, setOpen]   = React.useState(false);
   const [pos, setPos]     = React.useState({ top: 0, left: 0, width: 0, placeAbove: false });
@@ -37,6 +39,15 @@ export default function MultiSelectDropdown({
   const inputRef = React.useRef(null);
   const selectAllRef = React.useRef(null);
   const portalId = React.useRef(`msd-menu-${Math.random().toString(36).slice(2)}`);
+  const onOpenChangeRef = React.useRef(onOpenChange);
+
+  React.useEffect(() => {
+    onOpenChangeRef.current = onOpenChange;
+  }, [onOpenChange]);
+
+  React.useEffect(() => {
+    onOpenChangeRef.current?.(open);
+  }, [open]);
 
   const toggle = React.useCallback(() => {
     if (!disabled) setOpen(o => !o);
@@ -48,10 +59,14 @@ export default function MultiSelectDropdown({
     return m;
   }, [options]);
 
-  const selected = React.useMemo(
-    () => (Array.isArray(value) ? value.map(String) : []),
-    [value]
-  );
+  const selected = React.useMemo(() => {
+    if (single) {
+      if (Array.isArray(value)) return value.length ? [String(value[0])] : [];
+      if (value === undefined || value === null || value === '') return [];
+      return [String(value)];
+    }
+    return Array.isArray(value) ? value.map(String) : [];
+  }, [value, single]);
 
   const selectedLabels = React.useMemo(
     () => selected.map(v => map.get(v) ?? v).filter(Boolean),
@@ -94,7 +109,9 @@ export default function MultiSelectDropdown({
     selectAllRef.current.indeterminate = someFilteredSelected;
   }, [someFilteredSelected]);
 
-  const onToggleAllFiltered = () => {
+    // onToggleAllFiltered: вспомогательная логика компонента.
+const onToggleAllFiltered = () => {
+    if (single) return;
     if (!filteredOptions.length) return;
     const set = new Set(selected);
     if (allFilteredSelected) filteredIds.forEach(id => set.delete(id));
@@ -102,9 +119,22 @@ export default function MultiSelectDropdown({
     onChange(Array.from(set));
   };
 
-  const toggleItem = (val) => {
+    // toggleItem: переключает состояние компонента.
+const toggleItem = (val) => {
     const v = String(val);
     const set = new Set(selected);
+    if (single) {
+      if (set.has(v)) {
+        set.delete(v);
+      } else {
+        set.clear();
+        set.add(v);
+      }
+      onChange(Array.from(set));
+      setOpen(false);
+      setQuery('');
+      return;
+    }
     if (set.has(v)) set.delete(v); else set.add(v);
     onChange(Array.from(set));
   };
@@ -123,14 +153,17 @@ export default function MultiSelectDropdown({
     if (!open) return;
     computePosition();
 
-    const onDoc = (e) => {
+        // onDoc: вспомогательная логика компонента.
+const onDoc = (e) => {
       const menu = document.getElementById(portalId.current);
       const insideTrigger = trigRef.current && trigRef.current.contains(e.target);
       const insideMenu = menu && menu.contains(e.target);
       if (!insideTrigger && !insideMenu) setOpen(false);
     };
-    const onScroll = () => computePosition();
-    const onResize = () => computePosition();
+        // onScroll: вспомогательная логика компонента.
+const onScroll = () => computePosition();
+        // onResize: вспомогательная логика компонента.
+const onResize = () => computePosition();
 
     document.addEventListener('mousedown', onDoc);
     window.addEventListener('scroll', onScroll, true);
@@ -146,8 +179,9 @@ export default function MultiSelectDropdown({
     };
   }, [open, computePosition]);
 
-  const canCreate = allowCreate && q.length > 0 && !options.some(o => String(o.value).toLowerCase() === q);
-  const createAndSelect = () => {
+  const canCreate = !single && allowCreate && q.length > 0 && !options.some(o => String(o.value).toLowerCase() === q);
+    // createAndSelect: создаёт элемент в UI-потоке компонента.
+const createAndSelect = () => {
     if (!canCreate) return;
     const v = query.trim();
     if (!v) return;
@@ -155,6 +189,14 @@ export default function MultiSelectDropdown({
     set.add(v);
     onChange(Array.from(set));
     setQuery('');
+  };
+
+    // clearSingleSelection: вспомогательная логика компонента.
+const clearSingleSelection = () => {
+    if (!single) return;
+    onChange([]);
+    setQuery('');
+    setOpen(false);
   };
 
   const menuNode = open ? (
@@ -197,20 +239,34 @@ export default function MultiSelectDropdown({
         </div>
       )}
 
-      <div className={styles.allRow}>
-        <label className={styles.allLabel} title="По текущему фильтру">
-          <input
-            ref={selectAllRef}
-            type="checkbox"
-            checked={allFilteredSelected}
-            onChange={onToggleAllFiltered}
-          />
-          <span>Выбрать всех</span>
-          <span className={styles.count}>
-            {filteredSelectedCount}/{filteredOptions.length}
-          </span>
-        </label>
-      </div>
+      {single && selected.length > 0 && (
+        <div className={styles.singleClearRow}>
+          <button
+            type="button"
+            className={styles.singleClearBtn}
+            onClick={clearSingleSelection}
+          >
+            Очистить выбор
+          </button>
+        </div>
+      )}
+
+      {!single && (
+        <div className={styles.allRow}>
+          <label className={styles.allLabel} title="По текущему фильтру">
+            <input
+              ref={selectAllRef}
+              type="checkbox"
+              checked={allFilteredSelected}
+              onChange={onToggleAllFiltered}
+            />
+            <span>Выбрать всех</span>
+            <span className={styles.count}>
+              {filteredSelectedCount}/{filteredOptions.length}
+            </span>
+          </label>
+        </div>
+      )}
 
       <div
         className={styles.list}
@@ -226,6 +282,7 @@ export default function MultiSelectDropdown({
         {filteredOptions.map(o => {
           const id = String(o.value);
           const checked = selected.includes(id);
+          const secondary = o?.secondary || null;
           return (
             <label key={id} className={styles.item} title={o.label}>
               <input
@@ -233,7 +290,10 @@ export default function MultiSelectDropdown({
                 checked={checked}
                 onChange={() => toggleItem(id)}
               />
-              <span className={styles.itemText}>{o.label}</span>
+              <span className={styles.itemBody}>
+                <span className={styles.itemText}>{o.label}</span>
+                {secondary ? <span className={styles.itemMeta}>{secondary}</span> : null}
+              </span>
             </label>
           );
         })}
@@ -269,3 +329,4 @@ export default function MultiSelectDropdown({
     </div>
   );
 }
+

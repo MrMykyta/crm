@@ -6,6 +6,7 @@ import LanguageSwitcher from '../../../components/LanguageSwitcher';
 import ThemeSwitcher from '../../../components/layout/ThemeSwitcher';
 import s from '../../../styles/AuthPage.module.css';
 
+// Компонент AuthPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function AuthPage() {
   const [tab, setTab] = useState('signin');
   const { t } = useTranslation();

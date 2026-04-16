@@ -9,11 +9,13 @@ export function getCompanyMembersOptions(members = []) {
   });
 }
 
+// getCompanyDepartmentsOptions: возвращает вычисленные данные.
 export function getCompanyDepartmentsOptions(departments = []) {
   const arr = Array.isArray(departments) ? departments : [];
   return arr.map(d => ({ value: d.id, label: d.name || d.title || d.id }));
 }
 
+// buildTaskLookups: собирает итоговую структуру данных.
 export function buildTaskLookups({ members = [], departments = [] } = {}) {
   return {
     userOptions: getCompanyMembersOptions(members),
@@ -24,3 +26,4 @@ export function buildTaskLookups({ members = [], departments = [] } = {}) {
     categoryOptions: undefined,
   };
 }
+

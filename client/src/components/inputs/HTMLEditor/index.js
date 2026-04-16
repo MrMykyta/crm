@@ -1,136 +1,187 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
-import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
-import Link from "@tiptap/extension-link";
-import TextAlign from "@tiptap/extension-text-align";
-import Image from "@tiptap/extension-image";
-import {
-  TextStyle,
-  Color,
-  BackgroundColor,
-  FontFamily,
-  FontSize,
-} from "@tiptap/extension-text-style";
+import { useEffect, useMemo, useState } from 'react';
+import { Extension } from '@tiptap/core';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
+import Highlight from '@tiptap/extension-highlight';
+import { TextStyle } from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
+import { Redo2, Undo2 } from 'lucide-react';
+import FontSizeControl from './FontSizeControl';
+import s from './HTMLEditor.module.css';
 
-import s from "./HTMLEditor.module.css";
+const FONT_MIN = 6;
+const FONT_MAX = 96;
+const FONT_STEP = 1;
+const DEFAULT_FONT = 11;
+const FONT_PRESETS = [8, 9, 10, 11, 12, 14, 18, 24, 30, 36, 48, 60, 72];
+const PT_PER_PX = 0.75;
 
-/* ---------- helpers ---------- */
-const parsePx = (v, fallback = 14) => {
-  if (v === "" || v === null || v === undefined) return fallback;
-  const m = String(v).match(/(\d+(?:\.\d+)?)\s*px/i);
-  const num = m ? Number(m[1]) : Number(v);
-  return Number.isFinite(num) ? num : fallback;
+// clampSize: вспомогательная логика компонента.
+const clampSize = (size) => Math.max(FONT_MIN, Math.min(FONT_MAX, size));
+
+const FontSize = Extension.create({
+  name: 'fontSize',
+    // addOptions: добавляет элемент в локальное состояние компонента.
+addOptions() {
+    return {
+      types: ['textStyle'],
+    };
+  },
+    // addGlobalAttributes: добавляет элемент в локальное состояние компонента.
+addGlobalAttributes() {
+    return [
+      {
+        types: this.options.types,
+        attributes: {
+          fontSize: {
+            default: null,
+                        // parseHTML: парсит входные данные для UI.
+parseHTML: (element) => element.style.fontSize || null,
+                        // renderHTML: описывает рендер соответствующего блока UI.
+renderHTML: (attributes) => {
+              if (!attributes.fontSize) return {};
+              return { style: `font-size: ${attributes.fontSize}` };
+            },
+          },
+        },
+      },
+    ];
+  },
+    // addCommands: добавляет элемент в локальное состояние компонента.
+addCommands() {
+    return {
+            // setFontSize: обновляет состояние компонента.
+setFontSize:
+        (fontSize) =>
+        ({ chain }) =>
+          chain().setMark('textStyle', { fontSize }).run(),
+            // unsetFontSize: вспомогательная логика компонента.
+unsetFontSize:
+        () =>
+        ({ chain }) =>
+          chain().setMark('textStyle', { fontSize: null }).removeEmptyTextStyle().run(),
+    };
+  },
+});
+
+// normalizeUrl: нормализует данные для отображения и ввода.
+const normalizeUrl = (value = '') => {
+  const url = String(value || '').trim();
+  if (!url) return '';
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(url)) return url;
+  if (/^www\./i.test(url)) return `https://${url}`;
+  return '';
 };
-const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-const markActive = (editor, name) => {
-  if (!editor) return false;
-  if (editor.isActive(name)) return true;
-  const stored = editor.state?.storedMarks || [];
-  return stored.some((m) => m.type?.name === name);
+
+// parseFontSize: парсит входные данные для UI.
+const parseFontSize = (raw) => {
+  if (!raw) return null;
+  const text = String(raw).trim().toLowerCase();
+  const pt = text.match(/^(\d+(?:\.\d+)?)pt$/);
+  if (pt) {
+    const num = Number(pt[1]);
+    if (Number.isFinite(num)) return clampSize(Math.round(num));
+    return null;
+  }
+
+  const px = text.match(/^(\d+(?:\.\d+)?)px$/);
+  if (px) {
+    const num = Number(px[1]);
+    if (Number.isFinite(num)) return clampSize(Math.round(num * PT_PER_PX));
+    return null;
+  }
+
+  const plain = text.match(/^(\d+)$/);
+  if (plain) {
+    const num = Number(plain[1]);
+    if (Number.isFinite(num)) return clampSize(Math.round(num));
+  }
+
+  return null;
 };
 
-/* ---------- icons ---------- */
-const IconUndo = (p) => (
-  <svg viewBox="0 0 24 24" className={s.icon} {...p}>
-    <path d="M7 8H3v4M3 12a9 9 0 0 1 15.364-6.364" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-const IconRedo = (p) => (
-  <svg viewBox="0 0 24 24" className={s.icon} {...p}>
-    <path d="M17 8h4v4M21 12a9 9 0 0 0-15.364-6.364" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-const IconMarker = () => (
-  <svg viewBox="0 0 24 24" className={s.icon}>
-    <path d="M3 21h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M13 3l8 8-7 7-8-8 7-7z" fill="currentColor" opacity=".2"/>
-    <path d="M6 10l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-);
+// fontSizeFromMarks: вспомогательная логика компонента.
+const fontSizeFromMarks = (marks = []) => {
+  const mark = marks.find((entry) => entry?.type?.name === 'textStyle');
+  return parseFontSize(mark?.attrs?.fontSize || null);
+};
 
-/* ---------- SizeMenu (portal) ---------- */
-function SizeMenu({ open, anchorRect, value, onPick, onClose }) {
-  if (!open || !anchorRect) return null;
-  const PRESETS = [8,9,10,11,12,14,18,24,30,36,48,60,72,96];
+// getSelectionFontState: возвращает вычисленное значение для UI.
+const getSelectionFontState = (editor) => {
+  const selection = editor?.state?.selection;
+  if (!selection) {
+    return { size: null, mixed: false };
+  }
 
-  const style = {
-    position: "fixed",
-    top: Math.round(anchorRect.bottom + 6),
-    left: Math.round(anchorRect.left + anchorRect.width / 2 - 32),
-    zIndex: 10000,
-  };
+  if (selection.empty) {
+    const marks = editor.state.storedMarks || selection.$from.marks();
+    return { size: fontSizeFromMarks(marks), mixed: false };
+  }
 
-  return createPortal(
-    <div
-      className={s.menu}
-      style={style}
-      // критично: блокируем mousedown, чтобы глобальный обработчик «клик-вне» не закрыл меню раньше клика по пункту
-      onMouseDown={(e) => e.stopPropagation()}
+  const values = new Set();
+  editor.state.doc.nodesBetween(selection.from, selection.to, (node) => {
+    if (!node.isText || !node.text) return;
+    const size = fontSizeFromMarks(node.marks);
+    values.add(size == null ? 'unset' : String(size));
+  });
+
+  if (values.size === 0) return { size: null, mixed: false };
+  if (values.size > 1) return { size: null, mixed: true };
+
+  const [only] = Array.from(values);
+  if (only === 'unset') return { size: null, mixed: false };
+  return { size: Number(only), mixed: false };
+};
+
+// Компонент ToolButton: отвечает за отображение UI и обработку взаимодействий пользователя.
+function ToolButton({ active = false, disabled = false, title = '', onClick, className = '', children }) {
+  return (
+    <button
+      type="button"
+      className={`${s.toolBtn} ${active ? s.active : ''} ${className}`.trim()}
+      disabled={disabled}
+      title={title}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onClick}
     >
-      {PRESETS.map((p) => (
-        <button
-          key={p}
-          type="button"
-          className={`${s.menuItem} ${p === value ? s.menuItemActive : ""}`}
-          onClick={() => {
-            onPick(p);
-            onClose?.();
-          }}
-        >
-          {p}
-        </button>
-      ))}
-    </div>,
-    document.body
+      {children}
+    </button>
   );
 }
 
+// Компонент HTMLEditor: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function HTMLEditor({
   value,
-  defaultValue = "",
+  defaultValue = '',
   onChange,
-  placeholder = "Начните вводить текст…",
+  placeholder = 'Начните вводить текст…',
   minHeight = 220,
 }) {
-  const [uiColor, setUiColor] = useState("#e9edff");
-  const [uiBg, setUiBg] = useState("#000000");
-
-  // font-size state
-  const [fontPx, setFontPx] = useState(14);
-  const [sizeDraft, setSizeDraft] = useState("14");
-  const lastSizeRef = useRef(14);
-
-  // dropdown state for size (with portal)
-  const [openSize, setOpenSize] = useState(false);
-  const [anchorRect, setAnchorRect] = useState(null);
-  const sizeComboRef = useRef(null);
-
-  /* ---------- extensions ---------- */
   const extensions = useMemo(
     () => [
-      TextStyle,
-      Color.configure({ types: ["textStyle"] }),
-      BackgroundColor.configure({ types: ["textStyle"] }),
-      FontFamily.configure({ types: ["textStyle"] }),
-      FontSize.configure({ types: ["textStyle"] }),
-      Underline,
-      Link.configure({
-        openOnClick: true,
-        autolink: true,
-        protocols: ["http", "https", "mailto", "tel"],
-        HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
-      }),
-      TextAlign.configure({ types: ["paragraph", "heading"] }),
-      Image.configure({ allowBase64: true }),
       StarterKit.configure({
-        history: true,
-        bulletList: { keepMarks: true, keepAttributes: true },
-        orderedList: { keepMarks: true, keepAttributes: true },
+        heading: { levels: [2, 3] },
+        bulletList: { keepMarks: true, keepAttributes: false },
+        orderedList: { keepMarks: true, keepAttributes: false },
       }),
+      Underline,
+      TextStyle,
+      FontSize,
+      Color,
+      Highlight.configure({ multicolor: true }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        protocols: ['http', 'https', 'mailto', 'tel'],
+        HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
+      }),
+      Placeholder.configure({ placeholder }),
     ],
-    []
+    [placeholder]
   );
 
   const editor = useEditor({
@@ -139,322 +190,194 @@ export default function HTMLEditor({
     editorProps: {
       attributes: {
         class: s.editor,
-        "data-placeholder": placeholder,
-        style: `min-height:${typeof minHeight === "number" ? `${minHeight}px` : minHeight}`,
-      },
-      handleDrop(view, event) {
-        const e = event;
-        if (!e.dataTransfer) return false;
-        const file = Array.from(e.dataTransfer.files || [])[0];
-        if (file && file.type.startsWith("image/")) {
-          const reader = new FileReader();
-          reader.onload = () => editor?.chain().focus().setImage({ src: reader.result }).run();
-          reader.readAsDataURL(file);
-          e.preventDefault();
-          return true;
-        }
-        const url = e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain");
-        if (url && /^https?:\/\//i.test(url) && /\.(png|jpe?g|gif|webp|svg)(\?|#|$)/i.test(url)) {
-          editor?.chain().focus().setImage({ src: url }).run();
-          e.preventDefault();
-          return true;
-        }
-        return false;
+        style: `min-height:${typeof minHeight === 'number' ? `${minHeight}px` : minHeight}`,
       },
     },
-    onCreate: ({ editor }) => {
-      const fs = editor.getAttributes("textStyle")?.fontSize;
-      if (!fs) editor.chain().focus().setFontSize("14px").run();
-    },
-    onUpdate: ({ editor }) => {
-      onChange && onChange(editor.getHTML());
-      const a = editor.getAttributes("textStyle");
-      if (a?.color && a.color !== uiColor) setUiColor(a.color);
-      if (a?.backgroundColor && a.backgroundColor !== uiBg) setUiBg(a.backgroundColor);
-      if (a?.fontSize) {
-        const parsed = parsePx(a.fontSize, 14);
-        if (parsed !== fontPx) {
-          setFontPx(parsed);
-          setSizeDraft(String(parsed));
-          lastSizeRef.current = parsed;
-        }
-      }
+        // onUpdate: вспомогательная логика компонента.
+onUpdate: ({ editor: instance }) => {
+      onChange?.(instance.getHTML());
     },
   });
 
-  // синхронизация на выбор/транзакции
   useEffect(() => {
     if (!editor) return;
-    const handler = () => {
-      const a = editor.getAttributes("textStyle");
-      const parsed = parsePx(a?.fontSize, 14);
-      setFontPx(parsed);
-      setSizeDraft(String(parsed));
-      lastSizeRef.current = parsed;
+    if (value === undefined) return;
+    if (value === editor.getHTML()) return;
+    editor.commands.setContent(value || '', false);
+  }, [editor, value]);
+
+  const [fontState, setFontState] = useState({
+    size: DEFAULT_FONT,
+    mixed: false,
+  });
+
+  useEffect(() => {
+    if (!editor) return undefined;
+
+        // syncFontState: вспомогательная логика компонента.
+const syncFontState = () => {
+      const next = getSelectionFontState(editor);
+      setFontState({
+        size: next.size ?? DEFAULT_FONT,
+        mixed: Boolean(next.mixed),
+      });
     };
-    editor.on("selectionUpdate", handler);
-    editor.on("transaction", handler);
-    editor.on("update", handler);
+
+    syncFontState();
+    editor.on('selectionUpdate', syncFontState);
+    editor.on('transaction', syncFontState);
+    editor.on('update', syncFontState);
+
     return () => {
-      editor.off("selectionUpdate", handler);
-      editor.off("transaction", handler);
-      editor.off("update", handler);
+      editor.off('selectionUpdate', syncFontState);
+      editor.off('transaction', syncFontState);
+      editor.off('update', syncFontState);
     };
   }, [editor]);
 
-  // клик вне — применяем и закрываем
-  useEffect(() => {
-    const onDoc = (e) => {
-      if (openSize) {
-        if (sizeComboRef.current && !sizeComboRef.current.contains(e.target)) {
-          const v = parsePx(sizeDraft, fontPx);
-          applyFont(v);
-          setOpenSize(false);
-        }
-      }
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [openSize, sizeDraft, fontPx]); // eslint-disable-line
+    // chain: вспомогательная логика компонента.
+const chain = () => editor?.chain().focus();
+  const canUndo = !!editor?.can().chain().focus().undo().run();
+  const canRedo = !!editor?.can().chain().focus().redo().run();
 
-  const chain = () => (editor ? editor.chain().focus() : null);
-  const can = (cmd) => (editor ? editor.can().chain().focus()[cmd]().run() : false);
-  const holdCursor = (e) => e.preventDefault();
+    // applyFontSize: вспомогательная логика компонента.
+const applyFontSize = (next) => {
+    const parsed = Number(next);
+    if (!Number.isFinite(parsed)) return;
 
-  /* ---------- font size ---------- */
-  const STEP = 1, MIN = 8, MAX = 96;
+    const size = clampSize(Math.round(parsed));
+    chain()?.setFontSize(`${size}pt`).run();
+    setFontState({ size, mixed: false });
+  };
 
-  const applyFont = (px) => {
+    // stepFontSize: вспомогательная логика компонента.
+const stepFontSize = (delta) => {
+    const base = fontState.mixed ? DEFAULT_FONT : fontState.size || DEFAULT_FONT;
+    applyFontSize(base + delta);
+  };
+
+    // toggleLink: переключает состояние компонента.
+const toggleLink = () => {
     if (!editor) return;
-    const v = clamp(Math.round(px), MIN, MAX);
-    editor.chain().focus().setFontSize(`${v}px`).run();
-    setFontPx(v);
-    setSizeDraft(String(v));
-    lastSizeRef.current = v;
-  };
-  const incFont = () => applyFont(lastSizeRef.current + STEP);
-  const decFont = () => applyFont(lastSizeRef.current - STEP);
 
-  const onSizeInput = (e) => setSizeDraft(e.target.value.replace(/[^\d.]/g, ""));
-  const onSizeEnter = (e) => {
-    e.preventDefault(); e.stopPropagation();
-    applyFont(parsePx(sizeDraft, fontPx));
-  };
+    if (editor.isActive('link')) {
+      chain()?.extendMarkRange('link').unsetLink().run();
+      return;
+    }
 
-  // для списков — не терять текущий размер
-  const toggleBulletKeepSize = () => {
-    const v = lastSizeRef.current;
-    chain()?.toggleBulletList().setFontSize(`${v}px`).run();
-  };
-  const toggleOrderedKeepSize = () => {
-    const v = lastSizeRef.current;
-    chain()?.toggleOrderedList().setFontSize(`${v}px`).run();
-  };
+    const { from, to } = editor.state.selection;
+    const selected = editor.state.doc.textBetween(from, to, ' ').trim();
+    const clean = normalizeUrl(selected);
+    if (!clean) return;
 
-  /* ---------- color actions ---------- */
-  const applyColor = (hex) => { setUiColor(hex); editor?.chain().focus().setColor(hex).run(); };
-  const applyBg = (hex)   => { setUiBg(hex);   editor?.chain().focus().setBackgroundColor(hex).run(); };
-  const unsetBg  = ()     => editor?.chain().focus().unsetBackgroundColor().run();
-
-  /* ---------- image picker ---------- */
-  const insertImage = () => {
-    if (!editor) return;
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => chain()?.setImage({ src: reader.result }).run();
-      reader.readAsDataURL(file);
-    };
-    input.click();
+    chain()?.extendMarkRange('link').setLink({ href: clean }).run();
   };
-
-  const fonts = [
-    { label: "System", value: "" },
-    { label: "Arial", value: "Arial, sans-serif" },
-    { label: "Times New Roman", value: "'Times New Roman', Times, serif" },
-    { label: "Georgia", value: "Georgia, serif" },
-    { label: "Verdana", value: "Verdana, sans-serif" },
-    { label: "Roboto", value: "Roboto, system-ui, sans-serif" },
-  ];
 
   return (
     <div className={s.wrap}>
-      <div className={s.toolbar} role="toolbar" aria-label="HTMLEditor toolbar">
-        {/* Undo / Redo */}
-        <button
-          type="button"
-          className={`${s.btn} ${s.btnIcon} ${!can("undo") ? s.disabled : ""}`}
-          onMouseDown={holdCursor}
-          onClick={() => chain()?.undo().run()}
-          title="Отменить"
-        ><IconUndo /></button>
+      <div className={s.toolbar} role="toolbar" aria-label="HTML editor toolbar">
+        <ToolButton title="Отменить" disabled={!canUndo} onClick={() => chain()?.undo().run()}>
+          <Undo2 className={s.toolIcon} />
+        </ToolButton>
+        <ToolButton title="Повторить" disabled={!canRedo} onClick={() => chain()?.redo().run()}>
+          <Redo2 className={s.toolIcon} />
+        </ToolButton>
 
-        <button
-          type="button"
-          className={`${s.btn} ${s.btnIcon} ${!can("redo") ? s.disabled : ""}`}
-          onMouseDown={holdCursor}
-          onClick={() => chain()?.redo().run()}
-          title="Повторить"
-        ><IconRedo /></button>
+        <span className={s.divider} />
 
-        {/* Размер */}
-        <div className={s.group} ref={sizeComboRef}>
-          <button
-            type="button"
-            className={`${s.btn} ${s.btnIcon}`}
-            onMouseDown={holdCursor}
-            onClick={decFont}
-            title="Меньше"
-          >
-            <svg viewBox="0 0 24 24" className={s.icon}><rect x="5" y="11" width="14" height="2" rx="1"/></svg>
-          </button>
-
-          <div
-            className={`${s.sizeCombo} ${openSize ? s.sizeOpen : ""}`}
-            onMouseDown={(e) => { if ((e.target).tagName !== "INPUT") e.preventDefault(); }}
-            onClick={() => {
-              const rect = sizeComboRef.current?.getBoundingClientRect();
-              setAnchorRect(rect || null);
-              setOpenSize((o) => !o);
-            }}
-          >
-            <input
-              className={s.sizeInput}
-              value={sizeDraft}
-              readOnly={!openSize}
-              onChange={onSizeInput}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") onSizeEnter(e);
-                if (e.key === "ArrowUp") { e.preventDefault(); incFont(); }
-                if (e.key === "ArrowDown") { e.preventDefault(); decFont(); }
-              }}
-              inputMode="numeric"
-              aria-label="Размер шрифта"
-            />
-          </div>
-
-          <button
-            type="button"
-            className={`${s.btn} ${s.btnIcon}`}
-            onMouseDown={holdCursor}
-            onClick={incFont}
-            title="Больше"
-          >
-            <svg viewBox="0 0 24 24" className={s.icon}>
-              <rect x="11" y="5" width="2" height="14" rx="1"/>
-              <rect x="5" y="11" width="14" height="2" rx="1"/>
-            </svg>
-          </button>
-        </div>
-
-        {/* B / I / U */}
-        <button
-          type="button"
-          className={`${s.btn} ${markActive(editor,"bold") ? s.active : ""}`}
-          onMouseDown={holdCursor}
-          onClick={() => editor?.chain().focus().toggleBold().run()}
+        <ToolButton
+          title="Заголовок"
+          active={editor?.isActive('heading', { level: 2 })}
+          onClick={() => chain()?.toggleHeading({ level: 2 }).run()}
+        >
+          H2
+        </ToolButton>
+        <ToolButton
           title="Жирный"
-        >B</button>
-
-        <button
-          type="button"
-          className={`${s.btn} ${markActive(editor,"italic") ? s.active : ""}`}
-          onMouseDown={holdCursor}
-          onClick={() => editor?.chain().focus().toggleItalic().run()}
+          active={editor?.isActive('bold')}
+          onClick={() => chain()?.toggleBold().run()}
+        >
+          B
+        </ToolButton>
+        <ToolButton
           title="Курсив"
-        >I</button>
-
-        <button
-          type="button"
-          className={`${s.btn} ${markActive(editor,"underline") ? s.active : ""}`}
-          onMouseDown={holdCursor}
-          onClick={() => editor?.chain().focus().toggleUnderline().run()}
+          active={editor?.isActive('italic')}
+          onClick={() => chain()?.toggleItalic().run()}
+        >
+          I
+        </ToolButton>
+        <ToolButton
           title="Подчёркнутый"
-        >U</button>
-
-        {/* Цвет */}
-        <div className={s.swatch} onMouseDown={holdCursor} title="Цвет текста">
-          <span className={s.swatchA}>A</span>
-          <span className={s.swatchLine} style={{ background: uiColor }} />
-          <input type="color" className={s.color} value={uiColor} onChange={(e)=>applyColor(e.target.value)} />
-        </div>
-
-        {/* Фон */}
-        <div className={s.swatch} onMouseDown={holdCursor} title="Цвет фона за текстом">
-          <span className={s.marker}><IconMarker/></span>
-          <span className={s.swatchLine} style={{ background: uiBg }} />
-          <input type="color" className={s.color} value={uiBg} onChange={(e)=>applyBg(e.target.value)} />
-          <button type="button" className={`${s.btn} ${s.btnTiny}`} onMouseDown={holdCursor} onClick={unsetBg}>×</button>
-        </div>
-
-        {/* Шрифт */}
-        <select
-          className={`${s.select} ${s.selectWide}`}
-          value={editor?.getAttributes("textStyle")?.fontFamily || ""}
-          onChange={(e) => chain()?.setFontFamily(e.target.value).run()}
-          title="Шрифт"
+          active={editor?.isActive('underline')}
+          onClick={() => chain()?.toggleUnderline().run()}
         >
-          {[
-            { label: "System", value: "" },
-            { label: "Arial", value: "Arial, sans-serif" },
-            { label: "Times New Roman", value: "'Times New Roman', Times, serif" },
-            { label: "Georgia", value: "Georgia, serif" },
-            { label: "Verdana", value: "Verdana, sans-serif" },
-            { label: "Roboto", value: "Roboto, system-ui, sans-serif" },
-          ].map(f => (
-            <option key={f.label} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>
-          ))}
-        </select>
+          U
+        </ToolButton>
 
-        {/* Выравнивание */}
-        <select
-          className={`${s.select} ${s.selectAlign}`}
-          value={
-            (editor?.isActive({ textAlign: "center" }) && "center") ||
-            (editor?.isActive({ textAlign: "right" }) && "right") ||
-            (editor?.isActive({ textAlign: "justify" }) && "justify") || "left"
-          }
-          onChange={(e) => chain()?.setTextAlign(e.target.value).run()}
-          title="Выравнивание"
-        >
-          <option value="left">Лево</option>
-          <option value="center">Центр</option>
-          <option value="right">Право</option>
-          <option value="justify">Ширина</option>
-        </select>
+        <span className={s.divider} />
 
-        {/* Списки (с сохранением размера) */}
-        <button
-          type="button"
-          className={`${s.btn} ${editor?.isActive("bulletList") ? s.active : ""}`}
-          onMouseDown={holdCursor}
-          onClick={toggleBulletKeepSize}
+        <FontSizeControl
+          value={fontState.size}
+          mixed={fontState.mixed}
+          min={FONT_MIN}
+          max={FONT_MAX}
+          presets={FONT_PRESETS}
+          onApply={applyFontSize}
+          onStep={(delta) => stepFontSize(delta * FONT_STEP)}
+        />
+
+        <span className={s.divider} />
+
+        <ToolButton
           title="Маркированный список"
-        >•</button>
-        <button
-          type="button"
-          className={`${s.btn} ${editor?.isActive("orderedList") ? s.active : ""}`}
-          onMouseDown={holdCursor}
-          onClick={toggleOrderedKeepSize}
+          active={editor?.isActive('bulletList')}
+          onClick={() => chain()?.toggleBulletList().run()}
+        >
+          •
+        </ToolButton>
+        <ToolButton
           title="Нумерованный список"
-        >1.</button>
+          active={editor?.isActive('orderedList')}
+          onClick={() => chain()?.toggleOrderedList().run()}
+        >
+          1.
+        </ToolButton>
+        <ToolButton
+          title="Ссылка"
+          active={editor?.isActive('link')}
+          onClick={toggleLink}
+        >
+          ⛓
+        </ToolButton>
 
-        {/* Фото (d&d тоже работает) */}
-        <button type="button" className={s.btn} onMouseDown={holdCursor} onClick={insertImage} title="Вставить фото">🖼️</button>
+        <span className={s.divider} />
+
+        <label className={s.colorControl} title="Цвет текста">
+          <span className={s.colorLabel}>A</span>
+          <input
+            className={s.colorInput}
+            type="color"
+            defaultValue="#5fa8ff"
+            onChange={(e) => chain()?.setColor(e.target.value).run()}
+          />
+        </label>
+        <ToolButton title="Сбросить цвет текста" onClick={() => chain()?.unsetColor().run()}>
+          A×
+        </ToolButton>
+
+        <label className={s.colorControl} title="Цвет выделения">
+          <span className={s.colorLabel}>▦</span>
+          <input
+            className={s.colorInput}
+            type="color"
+            defaultValue="#fff59d"
+            onChange={(e) => chain()?.setHighlight({ color: e.target.value }).run()}
+          />
+        </label>
+        <ToolButton title="Сбросить выделение фона" onClick={() => chain()?.unsetHighlight().run()}>
+          ⌫
+        </ToolButton>
       </div>
-
-      {/* портал выпадашки размеров */}
-      <SizeMenu
-        open={openSize}
-        anchorRect={anchorRect}
-        value={fontPx}
-        onPick={(p) => applyFont(p)}
-        onClose={() => setOpenSize(false)}
-      />
 
       <div className={s.editorWrap}>
         <EditorContent editor={editor} />
@@ -462,3 +385,4 @@ export default function HTMLEditor({
     </div>
   );
 }
+

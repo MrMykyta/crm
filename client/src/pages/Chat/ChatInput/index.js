@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import s from "../ChatPage.module.css";
 
+// getExtLabel: возвращает вычисленное значение для UI.
 const getExtLabel = (filename = "", mime = "") => {
   const name = String(filename || "");
   const parts = name.split(".");
@@ -18,6 +19,7 @@ const getExtLabel = (filename = "", mime = "") => {
 
 const MAX_PREVIEW = 6;
 
+// Компонент ComposerAttachmentItem: отвечает за отображение UI и обработку взаимодействий пользователя.
 const ComposerAttachmentItem = ({ draft, onRemove, onRetry }) => {
   const { t } = useTranslation();
   const isDone = draft.status === "done";
@@ -96,6 +98,7 @@ const ComposerAttachmentItem = ({ draft, onRemove, onRetry }) => {
   );
 };
 
+// Компонент ChatInput: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ChatInput({
   text,
   onChangeText,
@@ -133,12 +136,14 @@ export default function ChatInput({
   // Drag state to show drop highlight.
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleSendClick = () => {
+    // handleSendClick: обработчик пользовательского действия.
+const handleSendClick = () => {
     if (isBusy || !canSend) return;
     onSend && onSend();
   };
 
-  const autoResize = (silent = false) => {
+    // autoResize: вспомогательная логика компонента.
+const autoResize = (silent = false) => {
     const el = textareaRef.current;
     if (!el) return;
 
@@ -173,12 +178,14 @@ export default function ChatInput({
     }
   };
 
-  const handleChange = (e) => {
+    // handleChange: обработчик пользовательского действия.
+const handleChange = (e) => {
     onChangeText && onChangeText(e);
     // высоту пересчитает useEffect по text
   };
 
-  const handleKeyDown = (e) => {
+    // handleKeyDown: обработчик пользовательского действия.
+const handleKeyDown = (e) => {
     if (e.key === "Escape" && editTarget) {
       e.preventDefault();
       e.stopPropagation();
@@ -191,36 +198,42 @@ export default function ChatInput({
     onKeyDown && onKeyDown(e);
   };
 
-  const handleAttachClick = () => {
+    // handleAttachClick: обработчик пользовательского действия.
+const handleAttachClick = () => {
     if (disableAttachments || isBusy) return;
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  const handleFiles = (files) => {
+    // handleFiles: обработчик пользовательского действия.
+const handleFiles = (files) => {
     if (!files || !files.length) return;
     if (disableAttachments || isBusy) return;
     onFilesSelected && onFilesSelected(files);
   };
 
-  const handleFileChange = (e) => {
+    // handleFileChange: обработчик пользовательского действия.
+const handleFileChange = (e) => {
     const files = Array.from(e.target.files || []);
     handleFiles(files);
     e.target.value = "";
   };
 
-  const handleDragOver = (e) => {
+    // handleDragOver: обработчик пользовательского действия.
+const handleDragOver = (e) => {
     e.preventDefault();
     if (disableAttachments || isBusy) return;
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => {
+    // handleDragLeave: обработчик пользовательского действия.
+const handleDragLeave = () => {
     setIsDragging(false);
   };
 
-  const handleDrop = (e) => {
+    // handleDrop: обработчик пользовательского действия.
+const handleDrop = (e) => {
     e.preventDefault();
     if (disableAttachments || isBusy) return;
     setIsDragging(false);
@@ -402,3 +415,4 @@ export default function ChatInput({
     </div>
   );
 }
+

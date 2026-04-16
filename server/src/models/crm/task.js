@@ -1,9 +1,11 @@
 'use strict';
 const { Model } = require('sequelize');
 
+// Инициализирует и возвращает Sequelize-модель текущей сущности.
 module.exports = (sequelize, DataTypes) => {
   class Task extends Model {
-    static associate(models) {
+        // Описывает associations этой модели с другими сущностями.
+static associate(models) {
       Task.belongsTo(models.Company, {
         foreignKey: { name: 'companyId', field: 'company_id' },
         as: 'company',
@@ -48,12 +50,14 @@ module.exports = (sequelize, DataTypes) => {
       });
     }
 
-    get isAllDay() {
-      // all-day = когда есть дата, но время незначимо (храним как [00:00, next 00:00))
-      return !!(this.startAt && this.endAt &&
-        new Date(this.endAt).getTime() - new Date(this.startAt).getTime() === 24 * 3600 * 1000 &&
-        new Date(this.startAt).getHours() === 0 &&
-        new Date(this.startAt).getMinutes() === 0);
+    // Вычисляет признак "весь день", когда обе даты заданы без времени.
+get isAllDay() {
+      return !!(
+        this.startAt &&
+        this.endAt &&
+        this.plannedStartHasTime === false &&
+        this.plannedEndHasTime === false
+      );
     }
   }
 
@@ -83,6 +87,32 @@ module.exports = (sequelize, DataTypes) => {
 
       startAt:   { type: DataTypes.DATE, allowNull: true, field: 'start_at' },
       endAt:     { type: DataTypes.DATE, allowNull: true, field: 'end_at' },
+      actualStartAt: { type: DataTypes.DATE, allowNull: true, field: 'actual_start_at' },
+      actualEndAt: { type: DataTypes.DATE, allowNull: true, field: 'actual_end_at' },
+      plannedStartHasTime: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'planned_start_has_time',
+      },
+      plannedEndHasTime: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'planned_end_has_time',
+      },
+      actualStartHasTime: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'actual_start_has_time',
+      },
+      actualEndHasTime: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'actual_end_has_time',
+      },
       timezone:  { type: DataTypes.STRING(64), allowNull: true },
 
       participantMode: {
@@ -115,29 +145,33 @@ module.exports = (sequelize, DataTypes) => {
       paranoid: true,
       timestamps: true,
       validate: {
-        endAfterStart() {
-          if (this.startAt && this.endAt && !(this.endAt > this.startAt)) {
-            throw new Error('endAt must be greater than startAt');
-          }
-        },
-      },
-      hooks: {
-        // если передали только дату (без времени) — нормализуем в [00:00; +1день)
-        beforeValidate(task) {
-          if (!task.startAt && !task.endAt) return;
-          const s = task.startAt ? new Date(task.startAt) : null;
-          const e = task.endAt ? new Date(task.endAt) : null;
+        // Проверяет, что плановый конец не раньше старта (с учётом режима "только дата").
+endAfterStart() {
+          if (!this.startAt || !this.endAt) return;
 
-          if (s && !e && s.getHours() === 0 && s.getMinutes() === 0) {
-            const next = new Date(s);
-            next.setDate(next.getDate() + 1);
-            task.endAt = next;
+          const start = new Date(this.startAt);
+          const end = new Date(this.endAt);
+
+          if (this.plannedStartHasTime === false && this.plannedEndHasTime === false) {
+            if (end < start) throw new Error('endAt must be greater than or equal to startAt');
+            return;
           }
-          if (s && e && e <= s) {
-            const next = new Date(s);
-            next.setDate(next.getDate() + 1);
-            task.endAt = next;
+
+          if (!(end > start)) throw new Error('endAt must be greater than startAt');
+        },
+        // Проверяет, что фактический конец не раньше фактического старта.
+actualEndAfterStart() {
+          if (!this.actualStartAt || !this.actualEndAt) return;
+
+          const start = new Date(this.actualStartAt);
+          const end = new Date(this.actualEndAt);
+
+          if (this.actualStartHasTime === false && this.actualEndHasTime === false) {
+            if (end < start) throw new Error('actualEndAt must be greater than or equal to actualStartAt');
+            return;
           }
+
+          if (!(end > start)) throw new Error('actualEndAt must be greater than actualStartAt');
         },
       },
     }

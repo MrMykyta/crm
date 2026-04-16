@@ -15,7 +15,9 @@ const MAX = {
   country: 2, city: 128, postalCode: 12, street: 128, description: 2000,
 };
 
+// trimOrNull: вспомогательная логика компонента.
 function trimOrNull(v){ if(v==null) return null; const t=String(v).trim(); return t.length?t:null; }
+// onlyDigits: вспомогательная логика компонента.
 function onlyDigits(s){ return /^\d+$/.test(s); }
 const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 const phoneRx = /^[+()\d\-.\s]{5,}$/;
@@ -59,6 +61,7 @@ function validate(values, contacts, t, { allowedTypes = TYPES, allowedStatuses =
   return e;
 }
 
+// Компонент CounterpartyForm: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CounterpartyForm({
   id,
   defaultType = 'client',
@@ -107,28 +110,34 @@ export default function CounterpartyForm({
   const [contacts, setContacts] = useState(initial.contacts || []);
   const [errors, setErrors] = useState({});
 
-  const set = (name, value) => {
+    // set: обновляет состояние компонента.
+const set = (name, value) => {
     if (name === 'country') value = (value || '').toUpperCase().slice(0, MAX.country);
     if (typeof value === 'string' && MAX[name]) value = value.slice(0, MAX[name]);
     setValues(v => ({ ...v, [name]: value }));
   };
 
-  const addContact = () =>
+    // addContact: добавляет элемент в локальное состояние компонента.
+const addContact = () =>
     setContacts(list => [
       ...list,
       { channel: 'email', value: '', isPrimary: list.length === 0 },
     ]);
 
-  const updContact = (idx, patch) =>
+    // updContact: вспомогательная логика компонента.
+const updContact = (idx, patch) =>
     setContacts(list => list.map((c, i) => (i === idx ? { ...c, ...patch } : c)));
 
-  const delContact = (idx) =>
+    // delContact: вспомогательная логика компонента.
+const delContact = (idx) =>
     setContacts(list => list.filter((_, i) => i !== idx));
 
-  const setPrimary = (idx) =>
+    // setPrimary: обновляет состояние компонента.
+const setPrimary = (idx) =>
     setContacts(list => list.map((c, i) => ({ ...c, isPrimary: i === idx })));
 
-  const handleSubmit = async (e) => {
+    // handleSubmit: обработчик пользовательского действия.
+const handleSubmit = async (e) => {
     e.preventDefault();
 
     const nextRaw = {
@@ -171,7 +180,8 @@ export default function CounterpartyForm({
     await onSubmit({ ...next, contacts: cleanContacts });
   };
 
-  const counter = (name) => {
+    // counter: вспомогательная логика компонента.
+const counter = (name) => {
     const max = MAX[name]; if (!max) return null;
     const val = values[name] ? String(values[name]) : '';
     return <span className={s.counter}>{val.length} / {max}</span>;

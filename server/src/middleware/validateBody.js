@@ -1,19 +1,8 @@
-const Joi = require('joi');
+'use strict';
 
-module.exports = (schema, options = {}) => {
-  // По умолчанию: собираем все ошибки, режем лишние поля
-  const defaultOpts = { abortEarly: false, stripUnknown: true, convert: true };
-  const opts = { ...defaultOpts, ...options };
+const validate = require('./validate');
 
-  return (req, res, next) => {
-    const { error, value } = schema.validate(req.body, opts);
-    if (error) {
-      return res.status(400).json({
-        error: 'Validation error',
-        details: error.details.map(d => d.message),
-      });
-    }
-    req.body = value;
-    next();
-  };
+// Специализация validate() для проверки тела запроса.
+module.exports = function validateBody(schema, options = {}) {
+  return validate(schema, 'body', options);
 };

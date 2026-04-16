@@ -1,7 +1,10 @@
 import { createSlice, createEntityAdapter } from '@reduxjs/toolkit';
 import { crmApi } from '../rtk/crmApi';
 
-const mkAdapter = () => createEntityAdapter({ selectId: (e) => e.id || e.userId });
+// mkAdapter: вспомогательная логика модуля.
+const mkAdapter = () => createEntityAdapter({ // selectId : select id.
+// selectId: вспомогательная логика модуля.
+selectId: (e) => e.id || e.userId });
 
 const membersAdapter = mkAdapter();
 const departmentsAdapter = mkAdapter();
@@ -22,15 +25,19 @@ const lookupsSlice = createSlice({
   name: 'lookups',
   initialState,
   reducers: {
-    hydrateFromCache(state, { payload }) {
+        // hydrateFromCache: вспомогательная логика модуля.
+hydrateFromCache(state, { payload }) {
       return { ...state, ...payload };
     },
-    clearLookups() {
+        // clearLookups: вспомогательная логика модуля.
+clearLookups() {
       return initialState;
     },
   },
-  extraReducers: (builder) => {
-    const upsert = (adapter, key) =>
+    // extraReducers: вспомогательная логика модуля.
+extraReducers: (builder) => {
+        // upsert: вспомогательная логика модуля.
+const upsert = (adapter, key) =>
       builder.addMatcher(
         (a) => a.type === crmApi.endpoints[`get${key}`]?.matchFulfilled?.type,
         (state, { payload }) => {
@@ -56,7 +63,9 @@ export const contactsSelectors = contactsAdapter.getSelectors((s) => s.lookups.c
 export const counterpartiesSelectors = counterpartiesAdapter.getSelectors((s) => s.lookups.counterparties);
 export const dealsSelectors = dealsAdapter.getSelectors((s) => s.lookups.deals);
 
-export const selectMemberOptions = (state) =>
+export // selectMemberOptions : select member options.
+// selectMemberOptions: вспомогательная логика модуля.
+const selectMemberOptions = (state) =>
   membersSelectors.selectAll(state).map((m) => ({
     value: m.userId || m.id,
     label: m.name || `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim() || m.email || '—',

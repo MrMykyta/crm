@@ -3,6 +3,7 @@ import React from "react";
 import s from "../CalendarPage.module.css";
 import { isSameDay, toKey } from "./dateUtils";
 
+// Компонент MonthGridMonth: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function MonthGridMonth({ baseDate, today, onClickDay, onEventOpen }) {
   const year = baseDate.getFullYear();
   const month = baseDate.getMonth();

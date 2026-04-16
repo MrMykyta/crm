@@ -4,6 +4,7 @@ const { withTx } = require('../../utils/tx');
 const Inventory = require('./inventoryService');
 const { PickWave, PickTask, Reservation } = require('../../models');
 
+// createWave: создаёт новую запись и возвращает результат.
 module.exports.createWave = async (companyId, { warehouseId, reservations=[], reference }, outerTx=null) => {
   return await withTx(async (t) => {
     const wave = await PickWave.create({ companyId, warehouseId, reference, status:'open' }, { transaction:t });
@@ -16,6 +17,7 @@ module.exports.createWave = async (companyId, { warehouseId, reservations=[], re
   }, outerTx);
 };
 
+// completeTask: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.completeTask = async (companyId, taskId, outerTx=null) => {
   return await withTx(async (t) => {
     const task = await PickTask.findOne({ where:{ companyId, id: taskId }, include:[{ model: Reservation }], transaction:t });
@@ -30,3 +32,4 @@ module.exports.completeTask = async (companyId, taskId, outerTx=null) => {
     return task;
   }, outerTx);
 };
+

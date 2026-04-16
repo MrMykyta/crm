@@ -21,6 +21,7 @@ const baseConfig587 = {
 
 let transporter = nodemailer.createTransport(baseConfig465);
 
+// ensureTransport: выполняет вспомогательную бизнес-логику сервиса.
 async function ensureTransport() {
   try {
     await transporter.verify();
@@ -35,6 +36,7 @@ async function ensureTransport() {
   }
 }
 
+// sendMail: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.sendMail = async ({ to, subject, html }) => {
   console.log(`[MAIL] sending to ${to}, subject "${subject}"`);
   const from = `"${process.env.MAIL_FROM_NAME || 'CRM'}" <${process.env.MAIL_FROM_ADDR || process.env.GMAIL_USER}>`;

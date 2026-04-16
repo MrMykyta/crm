@@ -1,7 +1,8 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     await queryInterface.createTable('deals', {
       id: {
         type: Sequelize.UUID,
@@ -112,7 +113,8 @@ module.exports = {
     await queryInterface.addIndex('deals', ['created_at']);
   },
 
-  async down(queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface, Sequelize) {
     await queryInterface.removeIndex('deals', ['created_at']);
     await queryInterface.removeIndex('deals', ['status']);
     await queryInterface.removeIndex('deals', ['responsible_id']);

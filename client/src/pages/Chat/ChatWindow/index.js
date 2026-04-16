@@ -46,7 +46,8 @@ import ChatHeader from "../components/ChatHeader";
 import ChatMessages from "../components/ChatMessages";
 import MessageContextMenu from "../components/MessageContextMenu";
 import ForwardDialog from "../components/ForwardDialog";
-import { getAuthorInfo } from "../utils/chatMessageUtils";
+import { getAuthorInfo, getMessageStatus } from "../utils/chatMessageUtils";
+import { formatDayLabel } from "../utils/chatDateUtils";
 import Modal from "../../../components/Modal";
 import ConfirmDialog from "../../../components/dialogs/ConfirmDialog";
 import ChatInfoPanel from "../../../components/chat/info/ChatInfoPanel";
@@ -94,6 +95,7 @@ const OFFICE_MIME = new Set([
 
 const DOC_EXTS = new Set(["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"]);
 
+// normalizeUrl: нормализует данные для отображения и ввода.
 const normalizeUrl = (u) => {
   if (!u) return "";
   if (/^https?:\/\//i.test(u)) return u;
@@ -103,6 +105,7 @@ const normalizeUrl = (u) => {
   return u;
 };
 
+// normalizeAttachment: нормализует данные для отображения и ввода.
 const normalizeAttachment = (att) => {
   if (!att) return null;
   return {
@@ -114,31 +117,37 @@ const normalizeAttachment = (att) => {
   };
 };
 
+// getAttachmentExt: возвращает вычисленное значение для UI.
 const getAttachmentExt = (name) => {
   if (!name || typeof name !== "string") return "";
   const parts = name.split(".");
   return parts.length > 1 ? parts.pop().toLowerCase() : "";
 };
 
+// isMediaAttachment: проверяет условие для UI-логики.
 const isMediaAttachment = (att) => {
   if (!att?.mime) return false;
   return att.mime.startsWith("image/") || att.mime.startsWith("video/");
 };
 
+// isAudioAttachment: проверяет условие для UI-логики.
 const isAudioAttachment = (att) => {
   if (!att?.mime) return false;
   return att.mime.startsWith("audio/");
 };
 
+// isPdfAttachment: проверяет условие для UI-логики.
 const isPdfAttachment = (att) =>
   att?.mime === "application/pdf" || getAttachmentExt(att?.filename) === "pdf";
 
+// isOfficeAttachment: проверяет условие для UI-логики.
 const isOfficeAttachment = (att) => {
   const ext = getAttachmentExt(att?.filename);
   if (OFFICE_MIME.has(att?.mime)) return true;
   return ["doc", "docx", "xls", "xlsx", "ppt", "pptx"].includes(ext);
 };
 
+// buildDocsViewerUrl: собирает итоговую структуру данных в рамках UI-компонента.
 const buildDocsViewerUrl = (url) =>
   `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`;
 
@@ -230,6 +239,10 @@ function ChatRoomWindow({ roomId }) {
 
   // Refs for message list and scroll logic.
   const listRef = useRef(null);
+  const [menuPortalNode, setMenuPortalNode] = useState(null);
+  const menuPortalRef = useCallback((node) => {
+    if (node) setMenuPortalNode(node);
+  }, []);
   const lastReadIdRef = useRef(null);
   const jumpTokenRef = useRef(0);
 
@@ -565,7 +578,8 @@ function ChatRoomWindow({ roomId }) {
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    const update = () => {
+        // update: обновляет данные внутри компонента.
+const update = () => {
       const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
       setShowScrollDown(distance > 160);
     };
@@ -612,7 +626,8 @@ function ChatRoomWindow({ roomId }) {
 
   const MAX_PIN_LOAD_ATTEMPTS = 6;
 
-  const waitForMessageInView = (messageId, token, timeoutMs = 3000) =>
+    // waitForMessageInView: вспомогательная логика компонента.
+const waitForMessageInView = (messageId, token, timeoutMs = 3000) =>
     new Promise((resolve) => {
       const container = listRef.current;
       if (!container || !messageId) {
@@ -626,7 +641,8 @@ function ChatRoomWindow({ roomId }) {
       let scrollTimerId = null;
       let scrollStable = false;
 
-      const cleanup = () => {
+            // cleanup: вспомогательная логика компонента.
+const cleanup = () => {
         if (done) return;
         done = true;
         if (rafId) cancelAnimationFrame(rafId);
@@ -635,7 +651,8 @@ function ChatRoomWindow({ roomId }) {
         container.removeEventListener("scroll", onScroll);
       };
 
-      const markStableSoon = () => {
+            // markStableSoon: вспомогательная логика компонента.
+const markStableSoon = () => {
         scrollStable = false;
         if (scrollTimerId) clearTimeout(scrollTimerId);
         scrollTimerId = setTimeout(() => {
@@ -643,11 +660,13 @@ function ChatRoomWindow({ roomId }) {
         }, 120);
       };
 
-      const onScroll = () => {
+            // onScroll: вспомогательная логика компонента.
+const onScroll = () => {
         markStableSoon();
       };
 
-      const isInView = () => {
+            // isInView: проверяет условие для UI-логики.
+const isInView = () => {
         const el = document.getElementById(`msg-${messageId}`);
         if (!el) return false;
         const cRect = container.getBoundingClientRect();
@@ -655,7 +674,8 @@ function ChatRoomWindow({ roomId }) {
         return mRect.bottom >= cRect.top && mRect.top <= cRect.bottom;
       };
 
-      const tick = () => {
+            // tick: вспомогательная логика компонента.
+const tick = () => {
         if (done) return;
         if (jumpTokenRef.current !== token) {
           cleanup();
@@ -679,7 +699,8 @@ function ChatRoomWindow({ roomId }) {
       }, timeoutMs);
     });
 
-  const highlightMessage = (messageId) => {
+    // highlightMessage: вспомогательная логика компонента.
+const highlightMessage = (messageId) => {
     if (!messageId) return;
     const wrapEl = document.getElementById(`msg-${messageId}`);
     if (!wrapEl) return;
@@ -693,7 +714,8 @@ function ChatRoomWindow({ roomId }) {
     }, 1400);
   };
 
-  const jumpToPinnedMessage = async (messageId, token) => {
+    // jumpToPinnedMessage: вспомогательная логика компонента.
+const jumpToPinnedMessage = async (messageId, token) => {
     if (!messageId) return false;
 
     const idStr = String(messageId);
@@ -722,7 +744,8 @@ function ChatRoomWindow({ roomId }) {
     return false;
   };
 
-  const handlePinnedBarClick = async () => {
+    // handlePinnedBarClick: обработчик пользовательского действия.
+const handlePinnedBarClick = async () => {
     if (!currentPinned || !currentPinned._id || !pinnedList.length) return;
 
     const token = jumpTokenRef.current + 1;
@@ -739,7 +762,8 @@ function ChatRoomWindow({ roomId }) {
     dispatch(setActivePinnedIndex({ roomId, index: nextIndex }));
   };
 
-  const loadOlderBatch = async () => {
+    // loadOlderBatch: загружает данные в рамках UI-компонента.
+const loadOlderBatch = async () => {
     if (isLoadingMoreRef.current || isLoadingRef.current) {
       return { ok: false };
     }
@@ -838,7 +862,8 @@ function ChatRoomWindow({ roomId }) {
     const container = listRef.current;
     if (!container) return;
 
-    const onScroll = () => {
+        // onScroll: вспомогательная логика компонента.
+const onScroll = () => {
       const el = listRef.current;
       if (!el) return;
 
@@ -941,17 +966,17 @@ function ChatRoomWindow({ roomId }) {
   // ===== меню действий по сообщению (двойной клик) =====
   const [menuState, setMenuState] = useState({
     open: false,
-    anchorRect: null,
-    boundsRect: null,
+    bubbleEl: null,
+    containerEl: null,
     side: "other",
-    clickY: null,
     message: null,
   });
 
-  // Active overlay controller (menu / reaction / dialog / viewer).
+  // Active overlay controller (menu / dialog / viewer).
   const [activeOverlay, setActiveOverlay] = useState(null);
 
-  const openMessageMenu = (message, e, anchorEl) => {
+    // openMessageMenu: открывает связанный UI-элемент.
+const openMessageMenu = (message, e, anchorEl) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -966,20 +991,7 @@ function ChatRoomWindow({ roomId }) {
       wrapEl.closest?.('[data-role="msg-bubble"]') ||
       wrapEl.querySelector?.('[data-role="msg-bubble"]');
     const el = bubbleEl || wrapEl;
-    const rect = el.getBoundingClientRect();
-
-    let boundsRect = null;
-    if (listRef.current) {
-      const br = listRef.current.getBoundingClientRect();
-      boundsRect = {
-        top: br.top,
-        bottom: br.bottom,
-        left: br.left,
-        right: br.right,
-        width: br.width,
-        height: br.height,
-      };
-    }
+    const containerEl = chatMainRef.current || listRef.current;
 
     const isMe = meId && String(message.authorId) === String(meId);
 
@@ -992,22 +1004,15 @@ function ChatRoomWindow({ roomId }) {
     setActiveOverlay({ type: "menu", messageId: String(message._id) });
     setMenuState({
       open: true,
-      anchorRect: {
-        top: rect.top,
-        left: rect.left,
-        right: rect.right,
-        bottom: rect.bottom,
-        width: rect.width,
-        height: rect.height,
-      },
-      boundsRect,
+      bubbleEl: el,
+      containerEl,
       side: isMe ? "me" : "other",
-      clickY: e.clientY,
       message,
     });
   };
 
-  const closeMenu = () => {
+    // closeMenu: закрывает связанный UI-элемент.
+const closeMenu = () => {
     setMenuState((prev) => ({
       ...prev,
       open: false,
@@ -1017,30 +1022,15 @@ function ChatRoomWindow({ roomId }) {
     );
   };
 
-  const toggleReactionPicker = useCallback(
-    (messageId) => {
-      if (!messageId) return;
-      if (selectMode) return;
-      if (activeOverlay?.type === "dialog" || activeOverlay?.type === "viewer") {
-        return;
-      }
-      closeMenu();
-      setActiveOverlay((prev) => {
-        if (
-          prev?.type === "reaction" &&
-          String(prev.messageId) === String(messageId)
-        ) {
-          return null;
-        }
-        return { type: "reaction", messageId: String(messageId) };
-      });
-    },
-    [closeMenu, selectMode, activeOverlay]
-  );
-
-  const closeReactionPicker = useCallback(() => {
-    setActiveOverlay((prev) => (prev?.type === "reaction" ? null : prev));
-  }, []);
+  useEffect(() => {
+    if (!menuState.open) return;
+    const el = listRef.current;
+    if (!el) return;
+        // onScroll: вспомогательная логика компонента.
+const onScroll = () => closeMenu();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [menuState.open, closeMenu]);
 
   const handleOpenMediaViewer = useCallback(
     (items, index = 0) => {
@@ -1130,7 +1120,8 @@ function ChatRoomWindow({ roomId }) {
     }
   };
 
-  const getPinnedSnippet = (msg) => {
+    // getPinnedSnippet: возвращает вычисленное значение для UI.
+const getPinnedSnippet = (msg) => {
     if (!msg) return "";
     if (msg.deletedAt) return t("chat.message.deleted");
 
@@ -1151,7 +1142,8 @@ function ChatRoomWindow({ roomId }) {
     return t("chat.message.fallback");
   };
 
-  const getCurrentUserName = () => {
+    // getCurrentUserName: возвращает вычисленное значение для UI.
+const getCurrentUserName = () => {
     if (!currentUser) return t("chat.message.someone");
     const full = [currentUser.firstName, currentUser.lastName]
       .filter(Boolean)
@@ -1159,7 +1151,8 @@ function ChatRoomWindow({ roomId }) {
     return full || currentUser.email || t("chat.message.user");
   };
 
-  const isWithinEditWindow = (msg, windowMs = EDIT_WINDOW_MS) => {
+    // isWithinEditWindow: проверяет условие для UI-логики.
+const isWithinEditWindow = (msg, windowMs = EDIT_WINDOW_MS) => {
     const createdAt = msg?.createdAt;
     if (!createdAt) return false;
     const createdTs = new Date(createdAt).getTime();
@@ -1167,7 +1160,8 @@ function ChatRoomWindow({ roomId }) {
     return nowTs - createdTs <= windowMs;
   };
 
-  const isMessageEditable = (msg) => {
+    // isMessageEditable: проверяет условие для UI-логики.
+const isMessageEditable = (msg) => {
     if (!msg) return false;
     if (!meId) return false;
     if (msg.isSystem || msg.deletedAt) return false;
@@ -1176,7 +1170,8 @@ function ChatRoomWindow({ roomId }) {
     return true;
   };
 
-  const canDeletePermission = (msg) => {
+    // canDeletePermission: проверяет доступность действия в рамках UI-компонента.
+const canDeletePermission = (msg) => {
     if (!msg) return false;
     if (!meId) return false;
     if (msg.isSystem) return false;
@@ -1184,19 +1179,22 @@ function ChatRoomWindow({ roomId }) {
     return String(msg.authorId) === String(meId);
   };
 
-  const isMessageDeletable = (msg) => {
+    // isMessageDeletable: проверяет условие для UI-логики.
+const isMessageDeletable = (msg) => {
     if (!canDeletePermission(msg)) return false;
     if (msg.deletedAt) return false;
     return true;
   };
 
-  const canCopyMessage = (msg) => {
+    // canCopyMessage: проверяет доступность действия в рамках UI-компонента.
+const canCopyMessage = (msg) => {
     if (!msg || msg.isSystem || msg.deletedAt) return false;
     const text = (msg.text || "").trim();
     return text.length > 0;
   };
 
-  const canForwardMessage = (msg) => {
+    // canForwardMessage: проверяет доступность действия в рамках UI-компонента.
+const canForwardMessage = (msg) => {
     if (!msg || msg.isSystem || msg.deletedAt) return false;
     return true;
   };
@@ -1241,7 +1239,8 @@ function ChatRoomWindow({ roomId }) {
     [roomId, updateDraft, uploadFile, t]
   );
 
-  const handleFilesSelected = async (fileList) => {
+    // handleFilesSelected: обработчик пользовательского действия.
+const handleFilesSelected = async (fileList) => {
     if (!fileList || !fileList.length) return;
     if (!roomId) return;
     if (isEditMode) return;
@@ -1307,18 +1306,21 @@ function ChatRoomWindow({ roomId }) {
     });
   };
 
-  const handleRetryAttachment = (localId) => {
+    // handleRetryAttachment: обработчик пользовательского действия.
+const handleRetryAttachment = (localId) => {
     const draft = attachmentsDraft.find((d) => d.localId === localId);
     if (!draft) return;
     uploadDraft(draft);
   };
 
-  const handleRemoveAttachment = (localId) => {
+    // handleRemoveAttachment: обработчик пользовательского действия.
+const handleRemoveAttachment = (localId) => {
     setAttachmentsDraft((prev) => prev.filter((d) => d.localId !== localId));
     if (sendError) setSendError(false);
   };
 
-  const getOriginalInfo = (msg) => {
+    // getOriginalInfo: возвращает вычисленное значение для UI.
+const getOriginalInfo = (msg) => {
     if (!canViewOriginal || !msg) return null;
     const audit = msg?.meta?.audit;
     if (!audit) return null;
@@ -1334,7 +1336,8 @@ function ChatRoomWindow({ roomId }) {
     return null;
   };
 
-  const syncDraft = (nextText, nextContext) => {
+    // syncDraft: вспомогательная логика компонента.
+const syncDraft = (nextText, nextContext) => {
     dispatch(
       setComposerDraft({
         roomId,
@@ -1369,7 +1372,8 @@ function ChatRoomWindow({ roomId }) {
     closeMenu();
   };
 
-  const cancelComposerContext = () => {
+    // cancelComposerContext: проверяет доступность действия в рамках UI-компонента.
+const cancelComposerContext = () => {
     setComposerContext(null);
     syncDraft(text, null);
   };
@@ -1383,7 +1387,8 @@ function ChatRoomWindow({ roomId }) {
     closeMenu();
   };
 
-  const toggleSelect = (msg) => {
+    // toggleSelect: переключает состояние компонента.
+const toggleSelect = (msg) => {
     const id = String(msg._id);
     setSelectedIds((prev) => {
       if (prev.includes(id)) {
@@ -1395,7 +1400,8 @@ function ChatRoomWindow({ roomId }) {
     });
   };
 
-  const clearSelection = () => {
+    // clearSelection: вспомогательная логика компонента.
+const clearSelection = () => {
     setSelectMode(false);
     setSelectedIds([]);
   };
@@ -1409,11 +1415,13 @@ function ChatRoomWindow({ roomId }) {
     closeMenu();
   };
 
-  const handleSelect = (msg) => {
+    // handleSelect: обработчик пользовательского действия.
+const handleSelect = (msg) => {
     startSelectWith(msg);
   };
 
-  const handleForwardSelected = () => {
+    // handleForwardSelected: обработчик пользовательского действия.
+const handleForwardSelected = () => {
     if (!selectedIds.length) return;
     const idSet = new Set(selectedIds);
 
@@ -1431,7 +1439,8 @@ function ChatRoomWindow({ roomId }) {
     setActiveOverlay({ type: "dialog", kind: "forward" });
   };
 
-  const getForwardSourceId = (msg) => {
+    // getForwardSourceId: возвращает вычисленное значение для UI.
+const getForwardSourceId = (msg) => {
     const f = msg?.meta?.forward || {};
     return (
       f.sourceMessageId ||
@@ -1442,7 +1451,8 @@ function ChatRoomWindow({ roomId }) {
     );
   };
 
-  const handleForwardSelectRoom = (targetRoomId) => {
+    // handleForwardSelectRoom: обработчик пользовательского действия.
+const handleForwardSelectRoom = (targetRoomId) => {
     const socket = getSocket();
     if (!socket || !forwardMessages.length) return;
 
@@ -1452,7 +1462,8 @@ function ChatRoomWindow({ roomId }) {
       return ta - tb;
     });
 
-    const sendNext = (index) => {
+        // sendNext: вспомогательная логика компонента.
+const sendNext = (index) => {
       if (index >= sorted.length) {
         const extra = (text || "").trim();
         if (extra) {
@@ -1490,7 +1501,8 @@ function ChatRoomWindow({ roomId }) {
     sendNext(0);
   };
 
-  const handleCopy = async (msg) => {
+    // handleCopy: обработчик пользовательского действия.
+const handleCopy = async (msg) => {
     try {
       await navigator.clipboard?.writeText(msg?.text || "");
     } catch (e) {
@@ -1499,14 +1511,16 @@ function ChatRoomWindow({ roomId }) {
     closeMenu();
   };
 
-  const cancelEdit = () => {
+    // cancelEdit: проверяет доступность действия в рамках UI-компонента.
+const cancelEdit = () => {
     dispatch(clearEditTarget());
     setText("");
     setComposerContext(null);
     syncDraft("", null);
   };
 
-  const handleEdit = (msg) => {
+    // handleEdit: обработчик пользовательского действия.
+const handleEdit = (msg) => {
     if (!isMessageEditable(msg)) {
       closeMenu();
       return;
@@ -1527,7 +1541,8 @@ function ChatRoomWindow({ roomId }) {
     closeMenu();
   };
 
-  const handlePin = (msg) => {
+    // handlePin: обработчик пользовательского действия.
+const handlePin = (msg) => {
     if (!msg || !msg._id) {
       closeMenu();
       return;
@@ -1578,7 +1593,8 @@ function ChatRoomWindow({ roomId }) {
     closeMenu();
   };
 
-  const handleUnpinFromBar = (messageId) => {
+    // handleUnpinFromBar: обработчик пользовательского действия.
+const handleUnpinFromBar = (messageId) => {
     if (!messageId) return;
     const socket = getSocket();
     if (!socket) return;
@@ -1586,7 +1602,8 @@ function ChatRoomWindow({ roomId }) {
     socket.emit("chat:unpin", { roomId, messageId }, () => {});
   };
 
-  const handleDelete = (msg) => {
+    // handleDelete: обработчик пользовательского действия.
+const handleDelete = (msg) => {
     if (!msg || !msg._id) {
       closeMenu();
       return;
@@ -1632,7 +1649,8 @@ function ChatRoomWindow({ roomId }) {
     }
   };
 
-  const confirmDelete = async () => {
+    // confirmDelete: вспомогательная логика компонента.
+const confirmDelete = async () => {
     const msg = deleteConfirm.message;
     if (!msg || !msg._id) {
       setDeleteConfirm({ open: false, message: null });
@@ -1665,7 +1683,8 @@ function ChatRoomWindow({ roomId }) {
     }
   };
 
-  const handleShowOriginal = (msg) => {
+    // handleShowOriginal: обработчик пользовательского действия.
+const handleShowOriginal = (msg) => {
     const info = getOriginalInfo(msg);
     if (!info) {
       closeMenu();
@@ -1768,14 +1787,16 @@ function ChatRoomWindow({ roomId }) {
     });
   };
 
-  const onKeyDown = (e) => {
+    // onKeyDown: вспомогательная логика компонента.
+const onKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
-  const onChangeText = (e) => {
+    // onChangeText: вспомогательная логика компонента.
+const onChangeText = (e) => {
     const next = e.target.value;
     setText(next);
     if (sendError) setSendError(false);
@@ -1796,10 +1817,10 @@ function ChatRoomWindow({ roomId }) {
     gotoNextMatch,
   } = useChatSearch({ roomId, messages, listRef });
 
-  const openSearchMode = () => {
+    // openSearchMode: открывает связанный UI-элемент.
+const openSearchMode = () => {
     if (searchOpen) return;
     closeMenu();
-    closeReactionPicker();
     setDeleteConfirm({ open: false, message: null });
     setForwardDialogOpen(false);
     setForwardMessages([]);
@@ -1810,19 +1831,22 @@ function ChatRoomWindow({ roomId }) {
     toggleSearch();
   };
 
-  const closeSearchMode = () => {
+    // closeSearchMode: закрывает связанный UI-элемент.
+const closeSearchMode = () => {
     if (!searchOpen) return;
     closeSearch();
   };
 
-  const handleSearchInputChange = (e) => {
+    // handleSearchInputChange: обработчик пользовательского действия.
+const handleSearchInputChange = (e) => {
     if (!searchOpen) toggleSearch();
     handleSearchChange(e);
   };
 
   // ESC closes the top layer: overlays first, then search.
   useEffect(() => {
-    const onKey = (e) => {
+        // onKey: вспомогательная логика компонента.
+const onKey = (e) => {
       if (e.key !== "Escape") return;
       if (e.defaultPrevented) return;
 
@@ -1832,10 +1856,6 @@ function ChatRoomWindow({ roomId }) {
 
         if (activeOverlay.type === "menu") {
           closeMenu();
-          return;
-        }
-        if (activeOverlay.type === "reaction") {
-          closeReactionPicker();
           return;
         }
         if (activeOverlay.type === "dropdown") {
@@ -1876,7 +1896,6 @@ function ChatRoomWindow({ roomId }) {
     searchOpen,
     closeSearchMode,
     closeMenu,
-    closeReactionPicker,
     handleCloseMediaViewer,
   ]);
 
@@ -1906,13 +1925,15 @@ function ChatRoomWindow({ roomId }) {
       canOpen,
       canDownload,
       openLabel,
-      onOpen: () =>
+            // onOpen: вспомогательная логика компонента.
+onOpen: () =>
         handleOpenAttachment(
           primaryMedia || primaryDoc,
           mediaItems,
           docItems
         ),
-      onDownload: () =>
+            // onDownload: вспомогательная логика компонента.
+onDownload: () =>
         handleDownloadAttachment(primaryMedia || primaryDoc),
     };
   }, [
@@ -1922,6 +1943,22 @@ function ChatRoomWindow({ roomId }) {
     handleDownloadAttachment,
     t,
   ]);
+
+  const menuTimeMeta = useMemo(() => {
+    const msg = menuState.message;
+    if (!msg?.createdAt) return null;
+    const time = new Date(msg.createdAt).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const dayLabel = formatDayLabel(msg.createdAt);
+    const label = dayLabel ? `${dayLabel} ${time}` : time;
+    const isMeMessage = meId && String(msg.authorId) === String(meId);
+    const status = isMeMessage
+      ? getMessageStatus(msg, room, meId, participants)
+      : null;
+    return { label, status };
+  }, [menuState.message, meId, room, participants]);
 
   const messagesClass = [
     s.messages,
@@ -1935,11 +1972,13 @@ function ChatRoomWindow({ roomId }) {
   const pinnedVisible = !!currentPinned && !searchOpen;
   const floatingDayTop = searchOpen ? 104 : pinnedVisible ? 104 : 64;
 
-  const handleBack = () => {
+    // handleBack: обработчик пользовательского действия.
+const handleBack = () => {
     dispatch(setActiveRoom(null));
   };
 
-  const handleToggleDropdown = (e) => {
+    // handleToggleDropdown: обработчик пользовательского действия.
+const handleToggleDropdown = (e) => {
     if (!roomId || !room) return;
     const anchorRect = e?.currentTarget?.getBoundingClientRect?.() || null;
     const defaultTab = room.type === "group" ? "participants" : "profile";
@@ -1948,7 +1987,6 @@ function ChatRoomWindow({ roomId }) {
       return;
     }
     closeMenu();
-    closeReactionPicker();
     setDeleteConfirm({ open: false, message: null });
     setForwardDialogOpen(false);
     setForwardMessages([]);
@@ -2068,9 +2106,6 @@ function ChatRoomWindow({ roomId }) {
             onMessageActionsClick={openMessageMenu}
             onOpenMedia={handleOpenMediaViewer}
             onToggleReaction={handleToggleReaction}
-            activeOverlay={activeOverlay}
-            onToggleReactionPicker={toggleReactionPicker}
-            onCloseReactionPicker={closeReactionPicker}
             selectMode={selectMode}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelect}
@@ -2105,12 +2140,13 @@ function ChatRoomWindow({ roomId }) {
 
         <MessageContextMenu
           open={menuState.open && activeOverlay?.type === "menu"}
-          anchorRect={menuState.anchorRect}
-          boundsRect={menuState.boundsRect}
+          bubbleEl={menuState.bubbleEl}
+          containerEl={menuState.containerEl}
           side={menuState.side}
-          clickY={menuState.clickY}
           message={menuState.message}
           attachmentActions={attachmentActions}
+          onToggleReaction={handleToggleReaction}
+          timeMeta={menuTimeMeta}
           canEdit={isMessageEditable(menuState.message)}
           canCopy={canCopyMessage(menuState.message)}
           canForward={canForwardMessage(menuState.message)}
@@ -2128,6 +2164,7 @@ function ChatRoomWindow({ roomId }) {
           onDelete={handleDelete}
           onShowOriginal={handleShowOriginal}
           showOriginalLabel={t("chat.menu.showOriginal")}
+          portalRoot={menuPortalNode}
         />
 
         <ForwardDialog
@@ -2199,6 +2236,18 @@ function ChatRoomWindow({ roomId }) {
               prev?.type === "dialog" && prev?.kind === "delete" ? null : prev
             );
           }}
+        />
+
+        <div
+          ref={menuPortalRef}
+          className={[
+            s.ctxPortal,
+            menuState.open && activeOverlay?.type === "menu"
+              ? s.ctxPortalActive
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
         />
 
         {selectMode && (
@@ -2286,3 +2335,4 @@ function ChatRoomWindow({ roomId }) {
     </div>
   );
 }
+

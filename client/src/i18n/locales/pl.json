@@ -98,6 +98,8 @@
     "clients": "Klienci",
     "deals": "Transakcje",
     "tasks": "Zadania",
+    "notes": "Notatki",
+    "contacts": "Osoby kontaktowe",
     "calendar": "Kalendarz",
     "oms": "OMS",
     "invoices": "Faktury",
@@ -188,7 +190,15 @@
       "push": "Powiadomienia push"
     },
     "appearance": {
-      "title": "Wygląd"
+      "title": "Wygląd",
+      "textSize": "Rozmiar tekstu",
+      "density": "Gęstość interfejsu",
+      "textSizeSmall": "Mały",
+      "textSizeMedium": "Średni (domyślny)",
+      "textSizeLarge": "Duży",
+      "densityCompact": "Kompaktowo",
+      "densityComfortable": "Wygodnie",
+      "densitySpacious": "Przestronnie"
     },
     "preferences": {
       "language": "Język",
@@ -201,7 +211,129 @@
     "refresh": "Odśwież",
     "back": "Wstecz",
     "forward": "Dalej",
-    "pageLabel": "s. {{page}} / {{pages}}"
+    "pageLabel": "s. {{page}} / {{pages}}",
+    "columns": {
+      "configure": "Skonfiguruj kolumny",
+      "configureShort": "Kolumny",
+      "searchPlaceholder": "Szukaj kolumn",
+      "groupMain": "Główne",
+      "groupAdditional": "Dodatkowe",
+      "groupSystem": "Systemowe",
+      "visibleCount": "Widoczne kolumny: {{count}}",
+      "emptySearch": "Nie znaleziono kolumn",
+      "reset": "Resetuj",
+      "resetHint": "Przywróć kolejność, szerokości i widoczność",
+      "groupCustom": "Niestandardowe",
+      "drawerHint": "Wybierz dane, które mają być widoczne w tabeli",
+      "visibleOfTotal": "Widoczne {{visible}} z {{total}}",
+      "recommended": "Zalecane",
+      "hideAdditional": "Ukryj dodatkowe"
+    },
+    "views": {
+      "title": "Widoki",
+      "default": "Domyślny",
+      "untitled": "Bez nazwy",
+      "select": "Wybierz widok",
+      "saveAs": "Zapisz jako nowy",
+      "saveAsShort": "Zapisz",
+      "updateCurrent": "Zaktualizuj bieżący widok",
+      "updateShort": "Aktualizuj",
+      "rename": "Zmień nazwę",
+      "renameShort": "Nazwa",
+      "delete": "Usuń",
+      "deleteShort": "Usuń",
+      "create": "Zapisz widok",
+      "name": "Nazwa widoku",
+      "namePlaceholder": "Np.: Szanse tygodnia",
+      "nameRequired": "Wprowadź nazwę widoku",
+      "nameTaken": "Widok o tej nazwie już istnieje",
+      "deleteTitle": "Usuń widok",
+      "deleteConfirm": "Usunąć widok „{{name}}”?"
+    }
+  },
+  "contacts": {
+    "title": "Osoby kontaktowe",
+    "actions": {
+      "add": "Dodaj kontakt",
+      "makeMain": "Ustaw jako główny",
+      "call": "Zadzwoń",
+      "email": "Napisz",
+      "open": "Otwórz",
+      "toList": "Do listy"
+    },
+    "dialogs": {
+      "create": "Nowy kontakt",
+      "edit": "Edycja kontaktu"
+    },
+    "fields": {
+      "counterparty": "Kontrahent",
+      "firstName": "Imię",
+      "lastName": "Nazwisko",
+      "position": "Stanowisko",
+      "department": "Dział",
+      "phone": "Telefon",
+      "email": "Email",
+      "note": "Notatka",
+      "isMain": "Kontakt główny"
+    },
+    "placeholders": {
+      "counterparty": "Zacznij wpisywać nazwę...",
+      "firstName": "Imię",
+      "lastName": "Nazwisko",
+      "position": "Stanowisko",
+      "department": "Dział",
+      "phone": "+48 ...",
+      "email": "name@example.com",
+      "note": "Komentarz o osobie kontaktowej"
+    },
+    "filters": {
+      "search": "Szukaj po imieniu, emailu lub telefonie",
+      "counterparty": "Kontrahent",
+      "main": "Główny",
+      "allMain": "Wszystkie",
+      "allCounterparties": "Wszyscy kontrahenci"
+    },
+    "table": {
+      "name": "Imię i nazwisko",
+      "counterparty": "Kontrahent",
+      "phone": "Telefon",
+      "email": "Email",
+      "main": "Główny",
+      "updatedAt": "Zaktualizowano"
+    },
+    "values": {
+      "main": "Główny",
+      "no": "Nie główny"
+    },
+    "validation": {
+      "counterpartyRequired": "Wybierz kontrahenta",
+      "firstNameRequired": "Wprowadź imię",
+      "emailInvalid": "Nieprawidłowy email"
+    },
+    "messages": {
+      "emptyCounterparty": "Brak osób kontaktowych dla tego kontrahenta",
+      "notFound": "Nie znaleziono kontaktu"
+    },
+    "hints": {
+      "counterparty": "Zacznij wpisywać nazwę kontrahenta",
+      "searching": "Wyszukiwanie...",
+      "empty": "Brak wyników"
+    },
+    "meta": {
+      "createdAt": "Utworzono",
+      "updatedAt": "Zaktualizowano",
+      "main": "Główny"
+    },
+    "section": {
+      "title": "Osoby kontaktowe",
+      "detailsTitle": "Dane kontaktowe"
+    },
+    "confirm": {
+      "delete": "Usunąć kontakt?"
+    },
+    "aria": {
+      "open": "Otwórz kontakt"
+    }
   },
   "crm": {
     "titles": {

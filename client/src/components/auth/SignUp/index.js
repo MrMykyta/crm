@@ -10,6 +10,7 @@ import {
   useResendVerificationMutation,
 } from '../../../store/rtk/authApi';
 
+// Компонент InputField: отвечает за отображение UI и обработку взаимодействий пользователя.
 function InputField({ name, label, type = 'text', autoComplete }) {
   const [field] = useField(name);
   const filled = (field.value ?? '') !== '';
@@ -22,6 +23,7 @@ function InputField({ name, label, type = 'text', autoComplete }) {
   );
 }
 
+// Компонент SignUp: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function SignUp() {
   const { t } = useTranslation();
   const [modalOpen, setModalOpen] = useState(false);
@@ -44,7 +46,8 @@ export default function SignUp() {
 
   const initialValues = { firstName:'', lastName:'', email:'', password:'' };
 
-  const onSubmit = async (values, { setSubmitting, setStatus }) => {
+    // onSubmit: вспомогательная логика компонента.
+const onSubmit = async (values, { setSubmitting, setStatus }) => {
     setStatus(null);
     try {
       const data = await registerUser(values).unwrap();
@@ -65,7 +68,8 @@ export default function SignUp() {
     }
   };
 
-  const handleResend = async () => {
+    // handleResend: обработчик пользовательского действия.
+const handleResend = async () => {
     if (!emailForVerify) return;
     try {
       await resendVerification(emailForVerify).unwrap();

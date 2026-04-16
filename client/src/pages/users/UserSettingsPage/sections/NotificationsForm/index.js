@@ -3,6 +3,7 @@ import { Formik, Form, Field } from "formik";
 import s from "../../UserSettingsPage.module.css";
 import { useTranslation } from "react-i18next";
 
+// Компонент NotificationsForm: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function NotificationsForm({ initial, onSave }) {
   const { t } = useTranslation();
 
@@ -11,7 +12,8 @@ export default function NotificationsForm({ initial, onSave }) {
     push : initial?.push  ?? false,
   };
 
-  const handleSubmit = async (values, { setSubmitting }) => {
+    // handleSubmit: обработчик пользовательского действия.
+const handleSubmit = async (values, { setSubmitting }) => {
     try {
       await onSave?.(values); // ожидается saveMyPreferences({ notifications: values })
     } finally { setSubmitting(false); }

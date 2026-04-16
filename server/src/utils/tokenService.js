@@ -23,10 +23,12 @@ const REFRESH_EXPIRES_IN_STR =
 const JWT_ACCESS_SECRET  = process.env.JWT_ACCESS_SECRET  || process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || (process.env.JWT_SECRET + '_r');
 
+// Генерирует уникальный идентификатор refresh-токена (JTI).
 function newJti() {
   return randomBytes(16).toString('hex'); // 32 символа
 }
 
+// Проверяет refresh-токен и убеждается, что он существует, не отозван и не истёк.
 async function verifyRefresh(token) {
   const payload = jwt.verify(token, JWT_REFRESH_SECRET);
   const row = await RefreshToken.findOne({ where: { jti: payload.jti } });
@@ -40,11 +42,13 @@ async function verifyRefresh(token) {
   return payload; // { sub, jti, iat, exp }
 }
 
+// Выпускает access-токен с userId и активным company-контекстом.
 function signAccessToken({ userId, activeCompanyId }) {
   const payload = { sub: userId, cid: activeCompanyId || null };
   return jwt.sign(payload, JWT_ACCESS_SECRET, { expiresIn: ACCESS_TTL });
 }
 
+// Создаёт refresh-токен, сохраняет его в БД и возвращает клиенту.
 async function issueRefreshToken({ userId, userAgent, ip }) {
   const jti = newJti();
   const expiresAt = new Date(Date.now() + REFRESH_TTL_MS);
@@ -65,10 +69,12 @@ async function issueRefreshToken({ userId, userAgent, ip }) {
   return { token, jti, expiresAt };
 }
 
+// Проверяет и декодирует access-токен.
 async function verifyAccess(token) {
   return jwt.verify(token, JWT_ACCESS_SECRET);
 }
 
+// Ротирует refresh-токен: отзывает старый, создаёт новый и перевыпускает access.
 async function rotateRefresh(oldToken, companyId, meta = {}) {
   const payload = await verifyRefresh(oldToken);
   const current = await RefreshToken.findOne({ where: { jti: payload.jti } });
@@ -99,6 +105,7 @@ async function rotateRefresh(oldToken, companyId, meta = {}) {
   };
 }
 
+// Отзывает один refresh-токен по jti или по сырому токену.
 async function revokeRefresh(tokenOrJti) {
   if (!tokenOrJti) return false;
 
@@ -113,6 +120,7 @@ async function revokeRefresh(tokenOrJti) {
   return true;
 }
 
+// Отзывает все активные refresh-токены пользователя.
 async function revokeAllUserRefresh(userId) {
   await RefreshToken.update(
     { revoked_at: new Date() },

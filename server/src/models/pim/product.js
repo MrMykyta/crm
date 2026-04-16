@@ -2,6 +2,7 @@
 const {
   Model
 } = require('sequelize');
+// Инициализирует и возвращает Sequelize-модель текущей сущности.
 module.exports = (sequelize, DataTypes) => {
   class Product extends Model {
     /**
@@ -23,9 +24,17 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'primary_category_id', 
         as: 'primaryCategory' 
       });
+      Product.belongsTo(models.Category, {
+        foreignKey: 'subcategory_id',
+        as: 'subcategory'
+      });
       Product.belongsTo(models.Uom, { 
         foreignKey: 'uom_id', 
         as: 'uom' 
+      });
+      Product.belongsTo(models.Counterparty, {
+        foreignKey: 'supplier_id',
+        as: 'supplier'
       });
 
       Product.belongsToMany(models.Category, {
@@ -51,17 +60,17 @@ module.exports = (sequelize, DataTypes) => {
         as: 'attachments'
       });
 
-      Product.belongsTo(models.ProductType, { 
-        foreignKey:'product_type_id', 
-        as:'type' 
+      Product.belongsTo(models.ProductType, {
+        foreignKey: 'productTypeId',
+        as: 'type'
       });
-      Product.belongsTo(models.TaxCategory, { 
-        foreignKey:'tax_category_id', 
-        as:'taxCategory' 
+      Product.belongsTo(models.TaxCategory, {
+        foreignKey: 'taxCategoryId',
+        as: 'taxCategory'
       });
-      Product.belongsTo(models.ShippingClass, { 
-        foreignKey:'shipping_class_id', 
-        as:'shippingClass' 
+      Product.belongsTo(models.ShippingClass, {
+        foreignKey: 'shippingClassId',
+        as: 'shippingClass'
       });
 
       Product.hasMany(models.ProductLocalization, { 
@@ -101,9 +110,9 @@ module.exports = (sequelize, DataTypes) => {
         otherKey:'collection_id', 
         as:'collections'
       });
-      Product.belongsTo(models.Product, { 
-        foreignKey: 'replaced_by_product_id', 
-        as: 'replacement' 
+      Product.belongsTo(models.Product, {
+        foreignKey: 'replacedByProductId',
+        as: 'replacement'
       });
     }
   }
@@ -127,9 +136,17 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID, 
       field:'primary_category_id' 
     },
+    subcategoryId: {
+      type: DataTypes.UUID,
+      field: 'subcategory_id'
+    },
     uomId: { 
       type: DataTypes.UUID, 
       field:'uom_id' 
+    },
+    supplierId: {
+      type: DataTypes.UUID,
+      field: 'supplier_id'
     },
 
     sku: {
@@ -146,8 +163,28 @@ module.exports = (sequelize, DataTypes) => {
     barcode: {
       type: DataTypes.STRING(64)
     },
+    ean: {
+      type: DataTypes.STRING(32)
+    },
+    pkwiu: {
+      type: DataTypes.STRING(32)
+    },
+    cn: {
+      type: DataTypes.STRING(32)
+    },
+    gtu: {
+      type: DataTypes.STRING(32)
+    },
     description: {
       type: DataTypes.TEXT
+    },
+    saleStartDate: {
+      type: DataTypes.DATEONLY,
+      field: 'sale_start_date'
+    },
+    saleEndDate: {
+      type: DataTypes.DATEONLY,
+      field: 'sale_end_date'
     },
 
     status: {
@@ -176,6 +213,30 @@ module.exports = (sequelize, DataTypes) => {
     cost: {
       type: DataTypes.DECIMAL(14,2)
     },
+    stockQuantity: {
+      type: DataTypes.DECIMAL(14,3),
+      allowNull: false,
+      field: 'stock_quantity',
+      defaultValue: 0
+    },
+    reservedQuantity: {
+      type: DataTypes.DECIMAL(14,3),
+      allowNull: false,
+      field: 'reserved_quantity',
+      defaultValue: 0
+    },
+    orderedQuantity: {
+      type: DataTypes.DECIMAL(14,3),
+      allowNull: false,
+      field: 'ordered_quantity',
+      defaultValue: 0
+    },
+    isSellable: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      field: 'is_sellable',
+      defaultValue: true
+    },
 
     weight: {
       type: DataTypes.DECIMAL(12,3)
@@ -201,64 +262,64 @@ module.exports = (sequelize, DataTypes) => {
       field:'published_at' 
     },
 
-    productTypeId: { 
-      type: DataTypes.UUID, 
-      field: 'product_type_id' 
+    productTypeId: {
+      type: DataTypes.UUID,
+      field: 'productTypeId'
     },
-    taxCategoryId: { 
-      type: DataTypes.UUID, 
-      field: 'tax_category_id' 
+    taxCategoryId: {
+      type: DataTypes.UUID,
+      field: 'taxCategoryId'
     },
-    shippingClassId: { 
-      type: DataTypes.UUID, 
-      field: 'shipping_class_id' 
-    },
-
-    hsCode: { 
-      type: DataTypes.STRING(32), 
-      field: 'hs_code' 
-    },
-    countryOfOrigin: { 
-      type: DataTypes.STRING(2), 
-      field: 'country_of_origin' 
-    },
-    warrantyMonths: { 
-      type: DataTypes.INTEGER, 
-      field: 'warranty_months', 
-      defaultValue: 0 
-    },
-    dangerousGoodsClass: { 
-      type: DataTypes.STRING(16), 
-      field: 'dangerous_goods_class' 
-    },
-    unNumber: { 
-      type: DataTypes.STRING(10), 
-      field: 'un_number' 
+    shippingClassId: {
+      type: DataTypes.UUID,
+      field: 'shippingClassId'
     },
 
-    isSerialized: { 
-      type: DataTypes.BOOLEAN, 
-      field: 'is_serialized', 
-      defaultValue: false 
+    hsCode: {
+      type: DataTypes.STRING(32),
+      field: 'hsCode'
     },
-    isLotTracked: { 
-      type: DataTypes.BOOLEAN, 
-      field: 'is_lot_tracked', 
-      defaultValue: false 
+    countryOfOrigin: {
+      type: DataTypes.STRING(2),
+      field: 'countryOfOrigin'
     },
-    shelfLifeDays: { 
-      type: DataTypes.INTEGER, 
-      field: 'shelf_life_days', 
-      defaultValue: 0 
+    warrantyMonths: {
+      type: DataTypes.INTEGER,
+      field: 'warrantyMonths',
+      defaultValue: 0
+    },
+    dangerousGoodsClass: {
+      type: DataTypes.STRING(16),
+      field: 'dangerousGoodsClass'
+    },
+    unNumber: {
+      type: DataTypes.STRING(10),
+      field: 'unNumber'
     },
 
-    discontinuedAt: { 
-      type: DataTypes.DATE, 
-      field: 'discontinued_at' 
+    isSerialized: {
+      type: DataTypes.BOOLEAN,
+      field: 'isSerialized',
+      defaultValue: false
     },
-    replacedByProductId: { 
-      type: DataTypes.UUID, 
-      field: 'replaced_by_product_id' 
+    isLotTracked: {
+      type: DataTypes.BOOLEAN,
+      field: 'isLotTracked',
+      defaultValue: false
+    },
+    shelfLifeDays: {
+      type: DataTypes.INTEGER,
+      field: 'shelfLifeDays',
+      defaultValue: 0
+    },
+
+    discontinuedAt: {
+      type: DataTypes.DATE,
+      field: 'discontinuedAt'
+    },
+    replacedByProductId: {
+      type: DataTypes.UUID,
+      field: 'replacedByProductId'
     }
   }, {
     sequelize,
@@ -275,3 +336,4 @@ module.exports = (sequelize, DataTypes) => {
   });
   return Product;
 };
+

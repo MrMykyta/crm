@@ -2,6 +2,7 @@
 // channel.extras.controller.js (generated)
 const svc = require('../../services/pim/channelService.extras');
 
+// Обновляет листинги канала для выбранной сущности.
 module.exports.setListings = async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
@@ -11,3 +12,4 @@ module.exports.setListings = async (req, res, next) => {
     next(e);
   }
 };
+

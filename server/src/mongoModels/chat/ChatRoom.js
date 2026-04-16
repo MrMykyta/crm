@@ -26,7 +26,8 @@ const ChatRoomSchema = new Schema(
     participants: {
       type: [ParticipantSchema],
       validate: {
-        validator: (v) => Array.isArray(v) && v.length >= 2,
+        // В комнате должно быть минимум два участника.
+validator: (v) => Array.isArray(v) && v.length >= 2,
         message: "ChatRoom must have at least 2 participants",
       },
     },

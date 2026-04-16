@@ -17,6 +17,7 @@ module.exports.createRole = async (req, res) => {
     }
 };
 
+// Возвращает список ролей и их настроек доступа.
 module.exports.listRoles = async (req, res) => {
     try {
         const list = await aclService.listRoles({ companyId: req.user.companyId, query: req.query });
@@ -26,6 +27,7 @@ module.exports.listRoles = async (req, res) => {
     }
 };
 
+// Возвращает одну роль по идентификатору.
 module.exports.getRole = async (req, res) => {
     try {
         const item = await aclService.getRole({ companyId: req.user.companyId, roleId: req.params.roleId });
@@ -38,6 +40,7 @@ module.exports.getRole = async (req, res) => {
     }
 };
 
+// Обновляет параметры роли и связанные права.
 module.exports.updateRole = async (req, res) => {
     try {
         const updated = await aclService.updateRole({
@@ -52,6 +55,7 @@ module.exports.updateRole = async (req, res) => {
     }
 };
 
+// Удаляет роль по идентификатору.
 module.exports.deleteRole = async (req, res) => {
     try {
         const n = await aclService.deleteRole({ companyId: req.user.companyId, roleId: req.params.roleId });
@@ -74,6 +78,7 @@ module.exports.assignPermToRole = async (req, res) => {
     }
 };
 
+// Удаляет право из выбранной роли.
 module.exports.removePermFromRole = async (req, res) => {
     try {
         await aclService.removePermFromRole({ companyId: req.user.companyId, roleId: req.params.roleId, permId: req.params.permId });
@@ -93,6 +98,7 @@ module.exports.assignRoleToUser = async (req, res) => {
     }
 };
 
+// Снимает роль с пользователя.
 module.exports.removeRoleFromUser = async (req, res) => {
     try {
         await aclService.removeRoleFromUser({ userId: req.params.userId, companyId: req.user.companyId, roleId: req.params.roleId });
@@ -112,6 +118,7 @@ module.exports.grantPermToUser = async (req, res) => {
     }
 };
 
+// Удаляет индивидуальное переопределение права у пользователя.
 module.exports.revokePermFromUser = async (req, res) => {
     try {
         await aclService.revokePermFromUser({ userId: req.params.userId, permId: req.params.permId });
@@ -130,6 +137,7 @@ module.exports.createPermission = async (req, res) => {
     }
 };
 
+// Возвращает список доступных permission-ключей.
 module.exports.listPermissions = async (req, res) => {
     try { 
         res.send(await aclService.listPermissions({ query: req.query })); 
@@ -138,6 +146,7 @@ module.exports.listPermissions = async (req, res) => {
     }
 };
 
+// Возвращает одну permission-запись по идентификатору.
 module.exports.getPermission = async (req, res) => {
     try {
         const p = await aclService.getPermission(req.params.permId);
@@ -150,6 +159,7 @@ module.exports.getPermission = async (req, res) => {
     }
 };
 
+// Обновляет параметры permission-записи.
 module.exports.updatePermission = async (req, res) => {
     try {
         const p = await aclService.updatePermission(req.params.permId, req.body);
@@ -162,6 +172,7 @@ module.exports.updatePermission = async (req, res) => {
     }
 };
 
+// Удаляет permission-запись.
 module.exports.deletePermission = async (req, res) => {
     try {
         const n = await aclService.deletePermission(req.params.permId);
@@ -175,6 +186,7 @@ module.exports.deletePermission = async (req, res) => {
 };
 
 
+// Возвращает сводку эффективных прав пользователя.
 module.exports.getUserPermSummary = async (req, res) => {
   try {
     const data = await aclService.getUserPermissionSummary({
@@ -188,6 +200,7 @@ module.exports.getUserPermSummary = async (req, res) => {
   }
 };
 
+// Явно разрешает право пользователю через override.
 module.exports.allowPermForUser = async (req, res) => {
   try {
     await aclService.allowPermForUser({
@@ -199,6 +212,7 @@ module.exports.allowPermForUser = async (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 };
 
+// Явно запрещает право пользователю через override.
 module.exports.denyPermForUser = async (req, res) => {
   try {
     await aclService.denyPermForUser({
@@ -210,6 +224,7 @@ module.exports.denyPermForUser = async (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 };
 
+// Сбрасывает override права пользователя к наследуемому состоянию.
 module.exports.clearPermOverride = async (req, res) => {
   try {
     await aclService.clearPermOverride({
@@ -220,3 +235,4 @@ module.exports.clearPermOverride = async (req, res) => {
     res.sendStatus(204);
   } catch (e) { res.status(400).json({ error: e.message }); }
 };
+

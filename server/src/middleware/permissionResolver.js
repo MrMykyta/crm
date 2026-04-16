@@ -14,10 +14,13 @@ const { DEFAULT_ROLE_SETS, DEPT_HEAD_PERMS } = require('../constants/aclDefaults
 
 const CACHE_TTL = 60_000; // 60s
 const cache = new Map();
+// Формирует ключ кэша для пары userId/companyId.
 const key = (u, c) => `${u}:${c}`;
 
+// Сбрасывает кэш прав для конкретного пользователя в конкретной компании.
 module.exports.invalidate = (userId, companyId) => cache.delete(key(userId, companyId));
 
+// Собирает итоговый security-контекст: роль, membership и allow/deny права из всех источников.
 async function load({ userId, companyId }) {
   // 0) membership (роль/департамент/лид/статус)
   const membership = await UserCompany.findOne({
@@ -99,6 +102,7 @@ async function load({ userId, companyId }) {
   };
 }
 
+// Возвращает security-контекст с краткоживущим in-memory кэшированием.
 module.exports.getPermissionsAndRole = async ({ userId, companyId }) => {
   const k = key(userId, companyId);
   const now = Date.now();

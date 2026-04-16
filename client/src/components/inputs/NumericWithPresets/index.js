@@ -1,6 +1,7 @@
 import React from "react";
 import styles from "./NumericWithPresets.module.css";
 
+// Компонент NumericWithPresets: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function NumericWithPresets({
   value = "",
   onChange = () => {},
@@ -20,18 +21,21 @@ export default function NumericWithPresets({
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef(null);
 
-  const parse = (raw) => {
+    // parse: парсит входные данные для UI.
+const parse = (raw) => {
     if (raw === "" || raw == null) return allowEmpty ? "" : "";
     const n = Number(raw);
     return Number.isNaN(n) ? "" : n;
   };
 
-  const handleChange = (e) => {
+    // handleChange: обработчик пользовательского действия.
+const handleChange = (e) => {
     const next = parse(e.target.value);
     onChange(next);
   };
 
-  const handleBlur = () => {
+    // handleBlur: обработчик пользовательского действия.
+const handleBlur = () => {
     if (value === "" || value == null) return;
     let n = Number(value);
     if (Number.isNaN(n)) return;
@@ -42,7 +46,8 @@ export default function NumericWithPresets({
 
   // клик вне меню
   React.useEffect(() => {
-    const onDoc = (e) => {
+        // onDoc: вспомогательная логика компонента.
+const onDoc = (e) => {
       if (!ref.current) return;
       if (!ref.current.contains(e.target)) setOpen(false);
     };

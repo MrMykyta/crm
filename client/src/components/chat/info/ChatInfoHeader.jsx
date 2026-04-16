@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import ImagePicker from "../../inputs/ImagePicker";
 import s from "./ChatInfoPanel.module.css";
 
+// Компонент ChatInfoHeader: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ChatInfoHeader({
   isGroup,
   title,
@@ -139,3 +140,4 @@ export default function ChatInfoHeader({
     </div>
   );
 }
+

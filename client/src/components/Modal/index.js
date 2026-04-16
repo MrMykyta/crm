@@ -11,6 +11,7 @@ function Button({ variant = 'secondary', children, className = '', ...props }) {
   );
 }
 
+// Компонент Modal: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function Modal({
   open,
   onClose,
@@ -44,7 +45,8 @@ export default function Modal({
   // ESC
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
+        // onKey: вспомогательная логика компонента.
+const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);

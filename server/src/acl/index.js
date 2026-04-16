@@ -2,6 +2,10 @@
 
 const { getPermissionsAndRole } = require('../middleware/permissionResolver');
 
+// Приводит разные форматы permissions к Set:
+// - массив ['a', 'b']
+// - объект { a: true, b: false }
+// - уже готовый Set.
 function toSet(x) {
   if (!x) return new Set();
   if (x instanceof Set) return x;
@@ -10,6 +14,8 @@ function toSet(x) {
   return new Set();
 }
 
+// Нормализует permissions в единый индекс allow/deny.
+// Поддерживает старый формат массива и новый формат { allow, deny }.
 function makeIndex(permissions) {
   if (Array.isArray(permissions)) {
     // старый формат ["p1","p2"]
@@ -21,6 +27,7 @@ function makeIndex(permissions) {
   };
 }
 
+// Строит список permission-ключей для базы и скоупов (:own, :dept).
 function expand(base, { own=false, dept=false } = {}) {
   const arr = [base];
   if (own)  arr.push(`${base}:own`);
@@ -28,15 +35,25 @@ function expand(base, { own=false, dept=false } = {}) {
   return arr;
 }
 
+// Проверяет, есть ли хотя бы один явный deny среди ключей.
 function isDeniedAny(idx, names)  { return names.some(n => idx.deny.has(n)); }
+// Проверяет, есть ли хотя бы один allow среди ключей.
 function isAllowedAny(idx, names) { return names.some(n => idx.allow.has(n)); }
 
+// Загружает роль и permissions пользователя в компании
+// и возвращает их в виде готового ACL-контекста.
 async function resolveContext({ userId, companyId }) {
   const { role, permissions, membership } = await getPermissionsAndRole({ userId, companyId });
   const idx = makeIndex(permissions);
   return { role, idx, membership: membership || null };
 }
 
+// Проверяет доступ к одному базовому permission.
+// Порядок проверки:
+// 1) owner => всегда true
+// 2) base allow/deny
+// 3) scoped allow для :own (через ownCheck)
+// 4) scoped allow для :dept (через deptCheck)
 async function checkOne({ user, companyId, base, ownCheck, deptCheck }) {
   const { role, idx } = await resolveContext({ userId: user.id, companyId });
 
@@ -67,9 +84,16 @@ async function checkOne({ user, companyId, base, ownCheck, deptCheck }) {
   return false;
 }
 
+// Универсальная ACL-проверка:
+// - required: один ключ или массив (any)
+// - opts.anyOf: хотя бы один из списка
+// - opts.allOf: все из списка
+// scoped-проверки пробрасываются в checkOne.
 async function check({ user, companyId, required, opts = {} }) {
   const need = Array.isArray(required) ? required : [required];
   const { anyOf, allOf, ownCheck, deptCheck } = opts;
+
+  // Привязывает общие параметры проверки к одному permission-ключу.
   const bound = (base) => checkOne({ user, companyId, base, ownCheck, deptCheck });
   if (Array.isArray(anyOf) && anyOf.length) {
     for (const p of anyOf) if (await bound(p)) return true;
@@ -83,7 +107,8 @@ async function check({ user, companyId, required, opts = {} }) {
   return false;
 }
 
-// бросает только здесь — чтобы сервисы могли использовать try/catch
+// Проверяет ACL и бросает Error(403), если доступ запрещён.
+// Сервисы могут использовать единый try/catch поверх assert.
 async function assert({ user, companyId, required, opts }) {
   const ok = await check({ user, companyId, required, opts });
   if (!ok) {
@@ -93,13 +118,19 @@ async function assert({ user, companyId, required, opts }) {
   }
 }
 
+// Определяет итоговый департаментный скоуп для выборок:
+// - canAll=true: есть полный доступ по base
+// - canAll=false + deptLimitId: доступ ограничен департаментом
+// - при запрете может бросить 403 (по throwIfDenied).
 async function computeDeptScope({ user, companyId, base, getRequesterDept, throwIfDenied = true }) {
   const allowAll = await check({ user, companyId, required: base });
   if (allowAll) return { canAll: true, deptLimitId: null };
 
   const allowDept = await check({
     user, companyId, required: base,
-    opts: { deptCheck: async () => true }
+    // Здесь нам важен сам факт наличия :dept права;
+    // конкретное ограничение вернётся через getRequesterDept().
+    opts: { deptCheck: async () => true },
   });
 
   if (!allowDept) {

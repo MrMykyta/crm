@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import s from './KpiCards.module.css';
 
+// Компонент KpiCards: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function KpiCards() {
   const { t } = useTranslation();
   return (

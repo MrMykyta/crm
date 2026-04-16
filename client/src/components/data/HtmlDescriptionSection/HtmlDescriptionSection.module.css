@@ -1,0 +1,162 @@
+.sectionCard {
+  width: 100%;
+  min-width: 0;
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 76%, transparent);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-15);
+  font-weight: 800;
+  color: var(--text);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ghostBtn,
+.primaryBtn {
+  height: 34px;
+  border-radius: 999px;
+  padding: 0 14px;
+  font-size: var(--font-size-13);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .06s ease, border-color .15s ease, background .15s ease, filter .15s ease;
+}
+
+.ghostBtn {
+  border: 1px solid color-mix(in srgb, var(--card-brd) 72%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  color: color-mix(in srgb, var(--text) 88%, transparent);
+}
+
+.ghostBtn:hover {
+  border-color: color-mix(in srgb, var(--card-brd) 45%, var(--focus));
+  background: color-mix(in srgb, var(--sidebar-hover) 62%, transparent);
+}
+
+.primaryBtn {
+  border: 1px solid color-mix(in srgb, var(--primary-start) 48%, transparent);
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  color: #fff;
+  box-shadow:
+    0 10px 22px color-mix(in srgb, var(--primary-start) 26%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.primaryBtn:hover {
+  filter: brightness(1.04);
+}
+
+.ghostBtn:active,
+.primaryBtn:active {
+  transform: translateY(1px);
+}
+
+.primaryBtn:disabled,
+.ghostBtn:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+.htmlView {
+  min-height: 320px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  border-radius: 12px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card-bg) 88%, transparent),
+    color-mix(in srgb, var(--card-bg) 94%, transparent)
+  );
+  padding: 12px 14px;
+  color: var(--text);
+  line-height: 1.6;
+  overflow: auto;
+}
+
+.htmlView h1,
+.htmlView h2,
+.htmlView h3 {
+  margin: 0.7em 0 0.45em;
+}
+
+.htmlView p {
+  margin: 0.35em 0;
+}
+
+.htmlView ul,
+.htmlView ol {
+  margin: 0.45em 0 0.55em;
+  padding-left: 1.35em;
+}
+
+.htmlView li + li {
+  margin-top: 0.2em;
+}
+
+.htmlView a {
+  color: color-mix(in srgb, var(--primary-start) 88%, #9eb3ff 12%);
+  text-decoration: underline;
+}
+
+.emptyState {
+  min-height: 320px;
+  border: 1px dashed color-mix(in srgb, var(--card-brd) 78%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 20px;
+  color: color-mix(in srgb, var(--muted) 88%, transparent);
+  font-size: var(--font-size-13);
+  line-height: 1.55;
+}
+
+.footerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  font-size: var(--font-size-12);
+}
+
+.dirty { color: color-mix(in srgb, #f4c769 86%, transparent); }
+.clean { color: color-mix(in srgb, var(--muted) 84%, transparent); }
+.message { color: color-mix(in srgb, var(--success, #39d98a) 86%, transparent); }
+
+@media (max-width: 760px) {
+  .sectionCard {
+    padding: 12px;
+  }
+
+  .headerRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .htmlView,
+  .emptyState {
+    min-height: 260px;
+  }
+}

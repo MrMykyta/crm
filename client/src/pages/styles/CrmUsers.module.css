@@ -158,7 +158,7 @@
 .spinText {
   margin-top: 12px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--font-size-14);
   letter-spacing: 0.3px;
 }
 
@@ -176,7 +176,7 @@
 .fieldError {
   margin-top: 6px;
   color: var(--danger);
-  font-size: 12px;
+  font-size: var(--font-size-12);
 }
 
 /*--------------------------------------------------------*/

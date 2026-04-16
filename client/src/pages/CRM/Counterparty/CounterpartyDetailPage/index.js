@@ -2,6 +2,8 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import EntityDetailPage from "../../../_scaffold/EntityDetailPage";
+import DetailTabs from "../../../../components/data/DetailTabs";
+import EntityNotesSection from "../../../../components/notes/EntityNotesSection";
 import {
   counterpartyEntitySchema,
   toFormCounterparty,
@@ -9,6 +11,7 @@ import {
 } from "../../../../schemas/counterparty.schema";
 import ContactsEditor from "../../../../components/forms/SmartForm/ContactsEditor";
 import { buildContactsPayload } from "../../../../utils/buildContactsPayload";
+import CounterpartyContactsSection from "../../../../components/contacts/CounterpartyContactsSection";
 
 import {
   useGetCounterpartyQuery,
@@ -16,6 +19,7 @@ import {
   useUpdateCounterpartyMutation,
 } from "../../../../store/rtk/counterpartyApi";
 
+// Компонент Skeleton: отвечает за отображение UI и обработку взаимодействий пользователя.
 function Skeleton() {
   return (
     <div style={{ padding: 16 }}>
@@ -63,8 +67,28 @@ const DEFAULT_QUERY = {
   excludeLeadClient: true, // ← убираем lead и client
 };
 
+// Компонент CounterpartyDetailTabs: отвечает за отображение UI и обработку взаимодействий пользователя.
+function CounterpartyDetailTabs({ tab, data, values, onChange }) {
+  if (tab === "notes") {
+    return (
+      <EntityNotesSection
+        ownerType="counterparty"
+        ownerId={data?.id}
+        title="Заметки контрагента"
+      />
+    );
+  }
+
+  return <DetailTabs tab={tab} data={data} values={values} onChange={onChange} />;
+}
+
+// Компонент CounterpartyDetailPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CounterpartyDetailPage() {
   const { id } = useParams();
+  const schemaBuilder = useCallback(
+    (i18n) => counterpartyEntitySchema(i18n).filter((field) => field?.name !== "description"),
+    []
+  );
 
   // 1) пробуем взять сущность из списка контрагентов (без лидов/клиентов)
   const { data: listData } = useListCounterpartiesQuery(
@@ -98,7 +122,8 @@ export default function CounterpartyDetailPage() {
     setContacts(Array.isArray(initial) ? initial : []);
   }, [base]);
 
-  const onChangeContacts = (list) => setContacts(list);
+    // onChangeContacts: вспомогательная логика компонента.
+const onChangeContacts = (list) => setContacts(list);
 
   const save = useCallback(
     async (entityId, payload) => {
@@ -124,7 +149,7 @@ export default function CounterpartyDetailPage() {
       id={id}
       tabs={TABS}
       tabsNamespace="crm.counterparty.detail"
-      schemaBuilder={counterpartyEntitySchema}
+      schemaBuilder={schemaBuilder}
       toForm={(d) => ({ ...toFormCounterparty(d), contacts: undefined })}
       toApi={toApiCounterparty}
       isSaving={saving}
@@ -139,9 +164,17 @@ export default function CounterpartyDetailPage() {
       saveOnExit={true}
       clearDraftOnUnmount={true}
       payloadDeps={[contacts]}
+      RightTabsComponent={CounterpartyDetailTabs}
       leftExtras={
-        <ContactsEditor value={contacts} onChange={onChangeContacts} />
+        <>
+          <CounterpartyContactsSection
+            counterpartyId={id}
+            counterpartyName={base?.shortName || base?.fullName || ''}
+          />
+          <ContactsEditor value={contacts} onChange={onChangeContacts} />
+        </>
       }
     />
   );
 }
+

@@ -8,8 +8,10 @@ import { useUploadFileMutation } from "../../../store/rtk/filesApi";
 import { useTopbar } from "../../../Providers/TopbarProvider";
 import styles from "./CompanyInfoPage.module.css";
 
+// Компонент CompanyLogoHeader: отвечает за отображение UI и обработку взаимодействий пользователя.
 function CompanyLogoHeader({ values, onChange, companyId, uploadFile }) {
-  const uploader = async (file) => {
+    // uploader: вспомогательная логика компонента.
+const uploader = async (file) => {
     const res = await uploadFile({
       ownerType: "company",
       ownerId: companyId,
@@ -23,7 +25,8 @@ function CompanyLogoHeader({ values, onChange, companyId, uploadFile }) {
     return { url };
   };
 
-  const urlUploader = async (url) => ({ url });
+    // urlUploader: вспомогательная логика компонента.
+const urlUploader = async (url) => ({ url });
 
   return (
     <div className={styles.headerCard}>
@@ -50,6 +53,7 @@ const TABS = [
   { key: "history", label: "История изменений" },
 ];
 
+// Компонент CompanyInfoPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CompanyInfoPage() {
   const { setTitle, reset } = useTopbar();
   const companyId = useSelector((s) => s.auth.companyId);
@@ -69,8 +73,10 @@ export default function CompanyInfoPage() {
   if (!company && isFetching) return null;
   if (!company) return null;
 
-  const load = async () => company;
-  const save = async (_id, payload) => {
+    // load: загружает данные в рамках UI-компонента.
+const load = async () => company;
+    // save: сохраняет данные в рамках UI-компонента.
+const save = async (_id, payload) => {
     const saved = await updateCompany(payload).unwrap();
     return saved;
   };
@@ -100,3 +106,4 @@ export default function CompanyInfoPage() {
     />
   );
 }
+

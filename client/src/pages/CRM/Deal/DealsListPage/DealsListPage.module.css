@@ -54,7 +54,7 @@
 }
 
 .label {
-  font-size: 12px;
+  font-size: var(--font-size-12);
   color: var(--muted);
 }
 
@@ -75,7 +75,7 @@
 
 .error {
   color: var(--danger);
-  font-size: 12px;
+  font-size: var(--font-size-12);
 }
 
 .dateRange {

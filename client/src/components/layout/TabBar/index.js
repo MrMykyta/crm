@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import s from "./TabBar.module.css";
 
+// sameOrder: вспомогательная логика компонента.
 const sameOrder = (a, b) =>
   Array.isArray(a) &&
   Array.isArray(b) &&
   a.length === b.length &&
   a.every((x, i) => x?.key === b[i]?.key);
 
+// Компонент TabBar: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function TabBar({
   items = [],
   activeKey,
@@ -22,7 +24,8 @@ export default function TabBar({
   const [expandedLocal, setExpandedLocal] = useState(false);
   const expanded =
     typeof expandedProp === "boolean" ? expandedProp : expandedLocal;
-  const setExpanded = (v) => {
+    // setExpanded: обновляет состояние компонента.
+const setExpanded = (v) => {
     onExpandedChange?.(!!v);
     if (typeof expandedProp !== "boolean") setExpandedLocal(!!v);
   };
@@ -64,7 +67,8 @@ export default function TabBar({
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
-    const calc = () => {
+        // calc: вспомогательная логика компонента.
+const calc = () => {
       if (expanded) return;
       setNeedsToggle(el.scrollWidth > el.clientWidth);
     };
@@ -95,12 +99,14 @@ export default function TabBar({
     return rects;
   };
 
-  const durByDist = (dx, dy) => {
+    // durByDist: вспомогательная логика компонента.
+const durByDist = (dx, dy) => {
     const dist = Math.hypot(dx, dy);
     return Math.min(520, Math.max(140, 120 + dist * 0.45));
   };
 
-  const flipAnimate = (prevRects, nextOrder) => {
+    // flipAnimate: вспомогательная логика компонента.
+const flipAnimate = (prevRects, nextOrder) => {
     setOrder(nextOrder);
 
     requestAnimationFrame(() => {
@@ -129,7 +135,8 @@ export default function TabBar({
           el.style.transition = `transform ${ms}ms cubic-bezier(.2,.7,.2,1)`;
           el.style.transform = `translate(0, 0)`;
 
-          const onEnd = () => {
+                    // onEnd: вспомогательная логика компонента.
+const onEnd = () => {
             el.classList.remove(s.animating);
             el.style.transition = "";
             el.style.transform = "";
@@ -150,7 +157,8 @@ export default function TabBar({
     e.dataTransfer.setDragImage(img, 0, 0);
   };
 
-  const onDragStart = (e, index) => {
+    // onDragStart: вспомогательная логика компонента.
+const onDragStart = (e, index) => {
     dragIndexRef.current = index;
     setDraggingIndex(index);
     e.dataTransfer.effectAllowed = "move";
@@ -160,9 +168,11 @@ export default function TabBar({
     lastPairRef.current = { a: null, b: null };
   };
 
-  const isNeighbour = (i1, i2) => Math.abs(i1 - i2) === 1;
+    // isNeighbour: проверяет условие для UI-логики.
+const isNeighbour = (i1, i2) => Math.abs(i1 - i2) === 1;
 
-  const onDragEnter = (e, overIndex) => {
+    // onDragEnter: вспомогательная логика компонента.
+const onDragEnter = (e, overIndex) => {
     const from = dragIndexRef.current;
     if (from < 0) return;
     if (from === overIndex) return;
@@ -210,25 +220,28 @@ export default function TabBar({
     flipAnimate(prevRects, next);
   };
 
-  const onDragOver = (e) => {
+    // onDragOver: вспомогательная логика компонента.
+const onDragOver = (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
 
-  const finishDragAndSave = () => {
+    // finishDragAndSave: вспомогательная логика компонента.
+const finishDragAndSave = () => {
     setDraggingIndex(-1);
     dragIndexRef.current = -1;
     lastPairRef.current = { a: null, b: null };
     onReorder?.(order.slice());
-    console.log("[DnD] finish", order.map((x) => x.key));
   };
 
-  const onDrop = (e) => {
+    // onDrop: вспомогательная логика компонента.
+const onDrop = (e) => {
     e.preventDefault();
     finishDragAndSave();
   };
 
-  const onDragEnd = () => {
+    // onDragEnd: вспомогательная логика компонента.
+const onDragEnd = () => {
     finishDragAndSave();
   };
 
@@ -300,3 +313,4 @@ export default function TabBar({
     </div>
   );
 }
+

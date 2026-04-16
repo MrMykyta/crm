@@ -2,6 +2,7 @@
 import React from "react";
 import s from "../CalendarPage.module.css";
 
+// Компонент MonthGrid: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function MonthGrid({
   baseDate,
   today,

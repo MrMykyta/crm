@@ -5,6 +5,7 @@ import { useUploadFileMutation } from "../../../store/rtk/filesApi";
 import { applyUserPatch } from "../../../store/slices/authSlice"; // <-- ДОБАВИЛИ
 import styles from "./UserAvatarHeader.module.css";
 
+// Компонент UserAvatarHeader: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function UserAvatarHeader({ values, onChange }) {
   const dispatch  = useDispatch();
   const userId    = useSelector((s) => s.auth?.currentUser?.id);
@@ -13,7 +14,8 @@ export default function UserAvatarHeader({ values, onChange }) {
   const fullName =
     [values?.firstName, values?.lastName].filter(Boolean).join(" ") || "User";
 
-  const uploader = async (file) => {
+    // uploader: вспомогательная логика компонента.
+const uploader = async (file) => {
     if (!userId) throw new Error("Не найден userId (auth.currentUser.id)");
     const res = await uploadFile({
       ownerType: "user",
@@ -32,7 +34,8 @@ export default function UserAvatarHeader({ values, onChange }) {
     return fileId ? { id: fileId } : { url: ref };
   };
 
-  const urlUploader = async (url) => {
+    // urlUploader: вспомогательная логика компонента.
+const urlUploader = async (url) => {
     if (!url) return { url: "" };
     onChange?.("avatarUrl", url);
     dispatch(applyUserPatch({ avatarUrl: url }));
@@ -63,3 +66,4 @@ export default function UserAvatarHeader({ values, onChange }) {
     </div>
   );
 }
+

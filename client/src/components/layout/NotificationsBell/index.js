@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useListMyNotificationsQuery, useMarkNotificationReadMutation, useMarkAllNotificationsReadMutation } from '../../store/rtk/notificationApi';
 import s from './NotificationsBell.module.css';
 
+// Компонент NotificationsBell: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function NotificationsBell({ sse }) {
   // sse – объект, который уже подключён к /sse и слушает события (если есть)
   const { data, refetch } = useListMyNotificationsQuery(
@@ -15,7 +16,8 @@ export default function NotificationsBell({ sse }) {
 
   useEffect(() => {
     if (!sse) return;
-    const handler = (evt) => {
+        // handler: обработчик пользовательского действия.
+const handler = (evt) => {
       try {
         const payload = JSON.parse(evt.data);
         if (!payload?.type) return;
@@ -35,7 +37,8 @@ export default function NotificationsBell({ sse }) {
   const unreadCount = data?.unreadCount || 0;
   const items = data?.items || [];
 
-  const onClickItem = async (n) => {
+    // onClickItem: вспомогательная логика компонента.
+const onClickItem = async (n) => {
     if (!n.isRead) {
       await markRead(n.id);
     }
@@ -44,7 +47,8 @@ export default function NotificationsBell({ sse }) {
     // if (n.entityType === 'task') navigate(`/main/tasks/${n.entityId}`);
   };
 
-  const onClickMarkAll = async () => {
+    // onClickMarkAll: вспомогательная логика компонента.
+const onClickMarkAll = async () => {
     if (!unreadCount) return;
     await markAll();
   };

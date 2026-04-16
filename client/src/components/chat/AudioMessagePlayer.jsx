@@ -11,6 +11,7 @@ import s from "./AudioMessagePlayer.module.css";
 // Fixed number of waveform bars for stable layout.
 const BARS_COUNT = 48;
 
+// formatTime: форматирует данные для отображения.
 const formatTime = (sec) => {
   if (!sec || Number.isNaN(sec)) return "0:00";
   const total = Math.floor(sec);
@@ -19,6 +20,7 @@ const formatTime = (sec) => {
   return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
+// normalizeUrl: нормализует данные для отображения и ввода.
 const normalizeUrl = (u) => {
   if (!u) return "";
   if (/^https?:\/\//i.test(u)) return u;
@@ -28,6 +30,7 @@ const normalizeUrl = (u) => {
   return u;
 };
 
+// Компонент AudioMessagePlayer: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function AudioMessagePlayer({ fileId, filename }) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -86,23 +89,28 @@ export default function AudioMessagePlayer({ fileId, filename }) {
     const audio = audioRef.current;
     if (!audio) return undefined;
 
-    const handleLoaded = () => {
+        // handleLoaded: обработчик пользовательского действия.
+const handleLoaded = () => {
       setDuration(audio.duration || 0);
       setSrcError(null);
     };
-    const handleTime = () => {
+        // handleTime: обработчик пользовательского действия.
+const handleTime = () => {
       setCurrentTime(audio.currentTime || 0);
     };
-    const handleEnded = () => {
+        // handleEnded: обработчик пользовательского действия.
+const handleEnded = () => {
       setPlaying(false);
       if (activeAudioFileId === fileId) {
         dispatch(clearActiveAudio());
       }
     };
-    const handlePause = () => {
+        // handlePause: обработчик пользовательского действия.
+const handlePause = () => {
       setPlaying(false);
     };
-    const handleErr = () => {
+        // handleErr: обработчик пользовательского действия.
+const handleErr = () => {
       setAudioSrc(null);
       setSrcError(t("chat.audio.playbackError"));
       setPlaying(false);
@@ -166,7 +174,8 @@ export default function AudioMessagePlayer({ fileId, filename }) {
     }
   }, [audioSrc, t]);
 
-  const togglePlay = async () => {
+    // togglePlay: переключает состояние компонента.
+const togglePlay = async () => {
     const audio = audioRef.current;
     if (!audio) return;
     if (isSrcLoading) return;
@@ -191,7 +200,8 @@ export default function AudioMessagePlayer({ fileId, filename }) {
     }
   };
 
-  const handleSeek = (e) => {
+    // handleSeek: обработчик пользовательского действия.
+const handleSeek = (e) => {
     const audio = audioRef.current;
     const wave = waveRef.current;
     if (!audio || !wave || !duration) return;
@@ -248,3 +258,4 @@ export default function AudioMessagePlayer({ fileId, filename }) {
     </div>
   );
 }
+

@@ -2,12 +2,14 @@
 // PickWave.controller.js (generated)
 const pickWaveService = require('../../services/wms/pickWaveService');
 
+// Возвращает список сущностей с учётом фильтров и пагинации.
 module.exports.list = async (req, res) => {
   try {
     const { rows, count, page, limit } = await pickWaveService.list({ query: req.query, user: req.user });
     res.status(200).send({ data: rows, meta: { count, page, limit }});
   } catch (e) { console.error('[PickWaveController.list]', e); res.status(400).send({ error: e.message }); }
 };
+// Возвращает одну сущность по её идентификатору.
 module.exports.getById = async (req, res) => {
   try {
     const item = await pickWaveService.getById(req.params.id);
@@ -15,6 +17,7 @@ module.exports.getById = async (req, res) => {
     res.status(200).send(item);
   } catch (e) { console.error('[PickWaveController.getById]', e); res.status(400).send({ error: e.message }); }
 };
+// Создаёт новую сущность и возвращает результат создания.
 module.exports.create = async (req, res) => {
   try {
     const payload = { ...req.body };
@@ -23,6 +26,7 @@ module.exports.create = async (req, res) => {
     res.status(201).send(created);
   } catch (e) { console.error('[PickWaveController.create]', e); res.status(400).send({ error: e.message }); }
 };
+// Обновляет существующую сущность по идентификатору.
 module.exports.update = async (req, res) => {
   try {
     const updated = await pickWaveService.update(req.params.id, req.body);
@@ -30,6 +34,7 @@ module.exports.update = async (req, res) => {
     res.status(200).send(updated);
   } catch (e) { console.error('[PickWaveController.update]', e); res.status(400).send({ error: e.message }); }
 };
+// Удаляет сущность по идентификатору.
 module.exports.remove = async (req, res) => {
   try {
     const n = await pickWaveService.remove(req.params.id);
@@ -37,3 +42,4 @@ module.exports.remove = async (req, res) => {
     res.status(200).send({ deleted: n });
   } catch (e) { console.error('[PickWaveController.remove]', e); res.status(400).send({ error: e.message }); }
 };
+

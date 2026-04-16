@@ -2,10 +2,11 @@
 'use strict';
 
 const { verifyAccess } = require('../utils/tokenService');
-const { getPermissionsAndRole } = require('./permissionResolver'); // ← берём новый резолвер
-const ApplicationError = require('../errors/ApplicationError');
+const { getPermissionsAndRole } = require('./permissionResolver'); // Резолвим роль и права пользователя в компании.
+const AppError = require('../errors/AppError');
 const TokenError = require('../errors/TokenError');
 
+// Проверяет access token, собирает security-контекст пользователя и кладёт его в req.user.
 module.exports.auth = async (req, res, next) => {
   try {
     const hdr = req.headers.authorization || '';
@@ -46,7 +47,7 @@ module.exports.auth = async (req, res, next) => {
     const isCompanyOptional = allowNoCompany.some((r) => r.method === method && r.re.test(path));
 
     if (userId && !req.user.companyId && !isCompanyOptional) {
-      return next(new ApplicationError('Company context required', 403));
+      return next(new AppError(403, 'Company context required', { code: 'COMPANY_CONTEXT_REQUIRED' }));
     }
 
     // опционально, оставить на время отладки:
@@ -55,6 +56,6 @@ module.exports.auth = async (req, res, next) => {
     next();
   } catch (e) {
     // не светим детали наружу, но не ломаем поток
-    next(new TokenError('error token'));
+    next(new TokenError('Unauthorized'));
   }
 };

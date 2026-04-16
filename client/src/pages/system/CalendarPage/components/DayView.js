@@ -4,6 +4,7 @@ import s from "../CalendarPage.module.css";
 import { isSameDay } from "./dateUtils";
 import CurrentTimeLineWeek from "./CurrentTimeLineWeek";
 
+// Компонент DayView: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function DayView({ baseDate, today }) {
   const isToday = isSameDay(baseDate, today);
 
@@ -14,7 +15,8 @@ export default function DayView({ baseDate, today }) {
     { id: "d4", title: "W – Metodologia badań...",       start: "17:00", end: "18:30", color: "orange" },
   ];
 
-  const toMinutes = (hhmm) => {
+    // toMinutes: вспомогательная логика компонента.
+const toMinutes = (hhmm) => {
     const [h, m] = hhmm.split(":").map(Number);
     return h * 60 + m;
   };

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useRequestPasswordResetMutation } from '../../../store/rtk/authApi';
 import styles from './ForgotPasswordModal.module.css';
 
+// Компонент ForgotPasswordModal: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ForgotPasswordModal({ open, onClose, initialEmail = '' }) {
   const { t } = useTranslation();
   const [email, setEmail] = useState(initialEmail);
@@ -24,7 +25,8 @@ export default function ForgotPasswordModal({ open, onClose, initialEmail = '' }
 
   if (!open) return null;
 
-  const submit = async (e) => {
+    // submit: вспомогательная логика компонента.
+const submit = async (e) => {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
@@ -76,3 +78,4 @@ export default function ForgotPasswordModal({ open, onClose, initialEmail = '' }
     </div>
   );
 }
+

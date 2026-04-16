@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useLazyGetSignedDownloadUrlQuery } from "../../../../store/rtk/filesApi";
 import s from "../ChatInfoPanel.module.css";
 
+// prettySize: вспомогательная логика компонента.
 const prettySize = (size) => {
   const n = Number(size || 0);
   if (!n || n <= 0) return "";
@@ -18,6 +19,7 @@ const prettySize = (size) => {
   return `${val.toFixed(val >= 10 || idx === 0 ? 0 : 1)} ${units[idx]}`;
 };
 
+// normalizeUrl: нормализует данные для отображения и ввода.
 const normalizeUrl = (u) => {
   if (!u) return "";
   if (/^https?:\/\//i.test(u)) return u;
@@ -37,7 +39,8 @@ function DocumentRow({ item, downloadLabel }) {
   const sizeText = useMemo(() => prettySize(item?.size), [item?.size]);
   const fallback = t("common.none");
 
-  const handleDownload = async () => {
+    // handleDownload: обработчик пользовательского действия.
+const handleDownload = async () => {
     try {
       const res = await getSignedDownload(item.fileId).unwrap();
       const url = normalizeUrl(res?.data?.url || res?.url || "");
@@ -70,6 +73,7 @@ function DocumentRow({ item, downloadLabel }) {
   );
 }
 
+// Компонент DocumentsTab: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function DocumentsTab({
   items = [],
   emptyText,
@@ -109,3 +113,4 @@ export default function DocumentsTab({
     </div>
   );
 }
+

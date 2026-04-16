@@ -7,7 +7,9 @@ import { setAuth, logout } from '../slices/authSlice';
  *  ============================================================== */
 const sessionCtx = { token: null, companyId: null };
 
-export const setApiSession = ({ token, companyId } = {}) => {
+export // setApiSession : set api session.
+// setApiSession: изменяет значение состояния для слоя RTK Query.
+const setApiSession = ({ token, companyId } = {}) => {
   if (typeof token !== 'undefined') sessionCtx.token = token || null;
   if (typeof companyId !== 'undefined') sessionCtx.companyId = companyId || null;
 
@@ -19,8 +21,12 @@ export const setApiSession = ({ token, companyId } = {}) => {
   } catch {}
 };
 
-export const getToken = () => sessionCtx.token || null;
-export const getCompanyId = () => sessionCtx.companyId || null;
+export // getToken : get token.
+// getToken: возвращает данные для слоя RTK Query.
+const getToken = () => sessionCtx.token || null;
+export // getCompanyId : get company id.
+// getCompanyId: возвращает данные для слоя RTK Query.
+const getCompanyId = () => sessionCtx.companyId || null;
 
 /** ==============================================================
  *  LOCALSTORAGE HELPERS (прямо здесь, чтобы не было циклов)
@@ -29,11 +35,13 @@ export const getCompanyId = () => sessionCtx.companyId || null;
 const LS_RT = 'rt';
 const LS_CID = 'cid';
 
+// saveRT: сохраняет данные для RTK Query.
 const saveRT = (rt) => {
   try {
     rt ? localStorage.setItem(LS_RT, rt) : localStorage.removeItem(LS_RT);
   } catch {}
 };
+// loadRT: загружает данные для RTK Query.
 const loadRT = () => {
   try {
     return localStorage.getItem(LS_RT) || null;
@@ -42,6 +50,7 @@ const loadRT = () => {
   }
 };
 
+// saveCID: сохраняет данные для RTK Query.
 const saveCID = (cid) => {
   try {
     cid
@@ -49,6 +58,7 @@ const saveCID = (cid) => {
       : localStorage.removeItem(LS_CID);
   } catch {}
 };
+// loadCID: загружает данные для RTK Query.
 const loadCID = () => {
   try {
     return localStorage.getItem(LS_CID) || null;
@@ -67,7 +77,8 @@ const baseUrl =
 const rawBaseQuery = fetchBaseQuery({
   baseUrl,
   credentials: 'include',
-  prepareHeaders: (headers) => {
+    // prepareHeaders: вспомогательная логика для слоя RTK Query.
+prepareHeaders: (headers) => {
     const token = getToken();
     const companyId = getCompanyId();
     if (token) headers.set('Authorization', `Bearer ${token}`);
@@ -82,6 +93,7 @@ const rawBaseQuery = fetchBaseQuery({
 
 let refreshingPromise = null;
 
+// ensureRefreshed: вспомогательная логика для слоя RTK Query.
 const ensureRefreshed = async (api, extraOptions) => {
   if (refreshingPromise) return refreshingPromise;
 
@@ -168,6 +180,7 @@ const ensureRefreshed = async (api, extraOptions) => {
 
 const SHOULD_REFRESH = new Set([401, 408, 419, 440]);
 
+// baseQueryWithReauth: вспомогательная логика для слоя RTK Query.
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await rawBaseQuery(args, api, extraOptions);
 
@@ -203,8 +216,20 @@ export const crmApi = createApi({
     'Counterparty',
     'Deal',
     'DealList',
+    'Contact',
+    'ContactList',
+    'Note',
+    'NoteList',
+    'Product',
+    'ProductList',
+    'ProductPrice',
+    'ProductSpec',
+    'BrandLookup',
+    'CategoryLookup',
   ],
-  endpoints: () => ({}),
+    // endpoints: описывает набор endpoint-ов RTK Query.
+endpoints: () => ({}),
 });
 
 export default crmApi;
+

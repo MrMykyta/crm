@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../Providers/ThemeProvider';
 import s from './ThemeSwitcher.module.css';
 
+// Компонент ThemeSwitcher: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ThemeSwitcher() {
   const { t } = useTranslation();
   const { mode, setMode, resolved } = useTheme();
@@ -11,7 +12,8 @@ export default function ThemeSwitcher() {
 
   // закрытие при клике вне
   useEffect(() => {
-    const onClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+        // onClick: вспомогательная логика компонента.
+const onClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
@@ -24,7 +26,8 @@ export default function ThemeSwitcher() {
 
   const current = items.find(i => i.key === (mode === 'system' ? resolved : mode)) || items[0];
 
-  const change = (m) => {
+    // change: вспомогательная логика компонента.
+const change = (m) => {
     setMode(m);
     setOpen(false);
   };
@@ -55,3 +58,4 @@ export default function ThemeSwitcher() {
     </div>
   );
 }
+

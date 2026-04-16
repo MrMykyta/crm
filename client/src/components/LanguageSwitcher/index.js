@@ -10,6 +10,7 @@ const langs = [
   { code: 'ua', label: 'Українська', flag: '🇺🇦' }
 ];
 
+// Компонент LanguageSwitcher: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function LanguageSwitcher() {
   const { i18n } = useTranslation();
   const cur = i18n.resolvedLanguage || i18n.language || 'en';
@@ -18,8 +19,10 @@ export default function LanguageSwitcher() {
 
   const currentLang = langs.find(l => l.code === cur) || langs[0];
 
-  const toggle = () => setOpen(o => !o);
-  const changeLang = (lng) => {
+    // toggle: переключает состояние компонента.
+const toggle = () => setOpen(o => !o);
+    // changeLang: вспомогательная логика компонента.
+const changeLang = (lng) => {
     i18n.changeLanguage(lng);
     document.documentElement.lang = lng;
     localStorage.setItem('lang', lng);
@@ -28,7 +31,8 @@ export default function LanguageSwitcher() {
 
   // закрытие при клике вне
   useEffect(() => {
-    const handler = (e) => {
+        // handler: обработчик пользовательского действия.
+const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     };
     document.addEventListener('mousedown', handler);

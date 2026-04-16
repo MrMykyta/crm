@@ -1,5 +1,6 @@
 import NumericWithPresets from "../NumericWithPresets";
 
+// Компонент PriorityInput: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function PriorityInput(props){
   return (
     <NumericWithPresets

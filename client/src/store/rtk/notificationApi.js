@@ -2,15 +2,19 @@
 import { crmApi } from "./crmApi";
 
 export const notificationApi = crmApi.injectEndpoints({
-  endpoints: (build) => ({
+    // endpoints: описывает набор endpoint-ов RTK Query.
+endpoints: (build) => ({
     listMyNotifications: build.query({
-      query: (params = {}) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (params = {}) => ({
         url: "/notifications",
         method: "GET",
         params,
       }),
-      transformResponse: (resp) => resp?.data || { items: [], unreadCount: 0 },
-      providesTags: (result) => {
+            // transformResponse: нормализует ответ API перед записью в кэш.
+transformResponse: (resp) => resp?.data || { items: [], unreadCount: 0 },
+            // providesTags: возвращает теги кэша для автообновления данных.
+providesTags: (result) => {
         const base = [{ type: "Notification", id: "LIST" }];
         if (!result?.items) return base;
         return [
@@ -21,18 +25,21 @@ export const notificationApi = crmApi.injectEndpoints({
     }),
 
     markNotificationRead: build.mutation({
-      query: (id) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (id) => ({
         url: `/notifications/${id}/read`,
         method: "POST",
       }),
-      invalidatesTags: (res, err, id) => [
+            // invalidatesTags: помечает теги кэша для рефетча связанных данных.
+invalidatesTags: (res, err, id) => [
         { type: "Notification", id },
         { type: "Notification", id: "LIST" },
       ],
     }),
 
     markAllNotificationsRead: build.mutation({
-      query: () => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: () => ({
         url: "/notifications/read-all/all",
         method: "POST",
       }),
@@ -47,3 +54,4 @@ export const {
   useMarkNotificationReadMutation,
   useMarkAllNotificationsReadMutation,
 } = notificationApi;
+

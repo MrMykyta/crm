@@ -1,7 +1,8 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     await queryInterface.createTable('contact_points', {
       id: {
         type: Sequelize.UUID,
@@ -127,7 +128,8 @@ module.exports = {
     `);
 
   },
-  async down(queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface, Sequelize) {
     await queryInterface.sequelize.query('DROP INDEX IF EXISTS cp_trgm_value_norm_idx;');
     await queryInterface.sequelize.query('DROP INDEX IF EXISTS cp_value_norm_unique;');
     await queryInterface.sequelize.query('DROP INDEX IF EXISTS cp_primary_unique;');

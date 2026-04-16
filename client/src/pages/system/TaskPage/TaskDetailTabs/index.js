@@ -1,41 +1,93 @@
-// src/pages/system/TaskPage/TaskDetailPage/TaskDetailTabs.jsx
-import DescriptionForm from "../sections/DescriptionForm";
+import DescriptionForm from '../sections/DescriptionForm';
+import EntityNotesSection from '../../../../components/notes/EntityNotesSection';
+import s from '../sections/sections.module.css';
 
-export default function TaskDetailTabs({ tab, data, values, onChange }) {
+// Компонент PlaceholderTab: отвечает за отображение UI и обработку взаимодействий пользователя.
+function PlaceholderTab({ title, text, points = [] }) {
+  return (
+    <section className={s.placeholderCard}>
+      <h3 className={s.placeholderTitle}>{title}</h3>
+      <p className={s.placeholderText}>{text}</p>
+      {points.length > 0 && (
+        <ul className={s.placeholderList}>
+          {points.map((point) => (
+            <li key={point}>{point}</li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// Компонент TaskDetailTabs: отвечает за отображение UI и обработку взаимодействий пользователя.
+export default function TaskDetailTabs({ tab, data, onChange }) {
   if (!data) return null;
 
   switch (tab) {
-    case "overview":
+    case 'description':
       return (
         <DescriptionForm
           taskId={data.id}
-          initialHtml={data.description || ""}
-          onSaved={(nextHtml) => onChange?.("description", nextHtml)}
+          initialHtml={data.description || ''}
+          onSaved={(nextHtml) => onChange?.('description', nextHtml)}
         />
       );
 
-    case "files":
-      return <div style={{padding:16}}>Здесь будут <b>Файлы</b> задачи</div>;
+    case 'notes':
+      return <EntityNotesSection ownerType="task" ownerId={data.id} title="Заметки задачи" />;
 
-    case "tasks":
-      return <div style={{padding:16}}>Связанные <b>подзадачи</b> (или связанные тикеты)</div>;
+    case 'files':
+      return (
+        <PlaceholderTab
+          title="Файлы"
+          text="Файлы задачи будут отображаться в этой панели."
+          points={['Документы и вложения', 'Сортировка по дате/автору', 'Быстрый просмотр']}
+        />
+      );
 
-    case "offers":
-      return <div style={{padding:16}}>Связанные <b>предложения</b></div>;
+    case 'links':
+      return (
+        <PlaceholderTab
+          title="Связи"
+          text="Связанные сущности: клиенты, сделки, проекты и другие записи CRM."
+          points={['Связанные карточки CRM', 'Переход в один клик', 'Контекст по задаче']}
+        />
+      );
 
-    case "orders":
-      return <div style={{padding:16}}>Связанные <b>заказы</b></div>;
+    case 'history':
+      return (
+        <PlaceholderTab
+          title="История"
+          text="Журнал изменений статусов, участников и описания задачи."
+          points={['Кто и что изменил', 'Когда произошло изменение', 'Хронология по действиям']}
+        />
+      );
 
-    case "invoices":
-      return <div style={{padding:16}}>Связанные <b>счета</b></div>;
+    case 'reminders':
+      return (
+        <PlaceholderTab
+          title="Напоминания"
+          text="Управление напоминаниями по срокам и ключевым этапам выполнения."
+          points={['Напоминание о старте', 'Напоминание о дедлайне', 'Персональные уведомления']}
+        />
+      );
 
-    case "documents":
-      return <div style={{padding:16}}>Привязанные <b>документы</b> (договора, приложения)</div>;
-
-    case "email":
-      return <div style={{padding:16}}>Почтовая <b>переписка</b> по задаче</div>;
+    case 'settings':
+      return (
+        <PlaceholderTab
+          title="Настройки"
+          text="Параметры задачи и дополнительные системные опции."
+          points={['Режим агрегации статуса', 'Правила уведомлений', 'Видимость для участников']}
+        />
+      );
 
     default:
-      return <div style={{padding:16, color:"var(--muted)"}}>Таб «{tab}» пока не реализован</div>;
+      return (
+        <PlaceholderTab
+          title="Раздел"
+          text={`Таб «${tab}» пока не реализован.`}
+        />
+      );
   }
 }
+

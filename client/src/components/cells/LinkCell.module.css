@@ -42,14 +42,14 @@
 }
 
 .secondary{
-  font-size:12px; color: var(--muted);
+  font-size: var(--font-size-12); color: var(--muted);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 
 .chevron{
   opacity:0; transform: translateX(-2px);
   transition: opacity .14s ease, transform .14s ease;
-  font-size:16px; line-height:1;
+  font-size: var(--font-size-16); line-height:1;
   color: color-mix(in srgb, var(--text) 70%, var(--primary) 10%);
 }
 .rowLink:hover .chevron{ opacity:.9; transform: translateX(0); }

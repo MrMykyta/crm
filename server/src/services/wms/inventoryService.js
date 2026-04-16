@@ -4,6 +4,7 @@ const { withTx } = require('../../utils/tx');
 const { withCompany } = require('../../utils/withCompany');
 const { sequelize, InventoryItem, Reservation, StockMove } = require('../../models');
 
+// getOnHand: возвращает данные по входным параметрам сервиса.
 module.exports.getOnHand = async (companyId, { warehouseId, productId, variantId, locationId=null, lotId=null }) => {
   const where = { companyId, warehouseId, productId, variantId };
   if (locationId) where.locationId = locationId;
@@ -13,6 +14,7 @@ module.exports.getOnHand = async (companyId, { warehouseId, productId, variantId
   return { onHand, rows };
 };
 
+// reserve: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.reserve = async (companyId, { warehouseId, productId, variantId, qty, orderRef }, outerTx=null) => {
   return await withTx(async (t) => {
     const items = await InventoryItem.findAll({ where:{ companyId, warehouseId, productId, variantId }, transaction:t, lock:t.LOCK.UPDATE });
@@ -31,6 +33,7 @@ module.exports.reserve = async (companyId, { warehouseId, productId, variantId, 
   }, outerTx);
 };
 
+// releaseReservation: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.releaseReservation = async (companyId, reservationId, outerTx=null) => {
   return await withTx(async (t) => {
     const r = await Reservation.findOne({ where:{ companyId, id: reservationId }, transaction:t });
@@ -42,6 +45,7 @@ module.exports.releaseReservation = async (companyId, reservationId, outerTx=nul
   }, outerTx);
 };
 
+// applyMove: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.applyMove = async (companyId, { warehouseId, productId, variantId, qty, fromLocationId=null, toLocationId=null, lotId=null, reason='move' }, outerTx=null) => {
   return await withTx(async (t) => {
     if (fromLocationId) {
@@ -64,3 +68,4 @@ module.exports.applyMove = async (companyId, { warehouseId, productId, variantId
     return await StockMove.create({ companyId, warehouseId, productId, variantId, qty, fromLocationId, toLocationId, lotId, reason, status:'done' }, { transaction:t });
   }, outerTx);
 };
+

@@ -5,21 +5,26 @@ import ThemedSelect from "../../../inputs/RadixSelect";
 
 const CHANNELS = ["email", "phone", "website", "telegram", "whatsapp", "linkedin"];
 
+// Компонент ContactsEditor: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ContactsEditor({ value = [], onChange }) {
   const { t } = useTranslation();
 
-  const add = () =>
+    // add: добавляет элемент в локальное состояние компонента.
+const add = () =>
     onChange([
       ...value,
       { channel: "email", value: "", isPrimary: value.length === 0 },
     ]);
 
-  const upd = (i, patch) =>
+    // upd: вспомогательная логика компонента.
+const upd = (i, patch) =>
     onChange(value.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
 
-  const del = (i) => onChange(value.filter((_, idx) => idx !== i));
+    // del: вспомогательная логика компонента.
+const del = (i) => onChange(value.filter((_, idx) => idx !== i));
 
-  const setPrimary = (i) =>
+    // setPrimary: обновляет состояние компонента.
+const setPrimary = (i) =>
     onChange(value.map((c, idx) => ({ ...c, isPrimary: idx === i })));
 
   const channelOptions = CHANNELS.map((v) => ({

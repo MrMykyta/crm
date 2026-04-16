@@ -4,6 +4,7 @@ const { withTx } = require('../../utils/tx');
 const Inventory = require('./inventoryService');
 const { Shipment, ShipmentItem } = require('../../models');
 
+// create: создаёт новую запись и возвращает результат.
 module.exports.create = async (companyId, data, outerTx=null) => {
   return await withTx(async (t) => {
     const { items=[], ...core } = data;
@@ -15,6 +16,7 @@ module.exports.create = async (companyId, data, outerTx=null) => {
   }, outerTx);
 };
 
+// shipItem: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.shipItem = async (companyId, shipmentItemId, { qty, fromLocationId, lotId=null }, outerTx=null) => {
   return await withTx(async (t) => {
     const item = await ShipmentItem.findOne({ where:{ companyId, id: shipmentItemId }, transaction:t });
@@ -28,3 +30,4 @@ module.exports.shipItem = async (companyId, shipmentItemId, { qty, fromLocationI
     return item;
   }, outerTx);
 };
+

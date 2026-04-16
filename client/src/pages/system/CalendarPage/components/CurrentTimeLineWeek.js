@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import s from "../CalendarPage.module.css";
 
+// Компонент CurrentTimeLineWeek: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CurrentTimeLineWeek({offsetTop}) {
   const [now, setNow] = useState(() => new Date());
 

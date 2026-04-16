@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useResetPasswordMutation } from '../../../store/rtk/authApi';
 import s from '../../../styles/formGlass.module.css';
 
+// Компонент InputField: отвечает за отображение UI и обработку взаимодействий пользователя.
 function InputField({ name, label, type='text', autoComplete }) {
   const [field] = useField(name);
   const filled = (field.value ?? '') !== '';
@@ -17,6 +18,7 @@ function InputField({ name, label, type='text', autoComplete }) {
   );
 }
 
+// Компонент ResetPasswordPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ResetPasswordPage() {
   const { t } = useTranslation();
   const [sp] = useSearchParams();
@@ -36,7 +38,8 @@ export default function ResetPasswordPage() {
       .required(t('common.required')),
   });
 
-  const onSubmit = async (values, { setSubmitting, setStatus }) => {
+    // onSubmit: вспомогательная логика компонента.
+const onSubmit = async (values, { setSubmitting, setStatus }) => {
     setStatus(null);
     try {
       await resetPassword({ token, password: values.password }).unwrap();
@@ -72,3 +75,4 @@ export default function ResetPasswordPage() {
     </div>
   );
 }
+

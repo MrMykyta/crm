@@ -1,6 +1,7 @@
 // src/controllers/crm/User.controller.js
 const userService = require('../../services/crm/userService');
 
+// Возвращает профиль текущего пользователя.
 exports.me = async (req, res) => {
   try {
     const me = await userService.getMe(req.user.id);
@@ -8,6 +9,7 @@ exports.me = async (req, res) => {
   } catch (e) { res.status(500).send({ error: e.message }); }
 };
 
+// Обновляет профиль текущего пользователя.
 exports.updateMe = async (req, res) => {
   try {
     const updated = await userService.updateMe(req.user.id, req.user.companyId, req.body);
@@ -15,6 +17,7 @@ exports.updateMe = async (req, res) => {
   } catch (e) { res.status(400).send({ error: e.message }); }
 };
 
+// Возвращает список компаний, доступных текущему пользователю.
 exports.myCompanies = async (req, res) => {
   try {
     const items = await userService.getUserCompanies(req.user.id);
@@ -22,6 +25,7 @@ exports.myCompanies = async (req, res) => {
   } catch (e) { res.status(500).send({ error: e.message }); }
 };
 
+// Ищет пользователя по email с учётом ограничений доступа.
 exports.lookupByEmail = async (req, res) => {
   try {
     const email = String(req.query.email || '').trim().toLowerCase();
@@ -41,6 +45,7 @@ exports.getById = async (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 };
 
+// Обновляет данные пользователя по идентификатору.
 exports.updateById = async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -50,3 +55,4 @@ exports.updateById = async (req, res) => {
     res.json(data);
   } catch (e) { res.status(400).json({ error: e.message }); }
 };
+

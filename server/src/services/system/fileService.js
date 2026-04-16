@@ -26,6 +26,9 @@ const {
   PUBLIC_ROOT,
   TMP_ROOT,
   MAX_SIZE_BYTES,
+  IMAGE_MAX_SIZE_BYTES,
+  DOCUMENT_MAX_SIZE_BYTES,
+  MEDIA_ARCHIVE_MAX_SIZE_BYTES,
   PUBLIC_ENABLED,
 } = require('../../config/files');
 
@@ -80,79 +83,285 @@ const IMAGE_MIME = new Set([
   'image/jpeg',
   'image/webp',
   'image/gif',
+  'image/svg+xml',
+  'image/bmp',
+  'image/x-ms-bmp',
+  'image/tiff',
+  'image/heic',
+  'image/heif',
 ]);
 
-const CHAT_ATTACHMENT_MIME = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-  'application/pdf',
+const VIDEO_MIME = new Set([
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-msvideo',
+  'video/x-matroska',
+]);
+
+const AUDIO_MIME = new Set([
   'audio/mpeg',
   'audio/ogg',
   'audio/wav',
-  'video/mp4',
-  'video/webm',
+  'audio/mp4',
+  'audio/x-m4a',
+]);
+
+const ARCHIVE_MIME = new Set([
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/vnd.rar',
+  'application/x-rar-compressed',
+  'application/x-7z-compressed',
+]);
+
+const DOCUMENT_MIME = new Set([
   'text/plain',
   'text/csv',
-  'application/zip',
+  'application/csv',
+  'text/tab-separated-values',
+  'application/json',
+  'text/json',
+  'application/xml',
+  'text/xml',
+  'application/pdf',
   'application/msword',
   'application/vnd.ms-excel',
+  'application/vnd.ms-powerpoint',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.oasis.opendocument.text',
+  'application/vnd.oasis.opendocument.spreadsheet',
+  'application/rtf',
+  'text/rtf',
+]);
+
+const OTHER_MIME = new Set([
+  'application/octet-stream',
+  'binary/octet-stream',
+]);
+
+const MEDIA_EXT = new Set([
+  'jpg',
+  'jpeg',
+  'png',
+  'webp',
+  'gif',
+  'bmp',
+  'svg',
+  'tif',
+  'tiff',
+  'heic',
+  'heif',
+  'mp4',
+  'mov',
+  'webm',
+  'avi',
+  'mkv',
+  'mp3',
+  'wav',
+  'm4a',
+  'ogg',
+]);
+
+const DOCUMENT_EXT = new Set([
+  'pdf',
+  'doc',
+  'docx',
+  'xls',
+  'xlsx',
+  'csv',
+  'txt',
+  'rtf',
+  'odt',
+  'ods',
+  'ppt',
+  'pptx',
+  'xml',
+  'json',
+]);
+
+const CHAT_ATTACHMENT_MIME = new Set([
+  ...IMAGE_MIME,
+  ...DOCUMENT_MIME,
+  ...ARCHIVE_MIME,
+  ...VIDEO_MIME,
+  ...AUDIO_MIME,
 ]);
 
 const FILE_MIME = new Set([
-  'text/plain',
-  'text/csv',
-  'application/json',
-  'application/pdf',
-  'application/zip',
-  'application/msword',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'audio/mpeg',
-  'audio/wav',
-  'video/mp4',
-  'video/webm',
+  ...IMAGE_MIME,
+  ...DOCUMENT_MIME,
+  ...ARCHIVE_MIME,
+  ...VIDEO_MIME,
+  ...AUDIO_MIME,
+  ...OTHER_MIME,
 ]);
 
+// resolveMaxSizeByMime: выполняет вспомогательную бизнес-логику сервиса.
+function resolveMaxSizeByMime(mime = '') {
+  if (IMAGE_MIME.has(mime)) {
+    return { bytes: IMAGE_MAX_SIZE_BYTES, label: 'image', maxMb: Math.round(IMAGE_MAX_SIZE_BYTES / 1024 / 1024) };
+  }
+  if (VIDEO_MIME.has(mime) || ARCHIVE_MIME.has(mime) || AUDIO_MIME.has(mime) || OTHER_MIME.has(mime)) {
+    return { bytes: MEDIA_ARCHIVE_MAX_SIZE_BYTES, label: 'media/archive', maxMb: Math.round(MEDIA_ARCHIVE_MAX_SIZE_BYTES / 1024 / 1024) };
+  }
+  if (DOCUMENT_MIME.has(mime)) {
+    return { bytes: DOCUMENT_MAX_SIZE_BYTES, label: 'document', maxMb: Math.round(DOCUMENT_MAX_SIZE_BYTES / 1024 / 1024) };
+  }
+  return { bytes: MAX_SIZE_BYTES, label: 'file', maxMb: Math.round(MAX_SIZE_BYTES / 1024 / 1024) };
+}
+
+// ensureDir: выполняет вспомогательную бизнес-логику сервиса.
 function ensureDir(dir) {
   return fs.mkdir(dir, { recursive: true });
 }
 
+// safeBaseName: выполняет вспомогательную бизнес-логику сервиса.
 function safeBaseName(original = '') {
   const ext = path.extname(original).toLowerCase().slice(0, 10);
   const rnd = crypto.randomBytes(6).toString('hex');
   return `${Date.now()}-${rnd}${ext}`;
 }
 
+// extFromName: выполняет вспомогательную бизнес-логику сервиса.
+function extFromName(name = '') {
+  const match = String(name || '').toLowerCase().match(/\.([a-z0-9]+)$/i);
+  return match ? match[1] : '';
+}
+
+// inferFileSection: выполняет вспомогательную бизнес-логику сервиса.
+function inferFileSection({ purpose, mime, filename } = {}) {
+  const normalizedPurpose = String(purpose || '').toLowerCase();
+  if (normalizedPurpose === 'product_image' || normalizedPurpose === 'media') return 'media';
+  if (normalizedPurpose === 'document') return 'documents';
+  if (normalizedPurpose === 'other') return 'other';
+
+  const normalizedMime = String(mime || '').toLowerCase();
+  const ext = extFromName(filename);
+
+  if (
+    IMAGE_MIME.has(normalizedMime) ||
+    VIDEO_MIME.has(normalizedMime) ||
+    AUDIO_MIME.has(normalizedMime) ||
+    MEDIA_EXT.has(ext)
+  ) {
+    return 'media';
+  }
+
+  if (DOCUMENT_MIME.has(normalizedMime) || DOCUMENT_EXT.has(ext)) {
+    return 'documents';
+  }
+
+  return 'other';
+}
+
+// normalizePurposeForOwner: приводит значения к единому формату для сервиса.
+function normalizePurposeForOwner({ ownerType, purpose, mime, filename } = {}) {
+  const normalizedOwnerType = normalizeOwnerType(ownerType);
+  const normalizedPurpose = String(purpose || 'file').trim().toLowerCase();
+
+  if (normalizedOwnerType !== 'product') return normalizedPurpose;
+  if (IMAGE_PURPOSES.has(normalizedPurpose) || normalizedPurpose === 'chat_attachment') {
+    return normalizedPurpose;
+  }
+
+  const section = inferFileSection({
+    purpose: normalizedPurpose,
+    mime,
+    filename,
+  });
+
+  if (section === 'documents') return 'document';
+  if (section === 'media') {
+    return String(mime || '').toLowerCase().startsWith('image/') ? 'product_image' : 'media';
+  }
+  return 'other';
+}
+
+// normalizeIncomingMime: приводит значения к единому формату для сервиса.
+function normalizeIncomingMime(file) {
+  const raw = String(file?.mimetype || '').toLowerCase();
+  if (raw && raw !== 'application/octet-stream' && raw !== 'binary/octet-stream') {
+    return raw;
+  }
+
+  const ext = extFromName(file?.originalname);
+  const byExt = {
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    webp: 'image/webp',
+    gif: 'image/gif',
+    svg: 'image/svg+xml',
+    bmp: 'image/bmp',
+    tif: 'image/tiff',
+    tiff: 'image/tiff',
+    heic: 'image/heic',
+    heif: 'image/heif',
+    pdf: 'application/pdf',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    csv: 'text/csv',
+    txt: 'text/plain',
+    rtf: 'application/rtf',
+    odt: 'application/vnd.oasis.opendocument.text',
+    ods: 'application/vnd.oasis.opendocument.spreadsheet',
+    ppt: 'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    zip: 'application/zip',
+    rar: 'application/vnd.rar',
+    '7z': 'application/x-7z-compressed',
+    json: 'application/json',
+    xml: 'application/xml',
+    mp4: 'video/mp4',
+    mov: 'video/quicktime',
+    webm: 'video/webm',
+    avi: 'video/x-msvideo',
+    mkv: 'video/x-matroska',
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    m4a: 'audio/mp4',
+    ogg: 'audio/ogg',
+    bin: 'application/octet-stream',
+  };
+  return byExt[ext] || raw;
+}
+
+// makePublicKey: выполняет вспомогательную бизнес-логику сервиса.
 function makePublicKey() {
   return crypto.randomBytes(16).toString('hex');
 }
 
+// isSystemPrivileged: проверяет бизнес-условие и возвращает boolean.
 function isSystemPrivileged(user) {
   const role = user?.role || null;
   return role === 'admin' || role === 'owner';
 }
 
+// isChatMessageOwnerType: проверяет бизнес-условие и возвращает boolean.
 function isChatMessageOwnerType(ownerType) {
   return String(ownerType || '').toLowerCase() === 'chatmessage';
 }
 
+// normalizeOwnerType: приводит значения к единому формату для сервиса.
 function normalizeOwnerType(ownerType) {
   const lower = String(ownerType || '').trim().toLowerCase();
   if (!lower) return '';
   return lower === 'chatmessage' ? 'chatMessage' : lower;
 }
 
+// isUuid: проверяет бизнес-условие и возвращает boolean.
 function isUuid(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
     String(value || '')
   );
 }
 
+// hasPermission: проверяет наличие данных и возвращает результат проверки.
 function hasPermission(user, perm) {
   const allow = user?.permissions?.allow || [];
   const deny = user?.permissions?.deny || [];
@@ -162,6 +371,7 @@ function hasPermission(user, perm) {
   return true;
 }
 
+// canUploadByPolicy: проверяет, может ли пользователь загружать файл в указанный ownerType.
 function canUploadByPolicy({ user, ownerType, ownerId }) {
   if (isSystemPrivileged(user)) return true;
   if (ownerType === 'user' && String(ownerId) === String(user?.id)) return true;
@@ -204,6 +414,7 @@ function canUploadByPolicy({ user, ownerType, ownerId }) {
   return hasPermission(user, 'file:upload') || hasPermission(user, 'attachment:upload');
 }
 
+// canDeleteByPolicy: проверяет, может ли пользователь удалить файл.
 function canDeleteByPolicy({ user, file }) {
   if (!user || !file) return false;
   if (isSystemPrivileged(user)) return true;
@@ -211,6 +422,7 @@ function canDeleteByPolicy({ user, file }) {
   return String(file.uploadedBy) === String(user.id);
 }
 
+// assertVisibilityAllowed: выполняет вспомогательную бизнес-логику сервиса.
 function assertVisibilityAllowed(ownerType, purpose, visibility) {
   if (!VISIBILITY.has(visibility)) {
     throw new ApplicationError('VALIDATION_ERROR: invalid visibility', 400);
@@ -226,6 +438,7 @@ function assertVisibilityAllowed(ownerType, purpose, visibility) {
   }
 }
 
+// assertMimeAllowed: выполняет вспомогательную бизнес-логику сервиса.
 function assertMimeAllowed(purpose, mime) {
   if (!mime) {
     throw new ApplicationError('VALIDATION_ERROR: mime is required', 400);
@@ -242,11 +455,15 @@ function assertMimeAllowed(purpose, mime) {
     }
     return;
   }
+  if (purpose === 'other' || purpose === 'file') {
+    return;
+  }
   if (!FILE_MIME.has(mime)) {
     throw new ApplicationError('VALIDATION_ERROR: file mime not allowed', 415);
   }
 }
 
+// assertOwnerInCompany: выполняет вспомогательную бизнес-логику сервиса.
 async function assertOwnerInCompany({ ownerType, ownerId, companyId, userId }) {
   if (!OWNER_TYPES.has(ownerType)) {
     throw new ApplicationError('VALIDATION_ERROR: invalid ownerType', 400);
@@ -314,6 +531,7 @@ async function assertOwnerInCompany({ ownerType, ownerId, companyId, userId }) {
   throw new ApplicationError('Unsupported ownerType', 400);
 }
 
+// buildStoragePath: собирает служебную структуру для выполнения запроса.
 function buildStoragePath({ companyId, ownerType, ownerId, fileId, safeName, visibility, publicKey }) {
   if (visibility === 'public') {
     const filename = `${publicKey}_${safeName}`;
@@ -331,6 +549,7 @@ function buildStoragePath({ companyId, ownerType, ownerId, fileId, safeName, vis
   };
 }
 
+// moveFile: выполняет вспомогательную бизнес-логику сервиса.
 async function moveFile(tempPath, destPath) {
   try {
     await ensureDir(path.dirname(destPath));
@@ -347,14 +566,21 @@ async function moveFile(tempPath, destPath) {
   }
 }
 
+// toFileDto: выполняет вспомогательную бизнес-логику сервиса.
 function toFileDto(fileRow) {
   if (!fileRow) return null;
   const plain = fileRow.toJSON ? fileRow.toJSON() : fileRow;
+  const section = inferFileSection({
+    purpose: plain.purpose,
+    mime: plain.mime,
+    filename: plain.filename || plain.safeName,
+  });
   return {
     id: plain.id,
     ownerType: plain.ownerType,
     ownerId: plain.ownerId,
     purpose: plain.purpose,
+    section,
     visibility: plain.visibility,
     publicKey: plain.publicKey,
     filename: plain.filename,
@@ -368,6 +594,7 @@ function toFileDto(fileRow) {
   };
 }
 
+// createFromUpload: создаёт новую запись и возвращает результат.
 module.exports.createFromUpload = async ({
   file,
   ownerType,
@@ -382,15 +609,27 @@ module.exports.createFromUpload = async ({
   if (!OWNER_TYPES.has(normalizedOwnerType)) {
     throw new ApplicationError('VALIDATION_ERROR: invalid ownerType', 400);
   }
-  if (!PURPOSES.has(purpose)) throw new ApplicationError('VALIDATION_ERROR: invalid purpose', 400);
   if (!VISIBILITY.has(visibility)) throw new ApplicationError('VALIDATION_ERROR: invalid visibility', 400);
 
-  if (file.size > MAX_SIZE_BYTES) {
-    throw new ApplicationError('VALIDATION_ERROR: file too large', 413);
+  const normalizedMime = normalizeIncomingMime(file);
+  const normalizedPurpose = normalizePurposeForOwner({
+    ownerType: normalizedOwnerType,
+    purpose,
+    mime: normalizedMime,
+    filename: file.originalname,
+  });
+  if (!PURPOSES.has(normalizedPurpose)) throw new ApplicationError('VALIDATION_ERROR: invalid purpose', 400);
+
+  const maxSize = resolveMaxSizeByMime(normalizedMime);
+  if (file.size > maxSize.bytes) {
+    throw new ApplicationError(
+      `VALIDATION_ERROR: file too large for ${maxSize.label} (max ${maxSize.maxMb} MB)`,
+      413
+    );
   }
 
-  assertVisibilityAllowed(ownerType, purpose, visibility);
-  assertMimeAllowed(purpose, file.mimetype);
+  assertVisibilityAllowed(normalizedOwnerType, normalizedPurpose, visibility);
+  assertMimeAllowed(normalizedPurpose, normalizedMime);
 
   // ownership / membership validation
   await assertOwnerInCompany({
@@ -426,12 +665,12 @@ module.exports.createFromUpload = async ({
     companyId,
     ownerType: normalizedOwnerType,
     ownerId,
-    purpose,
+    purpose: normalizedPurpose,
     visibility,
     publicKey,
     filename: file.originalname,
     safeName,
-    mime: file.mimetype,
+    mime: normalizedMime || file.mimetype,
     size: file.size,
     storagePath,
     uploadedBy: user.id,
@@ -440,6 +679,7 @@ module.exports.createFromUpload = async ({
   return toFileDto(row);
 };
 
+// list: возвращает список записей с фильтрами, сортировкой и пагинацией.
 module.exports.list = async ({ companyId, user, ownerType, ownerId, purpose }) => {
   const normalizedOwnerType = ownerType ? normalizeOwnerType(ownerType) : null;
   if (normalizedOwnerType && !OWNER_TYPES.has(normalizedOwnerType)) {
@@ -466,6 +706,7 @@ module.exports.list = async ({ companyId, user, ownerType, ownerId, purpose }) =
   return rows.map(toFileDto);
 };
 
+// getPrivateForDownload: возвращает данные по входным параметрам сервиса.
 module.exports.getPrivateForDownload = async ({ companyId, user, id }) => {
   const row = await File.findOne({ where: { id, companyId } });
   if (!row || row.deletedAt) throw new ApplicationError('File not found', 404);
@@ -480,6 +721,7 @@ module.exports.getPrivateForDownload = async ({ companyId, user, id }) => {
   return row;
 };
 
+// getPublicForDownload: возвращает данные по входным параметрам сервиса.
 module.exports.getPublicForDownload = async ({ publicKey }) => {
   if (!PUBLIC_ENABLED) {
     throw new ApplicationError('Public files disabled', 404);
@@ -489,6 +731,7 @@ module.exports.getPublicForDownload = async ({ publicKey }) => {
   return row;
 };
 
+// remove: удаляет запись с учётом бизнес-ограничений.
 module.exports.remove = async ({ companyId, user, id }) => {
   const row = await File.findOne({ where: { id, companyId } });
   if (!row) throw new ApplicationError('File not found', 404);
@@ -510,6 +753,16 @@ module.exports._internals = {
   IMAGE_MIME,
   CHAT_ATTACHMENT_MIME,
   FILE_MIME,
+  DOCUMENT_MIME,
+  ARCHIVE_MIME,
+  VIDEO_MIME,
+  AUDIO_MIME,
+  OTHER_MIME,
+  inferFileSection,
+  normalizePurposeForOwner,
+  IMAGE_MAX_SIZE_BYTES,
+  DOCUMENT_MAX_SIZE_BYTES,
+  MEDIA_ARCHIVE_MAX_SIZE_BYTES,
   TMP_ROOT,
   PRIVATE_ROOT,
   PUBLIC_ROOT,

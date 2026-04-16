@@ -15,6 +15,7 @@ import {
 } from "../store/slices/chatSlice";
 import { chatApi } from "../store/rtk/chatApi";
 
+// useChatSocket: инкапсулирует переиспользуемую логику.
 export function useChatSocket(activeRoomId) {
   const dispatch = useDispatch();
 
@@ -116,7 +117,8 @@ export function useChatSocket(activeRoomId) {
       );
     };
 
-    const onMessageUnpinned = (payload = {}) => {
+        // onMessageUnpinned: вспомогательная логика модуля.
+const onMessageUnpinned = (payload = {}) => {
       const { roomId } = payload;
       if (!roomId) return;
 
@@ -205,7 +207,8 @@ export function useChatSocket(activeRoomId) {
       );
     };
 
-    const onMessageDeleted = (payload = {}) => {
+        // onMessageDeleted: вспомогательная логика модуля.
+const onMessageDeleted = (payload = {}) => {
       const { roomId, messageId, text, deletedAt, deletedBy, audit } = payload;
       if (!roomId || !messageId) return;
       dispatch(
@@ -312,3 +315,4 @@ export function useChatSocket(activeRoomId) {
     };
   }, [activeRoomId, currentUserId, dispatch]);
 }
+

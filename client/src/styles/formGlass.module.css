@@ -17,7 +17,7 @@
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   color: var(--text);
-  font-size: 15px;
+  font-size: var(--font-size-15);
   outline: none;
   transition: border-color .2s ease, box-shadow .2s ease, transform .06s ease;
 }
@@ -44,7 +44,7 @@
 .field.filled label {
   top: -9px;
   left: 10px;
-  font-size: 12px;
+  font-size: var(--font-size-12);
   background: color-mix(in srgb, var(--bg) 90%, transparent);
   color: var(--focus);
   border-radius: 8px;
@@ -69,7 +69,7 @@
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   color: var(--text);
-  font-size: 15px;
+  font-size: var(--font-size-15);
   outline: none;
   transition: border-color .2s ease, box-shadow .2s ease, transform .06s ease;
   -webkit-appearance: none; -moz-appearance: none; appearance: none;
@@ -81,7 +81,7 @@
 }
 
 /* ошибки */
-.err{ color:#ff6b6b; font-size:12px; margin-top:4px; }
+.err{ color:#ff6b6b; font-size: var(--font-size-12); margin-top:4px; }
 .error input, .error .select{
   border-color: color-mix(in srgb, #ff6b6b 75%, transparent);
   box-shadow: 0 0 0 3px color-mix(in srgb, #ff6b6b 25%, transparent);
@@ -116,7 +116,7 @@
 }
 
 /* заголовки */
-.title{ margin:0; font-size:20px; font-weight:700; color: var(--text); }
-.subtitle{ margin:6px 0 0; color: var(--muted); font-size:13px; opacity:.9; }
+.title{ margin:0; font-size: var(--font-size-20); font-weight:700; color: var(--text); }
+.subtitle{ margin:6px 0 0; color: var(--muted); font-size: var(--font-size-13); opacity:.9; }
 
 .hint { margin:0; color: var(--text); }

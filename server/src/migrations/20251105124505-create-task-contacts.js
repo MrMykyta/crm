@@ -2,7 +2,8 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     // migrations/XXXX-create-task-contacts.js
     await queryInterface.createTable('task_contacts', {
       id: { type: Sequelize.UUID, allowNull: false, primaryKey: true, defaultValue: Sequelize.UUIDV4 },
@@ -25,7 +26,8 @@ module.exports = {
     });
   },
 
-  async down(queryInterface /*, Sequelize */) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface /*, Sequelize */) {
     await queryInterface.removeConstraint('task_contacts', 'uniq_task_contacts_task_contact');
     await queryInterface.dropTable('task_contacts');
   },

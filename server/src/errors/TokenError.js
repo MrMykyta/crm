@@ -1,10 +1,10 @@
-const ApplicationError = require('./ApplicationError');
+const AppError = require('./AppError');
 
-class TokenError extends ApplicationError{
+// Ошибка авторизации/токена (HTTP 401).
+class TokenError extends AppError {
   constructor (message) {
-    super(message || 'token error', 408);
+    super(401, message || 'Unauthorized', { code: 'UNAUTHORIZED' });
   }
 }
 
 module.exports = TokenError;
-

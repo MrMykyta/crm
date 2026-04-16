@@ -8,6 +8,7 @@ export function isSameDay(a, b) {
   );
 }
 
+// toKey: вспомогательная логика компонента.
 export function toKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate()

@@ -7,10 +7,12 @@ const tokenService = require('../../utils/tokenService');
 
 const VERIF_TTL_HOURS = 24;
 
+// makeToken: выполняет вспомогательную бизнес-логику сервиса.
 function makeToken() {
   return crypto.randomBytes(32).toString('hex'); // 64 символа
 }
 
+// register: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.register = async ({ email, password, firstName, lastName }, meta={}) => {
   try {
     // создай пользователя (хеш пароля оставь как в проекте)
@@ -61,6 +63,7 @@ module.exports.register = async ({ email, password, firstName, lastName }, meta=
   
 };
 
+// resendVerificationMail: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.resendVerificationMail = async (email) => {
   try {
     const safeEmail = String(email || '').trim().toLowerCase();
@@ -129,6 +132,7 @@ module.exports.resendVerificationMail = async (email) => {
   }
 };
 
+// verifyEmail: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.verifyEmail = async (token) => {
   console.log('verifyEmail', token);
   const u = await User.findOne({ where: { verificationToken: token } });

@@ -10,6 +10,7 @@ const valueKey = (channel, valueNorm, valueRaw) => {
 };
 
 
+// list: возвращает список записей с фильтрами, сортировкой и пагинацией.
 module.exports.list = async (companyId, query = {}) => {
     const where = { company_id: companyId };
     if (query.ownerType) {
@@ -31,6 +32,7 @@ module.exports.list = async (companyId, query = {}) => {
     return await ContactPoint.findAll({ where, order: [['is_primary','DESC'], ['created_at','DESC']] });
 };
 
+// create: создаёт новую запись и возвращает результат.
 module.exports.create = async (userId, companyId, p = {}) => {
     const base = {
         companyId: companyId,
@@ -71,6 +73,7 @@ module.exports.create = async (userId, companyId, p = {}) => {
     return await ContactPoint.create(base);
 };
 
+// addContacts: добавляет набор контактных точек с нормализацией и дедупликацией.
 module.exports.addContacts = async ({
   companyId,
   ownerType,
@@ -216,6 +219,7 @@ module.exports.addContacts = async ({
   };
 };
 
+// update: обновляет запись и возвращает актуальные данные.
 module.exports.update = async (companyId, id, p = {}) => {
     const row = await ContactPoint.findOne({ where: { id, companyId: companyId } });
     if (!row) {
@@ -265,6 +269,7 @@ module.exports.update = async (companyId, id, p = {}) => {
     return row;
 };
 
+// remove: удаляет запись с учётом бизнес-ограничений.
 module.exports.remove = async (companyId, id) => {
     const row = await ContactPoint.findOne(
         { where: { 

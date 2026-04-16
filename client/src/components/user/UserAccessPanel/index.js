@@ -13,6 +13,7 @@ import {
   useClearPermOverrideMutation, // на будущее (не используем прямо сейчас)
 } from '../../../store/rtk/aclApi';
 
+// Компонент Accordion: отвечает за отображение UI и обработку взаимодействий пользователя.
 function Accordion({ title, count, children, defaultOpen=false }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -27,6 +28,7 @@ function Accordion({ title, count, children, defaultOpen=false }) {
   );
 }
 
+// Компонент UserAccessPanel: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function UserAccessPanel({ userId }) {
   // поисковые строки
   const [qRole, setQRole] = useState('');
@@ -61,9 +63,11 @@ export default function UserAccessPanel({ userId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  const hasRole = (roleId) => Array.isArray(summary?.roles) && summary.roles.some(r => String(r.id) === String(roleId));
+    // hasRole: проверяет наличие нужных данных в компоненте.
+const hasRole = (roleId) => Array.isArray(summary?.roles) && summary.roles.some(r => String(r.id) === String(roleId));
 
-  const toggleRole = async (role) => {
+    // toggleRole: переключает состояние компонента.
+const toggleRole = async (role) => {
     const active = hasRole(role.id);
 
     // оптимистичное обновление
@@ -102,13 +106,15 @@ export default function UserAccessPanel({ userId }) {
       .sort((a,b)=>a.cat.localeCompare(b.cat));
   }, [summary, qPerm]);
 
-  const patchPermLocal = (permId, patch) => {
+    // patchPermLocal: вспомогательная логика компонента.
+const patchPermLocal = (permId, patch) => {
     // так как summary управляется RTK Query, лучше не мутировать напрямую.
     // В простоте — ничего локально не патчим, а показываем оптимизм через элемент Switch.
     // Но если хочешь — можно хранить локальную карту overrides по id.
   };
 
-  const togglePerm = async (p, nextChecked) => {
+    // togglePerm: переключает состояние компонента.
+const togglePerm = async (p, nextChecked) => {
     try {
       if (nextChecked) await allowPermForUser({ userId, permId: p.id }).unwrap();
       else             await denyPermForUser({ userId, permId: p.id }).unwrap();

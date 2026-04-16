@@ -1,6 +1,8 @@
 const UUID_RE = /^[0-9a-fA-F-]{32,36}$/;
 
-export const extractFileId = (value) => {
+export // extractFileId : extract file id.
+// extractFileId: вспомогательная логика модуля.
+const extractFileId = (value) => {
   if (!value) return null;
   if (typeof value !== "string") return null;
 
@@ -15,3 +17,4 @@ export const extractFileId = (value) => {
 
   return null;
 };
+

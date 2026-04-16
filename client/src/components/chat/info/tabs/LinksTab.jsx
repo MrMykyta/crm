@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import s from "../ChatInfoPanel.module.css";
 
+// Компонент LinksTab: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function LinksTab({
   items = [],
   emptyText,
@@ -44,3 +45,4 @@ export default function LinksTab({
     </div>
   );
 }
+

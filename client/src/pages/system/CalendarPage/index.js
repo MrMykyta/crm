@@ -17,6 +17,7 @@ const VIEW = {
   YEAR: "year",
 };
 
+// Компонент IconCalendar: отвечает за отображение UI и обработку взаимодействий пользователя.
 const IconCalendar = () => (
   <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
     <rect x="4" y="5" width="16" height="15" rx="3" ry="3" stroke="currentColor" strokeWidth="1.4" fill="none" />
@@ -27,6 +28,7 @@ const IconCalendar = () => (
   </svg>
 );
 
+// Компонент IconInbox: отвечает за отображение UI и обработку взаимодействий пользователя.
 const IconInbox = () => (
   <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
     <path
@@ -46,6 +48,7 @@ const IconInbox = () => (
   </svg>
 );
 
+// Компонент IconPlus: отвечает за отображение UI и обработку взаимодействий пользователя.
 const IconPlus = () => (
   <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
     <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" fill="none" />
@@ -54,6 +57,7 @@ const IconPlus = () => (
   </svg>
 );
 
+// Компонент IconSearch: отвечает за отображение UI и обработку взаимодействий пользователя.
 const IconSearch = () => (
   <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
     <circle cx="11" cy="11" r="4.5" stroke="currentColor" strokeWidth="1.4" fill="none" />
@@ -61,6 +65,7 @@ const IconSearch = () => (
   </svg>
 );
 
+// Компонент CalendarPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CalendarPage() {
   const [view, setView] = useState(VIEW.MONTH);
   const [cursor, setCursor] = useState(() => new Date());
@@ -81,13 +86,15 @@ export default function CalendarPage() {
     year: "numeric",
   });
 
-  const goToday = () => {
+    // goToday: вспомогательная логика компонента.
+const goToday = () => {
     const d = new Date();
     setCursor(d);
     setView(VIEW.DAY);
   };
 
-  const shift = (dir) => {
+    // shift: вспомогательная логика компонента.
+const shift = (dir) => {
     const base = new Date(cursor);
     if (view === VIEW.YEAR) base.setFullYear(base.getFullYear() + dir);
     else if (view === VIEW.MONTH) base.setMonth(base.getMonth() + dir);
@@ -115,7 +122,8 @@ export default function CalendarPage() {
   // клик мимо — закрыть дроп годов
   useEffect(() => {
     if (!yearPickerOpen) return;
-    const onClick = (e) => {
+        // onClick: вспомогательная логика компонента.
+const onClick = (e) => {
       if (yearBtnRef.current && yearBtnRef.current.contains(e.target)) return;
       setYearPickerOpen(false);
     };
@@ -160,7 +168,8 @@ export default function CalendarPage() {
     });
   };
 
-  const handleEventClose = () => setSelectedEvent(null);
+    // handleEventClose: обработчик пользовательского действия.
+const handleEventClose = () => setSelectedEvent(null);
 
   return (
     <div className={s.wrap}>

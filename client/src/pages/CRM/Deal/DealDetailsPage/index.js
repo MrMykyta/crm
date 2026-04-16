@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import EntityDetailPage from '../../../_scaffold/EntityDetailPage';
 import InfoRow from '../../../../components/shared/InfoRow';
+import HtmlDescriptionSection from '../../../../components/data/HtmlDescriptionSection';
 import useCompanyMembersOptions from '../../../../hooks/useCompanyMembersOptions';
 
 import {
@@ -21,7 +22,8 @@ const STATUS_OPTIONS = [
   { value: 'lost', labelKey: 'deals.status.lost' },
 ];
 
-const DealDetailTabs = ({ tab, data }) => {
+// Компонент DealDetailTabs: отвечает за отображение UI и обработку взаимодействий пользователя.
+const DealDetailTabs = ({ tab, data, values, onChange }) => {
   const { t } = useTranslation();
   if (!data) return null;
 
@@ -35,6 +37,21 @@ const DealDetailTabs = ({ tab, data }) => {
     case 'overview':
       return (
         <>
+          <HtmlDescriptionSection
+            title={t('deals.fields.description', 'Description')}
+            value={String(values?.description ?? data?.description ?? '')}
+            editable={typeof onChange === 'function'}
+            onSave={async (nextHtml) => {
+              onChange?.('description', nextHtml);
+              return nextHtml;
+            }}
+            placeholder={t('deals.placeholders.description', 'Опишите сделку, условия и важные детали…')}
+            emptyText={t(
+              'deals.description.empty',
+              'Описание пока пустое. Нажмите «Редактировать», чтобы добавить HTML-описание.'
+            )}
+            minHeight={320}
+          />
           <InfoRow label={t('deals.sidebar.owner', 'Owner')} value={ownerLabel} />
           <InfoRow label={t('deals.sidebar.counterparty', 'Counterparty')} value={counterpartyLabel} />
           <InfoRow label={t('deals.sidebar.contacts', 'Contacts')} value={noneLabel} muted />
@@ -51,6 +68,7 @@ const DealDetailTabs = ({ tab, data }) => {
   }
 };
 
+// toFormDeal: вспомогательная логика компонента.
 const toFormDeal = (d = {}, noneLabel = '—') => ({
   title: d.title ?? '',
   status: d.status ?? 'new',
@@ -61,6 +79,7 @@ const toFormDeal = (d = {}, noneLabel = '—') => ({
   counterpartyName: d.counterparty?.fullName || d.counterparty?.shortName || noneLabel,
 });
 
+// toApiDeal: вспомогательная логика компонента.
 const toApiDeal = (values = {}) => {
   const trimmedTitle = String(values.title || '').trim();
   const currency = String(values.currency || 'PLN').trim() || 'PLN';
@@ -77,6 +96,7 @@ const toApiDeal = (values = {}) => {
   };
 };
 
+// Компонент DealDetailsPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function DealDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -124,7 +144,8 @@ export default function DealDetailsPage() {
       type: 'select',
       float: true,
       cols: 2,
-      options: () => ownerOptions,
+            // options: вспомогательная логика компонента.
+options: () => ownerOptions,
     },
     {
       name: 'value',
@@ -149,18 +170,10 @@ export default function DealDetailsPage() {
       cols: 4,
       disabled: true,
     },
-    {
-      name: 'description',
-      label: 'deals.fields.description',
-      type: 'textarea',
-      float: true,
-      rows: 4,
-      cols: 4,
-      placeholder: 'deals.placeholders.description',
-    },
   ]), [ownerOptions]);
 
-  const save = async (entityId, payload) => {
+    // save: сохраняет данные в рамках UI-компонента.
+const save = async (entityId, payload) => {
     const saved = await updateDeal({ dealId: entityId, payload }).unwrap();
     return saved;
   };
@@ -242,3 +255,4 @@ export default function DealDetailsPage() {
     />
   );
 }
+

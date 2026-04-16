@@ -1,0 +1,101 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.span12 { grid-column: span 12; }
+.span6 { grid-column: span 6; }
+
+.label {
+  font-size: var(--font-size-12);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 76%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 95%, #000 0%);
+  color: var(--text);
+  padding: 10px 12px;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 20%, transparent);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 92px;
+}
+
+.metaHint {
+  font-size: var(--font-size-12);
+  color: var(--muted);
+}
+
+.checkboxLine {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-13);
+}
+
+.error {
+  font-size: var(--font-size-12);
+  color: #f97b7b;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn,
+.primary {
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--card-brd);
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.btn {
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  color: var(--text);
+}
+
+.primary {
+  border: none;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+}
+
+.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .span6 { grid-column: span 12; }
+}

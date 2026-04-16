@@ -3,6 +3,7 @@ import React from "react";
 import s from "../CalendarPage.module.css";
 import MonthGrid from "./MonthGrid";
 
+// Компонент YearView: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function YearView({ year, today, setCursor }) {
   const months = Array.from({ length: 12 }, (_, i) => new Date(year, i, 1));
 

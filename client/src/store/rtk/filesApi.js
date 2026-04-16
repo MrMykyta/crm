@@ -2,23 +2,27 @@ import { crmApi } from './crmApi';
 
 // Unified Files API
 export const filesApi = crmApi.injectEndpoints({
-  endpoints: (build) => ({
+    // endpoints: описывает набор endpoint-ов RTK Query.
+endpoints: (build) => ({
     getSignedFileUrl: build.query({
-      query: (id) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (id) => ({
         url: `/files/${encodeURIComponent(id)}/signed-url`,
         method: 'POST',
       }),
       keepUnusedDataFor: 60 * 60 * 24,
     }),
     getSignedPreviewUrl: build.query({
-      query: (id) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (id) => ({
         url: `/files/${encodeURIComponent(id)}/signed-url`,
         method: 'POST',
       }),
       keepUnusedDataFor: 60 * 60 * 24,
     }),
     getSignedDownloadUrl: build.query({
-      query: (id) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (id) => ({
         url: `/files/${encodeURIComponent(id)}/signed-download`,
         method: 'POST',
       }),
@@ -26,7 +30,8 @@ export const filesApi = crmApi.injectEndpoints({
     }),
 
     uploadFile: build.mutation({
-      query: ({ ownerType, ownerId, file, purpose = 'file', visibility = 'private' }) => {
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ ownerType, ownerId, file, purpose = 'file', visibility = 'private' }) => {
         const fd = new FormData();
         fd.append('file', file);
         fd.append('ownerType', ownerType);
@@ -43,14 +48,16 @@ export const filesApi = crmApi.injectEndpoints({
     }),
 
     deleteFile: build.mutation({
-      query: (id) => ({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (id) => ({
         url: `/files/${id}`,
         method: 'DELETE',
       }),
     }),
 
     listFilesByOwner: build.query({
-      query: ({ ownerType, ownerId, purpose }) => {
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: ({ ownerType, ownerId, purpose }) => {
         const params = {};
         if (ownerType) params.ownerType = ownerType;
         if (ownerId) params.ownerId = ownerId;
@@ -71,3 +78,4 @@ export const {
   useDeleteFileMutation,
   useListFilesByOwnerQuery,
 } = filesApi;
+

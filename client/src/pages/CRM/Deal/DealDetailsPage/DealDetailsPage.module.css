@@ -10,7 +10,7 @@
 }
 
 .breadcrumb {
-  font-size: 12px;
+  font-size: var(--font-size-12);
   color: var(--muted);
 }
 
@@ -20,7 +20,7 @@
 }
 
 .title {
-  font-size: 20px;
+  font-size: var(--font-size-20);
   font-weight: 600;
   color: var(--text);
   margin-top: 4px;
@@ -33,7 +33,7 @@
 }
 
 .actionBtn {
-  background: var(--card-bg);
+  background: color-mix(in srgb, var(--card-bg) 78%, #000 22%);
   border: 1px solid color-mix(in srgb, var(--card-bg) 70%, var(--text) 20%);
   color: var(--text);
   border-radius: 10px;
@@ -54,11 +54,11 @@
 
 .emptyState {
   padding: 32px;
-  background: var(--card-bg);
+  background: color-mix(in srgb, var(--card-bg) 78%, #000 22%);
   border-radius: 16px;
 }
 
 .placeholder {
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--font-size-14);
 }

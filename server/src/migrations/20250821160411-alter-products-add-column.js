@@ -2,7 +2,8 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up (queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up (queryInterface, Sequelize) {
     await queryInterface.addColumn('products','productTypeId',{ 
       type:Sequelize.UUID, 
       references:{ 
@@ -88,7 +89,8 @@ module.exports = {
     });
   },
 
-  async down (queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down (queryInterface, Sequelize) {
     await queryInterface.removeColumn('products','replacedByProductId');
     await queryInterface.removeColumn('products','discontinuedAt');
 
@@ -107,3 +109,4 @@ module.exports = {
     await queryInterface.removeColumn('products','productTypeId');
   }
 };
+

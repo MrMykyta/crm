@@ -16,6 +16,7 @@ import {
   useAddMyContactMutation,
 } from '../../../store/rtk/userApi';
 
+// Компонент FieldBlock: отвечает за отображение UI и обработку взаимодействий пользователя.
 function FieldBlock({ as, name, label, children, ...props }) {
   const [field, meta, helpers] = useField(name);
   const isFilled = (field.value ?? '') !== '';
@@ -50,6 +51,7 @@ function FieldBlock({ as, name, label, children, ...props }) {
   );
 }
 
+// Компонент CompanySetup: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CompanySetup({ setUser }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -59,7 +61,8 @@ export default function CompanySetup({ setUser }) {
   const [addMyContact,    { isLoading: isSavingCnt  }] = useAddMyContactMutation();
   const [triggerGetMe] = useLazyGetMeQuery(); // 👈 вместо fetch('/users/me')
 
-  const toNull = (v) => (v === '' ? null : v);
+    // toNull: вспомогательная логика компонента.
+const toNull = (v) => (v === '' ? null : v);
 
   const schema = Yup.object({
     name:      Yup.string().max(120, 'Too long').required(t('common.required')),

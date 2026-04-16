@@ -2,7 +2,7 @@
 
 const ucService = require('../../services/crm/userCompanyService');
 
-// список участников (c пагинацией/поиском/фильтрами)
+// Возвращает список участников компании с пагинацией, поиском и фильтрами.
 module.exports.listUsers = async (req, res) => {
   try {
     const data = await ucService.listUsers(req.user.id, req.user.companyId, req.query);
@@ -13,7 +13,7 @@ module.exports.listUsers = async (req, res) => {
   }
 };
 
-// добавить/активировать участника (присоединить существующего юзера к компании)
+// Добавляет пользователя в компанию или активирует существующее членство.
 module.exports.addUser = async (req, res) => {
   try {
     const { userId, role, departmentId = null, isLead = false } = req.body;
@@ -27,7 +27,7 @@ module.exports.addUser = async (req, res) => {
   }
 };
 
-// изменить роль/департамент/лида
+// Обновляет параметры членства пользователя (роль, статус, департамент, признак лида).
 exports.updateMember = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -43,14 +43,14 @@ exports.updateMember = async (req, res) => {
 };
 
 
-// удалить участника
+// Удаляет участника из компании.
 module.exports.removeUser = async (req, res) => {
   try {
     const ok = await ucService.removeUserFromCompany(
       req.user.id, req.user.companyId, req.params.userId
     );
     if (!ok) return res.status(404).send({ error: 'Пользователь не найден или нет прав' });
-    // 200 с телом — удобнее на фронте
+    // Возвращаем 200 с телом, чтобы фронту было проще обрабатывать ответ.
     return res.status(200).send({ ok: true });
   } catch (e) {
     return res.status(400).send({ error: e.message });

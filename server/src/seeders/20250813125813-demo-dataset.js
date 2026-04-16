@@ -3,7 +3,8 @@
 const { v4: uuidv4 } = require('uuid');
 
 module.exports = {
-  async up(queryInterface) {
+  // Заполняет демо-данные для компании из SEED_COMPANY_ID.
+async up(queryInterface) {
     const cid = process.env.SEED_COMPANY_ID;
     if (!cid) {
       console.log('ℹ️  SEED_COMPANY_ID is not set. Skip demo fixtures.');
@@ -62,7 +63,8 @@ module.exports = {
     }
   },
 
-  async down(queryInterface) {
+  // Удаляет демо-данные, созданные в up().
+async down(queryInterface) {
     const cid = process.env.SEED_COMPANY_ID;
     if (!cid) {
       console.log('ℹ️  SEED_COMPANY_ID is not set. Nothing to undo.');

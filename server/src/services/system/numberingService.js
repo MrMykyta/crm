@@ -1,5 +1,6 @@
 const { Sequence, sequelize } = require('../../models');
 
+// next: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.next = async (companyId, scope) => {
   const year = new Date().getFullYear();
 
@@ -23,3 +24,4 @@ module.exports.next = async (companyId, scope) => {
     return { number, year, nextValue };
   });
 };
+

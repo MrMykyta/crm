@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 
 let isConnected = false;
 
+// Собирает MongoDB URI из переменных окружения.
+// Если MONGO_URI задан, использует его как приоритетный источник.
 function buildMongoUri() {
   if (process.env.MONGO_URI) return process.env.MONGO_URI;
 
@@ -22,6 +24,7 @@ function buildMongoUri() {
   return `mongodb://${host}:${port}/${db}`;
 }
 
+// Инициализирует подключение к MongoDB один раз и возвращает экземпляр mongoose.
 async function connectMongo() {
   if (isConnected) return mongoose;
 

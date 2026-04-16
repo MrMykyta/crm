@@ -12,7 +12,6 @@ rootRouter.use("/public-files", require("./system/publicFilesRouter"));
 rootRouter.use("/invitations", require("./system/invitationsRouter"));
 rootRouter.use("/system", auth, require("./system/userPreferencesRouter"));
 rootRouter.use("/notifications", auth, require("./system/notificationRouter"));
-rootRouter.use('/chat', auth, require('./system/chatRouter'));
 rootRouter.use("/", sseRouter);
 
 //======================CRM===========================
@@ -24,9 +23,10 @@ rootRouter.use("/departments", auth, companyIdGuard, require("./crm/departmentRo
 rootRouter.use("/counterparties", auth, companyIdGuard, require("./crm/counterpartyRouter"));
 rootRouter.use("/contact-points", auth, companyIdGuard, require("./crm/contactPointRouter"));
 rootRouter.use("/contact", auth, companyIdGuard, require("./crm/contactRouter"));
+rootRouter.use("/contacts", auth, companyIdGuard, require("./crm/contactRouter"));
 rootRouter.use("/deals", auth, companyIdGuard, require("./crm/dealRouter"));
 rootRouter.use("/tasks", auth, companyIdGuard, require("./crm/taskRouter"));
-rootRouter.use("/notes", auth, require("./crm/noteRouter"));
+rootRouter.use("/notes", auth, companyIdGuard, require("./crm/noteRouter"));
 
 /* ============== PIM: CRUD ============== */
 rootRouter.use("/products", auth, companyIdGuard, require("./pim/product.router")); // содержит и команды (см. ниже)

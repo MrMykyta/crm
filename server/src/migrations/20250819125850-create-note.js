@@ -1,7 +1,8 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     await queryInterface.createTable('notes', {
       id: { 
         type: Sequelize.UUID, 
@@ -100,7 +101,8 @@ module.exports = {
       name: 'idx_notes_company_owner' 
     });
   },
-  async down(queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface, Sequelize) {
     await queryInterface.removeIndex('notes', 'idx_notes_company_owner');
     await queryInterface.dropTable('notes');
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_notes_owner_type";');

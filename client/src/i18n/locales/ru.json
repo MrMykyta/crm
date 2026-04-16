@@ -137,6 +137,7 @@
     "deals": "Сделки",
     "tasks": "Задачи",
     "notes": "Заметки",
+    "contacts": "Контактные лица",
     "contactsperson": "Контактные лица",
     "calendar": "Календарь",
     "oms": "OMS",
@@ -231,7 +232,15 @@
       "push": "Push-уведомления"
     },
     "appearance": {
-      "title": "Внешний вид"
+      "title": "Внешний вид",
+      "textSize": "Размер текста",
+      "density": "Плотность интерфейса",
+      "textSizeSmall": "Маленький",
+      "textSizeMedium": "Средний (по умолчанию)",
+      "textSizeLarge": "Большой",
+      "densityCompact": "Компактно",
+      "densityComfortable": "Комфортно",
+      "densitySpacious": "Просторно"
     },
     "preferences": {
       "language": "Язык",
@@ -244,7 +253,210 @@
     "refresh": "Обновить",
     "back": "Назад",
     "forward": "Вперёд",
-    "pageLabel": "стр. {{page}} / {{pages}}"
+    "pageLabel": "стр. {{page}} / {{pages}}",
+    "columns": {
+      "configure": "Настроить колонки",
+      "configureShort": "Колонки",
+      "searchPlaceholder": "Поиск колонок",
+      "groupMain": "Основные",
+      "groupAdditional": "Дополнительные",
+      "groupSystem": "Системные",
+      "visibleCount": "Видимо колонок: {{count}}",
+      "emptySearch": "Колонки не найдены",
+      "reset": "Сбросить",
+      "resetHint": "Сбросить порядок, ширины и видимость",
+      "groupCustom": "Пользовательские",
+      "drawerHint": "Выберите, какие данные отображать в таблице",
+      "visibleOfTotal": "Показано {{visible}} из {{total}}",
+      "recommended": "Рекомендуемые",
+      "hideAdditional": "Скрыть доп."
+    },
+    "views": {
+      "title": "Представления",
+      "default": "По умолчанию",
+      "untitled": "Без имени",
+      "select": "Выбрать представление",
+      "saveAs": "Сохранить как новое",
+      "saveAsShort": "Сохранить",
+      "updateCurrent": "Обновить текущее представление",
+      "updateShort": "Обновить",
+      "rename": "Переименовать",
+      "renameShort": "Имя",
+      "delete": "Удалить",
+      "deleteShort": "Удалить",
+      "create": "Сохранить представление",
+      "name": "Название представления",
+      "namePlaceholder": "Например: Сделки недели",
+      "nameRequired": "Введите имя представления",
+      "nameTaken": "Представление с таким именем уже существует",
+      "deleteTitle": "Удалить представление",
+      "deleteConfirm": "Удалить представление «{{name}}»?"
+    }
+  },
+  "notes": {
+    "title": "Заметки",
+    "actions": {
+      "add": "Добавить заметку",
+      "create": "Создать",
+      "save": "Сохранить",
+      "edit": "Редактировать",
+      "quickEdit": "Быстро",
+      "delete": "Удалить",
+      "pin": "Закрепить",
+      "unpin": "Открепить"
+    },
+    "fields": {
+      "ownerType": "Тип сущности",
+      "owner": "Сущность",
+      "selectedId": "ID",
+      "visibility": "Видимость",
+      "pinned": "Закреплена",
+      "content": "Текст заметки"
+    },
+    "filters": {
+      "allOwnerTypes": "Все типы",
+      "allVisibility": "Любая видимость",
+      "allPinned": "Любой pin",
+      "onlyPinned": "Только закреплённые",
+      "onlyUnpinned": "Только не закреплённые"
+    },
+    "ownerTypes": {
+      "counterparty": "Контрагент",
+      "deal": "Сделка",
+      "task": "Задача",
+      "contact": "Контакт",
+      "company": "Компания",
+      "department": "Отдел",
+      "user": "Пользователь",
+      "order": "Заказ",
+      "offer": "Оффер",
+      "product": "Товар"
+    },
+    "visibility": {
+      "company": "Компания",
+      "private": "Личная"
+    },
+    "values": {
+      "yes": "Да",
+      "no": "Нет"
+    },
+    "table": {
+      "content": "Текст",
+      "visibility": "Видимость",
+      "pinned": "Pin",
+      "author": "Автор",
+      "createdAt": "Создано",
+      "updatedAt": "Обновлено"
+    },
+    "placeholders": {
+      "ownerType": "Выберите тип сущности",
+      "ownerSearch": "Начните вводить название…",
+      "ownerFilterSearch": "Фильтр по сущности…",
+      "content": "Введите текст заметки",
+      "search": "Поиск по заметкам",
+      "ownerIdFilter": "ownerId"
+    },
+    "modal": {
+      "createTitle": "Новая заметка",
+      "editTitle": "Редактировать заметку"
+    },
+    "messages": {
+      "typeToSearch": "Начните вводить название",
+      "selectOwnerTypeFirst": "Сначала выберите тип сущности",
+      "searching": "Поиск…",
+      "emptyOwners": "Ничего не найдено",
+      "deleteConfirm": "Удалить заметку?"
+    },
+    "validation": {
+      "ownerTypeRequired": "Укажите тип сущности.",
+      "ownerRequired": "Выберите сущность из списка.",
+      "contentRequired": "Текст заметки обязателен.",
+      "saveFailed": "Не удалось сохранить заметку."
+    }
+  },
+  "contacts": {
+    "title": "Контактные лица",
+    "actions": {
+      "add": "Добавить контакт",
+      "makeMain": "Сделать основным",
+      "call": "Позвонить",
+      "email": "Написать",
+      "open": "Открыть",
+      "toList": "К списку"
+    },
+    "dialogs": {
+      "create": "Новый контакт",
+      "edit": "Редактирование контакта"
+    },
+    "fields": {
+      "counterparty": "Контрагент",
+      "firstName": "Имя",
+      "lastName": "Фамилия",
+      "position": "Должность",
+      "department": "Отдел",
+      "phone": "Телефон",
+      "email": "Email",
+      "note": "Заметка",
+      "isMain": "Основной контакт"
+    },
+    "placeholders": {
+      "counterparty": "Начните вводить название...",
+      "firstName": "Имя",
+      "lastName": "Фамилия",
+      "position": "Должность",
+      "department": "Отдел",
+      "phone": "+48 ...",
+      "email": "name@example.com",
+      "note": "Комментарий по контактному лицу"
+    },
+    "filters": {
+      "search": "Поиск: имя, email, телефон",
+      "counterparty": "Контрагент",
+      "main": "Основной",
+      "allMain": "Все",
+      "allCounterparties": "Все контрагенты"
+    },
+    "table": {
+      "name": "Имя и фамилия",
+      "counterparty": "Контрагент",
+      "phone": "Телефон",
+      "email": "Email",
+      "main": "Основной",
+      "updatedAt": "Обновлен"
+    },
+    "values": {
+      "main": "Основной",
+      "no": "Не основной"
+    },
+    "validation": {
+      "counterpartyRequired": "Выберите контрагента",
+      "firstNameRequired": "Введите имя",
+      "emailInvalid": "Некорректный email"
+    },
+    "messages": {
+      "emptyCounterparty": "Для этого контрагента пока нет контактных лиц",
+      "notFound": "Контакт не найден"
+    },
+    "hints": {
+      "counterparty": "Начните вводить название контрагента",
+      "searching": "Поиск...",
+      "empty": "Ничего не найдено"
+    },
+    "meta": {
+      "createdAt": "Создан",
+      "updatedAt": "Обновлен",
+      "main": "Основной"
+    },
+    "section": {
+      "title": "Контактные лица",
+      "detailsTitle": "Контактные данные"
+    },
+    "confirm": {
+      "delete": "Удалить контакт?"
+    },
+    "aria": {
+      "open": "Открыть контакт"
+    }
   },
   "crm": {
     "titles": {
@@ -370,7 +582,7 @@
           "todo": "К выполнению",
           "in_progress": "В процессе",
           "done": "Выполнено",
-          "blocked": "Заблокривано",
+          "blocked": "Заблокировано",
           "canceled": "Отменено"
         }
       },
@@ -382,14 +594,32 @@
         "priority": "Приоритет",
         "startAt": "Планируемое начало",
         "endAt": "Планируемое окончание",
+        "actualStartAt": "Фактическое начало",
+        "actualEndAt": "Фактическое окончание",
         "description": "Описание",
         "assignees": "Назначенные работники",
         "watchers": "Наблюдатели",
         "counterparty": "Клиент",
+        "project": "Проект",
         "deal": "Сделка",
         "contacts": "Контактные лица",
         "schedule": "Планирование",
+        "withTime": "Со временем",
         "statusAggregate": "Рассчитывать общий статус по исполнителям"
+      },
+      "placeholders": {
+        "title": "Например: Перезвонить клиенту",
+        "category": "Напр.: Звонок, Встреча",
+        "description": "Кратко опишите задачу",
+        "counterpartySearch": "Начните вводить название клиента...",
+        "contactSearch": "Начните вводить имя, email или телефон..."
+      },
+      "messages": {
+        "typeToSearch": "Начните вводить название",
+        "searching": "Поиск...",
+        "empty": "Ничего не найдено",
+        "emptyContacts": "Контакты не найдены",
+        "selectCounterpartyFirst": "Сначала выберите клиента или введите поиск"
       }
     }
   },

@@ -62,9 +62,13 @@ export default authSlice.reducer;
    Селекторы
    =========================== */
 
-export const selectUser = (s) => s.auth?.currentUser || null;
+export // selectUser : select user.
+// selectUser: вспомогательная логика модуля.
+const selectUser = (s) => s.auth?.currentUser || null;
 
-export const selectAvatarUrl = (s) => {
+export // selectAvatarUrl : select avatar url.
+// selectAvatarUrl: вспомогательная логика модуля.
+const selectAvatarUrl = (s) => {
   const url = s.auth?.currentUser?.avatarUrl || null;
   if (!url) return null;
   const rev = s.auth?.avatarRev ?? 0;
@@ -79,7 +83,9 @@ export const selectAvatarUrl = (s) => {
    =========================== */
 
 // Безопасно записать auth во все места: redux + sessionCtx
-export const applyAuth = ({ token, accessToken, refreshToken, companyId, user } = {}) =>
+export // applyAuth : apply auth.
+// applyAuth: вспомогательная логика модуля.
+const applyAuth = ({ token, accessToken, refreshToken, companyId, user } = {}) =>
   (dispatch, getState) => {
     const state = getState();
     const prev  = state.auth || {};
@@ -97,7 +103,9 @@ export const applyAuth = ({ token, accessToken, refreshToken, companyId, user } 
   };
 
 // Удобный thunk: только обновить пользователя (например после аплоада аватара)
-export const applyUserPatch = (userPatch) => (dispatch, getState) => {
+export // applyUserPatch : apply user patch.
+// applyUserPatch: вспомогательная логика модуля.
+const applyUserPatch = (userPatch) => (dispatch, getState) => {
   const state = getState();
   const prev  = state.auth?.currentUser || null;
   const next  = { ...(prev || {}), ...(userPatch || {}) };
@@ -106,7 +114,9 @@ export const applyUserPatch = (userPatch) => (dispatch, getState) => {
 };
 
 // Полный logout: дернуть бэк для чистки refresh и зачистить клиент
-export const doLogout = () => async (dispatch) => {
+export // doLogout : do logout.
+// doLogout: вспомогательная логика модуля.
+const doLogout = () => async (dispatch) => {
   try {
     await fetch(`${getApiBase()}/auth/logout`, {
       method: 'POST',
@@ -127,3 +137,4 @@ export const doLogout = () => async (dispatch) => {
   // уводим на /auth, чтобы не оставаться на защищённых маршрутах
   if (typeof window !== 'undefined') window.location.replace('/auth');
 };
+

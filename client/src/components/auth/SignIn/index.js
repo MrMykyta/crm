@@ -11,6 +11,7 @@ import CompanySelect from "../../company/CompanySelect";
 import ForgotPasswordModal from "../ForgotPasswordModal";
 import s from "../../../styles/formGlass.module.css";
 
+// Компонент InputField: отвечает за отображение UI и обработку взаимодействий пользователя.
 function InputField({ name, label, type = "text", autoComplete }) {
   const [field] = useField(name);
   const filled = (field.value ?? "") !== "";
@@ -28,6 +29,7 @@ function InputField({ name, label, type = "text", autoComplete }) {
   );
 }
 
+// Компонент SignIn: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function SignIn({ onSwitch }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -65,7 +67,8 @@ export default function SignIn({ onSwitch }) {
     navigate("/main/pulpit", { replace: true });
   };
 
-  const handleLogin = async (values, { setSubmitting, setStatus }) => {
+    // handleLogin: обработчик пользовательского действия.
+const handleLogin = async (values, { setSubmitting, setStatus }) => {
     setStatus(null);
     try {
       const res = await login({
@@ -110,7 +113,8 @@ export default function SignIn({ onSwitch }) {
     }
   };
 
-  const confirmCompany = async (choice) => {
+    // confirmCompany: вспомогательная логика компонента.
+const confirmCompany = async (choice) => {
     if (!choice) {
       setCompaniesModal((m) => ({ ...m, open: false }));
       return;

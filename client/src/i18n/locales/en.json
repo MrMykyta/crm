@@ -98,6 +98,8 @@
     "clients": "Clients",
     "deals": "Deals",
     "tasks": "Tasks",
+    "notes": "Notes",
+    "contacts": "Contacts",
     "calendar": "Calendar",
     "oms": "OMS",
     "invoices": "Invoices",
@@ -188,7 +190,15 @@
       "push": "Push notifications"
     },
     "appearance": {
-      "title": "Appearance"
+      "title": "Appearance",
+      "textSize": "Text size",
+      "density": "Density",
+      "textSizeSmall": "Small",
+      "textSizeMedium": "Medium (default)",
+      "textSizeLarge": "Large",
+      "densityCompact": "Compact",
+      "densityComfortable": "Comfortable",
+      "densitySpacious": "Spacious"
     },
     "preferences": {
       "language": "Language",
@@ -201,7 +211,210 @@
     "refresh": "Refresh",
     "back": "Back",
     "forward": "Forward",
-    "pageLabel": "p. {{page}} / {{pages}}"
+    "pageLabel": "p. {{page}} / {{pages}}",
+    "columns": {
+      "configure": "Configure columns",
+      "configureShort": "Columns",
+      "searchPlaceholder": "Search columns",
+      "groupMain": "Main",
+      "groupAdditional": "Additional",
+      "groupSystem": "System",
+      "visibleCount": "Visible columns: {{count}}",
+      "emptySearch": "No columns found",
+      "reset": "Reset",
+      "resetHint": "Reset order, widths and visibility",
+      "groupCustom": "Custom",
+      "drawerHint": "Choose which data to display in the table",
+      "visibleOfTotal": "Shown {{visible}} of {{total}}",
+      "recommended": "Recommended",
+      "hideAdditional": "Hide extra"
+    },
+    "views": {
+      "title": "Views",
+      "default": "Default",
+      "untitled": "Untitled",
+      "select": "Select view",
+      "saveAs": "Save as new",
+      "saveAsShort": "Save",
+      "updateCurrent": "Update current view",
+      "updateShort": "Update",
+      "rename": "Rename",
+      "renameShort": "Name",
+      "delete": "Delete",
+      "deleteShort": "Delete",
+      "create": "Save view",
+      "name": "View name",
+      "namePlaceholder": "Example: Weekly deals",
+      "nameRequired": "Enter a view name",
+      "nameTaken": "A view with this name already exists",
+      "deleteTitle": "Delete view",
+      "deleteConfirm": "Delete view “{{name}}”?"
+    }
+  },
+  "notes": {
+    "title": "Notes",
+    "actions": {
+      "add": "Add note",
+      "create": "Create",
+      "save": "Save",
+      "edit": "Edit",
+      "quickEdit": "Quick edit",
+      "delete": "Delete",
+      "pin": "Pin",
+      "unpin": "Unpin"
+    },
+    "fields": {
+      "ownerType": "Entity type",
+      "owner": "Entity",
+      "selectedId": "ID",
+      "visibility": "Visibility",
+      "pinned": "Pinned",
+      "content": "Note text"
+    },
+    "filters": {
+      "allOwnerTypes": "All types",
+      "allVisibility": "Any visibility",
+      "allPinned": "Any pin",
+      "onlyPinned": "Pinned only",
+      "onlyUnpinned": "Unpinned only"
+    },
+    "ownerTypes": {
+      "counterparty": "Counterparty",
+      "deal": "Deal",
+      "task": "Task",
+      "contact": "Contact",
+      "company": "Company",
+      "department": "Department",
+      "user": "User",
+      "order": "Order",
+      "offer": "Offer",
+      "product": "Product"
+    },
+    "visibility": {
+      "company": "Company",
+      "private": "Private"
+    },
+    "values": {
+      "yes": "Yes",
+      "no": "No"
+    },
+    "table": {
+      "content": "Text",
+      "visibility": "Visibility",
+      "pinned": "Pin",
+      "author": "Author",
+      "createdAt": "Created",
+      "updatedAt": "Updated"
+    },
+    "placeholders": {
+      "ownerType": "Select entity type",
+      "ownerSearch": "Start typing entity name…",
+      "ownerFilterSearch": "Filter by entity…",
+      "content": "Enter note text",
+      "search": "Search notes",
+      "ownerIdFilter": "ownerId"
+    },
+    "modal": {
+      "createTitle": "New note",
+      "editTitle": "Edit note"
+    },
+    "messages": {
+      "typeToSearch": "Start typing to search",
+      "selectOwnerTypeFirst": "Select entity type first",
+      "searching": "Searching…",
+      "emptyOwners": "No entities found",
+      "deleteConfirm": "Delete this note?"
+    },
+    "validation": {
+      "ownerTypeRequired": "Entity type is required.",
+      "ownerRequired": "Select an entity from the list.",
+      "contentRequired": "Note content is required.",
+      "saveFailed": "Failed to save note."
+    }
+  },
+  "contacts": {
+    "title": "Contacts",
+    "actions": {
+      "add": "Add contact",
+      "makeMain": "Set as main",
+      "call": "Call",
+      "email": "Email",
+      "open": "Open",
+      "toList": "Back to list"
+    },
+    "dialogs": {
+      "create": "New contact",
+      "edit": "Edit contact"
+    },
+    "fields": {
+      "counterparty": "Counterparty",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "position": "Position",
+      "department": "Department",
+      "phone": "Phone",
+      "email": "Email",
+      "note": "Note",
+      "isMain": "Main contact"
+    },
+    "placeholders": {
+      "counterparty": "Start typing name...",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "position": "Position",
+      "department": "Department",
+      "phone": "+48 ...",
+      "email": "name@example.com",
+      "note": "Comment about this contact"
+    },
+    "filters": {
+      "search": "Search by name, email or phone",
+      "counterparty": "Counterparty",
+      "main": "Main",
+      "allMain": "All",
+      "allCounterparties": "All counterparties"
+    },
+    "table": {
+      "name": "Name",
+      "counterparty": "Counterparty",
+      "phone": "Phone",
+      "email": "Email",
+      "main": "Main",
+      "updatedAt": "Updated"
+    },
+    "values": {
+      "main": "Main",
+      "no": "Not main"
+    },
+    "validation": {
+      "counterpartyRequired": "Counterparty is required",
+      "firstNameRequired": "First name is required",
+      "emailInvalid": "Invalid email"
+    },
+    "messages": {
+      "emptyCounterparty": "No contacts for this counterparty yet",
+      "notFound": "Contact not found"
+    },
+    "hints": {
+      "counterparty": "Start typing counterparty name",
+      "searching": "Searching...",
+      "empty": "No results"
+    },
+    "meta": {
+      "createdAt": "Created",
+      "updatedAt": "Updated",
+      "main": "Main"
+    },
+    "section": {
+      "title": "Contacts",
+      "detailsTitle": "Contact details"
+    },
+    "confirm": {
+      "delete": "Delete this contact?"
+    },
+    "aria": {
+      "open": "Open contact"
+    }
   },
   "crm": {
     "titles": {

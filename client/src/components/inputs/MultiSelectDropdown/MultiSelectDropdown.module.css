@@ -36,57 +36,117 @@
 .menuFixed{
   color:var(--text, #e8e8e8);
   position:fixed; z-index:9999;
-  background: color-mix(in srgb, var(--menu-bg, #0e0f15) 96%, transparent);
-  border:1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
-  border-radius:12px; box-shadow:0 12px 32px color-mix(in srgb, var(--shadow-clr, #000) 42%, transparent);
+  background: var(--ui-overlay-bg);
+  border:1px solid var(--ui-overlay-border);
+  border-radius:12px;
+  box-shadow: var(--ui-overlay-shadow);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   overflow:hidden;
 }
 
 /* Поиск */
 .searchRow{
   display:flex; align-items:center; gap:6px;
-  padding:8px; border-bottom:1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  padding:8px; border-bottom:1px solid color-mix(in srgb, var(--ui-overlay-border) 80%, transparent);
   background:inherit;
 }
 .searchInput{
   flex:1; height:34px; padding:6px 8px;
   border-radius:10px; outline:none;
-  border:1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
-  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
-  color: var(--text);
+  border:1px solid color-mix(in srgb, var(--ui-overlay-border) 82%, transparent);
+  background: var(--ui-overlay-bg-strong);
+  color: var(--ui-text-1);
 }
 .searchInput:focus{ border-color: var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 24%, transparent); }
 .clearBtn{
   height:34px; min-width:34px;
-  border-radius:10px; border:1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
-  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
-  color: var(--text); cursor:pointer;
+  border-radius:10px; border:1px solid color-mix(in srgb, var(--ui-overlay-border) 82%, transparent);
+  background: var(--ui-overlay-bg-strong);
+  color: var(--ui-text-1); cursor:pointer;
 }
 
 /* Ряд "Выбрать всех" */
 .allRow{
   position:sticky; top:0; z-index:1;
   background:inherit; padding:8px;
-  border-bottom:1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  border-bottom:1px solid color-mix(in srgb, var(--ui-overlay-border) 80%, transparent);
+}
+.singleClearRow{
+  padding: 8px;
+  border-bottom:1px solid color-mix(in srgb, var(--ui-overlay-border) 80%, transparent);
+}
+.singleClearBtn{
+  width: 100%;
+  min-height: 32px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-overlay-border) 82%, transparent);
+  background: var(--ui-overlay-bg-strong);
+  color: color-mix(in srgb, var(--ui-text-1) 88%, transparent);
+  font-size: var(--font-size-12);
+  cursor: pointer;
+}
+.singleClearBtn:hover{
+  border-color: color-mix(in srgb, var(--focus) 50%, transparent);
+  background: color-mix(in srgb, var(--sidebar-hover) 65%, transparent);
 }
 .allLabel{
   display:flex; align-items:center; gap:10px;
   font-weight:600;
 }
 .count{
-  margin-left:auto; font-size:12px; opacity:.7;
+  margin-left:auto; font-size: var(--font-size-12); opacity:.7;
 }
 
 /* Список */
 .list{ padding:6px 8px 8px; }
+.list{
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-overlay-scrollbar-thumb) var(--ui-overlay-scrollbar-track);
+}
+.list::-webkit-scrollbar{
+  width: 8px;
+}
+.list::-webkit-scrollbar-track{
+  background: var(--ui-overlay-scrollbar-track);
+}
+.list::-webkit-scrollbar-thumb{
+  background: var(--ui-overlay-scrollbar-thumb);
+  border-radius: 999px;
+}
 .item{
   display:flex; align-items:center; gap:10px;
   padding:8px 6px; border-radius:8px; cursor:pointer;
   border: 1px solid transparent;
 }
-.item:hover{ background: color-mix(in srgb, var(--sidebar-hover) 70%, transparent); }
-.itemText{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.empty{ opacity:.6; padding:12px; text-align:center; }
+.item:hover{
+  border-color: color-mix(in srgb, var(--ui-border-focus) 66%, transparent);
+  background: var(--ui-overlay-hover);
+}
+.itemBody{
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.itemText{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.itemMeta{
+  font-size: var(--font-size-12);
+  color: color-mix(in srgb, var(--ui-text-2) 90%, transparent);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.empty{
+  opacity:.82;
+  color: color-mix(in srgb, var(--ui-text-2) 94%, transparent);
+  padding:12px;
+  text-align:center;
+}
 
 /* "Добавить «…»" */
 .createItem{

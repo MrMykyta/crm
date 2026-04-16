@@ -7,7 +7,9 @@ import { extractFileId } from "../utils/fileUrl";
  * Returns signed inline URL for private files (/api/files/:id/download).
  * For public/external URLs returns the original value.
  */
-export const useSignedFileUrl = (value) => {
+export // useSignedFileUrl : use signed file url.
+// Хук useSignedFileUrl: инкапсулирует переиспользуемую логику и возвращает состояние/обработчики для компонентов.
+const useSignedFileUrl = (value) => {
   const accessToken = useSelector((s) => s.auth?.accessToken);
   const companyId = useSelector((s) => s.auth?.companyId);
   const fileId = useMemo(() => extractFileId(value), [value]);
@@ -26,7 +28,8 @@ export const useSignedFileUrl = (value) => {
     return raw;
   }, []);
 
-  const normalize = (u) => {
+    // normalize: нормализует входные и выходные данные.
+const normalize = (u) => {
     if (!u) return "";
     if (/^https?:\/\//i.test(u)) return u;
     if (u.startsWith("/")) return `${apiOrigin}${u}`;
@@ -49,3 +52,4 @@ export const useSignedFileUrl = (value) => {
 
   return { url, fileId, onError };
 };
+

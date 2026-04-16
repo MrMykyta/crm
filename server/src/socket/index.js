@@ -1,6 +1,7 @@
 // src/socket/index.js
 const { Server } = require('socket.io');
-const tokenService = require('../utils/tokenService'); // <-- путь проверь, если utils лежит где-то иначе
+const tokenService = require('../utils/tokenService');
+const logger = require('../lib/logger');
 
 const originsFromEnv =
   (process.env.CORS_ORIGINS &&
@@ -13,10 +14,12 @@ const WHITELIST = new Set([
   'http://127.0.0.1:3000',
 ]);
 
+// Инициализирует Socket.IO, настраивает auth и подключает прикладные сокет-модули.
 module.exports = function initSocket(server) {
   const io = new Server(server, {
     cors: {
-      origin(origin, cb) {
+      // Проверяет origin входящего socket-соединения по whitelist.
+origin(origin, cb) {
         if (!origin || WHITELIST.has(origin)) return cb(null, true);
         return cb(new Error(`Socket CORS blocked: ${origin}`));
       },
@@ -60,7 +63,7 @@ module.exports = function initSocket(server) {
 
       next();
     } catch (e) {
-      console.error('[socket auth error]', e.message);
+      logger.error('[socket auth error]', { message: e.message });
       next(new Error('Auth failed'));
     }
   });
@@ -68,12 +71,12 @@ module.exports = function initSocket(server) {
   const chatSocket = require('./chatSocket');
 
   io.on('connection', (socket) => {
-    console.log('[socket] connected', socket.id, 'user:', socket.user?.id);
+    logger.info('[socket] connected', { socketId: socket.id, userId: socket.user?.id || null });
 
     chatSocket(io, socket);
 
     socket.on('disconnect', (reason) => {
-      console.log('[socket] disconnected', socket.id, reason);
+      logger.info('[socket] disconnected', { socketId: socket.id, reason });
     });
   });
 

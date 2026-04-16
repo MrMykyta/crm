@@ -35,13 +35,16 @@ module.exports.parsePagination = (query = {}, opts = {}) => {
     const n = parseInt(v, 10);
     return Number.isFinite(n) && n > 0 ? n : def;
   };
-  const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
-  const toArray = (v) => {
+  // Ограничивает число в заданном диапазоне.
+const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+  // Приводит строку CSV/значение к массиву строк.
+const toArray = (v) => {
     if (Array.isArray(v)) return v;
     if (v == null || v === '') return [];
     return String(v).split(',').map(s => s.trim()).filter(Boolean);
   };
-  const str = (v) => (typeof v === 'string' ? v.trim() : '');
+  // Безопасно приводит значение к trimmed-строке.
+const str = (v) => (typeof v === 'string' ? v.trim() : '');
 
   // ----- limit/page/offset
   const limit = clamp(toInt(query.limit, defaultLimit), 1, maxLimit);

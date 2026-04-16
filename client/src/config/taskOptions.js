@@ -16,7 +16,9 @@ export const PRIORITY_OPTIONS = [
   { value: 5, label: "5 — Высокий"   },
 ];
 
-export const priorityToLabel = (n) => {
+export // priorityToLabel : priority to label.
+// priorityToLabel: вспомогательная логика модуля.
+const priorityToLabel = (n) => {
   const found = PRIORITY_OPTIONS.find(o => o.value === Number(n));
   return found?.label ?? String(n ?? "—");
 };

@@ -1,7 +1,11 @@
 .drawer{
   position:fixed; top:0; right:-360px; width:360px; height:100vh;
-  background:var(--card-bg); border-left:1px solid var(--card-brd);
-  box-shadow: var(--shadow); transition: right .18s ease; z-index:40; padding:12px;
+  background:var(--ui-overlay-bg);
+  border-left:1px solid var(--ui-overlay-border);
+  box-shadow: var(--ui-overlay-shadow);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: right .18s ease; z-index:40; padding:12px;
 }
 .open{ right:0; }
 .panel{ color:var(--text); }

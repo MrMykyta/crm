@@ -4,6 +4,7 @@ import * as Yup from "yup";
 import s from "../../UserSettingsPage.module.css";
 import { useTranslation } from "react-i18next";
 
+// Компонент ProfileForm: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ProfileForm({ user, onSave }) {
   const { t } = useTranslation();
 
@@ -19,7 +20,8 @@ export default function ProfileForm({ user, onSave }) {
     email    : Yup.string().email(t("common.invalidEmail")).required(t("common.required")),
   });
 
-  const handleSubmit = async (values, { setSubmitting }) => {
+    // handleSubmit: обработчик пользовательского действия.
+const handleSubmit = async (values, { setSubmitting }) => {
     try {
       await onSave?.(values); // ожидается api.updateProfile(values)
     } finally { setSubmitting(false); }

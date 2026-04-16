@@ -1,9 +1,11 @@
 'use strict';
 const { Model } = require('sequelize');
 
+// Инициализирует и возвращает Sequelize-модель текущей сущности.
 module.exports = (sequelize, DataTypes) => {
   class Contact extends Model {
-    static associate(models) {
+        // Описывает associations этой модели с другими сущностями.
+static associate(models) {
       Contact.belongsTo(models.Company, {
         foreignKey: { name: 'companyId', field: 'company_id' },
         as: 'company',
@@ -34,7 +36,8 @@ module.exports = (sequelize, DataTypes) => {
       });
     }
 
-    get fullName() {
+    // Собирает отображаемое ФИО из частей имени с fallback на displayName.
+get fullName() {
       const a = [this.firstName, this.middleName, this.lastName].filter(Boolean);
       return a.length ? a.join(' ') : this.displayName || null;
     }
@@ -56,6 +59,9 @@ module.exports = (sequelize, DataTypes) => {
 
       jobTitle:   { type: DataTypes.STRING(120), allowNull: true, field: 'job_title' },
       department: { type: DataTypes.STRING(120), allowNull: true },
+      email: { type: DataTypes.STRING(255), allowNull: true },
+      phone: { type: DataTypes.STRING(64), allowNull: true },
+      avatarUrl: { type: DataTypes.STRING(512), allowNull: true, field: 'avatar_url' },
 
       status: {
         type: DataTypes.ENUM('active', 'inactive'),
@@ -81,7 +87,11 @@ module.exports = (sequelize, DataTypes) => {
       paranoid: true,
       timestamps: true,
       validate: {
-        atLeastSomeName() {
+        // Для новых записей требует хотя бы одно имя: firstName/lastName/displayName.
+atLeastSomeName() {
+          // Legacy rows may exist without name fields.
+          // Enforce this rule only for new records; updates are validated in service/Joi.
+          if (!this.isNewRecord) return;
           if (!this.firstName && !this.lastName && !this.displayName) {
             throw new Error('At least one of firstName/lastName/displayName is required');
           }

@@ -1,7 +1,9 @@
 // Deterministic waveform generation for audio messages.
 // Uses a seeded PRNG so the same fileId always renders the same bars.
 
-export const hashStringToInt = (str) => {
+export // hashStringToInt : hash string to int.
+// hashStringToInt: проверяет наличие нужных данных в компоненте.
+const hashStringToInt = (str) => {
   const s = String(str || "");
   // FNV-1a 32-bit hash
   let h = 2166136261;
@@ -13,7 +15,9 @@ export const hashStringToInt = (str) => {
   return h >>> 0;
 };
 
-export const mulberry32 = (seed) => {
+export // mulberry32 : mulberry32.
+// mulberry32: вспомогательная логика компонента.
+const mulberry32 = (seed) => {
   let a = seed >>> 0;
   return () => {
     a |= 0;
@@ -24,7 +28,9 @@ export const mulberry32 = (seed) => {
   };
 };
 
-export const generateBarsFromSeed = (seed, count, min, max) => {
+export // generateBarsFromSeed : generate bars from seed.
+// generateBarsFromSeed: вспомогательная логика компонента.
+const generateBarsFromSeed = (seed, count, min, max) => {
   const total = Math.max(1, Number(count) || 1);
   const minH = Math.max(1, Number(min) || 1);
   const maxH = Math.max(minH + 1, Number(max) || minH + 1);
@@ -37,7 +43,9 @@ export const generateBarsFromSeed = (seed, count, min, max) => {
   return bars;
 };
 
-export const generateWaveformBars = (
+export // generateWaveformBars : generate waveform bars.
+// generateWaveformBars: вспомогательная логика компонента.
+const generateWaveformBars = (
   fileId,
   count = 48,
   minHeight = 4,
@@ -46,3 +54,4 @@ export const generateWaveformBars = (
   const seed = hashStringToInt(fileId || "");
   return generateBarsFromSeed(seed, count, minHeight, maxHeight);
 };
+

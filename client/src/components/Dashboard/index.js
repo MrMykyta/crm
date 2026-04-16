@@ -21,6 +21,7 @@ const rowsFromPx = (px) => {
   return Math.max(1, Math.ceil(raw - ROW_CEIL_BIAS));
 };
 
+// clampLayouts: вспомогательная логика компонента.
 const clampLayouts = (ls) => {
   const lg = (ls?.lg ?? []).map(it => {
     const minW = Math.max(it.minW ?? 1, 1);
@@ -34,11 +35,13 @@ const clampLayouts = (ls) => {
   return { ...ls, lg };
 };
 
+// jsonEqual: вспомогательная логика компонента.
 const jsonEqual = (a, b) => {
   try { return JSON.stringify(a) === JSON.stringify(b); }
   catch { return false; }
 };
 
+// useElemHeight: инкапсулирует переиспользуемую UI-логику.
 function useElemHeight() {
   const ref = useRef(null);
   const [h, setH] = useState(0);

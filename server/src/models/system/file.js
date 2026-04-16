@@ -4,7 +4,8 @@ const { Model } = require('sequelize');
 // Unified Files model. This replaces legacy attachments and keeps all file metadata in one table.
 module.exports = (sequelize, DataTypes) => {
   class File extends Model {
-    static associate(models) {
+        // Описывает associations этой модели с другими сущностями.
+static associate(models) {
       File.belongsTo(models.User, { foreignKey: 'uploaded_by', as: 'uploader' });
     }
   }
@@ -83,3 +84,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return File;
 };
+

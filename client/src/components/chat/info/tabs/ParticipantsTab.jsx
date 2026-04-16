@@ -34,6 +34,7 @@ function ParticipantRow({ item }) {
   );
 }
 
+// Компонент ParticipantsTab: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ParticipantsTab({
   participants = [],
   emptyText,
@@ -71,3 +72,4 @@ export default function ParticipantsTab({
     </div>
   );
 }
+

@@ -1,5 +1,6 @@
 const service = require('../../services/oms/orderService');
 
+// Возвращает список сущностей с учётом фильтров и пагинации.
 module.exports.list = async (req,res,next) => { 
     try{ 
         const query = { ...req.query };
@@ -10,6 +11,7 @@ module.exports.list = async (req,res,next) => {
     } 
 };
 
+// Возвращает одну сущность по её идентификатору.
 module.exports.get = async (req,res,next) => { 
     try{ 
         const r=await service.get(req.params.id); 
@@ -20,6 +22,7 @@ module.exports.get = async (req,res,next) => {
     } 
 };
 
+// Создаёт новую сущность и возвращает результат создания.
 module.exports.create = async (req,res,next) => { 
     try{ 
         const payload = { ...req.body, companyId: req.user.companyId };
@@ -28,6 +31,7 @@ module.exports.create = async (req,res,next) => {
         next(e);
     } 
 };
+// Обновляет существующую сущность по идентификатору.
 module.exports.update = async (req,res,next) => { 
     try{ 
         const payload = { ...req.body };
@@ -38,6 +42,7 @@ module.exports.update = async (req,res,next) => {
     } 
 };
 
+// Удаляет сущность по идентификатору.
 module.exports.remove = async (req,res,next) => { 
     try{ 
         res.json(await service.remove(req.params.id)); 
@@ -46,6 +51,7 @@ module.exports.remove = async (req,res,next) => {
     } 
 };
 
+// Создаёт заказ на основании коммерческого предложения.
 module.exports.fromOffer = async (req,res,next) => { 
     try{ 
         const payload = { ...req.body };
@@ -55,3 +61,4 @@ module.exports.fromOffer = async (req,res,next) => {
         next(e);
     } 
 };
+

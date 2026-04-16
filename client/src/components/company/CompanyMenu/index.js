@@ -8,6 +8,7 @@ import { useGetCompanyQuery } from "../../../store/rtk/companyApi";
 import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import s from "./CompanyMenu.module.css";
 
+// Компонент CompanyMenu: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CompanyMenu({ company: companyProp, onClose }) {
   const ref = useRef(null);
   const navigate = useNavigate();
@@ -38,14 +39,17 @@ export default function CompanyMenu({ company: companyProp, onClose }) {
   });
 
   useEffect(() => {
-    const onDoc = (e) => {
+        // onDoc: вспомогательная логика компонента.
+const onDoc = (e) => {
       if (ref.current && !ref.current.contains(e.target)) onClose?.();
     };
-    const onEsc = (e) => { if (e.key === "Escape") onClose?.(); };
+        // onEsc: вспомогательная логика компонента.
+const onEsc = (e) => { if (e.key === "Escape") onClose?.(); };
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onEsc);
 
-    const onAvatarReady = (e) => setCssAvatar(e?.detail?.url || "");
+        // onAvatarReady: вспомогательная логика компонента.
+const onAvatarReady = (e) => setCssAvatar(e?.detail?.url || "");
     window.addEventListener("company:avatar-ready", onAvatarReady);
 
     return () => {
@@ -55,8 +59,10 @@ export default function CompanyMenu({ company: companyProp, onClose }) {
     };
   }, [onClose]);
 
-  const goDetails = () => { onClose?.(); navigate("/main/company/details"); };
-  const goSettings = () => { onClose?.(); navigate("/main/company-settings"); };
+    // goDetails: вспомогательная логика компонента.
+const goDetails = () => { onClose?.(); navigate("/main/company/details"); };
+    // goSettings: вспомогательная логика компонента.
+const goSettings = () => { onClose?.(); navigate("/main/company-settings"); };
 
   const name = company?.shortName || company?.name || "Company";
   const sub  = [company?.domain, company?.vat].filter(Boolean).join(" • ");
@@ -95,3 +101,4 @@ export default function CompanyMenu({ company: companyProp, onClose }) {
     </div>
   );
 }
+

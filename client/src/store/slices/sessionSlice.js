@@ -11,12 +11,14 @@ const sessionSlice = createSlice({
   name: 'session',
   initialState,
   reducers: {
-    setSession(state, { payload }) {
+        // setSession: обновляет состояние.
+setSession(state, { payload }) {
       state.token = payload.token ?? null;
       state.user = payload.user ?? null;
       state.companyId = payload.companyId ?? payload.user?.companyId ?? null;
     },
-    clearSession() {
+        // clearSession: вспомогательная логика модуля.
+clearSession() {
       return initialState;
     },
   },

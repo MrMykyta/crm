@@ -45,7 +45,8 @@ exports.listUsers = async (requesterId, companyId, query = {}) => {
     user: requester,
     companyId,
     base: 'member:read',
-    getRequesterDept: async () => getRequesterDeptId(requesterId, companyId),
+        // getRequesterDept: возвращает данные по входным параметрам сервиса.
+getRequesterDept: async () => getRequesterDeptId(requesterId, companyId),
     throwIfDenied: false,                // ← ключевой момент
   });
 
@@ -56,7 +57,10 @@ exports.listUsers = async (requesterId, companyId, query = {}) => {
       user: requester,
       companyId,
       required: 'member:read',
-      opts: { ownCheck: async () => true }, // сам факт наличия :own
+      opts: {
+        // ownCheck нужен, чтобы проверить ветку permission-а с суффиксом :own.
+        ownCheck: async () => true,
+      }, // сам факт наличия :own
     });
     if (!canOwn) {
       const err = new Error('Forbidden');
@@ -189,7 +193,10 @@ exports.addUserToCompany = async (requesterId, companyId, userId, role = 'user',
       user: requester,
       companyId,
       required: 'member:create',
-      opts: { deptCheck: async () => true },
+      opts: {
+        // deptCheck нужен, чтобы проверить ветку permission-а с суффиксом :dept.
+        deptCheck: async () => true,
+      },
     });
     if (!allowDept) {
       const err = new Error('Forbidden');
@@ -269,7 +276,10 @@ exports.updateUserMembership = async (requesterId, companyId, userId, payload = 
       user: requester,
       companyId,
       required: 'member:update',
-      opts: { deptCheck: async () => true },
+      opts: {
+        // deptCheck нужен, чтобы проверить ветку permission-а с суффиксом :dept.
+        deptCheck: async () => true,
+      },
     });
 
     if (!allowDept) {
@@ -278,7 +288,10 @@ exports.updateUserMembership = async (requesterId, companyId, userId, payload = 
         user: requester,
         companyId,
         required: 'member:update',
-        opts: { ownCheck: async () => requesterId === userId },
+        opts: {
+          // ownCheck ограничивает обновление своим membership-профилем.
+          ownCheck: async () => requesterId === userId,
+        },
       });
       if (!allowOwn) {
         const err = new Error('Forbidden');
@@ -388,7 +401,10 @@ exports.removeUserFromCompany = async (requesterId, companyId, userId) => {
       user: requester,
       companyId,
       required: 'member:delete',
-      opts: { deptCheck: async () => true },
+      opts: {
+        // deptCheck нужен, чтобы проверить ветку permission-а с суффиксом :dept.
+        deptCheck: async () => true,
+      },
     });
     if (!allowDept) {
       const err = new Error('Forbidden');

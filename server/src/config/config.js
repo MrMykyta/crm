@@ -1,10 +1,13 @@
 require('dotenv').config();
 
+// Базовые настройки Sequelize, общие для всех окружений.
 const base = {
   dialect: 'postgres',
   logging: false,
 };
 
+// Конфигурация БД для sequelize-cli и runtime:
+// значения берутся из переменных окружения.
 module.exports = {
   development: {
     ...base,

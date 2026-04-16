@@ -34,6 +34,7 @@ function MediaThumb({ item, shouldLoad, onOpen, ariaLabel }) {
   );
 }
 
+// Компонент MediaTab: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function MediaTab({
   items = [],
   maxPreview = 30,
@@ -77,3 +78,4 @@ export default function MediaTab({
     </div>
   );
 }
+

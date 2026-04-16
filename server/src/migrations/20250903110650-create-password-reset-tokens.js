@@ -1,7 +1,8 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+    // Применяет изменения схемы/данных для этой миграции.
+async up(queryInterface, Sequelize) {
     await queryInterface.createTable('password_reset_tokens', {
       id: {
         type: Sequelize.INTEGER,
@@ -60,7 +61,8 @@ module.exports = {
     await queryInterface.addIndex('password_reset_tokens', ['expires_at']);
     await queryInterface.addIndex('password_reset_tokens', ['token_hash'], { unique: true });
   },
-  async down(queryInterface, Sequelize) {
+    // Откатывает изменения, внесённые в up().
+async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('password_reset_tokens');
   }
 };

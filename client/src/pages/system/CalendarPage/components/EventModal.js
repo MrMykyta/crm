@@ -9,6 +9,7 @@ const COLORS = [
   { key: "red", label: "Красный" },
 ];
 
+// Компонент EventModal: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function EventModal({ event, pos, onClose, onSave }) {
   const modalRef = useRef(null);
 
@@ -22,7 +23,8 @@ export default function EventModal({ event, pos, onClose, onSave }) {
 
   // Esc
   useEffect(() => {
-    const handleKey = (e) => {
+        // handleKey: обработчик пользовательского действия.
+const handleKey = (e) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKey);
@@ -31,7 +33,8 @@ export default function EventModal({ event, pos, onClose, onSave }) {
 
   // клик вне
   useEffect(() => {
-    const handleClick = (e) => {
+        // handleClick: обработчик пользовательского действия.
+const handleClick = (e) => {
       if (modalRef.current && modalRef.current.contains(e.target)) return;
       onClose();
     };
@@ -48,7 +51,8 @@ export default function EventModal({ event, pos, onClose, onSave }) {
       })
     : "";
 
-  const handleSave = () => {
+    // handleSave: обработчик пользовательского действия.
+const handleSave = () => {
     const payload = {
       ...event,
       title,

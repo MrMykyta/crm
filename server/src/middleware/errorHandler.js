@@ -1,64 +1,88 @@
-const ApplicationError = require("../errors/ApplicationError");
-const multer = require("multer");
+'use strict';
 
-const safeLogUrl = (url = "") =>
-  String(url).replace(/([?&]sig=)[^&]+/g, "$1***");
+const multer = require('multer');
+const AppError = require('../errors/AppError');
+const logger = require('../lib/logger');
+const { fail } = require('../http/response');
 
-module.exports = (err, req, res, next) => {
-  // лог в консоль
-  const rawUrl = req?.originalUrl || req?.url || "";
-  const logUrl = rawUrl ? safeLogUrl(rawUrl) : "";
-  if (logUrl && logUrl.includes("/api/files/") && logUrl.includes("/inline")) {
-    console.error(`[${err.name}] ${err.message} ${req.method} ${logUrl}`);
-  } else {
-    console.error(`[${err.name}] ${err.message}`);
+const isProd = process.env.NODE_ENV === 'production';
+
+// Приводит статус ошибки к валидному HTTP-коду (400-599), иначе отдаёт 500.
+function normalizeStatus(err) {
+  const candidates = [err?.statusCode, err?.status, err?.code];
+  let statusCode = 500;
+  for (const value of candidates) {
+    const parsed = Number(value);
+    if (parsed >= 400 && parsed <= 599) {
+      statusCode = parsed;
+      break;
+    }
   }
 
-  /* --- 1. ошибки бизнес-логики (твои кастомные) --- */
-  if (err instanceof ApplicationError) {
-    return res.status(err.code).json({
-      error: err.name,
-      message: err.message,
-    });
+  if (statusCode >= 400 && statusCode <= 599) {
+    return statusCode;
   }
+  return 500;
+}
 
-  /* --- 2. ошибки загрузки файлов (Multer и лимиты) --- */
+// Подбирает безопасный текст ошибки (в production скрывает внутренние детали для 500).
+function normalizeMessage(err, statusCode) {
+  if (statusCode === 500 && isProd) {
+    return 'Internal server error';
+  }
+  return err?.message || 'Internal server error';
+}
+
+// Извлекает машиночитаемый код ошибки, если он задан строкой.
+function normalizeCode(err) {
+  if (!err) return undefined;
+  const code = err.code;
+  if (typeof code === 'string' && code.trim()) {
+    return code.trim();
+  }
+  return undefined;
+}
+
+// Единая обработка ошибок API: логирование + нормализованный JSON-ответ.
+module.exports = (err, req, res, _next) => {
+  const statusCode = normalizeStatus(err);
+  const code = normalizeCode(err);
+
+  logger.error('HTTP request failed', {
+    requestId: req?.requestId || null,
+    method: req?.method || null,
+    url: req?.originalUrl || req?.url || null,
+    statusCode,
+    code: code || null,
+    errorName: err?.name || 'Error',
+    errorMessage: err?.message || 'Unknown error',
+    ...(isProd ? {} : { stack: err?.stack || null }),
+  });
+
   if (err instanceof multer.MulterError) {
-    if (err.code === "LIMIT_FILE_SIZE") {
-      return res.status(413).json({
-        error: "FileTooLarge",
-        message: "Размер файла превышает допустимый лимит",
-      });
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return fail(res, 413, 'File too large', undefined, 'UPLOAD_FILE_TOO_LARGE');
     }
-    if (err.code === "LIMIT_UNEXPECTED_FILE") {
-      return res.status(415).json({
-        error: "MimeNotAllowed",
-        message: "Недопустимый тип файла",
-      });
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      return fail(res, 415, 'Unsupported file type', undefined, 'UPLOAD_UNSUPPORTED_FILE');
     }
-    // остальные коды Multer (редко встречаются)
-    return res.status(400).json({
-      error: "UploadError",
-      message: err.message,
+    return fail(res, 400, err.message || 'Upload error', undefined, 'UPLOAD_ERROR');
+  }
+
+  if (err?.name === 'FetchError' || /fetch/i.test(String(err?.message || ''))) {
+    return fail(res, 502, 'Failed to fetch remote file', undefined, 'FETCH_ERROR');
+  }
+
+  if (err instanceof AppError) {
+    return fail(res, statusCode, normalizeMessage(err, statusCode), {
+      code,
+      details: err.details,
     });
   }
 
-  /* --- 3. ошибки загрузки по ссылке / сетевые --- */
-  if (err.name === "FetchError" || /fetch/i.test(err.message)) {
-    return res.status(502).json({
-      error: "FileDownloadError",
-      message: "Не удалось загрузить файл по указанной ссылке",
-    });
-  }
-
-  /* --- 4. если мы выбросили объект с code --- */
-  if (err.code === 413) {
-    return res.status(413).json({ error: "FileTooLarge", message: err.message });
-  }
-
-  /* --- 5. fallback --- */
-  return res.status(500).json({
-    error: "InternalServerError",
-    message: "Something went wrong",
+  const details = !isProd && err?.stack ? { stack: err.stack } : undefined;
+  return fail(res, statusCode, normalizeMessage(err, statusCode), {
+    code,
+    details,
   });
 };

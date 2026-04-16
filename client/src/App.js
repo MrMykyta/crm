@@ -39,6 +39,11 @@ import LeadDetailPage from "./pages/CRM/Lead/LeadDetailPage";
 import ClientDetailPage from "./pages/CRM/Client/ClientDetailPage";
 import NotificationsPage from "./pages/system/NotificationsPage";
 import ChatPage from "./pages/Chat";
+import NotesPage from "./pages/system/NotesPage";
+import ContactsPage from "./pages/CRM/Contact/ContactsPage";
+import ContactDetailPage from "./pages/CRM/Contact/ContactDetailPage";
+import ProductsPage from "./pages/PIM/Product/ProductsPage";
+import ProductDetailPage from "./pages/PIM/Product/ProductDetailPage";
 
 // ===== Protected
 const Protected = ({ children }) => {
@@ -48,6 +53,7 @@ const Protected = ({ children }) => {
   return token ? children : <Navigate to="/auth" replace />;
 };
 
+// AppShell: вспомогательная логика модуля.
 function AppShell() {
   const dispatch = useDispatch();
   const checked = useSelector((s) => s.bootstrap?.checked);
@@ -127,21 +133,26 @@ function AppShell() {
             <Route path="deals" element={<CompanyDeals />} />
           </Route>
 
-          <Route path="crm/counterparties" element={<CounterpartiesPage />} />
+          <Route path="counterparties" element={<CounterpartiesPage />} />
           <Route
-            path="crm/counterparties/:id"
+            path="counterparties/:id"
             element={<CounterpartyDetailPage />}
           />
-          <Route path="crm/leads" element={<LeadsPage />} />
-          <Route path="crm/leads/:id" element={<LeadDetailPage />} />
-          <Route path="crm/clients" element={<ClientsPage />} />
-          <Route path="crm/clients/:id" element={<ClientDetailPage />} />
+          <Route path="leads" element={<LeadsPage />} />
+          <Route path="leads/:id" element={<LeadDetailPage />} />
+          <Route path="clients" element={<ClientsPage />} />
+          <Route path="clients/:id" element={<ClientDetailPage />} />
 
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="deals" element={<DealsListPage />} />
           <Route path="deals/:id" element={<DealDetailsPage />} />
           <Route path="tasks" element={<TaskPage />} />
           <Route path="tasks/:id" element={<TaskDetailPage />} />
+          <Route path="notes" element={<NotesPage />} />
+          <Route path="contacts" element={<ContactsPage />} />
+          <Route path="contacts/:id" element={<ContactDetailPage />} />
+          <Route path="products" element={<ProductsPage />} />
+          <Route path="products/:id" element={<ProductDetailPage />} />
 
           <Route path="company-users" element={<CompanyUsers />} />
           <Route path="users/:userId" element={<UserEntityPage />} />
@@ -159,6 +170,7 @@ function AppShell() {
   );
 }
 
+// App: вспомогательная логика модуля.
 export default function App() {
   return (
     <Provider store={store}>
@@ -168,3 +180,4 @@ export default function App() {
     </Provider>
   );
 }
+

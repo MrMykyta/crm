@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import styles from './EmailVerificationModal.module.css';
 
+// getMailboxUrl: возвращает вычисленное значение для UI.
 function getMailboxUrl(email) {
   if (!email) return null;
   const domain = String(email.split('@')[1] || '').toLowerCase().trim();
@@ -29,7 +30,8 @@ function getMailboxUrl(email) {
   };
   if (direct[domain]) return direct[domain];
 
-  const endsWithAny = (arr) => arr.some(suf => domain.endsWith(suf));
+    // endsWithAny: вспомогательная логика компонента.
+const endsWithAny = (arr) => arr.some(suf => domain.endsWith(suf));
   if (endsWithAny(['outlook.com', 'outlook.pl', 'outlook.de', 'outlook.co.uk'])) return 'https://outlook.live.com/';
   if (endsWithAny(['hotmail.com', 'hotmail.co.uk', 'hotmail.fr'])) return 'https://outlook.live.com/';
   if (domain.startsWith('live.') || domain.endsWith('.live.com')) return 'https://outlook.live.com/';
@@ -37,6 +39,7 @@ function getMailboxUrl(email) {
   return null;
 }
 
+// Компонент EmailVerificationModal: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function EmailVerificationModal({
   open,
   email,
@@ -59,7 +62,8 @@ export default function EmailVerificationModal({
 
   if (!open) return null;
 
-  const handleResend = async () => {
+    // handleResend: обработчик пользовательского действия.
+const handleResend = async () => {
     if (!email || !onResend) return;
     try {
       setLoading(true);

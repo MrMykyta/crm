@@ -12,19 +12,10 @@ import {
   renderHighlightedText,
 } from "../../utils/chatMessageUtils";
 import ChatAttachment from "../ChatAttachment";
+import linkifyMessage from "../../../../utils/linkifyMessage";
 
 const MEDIA_PREFIXES = ["image/", "video/"];
 const MAX_MEDIA_PREVIEW = 4;
-const DOC_EXTS = new Set(["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"]);
-const DOC_MIME = new Set([
-  "application/pdf",
-  "application/msword",
-  "application/vnd.ms-excel",
-  "application/vnd.ms-powerpoint",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-]);
 
 /**
  * Normalize raw attachment object to unified shape.
@@ -61,23 +52,6 @@ const isAudioAttachment = (att) => {
   if (!att?.mime) return false;
   return String(att.mime).startsWith("audio/");
 };
-
-/**
- * Whether attachment should be treated as a document (pdf/doc/xls/ppt).
- * @param {object} att
- * @returns {boolean}
- */
-const isDocumentAttachment = (att) => {
-  if (!att) return false;
-  if (DOC_MIME.has(att.mime)) return true;
-  const name = att.filename || "";
-  const parts = name.split(".");
-  const ext = parts.length > 1 ? parts.pop().toLowerCase() : "";
-  return DOC_EXTS.has(ext);
-};
-
-const attachmentKey = (att) =>
-  `${att?.fileId || ""}|${att?.url || ""}|${att?.filename || ""}`;
 
 /**
  * Single media tile used inside message grid.
@@ -127,6 +101,7 @@ function MessageMediaTile({ item, overlayText, onOpen }) {
   );
 }
 
+// Компонент ChatMessages: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ChatMessages({
   listRef,
   messagesClass,
@@ -142,9 +117,6 @@ export default function ChatMessages({
   onMessageActionsClick,
   onOpenMedia,
   onToggleReaction,
-  activeOverlay,
-  onToggleReactionPicker,
-  onCloseReactionPicker,
 
   // режим выбора сообщений
   selectMode,
@@ -160,8 +132,8 @@ export default function ChatMessages({
 
   // Reactions state mapped by messageId from Redux.
   const reactionsById = useSelector((st) => st.chat.reactions || {});
-  // Picker ref for outside click handling.
-  const pickerRef = useRef(null);
+  const longPressTimerRef = useRef(null);
+  const longPressStartRef = useRef({ x: 0, y: 0 });
 
   // Map for quick lookup by id (reply preview).
   const byId = useMemo(() => {
@@ -184,23 +156,59 @@ export default function ChatMessages({
     return () => clearTimeout(tmo);
   }, [jumpHighlightId]);
 
-  // Close reaction picker on ESC or outside click.
-  const isReactionOpen = activeOverlay?.type === "reaction";
+    // clearLongPress: вспомогательная логика компонента.
+const clearLongPress = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
 
-  useEffect(() => {
-    if (!isReactionOpen) return;
-    const onClick = (e) => {
-      if (e.target.closest("[data-reaction-trigger]")) return;
-      if (e.target.closest("[data-reaction-picker]")) return;
-      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
-        onCloseReactionPicker && onCloseReactionPicker();
-      }
-    };
-    document.addEventListener("mousedown", onClick, true);
-    return () => {
-      document.removeEventListener("mousedown", onClick, true);
-    };
-  }, [isReactionOpen, onCloseReactionPicker]);
+    // handleTouchStart: обработчик пользовательского действия.
+const handleTouchStart = (message, e) => {
+    if (!onMessageActionsClick || selectMode) return;
+    if (!e.touches || e.touches.length !== 1) return;
+
+    const touch = e.touches[0];
+    longPressStartRef.current = { x: touch.clientX, y: touch.clientY };
+
+    clearLongPress();
+    longPressTimerRef.current = setTimeout(() => {
+      const anchor = e.currentTarget;
+      onMessageActionsClick(
+        message,
+        {
+          clientY: touch.clientY,
+                    // preventDefault: вспомогательная логика компонента.
+preventDefault: () => {},
+                    // stopPropagation: вспомогательная логика компонента.
+stopPropagation: () => {},
+        },
+        anchor
+      );
+      clearLongPress();
+    }, 480);
+  };
+
+    // handleTouchMove: обработчик пользовательского действия.
+const handleTouchMove = (e) => {
+    if (!e.touches || e.touches.length !== 1) {
+      clearLongPress();
+      return;
+    }
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - longPressStartRef.current.x);
+    const dy = Math.abs(touch.clientY - longPressStartRef.current.y);
+    if (dx > 10 || dy > 10) {
+      clearLongPress();
+    }
+  };
+
+    // handleTouchEnd: обработчик пользовательского действия.
+const handleTouchEnd = () => {
+    clearLongPress();
+  };
+
 
   // скролл к сообщению + подсветка
   const handleJumpToMessage = (targetMsg, e) => {
@@ -256,20 +264,6 @@ export default function ChatMessages({
     return items.sort((a, b) => b.count - a.count);
   };
 
-  // Emoji set for the quick picker.
-  const REACTION_EMOJI = [
-    "👍",
-    "❤️",
-    "😂",
-    "😮",
-    "😢",
-    "🙏",
-    "🎉",
-    "🔥",
-    "👏",
-    "👀",
-  ];
-
   // 🔼 обработчик скролла: если близко к верху — грузим ещё
   const handleScroll = (e) => {
     if (!hasMore || isLoadingMore || !onLoadMore) return;
@@ -279,6 +273,19 @@ export default function ChatMessages({
     if (el.scrollTop <= 300) {
       onLoadMore();
     }
+  };
+
+    // renderMessageText: описывает рендер соответствующего блока UI.
+const renderMessageText = (text, { allowLinks = true } = {}) => {
+    if (!allowLinks) {
+      return renderHighlightedText(text || "", searchQuery, s.msgHighlight);
+    }
+
+    return linkifyMessage(text || "", {
+      className: s.chatLink,
+      highlightQuery: searchQuery,
+      highlightClassName: s.msgHighlight,
+    });
   };
 
   return (
@@ -340,11 +347,7 @@ export default function ChatMessages({
                   className={s.systemMessageWrap}
                 >
                   <div className={s.systemMessageInner}>
-                    {renderHighlightedText(
-                      m.text || "",
-                      searchQuery,
-                      s.msgHighlight
-                    )}
+                    {renderMessageText(m.text || "")}
                   </div>
                 </div>
               );
@@ -369,9 +372,6 @@ export default function ChatMessages({
             const otherAttachments = normalizedAttachments.filter(
               (att) => !isMediaAttachment(att) && !isAudioAttachment(att)
             );
-
-            const hasAttachments =
-              mediaAttachments.length > 0 || otherAttachments.length > 0;
 
             const {
               name: authorName,
@@ -473,9 +473,6 @@ export default function ChatMessages({
               s.messageWrap,
               isMe ? s.meWrap : s.otherWrap,
               isSelected ? s.messageWrapSelected : "",
-              isReactionOpen && String(activeOverlay?.messageId) === String(m._id)
-                ? s.messageWrapActionsOpen
-                : "",
               wrapStackClass,
             ]
               .filter(Boolean)
@@ -501,9 +498,6 @@ export default function ChatMessages({
             const mediaPreview = mediaAttachments.slice(0, MAX_MEDIA_PREVIEW);
             const extraMediaCount = mediaAttachments.length - mediaPreview.length;
             const reactions = getReactionEntries(m);
-            const showPicker =
-              isReactionOpen &&
-              String(activeOverlay?.messageId) === String(m._id);
             const bodyClass = [
               s.messageBody,
               isMe ? s.messageBodyMe : s.messageBodyOther,
@@ -519,6 +513,10 @@ export default function ChatMessages({
                 onDoubleClick={(e) =>
                   onMessageActionsClick && onMessageActionsClick(m, e)
                 }
+                onTouchStart={(e) => handleTouchStart(m, e)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchEnd}
                 onContextMenu={(e) => {
                   if (selectMode) return;
                   e.preventDefault();
@@ -542,71 +540,6 @@ export default function ChatMessages({
                 <div className={bodyClass}>
                   {showBubble && (
                     <div className={bubbleClass} data-role="msg-bubble">
-                      {/* Hover actions */}
-                      {!selectMode && !isDeleted && (
-                        <div
-                          className={`${s.msgActions} ${
-                            isMe ? s.msgActionsMe : s.msgActionsOther
-                          }`}
-                        >
-                          <button
-                            type="button"
-                            className={`${s.msgActionBtn} ${s.msgActionBtnReact}`}
-                            aria-label={t("chat.actions.react")}
-                            data-reaction-trigger
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onToggleReactionPicker &&
-                                onToggleReactionPicker(m._id);
-                            }}
-                          >
-                            <span className={s.msgActionPlus}>+</span>
-                            <span className={s.msgActionEmoji}>😊</span>
-                          </button>
-                          <button
-                            type="button"
-                            className={s.msgActionBtn}
-                            aria-label={t("chat.actions.more")}
-                            onClick={(e) => {
-                              const anchor = e.currentTarget.closest(
-                                '[data-role="msg-bubble"]'
-                              );
-                              onMessageActionsClick &&
-                                onMessageActionsClick(m, e, anchor);
-                            }}
-                          >
-                            ⋯
-                          </button>
-                        </div>
-                      )}
-
-                      {showPicker && (
-                        <div
-                          ref={pickerRef}
-                          data-reaction-picker
-                          className={`${s.reactionPicker} ${
-                            isMe ? s.reactionPickerMe : s.reactionPickerOther
-                          }`}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {REACTION_EMOJI.map((emoji) => (
-                            <button
-                              key={`${m._id}-${emoji}`}
-                              type="button"
-                              className={s.reactionEmojiBtn}
-                              onClick={() => {
-                                onToggleReaction &&
-                                  onToggleReaction(m._id, emoji);
-                                onCloseReactionPicker &&
-                                  onCloseReactionPicker();
-                              }}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-
                       {/* Переслано от ... */}
                       {showForward && (
                         <div className={s.msgForwardLabel}>
@@ -660,12 +593,13 @@ export default function ChatMessages({
                             .filter(Boolean)
                             .join(" ")}
                         >
-                          {renderHighlightedText(
+                          {renderMessageText(
                             isDeleted
                               ? t("chat.message.deleted")
                               : m.text || "",
-                            searchQuery,
-                            s.msgHighlight
+                            {
+                              allowLinks: !isDeleted,
+                            }
                           )}
                         </div>
                       )}
@@ -734,71 +668,7 @@ export default function ChatMessages({
                         .filter(Boolean)
                         .join(" ")}
                       data-role="msg-bubble"
-                    >
-                      {!selectMode && !isDeleted && (
-                        <div
-                          className={`${s.msgActions} ${
-                            isMe ? s.msgActionsMe : s.msgActionsOther
-                          }`}
-                        >
-                          <button
-                            type="button"
-                            className={`${s.msgActionBtn} ${s.msgActionBtnReact}`}
-                            aria-label={t("chat.actions.react")}
-                            data-reaction-trigger
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onToggleReactionPicker &&
-                                onToggleReactionPicker(m._id);
-                            }}
-                          >
-                            <span className={s.msgActionPlus}>+</span>
-                            <span className={s.msgActionEmoji}>😊</span>
-                          </button>
-                          <button
-                            type="button"
-                            className={s.msgActionBtn}
-                            aria-label={t("chat.actions.more")}
-                            onClick={(e) => {
-                              const anchor = e.currentTarget.closest(
-                                '[data-role="msg-bubble"]'
-                              );
-                              onMessageActionsClick &&
-                                onMessageActionsClick(m, e, anchor);
-                            }}
-                          >
-                            ⋯
-                          </button>
-                        </div>
-                      )}
-
-                      {showPicker && (
-                        <div
-                          ref={pickerRef}
-                          data-reaction-picker
-                          className={`${s.reactionPicker} ${
-                            isMe ? s.reactionPickerMe : s.reactionPickerOther
-                          }`}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {REACTION_EMOJI.map((emoji) => (
-                            <button
-                              key={`${m._id}-${emoji}`}
-                              type="button"
-                              className={s.reactionEmojiBtn}
-                              onClick={() => {
-                                onToggleReaction &&
-                                  onToggleReaction(m._id, emoji);
-                                onCloseReactionPicker &&
-                                  onCloseReactionPicker();
-                              }}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    />
                   )}
 
                   {/* Медиа-вложения (grid) */}
@@ -832,30 +702,14 @@ export default function ChatMessages({
                   {/* Прочие вложения (документы) */}
                   {otherAttachments.length > 0 && (
                     <div className={s.attachmentsWrap}>
-                      {(() => {
-                        const normalized = otherAttachments
-                          .map(normalizeAttachment)
-                          .filter(Boolean);
-                        const docItems = normalized.filter(isDocumentAttachment);
-                        const docIndexMap = new Map(
-                          docItems.map((att, idx) => [
-                            attachmentKey(att),
-                            idx,
-                          ])
-                        );
-
-                        return normalized.map((att, idx) => (
-                          <ChatAttachment
-                            key={`${m._id}-att-${att.fileId || att.url || idx}`}
-                            attachment={att}
-                            mode="message"
-                            forceFileCard
-                            onOpenMedia={onOpenMedia}
-                            documentItems={docItems}
-                            documentIndex={docIndexMap.get(attachmentKey(att))}
-                          />
-                        ));
-                      })()}
+                      {otherAttachments.map((att, idx) => (
+                        <ChatAttachment
+                          key={`${m._id}-att-${att.fileId || att.url || idx}`}
+                          attachment={att}
+                          mode="message"
+                          forceFileCard
+                        />
+                      ))}
                     </div>
                   )}
 
@@ -930,3 +784,4 @@ export default function ChatMessages({
     </div>
   );
 }
+

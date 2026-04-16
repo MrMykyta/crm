@@ -18,6 +18,10 @@ import {
   useCreateCounterpartyMutation,
 } from '../../../../store/rtk/counterpartyApi';
 
+/**
+ * Страница списка лидов:
+ * фиксирует type=lead и управляет таблицей/фильтрами/созданием лида.
+ */
 export default function LeadsPage() {
   const listRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -27,19 +31,32 @@ export default function LeadsPage() {
   const openAsModal = useOpenAsModal();
 
   // prefs таблицы
-  const { colWidths, colOrder, onColumnResize, onColumnOrderChange } =
-    useGridPrefs('crm.leads');
+  const {
+    colWidths,
+    colOrder,
+    colVisibility,
+    savedViews,
+    activeViewId,
+    onColumnResize,
+    onColumnOrderChange,
+    onColumnVisibilityChange,
+    onSavedViewsChange,
+    onActiveViewChange,
+    resetGridPrefs,
+  } = useGridPrefs('crm.leads');
 
   const [createCounterparty, { isLoading: creating }] = useCreateCounterpartyMutation();
 
+  // Открывает карточку лида в обычном режиме или как modal-route.
   const openDetail = useCallback(
     (id) => {
       const suffix = openAsModal ? '?modal=1' : '';
-      navigate(`/main/crm/leads/${id}${suffix}`);
+      navigate(`/main/leads/${id}${suffix}`);
     },
     [navigate, openAsModal]
   );
 
+  // Конфигурация колонок таблицы лидов.
   const columns = useMemo(
     () => [
       {
@@ -47,7 +64,8 @@ export default function LeadsPage() {
         title: t('crm.table.columns.name'),
         sortable: true,
         width: 280,
-        render: (r) => (
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => (
           <LinkCell
             primary={r.shortName || r.fullName}
             secondary={r.fullName && r.fullName !== r.shortName ? r.fullName : null}
@@ -63,13 +81,15 @@ export default function LeadsPage() {
         title: t('crm.table.columns.nip'),
         sortable: true,
         width: 160,
-        render: (r) => r.nip || '—',
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => r.nip || '—',
       },
       {
         key: 'address',
         title: t('crm.table.columns.address'),
         width: 360,
-        render: (r) => (
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => (
           <AddressCell
             street={r.street}
             postcode={r.postcode}
@@ -83,20 +103,23 @@ export default function LeadsPage() {
         title: t('crm.table.columns.type'),
         sortable: true,
         width: 140,
-        render: (r) => t(`crm.enums.type.${r.type}`),
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => t(`crm.enums.type.${r.type}`),
       },
       {
         key: 'status',
         title: t('crm.table.columns.status'),
         sortable: true,
         width: 140,
-        render: (r) => t(`crm.enums.status.${r.status}`),
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => t(`crm.enums.status.${r.status}`),
       },
       {
         key: 'owner',
         title: t('crm.table.columns.owner'),
         width: 200,
-        render: (r) => r.mainResponsibleUser || '—',
+                // render: описывает рендер соответствующего блока UI.
+render: (r) => r.mainResponsibleUser || '—',
       },
     ],
     [t, i18n.language, openDetail]
@@ -113,6 +136,7 @@ export default function LeadsPage() {
     []
   );
 
+  // Основная кнопка действия страницы (создать лид).
   const actions = useMemo(
     () => (
       <AddButton onClick={() => setOpen(true)} title={t('crm.actions.addLead')}>
@@ -122,6 +146,7 @@ export default function LeadsPage() {
     [t]
   );
 
+  // Кнопки футера модалки создания лида.
   const footer = useMemo(
     () => (
       <>
@@ -153,6 +178,13 @@ export default function LeadsPage() {
         onColumnResize={onColumnResize}
         columnOrder={colOrder}
         onColumnOrderChange={onColumnOrderChange}
+        columnVisibility={colVisibility}
+        onColumnVisibilityChange={onColumnVisibilityChange}
+        savedViews={savedViews}
+        activeViewId={activeViewId}
+        onSavedViewsChange={onSavedViewsChange}
+        onActiveViewChange={onActiveViewChange}
+        onResetColumns={resetGridPrefs}
         ToolbarComponent={(props) => (
           <FilterToolbar
             {...props}
@@ -197,6 +229,7 @@ export default function LeadsPage() {
             loading={saving || creating}
             withButtons={false}
             onCancel={() => setOpen(false)}
+            // Создаёт лида и обновляет таблицу без полного перезапуска страницы.
             onSubmit={async (values) => {
                 setSaving(true);
                 try {
@@ -216,3 +249,4 @@ export default function LeadsPage() {
     </>
   );
 }
+

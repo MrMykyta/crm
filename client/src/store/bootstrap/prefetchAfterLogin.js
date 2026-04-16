@@ -4,6 +4,7 @@ import { counterpartyApi } from '../rtk/counterpartyApi';
 import { tasksApi } from '../rtk/tasksApi';
 import { companyUsersApi } from '../rtk/companyUsersApi';
 
+// prefetchAfterLogin: вспомогательная логика модуля.
 export function prefetchAfterLogin(store) {
   const dispatch = store.dispatch;
 

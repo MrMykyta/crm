@@ -14,16 +14,20 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const ACCESS_TTL = process.env.JWT_ACCESS_TTL || '1h';
 const REFRESH_TTL = process.env.JWT_REFRESH_TTL || '30d';
 
+// genToken: выполняет вспомогательную бизнес-логику сервиса.
 function genToken() {
   return crypto.randomBytes(24).toString('hex');
 }
+// expiresAtFromNow: выполняет вспомогательную бизнес-логику сервиса.
 function expiresAtFromNow() {
   return new Date(Date.now() + INVITE_TTL_DAYS * 24 * 3600 * 1000);
 }
+// inviteLink: выполняет вспомогательную бизнес-логику сервиса.
 function inviteLink(token) {
   const base = process.env.APP_URL || 'http://localhost:3000';
   return `${base}/invite/accept?token=${encodeURIComponent(token)}`;
 }
+// sendInviteEmail: выполняет вспомогательную бизнес-логику сервиса.
 async function sendInviteEmail({ to, token, repeat = false, companyName, invitedByName }) {
   const link = inviteLink(token);
   const subj = repeat ? 'Приглашение в компанию (повтор)' : 'Приглашение в компанию';
@@ -57,6 +61,7 @@ async function sendInviteEmail({ to, token, repeat = false, companyName, invited
   await mailer.sendMail({ to, subject: subj, html });
 }
 
+// buildUserDTO: собирает служебную структуру для выполнения запроса.
 function buildUserDTO(u) {
   return {
     id: u.id,
@@ -68,6 +73,7 @@ function buildUserDTO(u) {
   };
 }
 
+// signTokens: выполняет вспомогательную бизнес-логику сервиса.
 function signTokens(userId, companyId) {
   const accessToken = jwt.sign(
     { sub: String(userId), companyId: String(companyId) },
@@ -272,3 +278,4 @@ module.exports.accept = async (token, password, patch = {}) => {
     companyId: outCompanyId,
   };
 };
+

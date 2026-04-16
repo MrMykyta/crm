@@ -2,21 +2,61 @@
 
 const express = require('express');
 const contactRouter = express.Router();
+
 const { requireMember } = require('../../middleware/requireMember');
+const validateBody = require('../../middleware/validateBody');
+const validateQuery = require('../../middleware/validateQuery');
+const authorize = require('../../middleware/authorize');
+const contactSchema = require('../../schemas/contactSchema');
 const ContactController = require('../../controllers/crm/Contact.controller');
 
-/**
- * companyId берём из req.user.companyId.
- * В запросах можно передавать:
- *  - GET /contact?counterpartyId=...&status=active&search=...
- *  - include флаги: withPoints=1, withCounterparty=1
- */
+contactRouter.get(
+  '/',
+  requireMember,
+  authorize('contact:read'),
+  validateQuery(contactSchema.listQuery),
+  ContactController.list
+);
 
-contactRouter.get('/',        requireMember, ContactController.list);
-contactRouter.get('/:id',    requireMember, ContactController.getOne);
-contactRouter.post('/',       requireMember, ContactController.create);
-contactRouter.put('/:id',    requireMember, ContactController.update);
-contactRouter.delete('/:id', requireMember, ContactController.remove);
-contactRouter.post('/:id/restore', requireMember, ContactController.restore);
+contactRouter.get(
+  '/counterparty/:counterpartyId',
+  requireMember,
+  authorize('contact:read'),
+  validateQuery(contactSchema.byCounterpartyQuery),
+  ContactController.getByCounterparty
+);
+
+contactRouter.get('/:id', requireMember, authorize('contact:read'), ContactController.getById);
+
+contactRouter.post(
+  '/',
+  requireMember,
+  authorize('contact:create'),
+  validateBody(contactSchema.create),
+  ContactController.create
+);
+
+contactRouter.patch(
+  '/:id',
+  requireMember,
+  authorize('contact:update'),
+  validateBody(contactSchema.update),
+  ContactController.update
+);
+
+// backward compatibility with old clients
+contactRouter.put(
+  '/:id',
+  requireMember,
+  authorize('contact:update'),
+  validateBody(contactSchema.update),
+  ContactController.update
+);
+
+contactRouter.patch('/:id/set-main', requireMember, authorize('contact:update'), ContactController.setMain);
+
+contactRouter.delete('/:id', requireMember, authorize('contact:delete'), ContactController.remove);
+
+contactRouter.post('/:id/restore', requireMember, authorize('contact:update'), ContactController.restore);
 
 module.exports = contactRouter;

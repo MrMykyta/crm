@@ -54,7 +54,8 @@ export const bootstrapLoad = createAsyncThunk(
       ),
     ]);
 
-    const safe = (r) => (r?.value?.data ?? r?.value ?? []);
+        // safe: вспомогательная логика модуля.
+const safe = (r) => (r?.value?.data ?? r?.value ?? []);
     const usersRes = safe(results[0]);
     const countersRes = safe(results[1]);
 
@@ -92,9 +93,11 @@ const bootstrapSlice = createSlice({
     checked: false,
   },
   reducers: {
-    setChecked: (s, a) => { s.checked = !!a.payload; },
+        // setChecked: обновляет состояние.
+setChecked: (s, a) => { s.checked = !!a.payload; },
   },
-  extraReducers: (b) => {
+    // extraReducers: вспомогательная логика модуля.
+extraReducers: (b) => {
     b.addCase(bootstrapLoad.fulfilled, (state, action) => {
       Object.assign(state, action.payload, { loaded: true });
     });
@@ -112,3 +115,4 @@ const bootstrapSlice = createSlice({
 
 export const { setChecked } = bootstrapSlice.actions;
 export default bootstrapSlice.reducer;
+

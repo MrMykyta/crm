@@ -4,6 +4,7 @@ import s from "../CalendarPage.module.css";
 import { isSameDay, toKey } from "./dateUtils";
 import CurrentTimeLineWeek from "./CurrentTimeLineWeek";
 
+// Компонент WeekView: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function WeekView({ baseDate, today, onEventOpen }) {
   // считаем понедельник
   const start = new Date(baseDate);
@@ -63,7 +64,8 @@ export default function WeekView({ baseDate, today, onEventOpen }) {
     return m;
   }, [days]);
 
-  const toMinutes = (hhmm) => {
+    // toMinutes: вспомогательная логика компонента.
+const toMinutes = (hhmm) => {
     const [h, m] = hhmm.split(":").map(Number);
     return h * 60 + m;
   };
@@ -85,7 +87,8 @@ export default function WeekView({ baseDate, today, onEventOpen }) {
     });
   };
 
-  const closeAllDay = () => setAllDayModal(null);
+    // closeAllDay: закрывает связанный UI-элемент.
+const closeAllDay = () => setAllDayModal(null);
 
   // высота полоски all-day у каждого дня — фикс
   const ALLDAY_H = 42;

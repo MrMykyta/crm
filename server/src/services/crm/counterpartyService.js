@@ -60,6 +60,7 @@ async function getCompanyUserIds(companyId, opts = {}) {
   return rows.map((r) => r.userId).filter(Boolean);
 }
 
+// requireCompanyId: выполняет вспомогательную бизнес-логику сервиса.
 function requireCompanyId(companyId) {
   if (!companyId) {
     const err = new Error("companyId is required");
@@ -68,6 +69,7 @@ function requireCompanyId(companyId) {
   }
 }
 
+// assertDepartmentInCompany: выполняет вспомогательную бизнес-логику сервиса.
 async function assertDepartmentInCompany(departmentId, companyId, t) {
   if (!departmentId) return;
   const dept = await CompanyDepartment.findOne({
@@ -81,6 +83,7 @@ async function assertDepartmentInCompany(departmentId, companyId, t) {
   }
 }
 
+// assertHoldingInCompany: выполняет вспомогательную бизнес-логику сервиса.
 async function assertHoldingInCompany(holdingId, companyId, t) {
   if (!holdingId) return;
   const holding = await Counterparty.findOne({
@@ -94,6 +97,7 @@ async function assertHoldingInCompany(holdingId, companyId, t) {
   }
 }
 
+// assertMemberInCompany: выполняет вспомогательную бизнес-логику сервиса.
 async function assertMemberInCompany(userId, companyId, t) {
   if (!userId) return;
   const member = await UserCompany.findOne({
@@ -515,3 +519,4 @@ module.exports.convertLead = async (companyId, id, userId) => {
 
   return true;
 };
+

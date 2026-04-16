@@ -9,6 +9,7 @@ import { selectUser, selectAvatarUrl } from "../../../store/slices/authSlice";
 import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import s from "./UserMenu.module.css";
 
+// Компонент UserMenu: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function UserMenu({ onClose, onLogout }) {
   const ref = useRef(null);
   const navigate = useNavigate();
@@ -22,8 +23,10 @@ export default function UserMenu({ onClose, onLogout }) {
   const [hasImg, setHasImg] = useState(Boolean(avatarUrl));
 
   useEffect(() => {
-    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose?.(); };
-    const onEsc = (e) => e.key === "Escape" && onClose?.();
+        // onDoc: вспомогательная логика компонента.
+const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose?.(); };
+        // onEsc: вспомогательная логика компонента.
+const onEsc = (e) => e.key === "Escape" && onClose?.();
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onEsc);
     return () => {
@@ -34,9 +37,11 @@ export default function UserMenu({ onClose, onLogout }) {
 
   useEffect(() => { setHasImg(Boolean(avatarUrl)); }, [avatarUrl]);
 
-  const goProfile = () => { onClose?.(); navigate("/main/user-profile"); };
+    // goProfile: вспомогательная логика компонента.
+const goProfile = () => { onClose?.(); navigate("/main/user-profile"); };
 
-  const doLogout = async () => {
+    // doLogout: вспомогательная логика компонента.
+const doLogout = async () => {
     onClose?.();
     try { await logout().unwrap(); } catch {}
     if (onLogout) { try { await onLogout(); } catch {} ; return; }
@@ -88,3 +93,4 @@ export default function UserMenu({ onClose, onLogout }) {
     </div>
   );
 }
+
