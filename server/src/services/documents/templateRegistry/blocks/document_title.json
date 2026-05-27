@@ -1,0 +1,25 @@
+{
+  "type": "document_title",
+  "displayName": "Document Title",
+  "family": "document_meta",
+  "defaultProps": {
+    "uppercase": true,
+    "align": "left",
+    "fontSize": 18,
+    "fallbackLabel": "DOCUMENT"
+  },
+  "layout": {
+    "widthMode": "auto",
+    "minWidthPx": 160
+  },
+  "bindingSchema": {
+    "supportedPaths": [
+      "document.typeLabel",
+      "document.type",
+      "documentType.displayName"
+    ],
+    "requiredPaths": [
+      "document.typeLabel"
+    ]
+  }
+}

@@ -18,6 +18,10 @@ import CounterpartyDetailPage from "./pages/CRM/Counterparty/CounterpartyDetailP
 import CompanySettings from "./pages/company/CompanySettings";
 import CompanyModules from "./pages/company/CompanySettings/Modules/CompanyModules";
 import CompanyDeals from "./pages/company/CompanySettings/Modules/CompanyDeals";
+import InvoicesSettings from "./pages/company/CompanySettings/Modules/InvoicesSettings";
+import WarehouseDocumentSettings from "./pages/company/CompanySettings/Modules/WarehouseDocumentSettings";
+import DocumentTemplatesPage from "./pages/company/CompanySettings/Modules/DocumentTemplatesPage";
+import DocumentTemplateEditorPage from "./pages/company/CompanySettings/Modules/DocumentTemplateEditorPage";
 import CompanyInfoPage from "./pages/company/CompanyInfoPage";
 import CompanyUsers from "./pages/company/CompanyUsers";
 import InviteAcceptPage from "./pages/auth/InviteAcceptPage";
@@ -44,6 +48,9 @@ import ContactsPage from "./pages/CRM/Contact/ContactsPage";
 import ContactDetailPage from "./pages/CRM/Contact/ContactDetailPage";
 import ProductsPage from "./pages/PIM/Product/ProductsPage";
 import ProductDetailPage from "./pages/PIM/Product/ProductDetailPage";
+import DocumentCreatePage from "./pages/documents/DocumentCreatePage";
+import DocumentDetailsPage from "./pages/documents/DocumentDetailsPage";
+import DocumentsListPage from "./pages/documents/DocumentsListPage";
 
 // ===== Protected
 const Protected = ({ children }) => {
@@ -94,7 +101,7 @@ function AppShell() {
   }, [token, companyId]);
 
   const rootElement = checked ? (
-    <Navigate to={token ? "/main" : "/auth"} replace />
+    <Navigate to={token ? "/main/pulpit" : "/auth"} replace />
   ) : null;
 
   return (
@@ -107,7 +114,6 @@ function AppShell() {
         <Route path="/auth/company-setup" element={<CompanySetupPage />} />
         <Route path="/auth/reset" element={<ResetPasswordPage />} />
         <Route path="/invite/accept" element={<InviteAcceptPage />} />
-
         <Route
           path="/main"
           element={
@@ -131,6 +137,11 @@ function AppShell() {
             <Route index element={<Navigate to="modules" replace />} />
             <Route path="modules" element={<CompanyModules />} />
             <Route path="deals" element={<CompanyDeals />} />
+            <Route path="invoices" element={<InvoicesSettings />} />
+            <Route path="warehouse-docs" element={<WarehouseDocumentSettings />} />
+            <Route path="document-templates" element={<DocumentTemplatesPage />} />
+            <Route path="document-templates/new" element={<DocumentTemplatesPage />} />
+            <Route path="document-templates/:templateId/editor" element={<DocumentTemplateEditorPage />} />
           </Route>
 
           <Route path="counterparties" element={<CounterpartiesPage />} />
@@ -153,7 +164,9 @@ function AppShell() {
           <Route path="contacts/:id" element={<ContactDetailPage />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="products/:id" element={<ProductDetailPage />} />
-
+          <Route path="documents" element={<DocumentsListPage />} />
+          <Route path="documents/create" element={<DocumentCreatePage />} />
+          <Route path="documents/:id" element={<DocumentDetailsPage />} />
           <Route path="company-users" element={<CompanyUsers />} />
           <Route path="users/:userId" element={<UserEntityPage />} />
 
@@ -180,4 +193,3 @@ export default function App() {
     </Provider>
   );
 }
-

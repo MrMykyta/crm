@@ -4,6 +4,7 @@ const ApplicationError = require('../../errors/ApplicationError');
 const { bootstrapCompanyAcl } = require('../system/aclBootstrap');
 const { addContacts } = require('./contactPointService');
 const { ensureDefaultUomsForCompany } = require('../pim/uomDefaults');
+const { bootstrapCompanyNumberingSettings } = require('./documentNumberingService');
 
 const UUID_RE = /^[0-9a-fA-F-]{32,36}$/;
 // isFileApiUrl: проверяет бизнес-условие и возвращает boolean.
@@ -119,6 +120,9 @@ module.exports.createWithOwner = async (ownerUserId, data = {}) => {
     // 5) базовый справочник единиц измерения для компании
     await ensureDefaultUomsForCompany(company.id, { transaction: t });
 
+    // 6) дефолтные настройки нумерации документов компании
+    await bootstrapCompanyNumberingSettings({ companyId: company.id, transaction: t });
+
 
     await t.commit();
     return company;
@@ -184,4 +188,3 @@ module.exports.deleteCompany = async (requesterId, companyId) => {
   await company.destroy(); // paranoid: true — soft delete
   return true;
 };
-

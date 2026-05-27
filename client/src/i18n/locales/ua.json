@@ -105,6 +105,7 @@
     "receipts": "Квитанції",
     "orders": "Замовлення",
     "offers": "Пропозиції",
+    "documents": "Документи",
     "promotions": "Акції",
     "coupons": "Купони",
     "shipments": "Відправлення",
@@ -437,6 +438,257 @@
       "allTypes": "Усі типи",
       "allStatuses": "Усі статуси",
       "searchPlaceholder": "Пошук (назва, NIP, REGON...)"
+    }
+  },
+  "companySettings": {
+    "title": "Налаштування компанії",
+    "modules": "Модулі",
+    "lists": "Списки",
+    "deals": "Угоди",
+    "offers": "Пропозиції",
+    "orders": "Замовлення",
+    "invoices": "Фактури",
+    "documentNumbering": "Нумерація документів",
+    "warehouseDoc": "Складські документи",
+    "automation": "Автоматизація",
+    "integrations": "Інтеграції",
+    "catalog": "Товари / Послуги",
+    "warehouse": "Склад",
+    "other": "Інше",
+    "documents": {
+      "common": {
+        "basicSettings": "Основні налаштування",
+        "refresh": "Оновити",
+        "saveSettings": "Зберегти налаштування",
+        "saving": "Збереження...",
+        "retry": "Спробувати знову",
+        "loadErrorBody": "Сталася помилка під час завантаження даних",
+        "annotationTemplateLabel": "Шаблон анотації",
+        "selectMode": "Оберіть режим",
+        "selectAnnotationMode": "Оберіть режим анотації",
+        "selectDocumentType": "Оберіть тип документа",
+        "selectInvoiceType": "Оберіть тип фактури",
+        "selectPaymentMethod": "Оберіть спосіб оплати",
+        "selectPaymentTerm": "Оберіть термін оплати",
+        "selectCurrency": "Оберіть валюту",
+        "selectStockMode": "Оберіть режим",
+        "filters": {
+          "all": "Усі"
+        }
+      },
+      "validation": {
+        "cannotDisableDefaultType": "Не можна вимкнути тип, який обрано за замовчуванням.",
+        "defaultTypeMustBeEnabled": "Тип за замовчуванням має бути активним."
+      },
+      "numbering": {
+        "title": "Типи документів і нумерація",
+        "columns": {
+          "documentType": "Тип документа",
+          "numberPattern": "Шаблон номера",
+          "lastNumber": "Останній номер",
+          "nextNumber": "Наступний номер",
+          "enabled": "Активний"
+        },
+        "hints": {
+          "button": "Підказка",
+          "available": "Доступні змінні:",
+          "examples": "Приклади:",
+          "tokens": {
+            "year": "$Y — рік, наприклад 2026",
+            "shortYear": "$YY — короткий рік, наприклад 26",
+            "month": "$M — місяць, наприклад 04",
+            "day": "$D — день, наприклад 24",
+            "sequence4": "$NY(4) — порядковий номер з 4 цифрами, наприклад 0001",
+            "sequence5": "$NY(5) — порядковий номер з 5 цифрами, наприклад 00001"
+          }
+        },
+        "validation": {
+          "required": "Шаблон номера обов'язковий",
+          "maxLength": "Максимальна довжина — 80 символів",
+          "unknownToken": "Невідомий токен",
+          "missingSequence": "Шаблон має містити $NY(n)"
+        },
+        "aria": {
+          "toggleEnabled": "Перемкнути активність типу: {{type}}"
+        }
+      },
+      "templates": {
+        "title": "Шаблони",
+        "add": "Додати",
+        "edit": "Редагувати",
+        "delete": "Видалити шаблон",
+        "setDefault": "Зробити типовим",
+        "defaultBadge": "Типовий",
+        "emptyTitle": "Немає шаблонів",
+        "emptyText": "Додайте перший шаблон документа",
+        "loadError": "Не вдалося завантажити шаблони.",
+        "sync": "Синхронізація...",
+        "untitled": "Без назви",
+        "documentTypeFallback": "Документ",
+        "confirmDelete": "Видалити шаблон \"{{name}}\"?",
+        "confirmSetDefault": "Встановити \"{{name}}\" як шаблон за замовчуванням?",
+        "errors": {
+          "cannotDeleteDefault": "Не можна видалити типовий шаблон.",
+          "deleteFailed": "Не вдалося видалити шаблон.",
+          "setDefaultFailed": "Не вдалося встановити типовий шаблон."
+        },
+        "success": {
+          "deleted": "Шаблон видалено.",
+          "defaultUpdated": "Типовий шаблон оновлено."
+        }
+      },
+      "options": {
+        "reservation": {
+          "disabled": "Вимкнена",
+          "enabled": "Увімкнена"
+        },
+        "annotation": {
+          "empty": "Порожня",
+          "copyFromDocuments": "Копіюється з документів",
+          "template": "Шаблонна"
+        },
+        "stockUpdate": {
+          "disabled": "Вимкнена",
+          "create_warehouse_document": "Створити складський документ"
+        },
+        "paymentMethod": {
+          "bank_transfer": "Банківський переказ",
+          "cash": "Готівка",
+          "card": "Платіжна картка",
+          "blik": "BLIK",
+          "online": "Онлайн-оплата",
+          "cash_on_delivery": "Післяплата",
+          "other": "Інше"
+        },
+        "paymentTermDays": "{{count}} дн."
+      },
+      "types": {
+        "offer": "Пропозиція",
+        "order": "Замовлення",
+        "invoice": "Фактура",
+        "correction": "Фактура коригувальна",
+        "proforma": "Фактура proforma",
+        "advance": "Фактура авансова",
+        "advance_proforma": "Фактура авансова proforma",
+        "wdt": "Фактура WDT",
+        "pz": "PZ",
+        "wz": "WZ",
+        "mm": "MM",
+        "rw": "RW",
+        "pw": "PW"
+      },
+      "orders": {
+        "subtitle": "Налаштування застосовуються на рівні компанії.",
+        "fields": {
+          "productReservation": "Резервація продуктів",
+          "annotation": "Анотація до замовлень"
+        },
+        "annotationTemplatePlaceholder": "Введіть шаблон анотації...",
+        "annotationTemplateHelper": "HTML буде збережено та використано як основу анотації замовлення.",
+        "validation": {
+          "templateRequired": "Для шаблонної анотації заповніть шаблон."
+        },
+        "loading": "Завантаження налаштувань замовлень...",
+        "success": {
+          "saved": "Налаштування збережено."
+        },
+        "errors": {
+          "loadTitle": "Не вдалося завантажити налаштування замовлень",
+          "saveFailed": "Не вдалося зберегти налаштування замовлень."
+        }
+      },
+      "offers": {
+        "fields": {
+          "annotation": "Анотація до пропозицій"
+        },
+        "annotationTemplatePlaceholder": "Введіть шаблон анотації...",
+        "validation": {
+          "templateRequired": "Для шаблонної анотації заповніть шаблон."
+        },
+        "loading": "Завантаження налаштувань пропозицій...",
+        "success": {
+          "saved": "Налаштування збережено."
+        },
+        "errors": {
+          "loadTitle": "Не вдалося завантажити налаштування пропозицій",
+          "saveFailed": "Не вдалося зберегти налаштування пропозицій."
+        }
+      },
+      "invoices": {
+        "fields": {
+          "defaultType": "Стандартний тип фактури",
+          "defaultPaymentMethod": "Стандартний спосіб оплати",
+          "defaultPaymentTerm": "Стандартний термін оплати",
+          "defaultCurrency": "Стандартна валюта",
+          "stockUpdateMode": "Оновлення складських залишків",
+          "annotation": "Анотація до фактур"
+        },
+        "filter": {
+          "invoice": "Фактура",
+          "correction": "Корекція",
+          "proforma": "Proforma",
+          "advance": "Аванс",
+          "advance_proforma": "Аванс proforma",
+          "wdt": "WDT"
+        },
+        "annotationTemplatePlaceholder": "Введіть шаблон анотації...",
+        "validation": {
+          "atLeastOneEnabled": "Не можна вимкнути останній активний тип.",
+          "templateRequired": "Для шаблонної анотації заповніть шаблон."
+        },
+        "loading": "Завантаження налаштувань фактур...",
+        "success": {
+          "saved": "Налаштування збережено."
+        },
+        "errors": {
+          "loadTitle": "Не вдалося завантажити налаштування фактур",
+          "saveFailed": "Не вдалося зберегти налаштування фактур."
+        }
+      },
+      "warehouse": {
+        "subtitle": "Тип документа за замовчуванням використовується у сценарії фактура -> склад.",
+        "fields": {
+          "defaultType": "Тип складського документа за замовчуванням"
+        },
+        "validation": {
+          "atLeastOneEnabled": "Не можна вимкнути останній активний тип."
+        },
+        "loading": "Завантаження налаштувань складських документів...",
+        "success": {
+          "saved": "Налаштування складських документів збережено."
+        },
+        "errors": {
+          "loadTitle": "Не вдалося завантажити налаштування складських документів",
+          "saveFailed": "Не вдалося зберегти налаштування складських документів."
+        }
+      }
+    }
+  },
+  "htmlEditor": {
+    "placeholder": "Почніть вводити текст...",
+    "annotation": {
+      "ariaLabel": "Панель інструментів редактора анотації",
+      "linkPrompt": "Вкажіть посилання",
+      "bold": "Жирний",
+      "alignLeft": "Ліворуч",
+      "alignCenter": "По центру",
+      "link": "Посилання"
+    },
+    "toolbar": {
+      "ariaLabel": "Панель інструментів HTML редактора",
+      "undo": "Скасувати",
+      "redo": "Повторити",
+      "heading": "Заголовок",
+      "bold": "Жирний",
+      "italic": "Курсив",
+      "underline": "Підкреслення",
+      "bulletList": "Маркований список",
+      "orderedList": "Нумерований список",
+      "link": "Посилання",
+      "textColor": "Колір тексту",
+      "clearTextColor": "Скинути колір тексту",
+      "highlightColor": "Колір виділення",
+      "clearHighlight": "Скинути виділення"
     }
   }
 }

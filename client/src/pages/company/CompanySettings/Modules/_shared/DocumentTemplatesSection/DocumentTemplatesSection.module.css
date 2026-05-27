@@ -1,0 +1,414 @@
+.card {
+  border: 1px solid color-mix(in srgb, var(--glass-brd) 84%, transparent);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  padding: 14px;
+  display: grid;
+  gap: 14px;
+  min-height: 280px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+}
+
+.addButton,
+.retryButton {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 74%, transparent);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.addButton {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-start) 34%, transparent),
+    color-mix(in srgb, var(--focus) 30%, transparent)
+  );
+}
+
+.retryButton {
+  background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+}
+
+.filterPills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterButton {
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: var(--radius-full);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 74%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+  color: color-mix(in srgb, var(--text) 84%, transparent);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.filterButtonActive {
+  border-color: color-mix(in srgb, var(--focus) 64%, transparent);
+  color: var(--text);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 32%, transparent);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 165px));
+  justify-content: flex-start;
+  align-content: start;
+  gap: 15px;
+  min-height: 230px;
+}
+
+.templateCard {
+  min-width: 145px;
+  min-height: 242px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 72%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  padding: 10px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 10px;
+  transition: border-color var(--tr-fast), box-shadow var(--tr-fast), background-color var(--tr-fast);
+}
+
+.templateCard:hover,
+.templateCard:focus-within {
+  border-color: color-mix(in srgb, var(--focus) 52%, transparent);
+  box-shadow: 0 6px 20px color-mix(in srgb, #000000 22%, transparent);
+}
+
+.templateCardDefault {
+  border-color: color-mix(in srgb, var(--focus) 72%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 84%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 30%, transparent);
+}
+
+.cardHeader {
+  display: grid;
+  gap: 5px;
+}
+
+.cardTitleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 22px;
+}
+
+.cardTitle {
+  margin: 0;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.3;
+  font-weight: var(--fw-semibold);
+  color: color-mix(in srgb, var(--text) 94%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardMeta {
+  margin: 0;
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.2;
+  color: color-mix(in srgb, var(--text) 67%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actionButton {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 78%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+  color: color-mix(in srgb, #ffffff 92%, transparent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-1px);
+  transition: opacity var(--tr-fast), border-color var(--tr-fast), background-color var(--tr-fast), transform var(--tr-fast);
+}
+
+.templateCard:hover .actionButton,
+.templateCard:focus-within .actionButton,
+.actionButton:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.setDefaultButton:hover,
+.setDefaultButton:focus-visible {
+  border-color: color-mix(in srgb, #78e7a4 82%, transparent);
+  background: color-mix(in srgb, #2f7a49 46%, transparent);
+}
+
+.deleteButton:hover,
+.deleteButton:focus-visible {
+  border-color: color-mix(in srgb, #ff9a9a 84%, transparent);
+  background: color-mix(in srgb, #9e2f2f 52%, transparent);
+}
+
+.actionButton:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.previewButton {
+  border: 1px solid color-mix(in srgb, var(--card-brd) 72%, transparent);
+  border-radius: calc(var(--radius-md) + 1px);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  padding: 8px;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewButton:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.previewShell {
+  position: relative;
+  width: 124px;
+  margin: 0 auto;
+}
+
+.previewPaper {
+  width: 124px;
+  aspect-ratio: 210 / 297;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, #d7dce6 68%, transparent);
+  background: #ffffff;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #ffffff 54%, transparent) inset,
+    0 8px 18px color-mix(in srgb, #000000 22%, transparent);
+  overflow: hidden;
+  position: relative;
+}
+
+.defaultBadge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--focus) 70%, transparent);
+  background: color-mix(in srgb, var(--focus) 25%, transparent);
+  color: color-mix(in srgb, #ffffff 92%, transparent);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.previewViewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.previewContent {
+  display: block;
+  width: 300%;
+  min-height: 300%;
+  transform: scale(0.34);
+  transform-origin: top left;
+  color: #1d2432;
+  background: #ffffff;
+}
+
+.previewFallback {
+  width: 100%;
+  height: 100%;
+  padding: 12px 10px;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+}
+
+.previewLine {
+  height: 4px;
+  width: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, #b6c0ce 46%, transparent);
+}
+
+.previewLineShort {
+  width: 76%;
+}
+
+.previewLineTiny {
+  width: 58%;
+}
+
+.previewOverlay {
+  position: absolute;
+  inset: 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #0b1020 58%, transparent);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #e8f0ff;
+  opacity: 0;
+  transition: opacity var(--tr-fast);
+}
+
+.previewButton:hover .previewOverlay,
+.previewButton:focus-visible .previewOverlay {
+  opacity: 1;
+}
+
+.previewOverlayText {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.errorCard,
+.emptyCard {
+  border: 1px solid color-mix(in srgb, var(--card-brd) 74%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  min-height: 160px;
+  align-content: center;
+}
+
+.errorText,
+.emptyTitle,
+.emptyText,
+.extraError,
+.successText,
+.syncText {
+  margin: 0;
+}
+
+.errorText,
+.extraError {
+  font-size: var(--fs-sm);
+  color: #ff9d9d;
+}
+
+.successText {
+  font-size: var(--fs-sm);
+  color: #8fdfb0;
+}
+
+.emptyTitle {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+
+.emptyText {
+  font-size: var(--fs-sm);
+  color: color-mix(in srgb, var(--text) 70%, transparent);
+}
+
+.syncText {
+  font-size: var(--fs-xs);
+  color: color-mix(in srgb, var(--text) 64%, transparent);
+}
+
+.skeletonCard {
+  pointer-events: none;
+}
+
+.skeletonTitle,
+.skeletonMeta,
+.skeletonPreview {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--card-bg) 80%, transparent) 8%,
+    color-mix(in srgb, #ffffff 14%, transparent) 18%,
+    color-mix(in srgb, var(--card-bg) 80%, transparent) 33%
+  );
+  background-size: 200% 100%;
+  animation: templateSkeleton 1.4s ease-in-out infinite;
+}
+
+.skeletonTitle {
+  height: 13px;
+  width: 74%;
+}
+
+.skeletonMeta {
+  height: 11px;
+  width: 92%;
+}
+
+.skeletonPreview {
+  width: 124px;
+  aspect-ratio: 210 / 297;
+}
+
+@keyframes templateSkeleton {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .header {
+    flex-wrap: wrap;
+  }
+
+  .addButton {
+    width: 100%;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+    gap: 12px;
+  }
+
+  .templateCard {
+    min-width: 145px;
+  }
+}

@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { Op } = require('sequelize');
 const { User, PasswordResetTokens } = require('../../models');
+const { buildPublicUrl } = require('../../config/publicUrl');
 
 const RESET_TTL_HOURS = Number(process.env.PASSWORD_RESET_TTL_HOURS || 24);
 
@@ -39,7 +40,7 @@ async function requestReset(email, mailer, meta = {}) {
     userAgent: meta.userAgent || null,
   });
 
-  const link = `${process.env.APP_URL}/auth/reset?token=${raw}`;
+  const link = buildPublicUrl('/auth/reset', { token: raw });
   await mailer.sendMail({
     to: email,
     subject: 'Сброс пароля',

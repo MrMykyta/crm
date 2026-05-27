@@ -85,7 +85,7 @@ function buildSort(query = {}) {
 // parsePagination: парсит и нормализует входные параметры.
 function parsePagination(query = {}) {
   const page = Math.max(1, Number(query.page || 1));
-  const limit = Math.min(100, Math.max(1, Number(query.limit || 25)));
+  const limit = Math.min(200, Math.max(1, Number(query.limit || 25)));
   const offset = (page - 1) * limit;
   return { page, limit, offset };
 }
@@ -516,4 +516,3 @@ module.exports.update = ({ companyId, id, payload, user }) => module.exports.upd
 module.exports.remove = ({ companyId, id }) => module.exports.deleteContact({ companyId, contactId: id });
 // restore: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.restore = ({ companyId, id }) => module.exports.restoreContact({ companyId, contactId: id });
-

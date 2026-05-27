@@ -1,0 +1,544 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(360px, 32vw, 380px);
+  gap: 16px;
+  align-items: start;
+  position: relative;
+  z-index: 1;
+}
+
+.layoutSplit {
+  grid-template-columns: minmax(0, 1.38fr) minmax(0, 1fr);
+  gap: 26px;
+  align-items: stretch;
+}
+
+.layoutPreview {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace {
+  display: grid;
+  gap: 6px;
+}
+
+.workspaceSplit {
+  max-height: calc(100vh - 152px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.workspaceSplit .commandGrid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.workspaceSplit .commandPrimary,
+.workspaceSplit .commandSecondary {
+  gap: 6px;
+}
+
+.workspaceSplit .infoStrip {
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.workspaceSplit .infoBadge {
+  padding: 5px 8px;
+}
+
+.infoStrip {
+  display: grid;
+  gap: 3px;
+}
+
+.infoBadge {
+  display: grid;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 90%, #fff 10%);
+  background: color-mix(in srgb, var(--ui-surface-2) 97%, black 3%);
+}
+
+.infoBadgeLabel {
+  margin: 0;
+  font-size: var(--font-size-11);
+  line-height: var(--lh-normal);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text-secondary) 80%, #fff 20%);
+}
+
+.infoBadgeValue {
+  margin: 0;
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  color: color-mix(in srgb, var(--text-primary) 90%, #fff 10%);
+}
+
+.commandBar {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 90%, #fff 10%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ui-surface-1) 98%, black 2%) 0%,
+      color-mix(in srgb, var(--ui-surface-2) 98%, black 2%) 100%
+    );
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #fff 8%, transparent) inset,
+    0 10px 20px color-mix(in srgb, black 18%, transparent);
+}
+
+.commandHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.commandTitle {
+  margin: 0;
+  font-size: var(--font-size-13);
+  line-height: var(--lh-normal);
+  letter-spacing: 0.01em;
+  font-weight: var(--font-weight-medium);
+  color: color-mix(in srgb, var(--text-secondary) 86%, #fff 14%);
+}
+
+.commandHint {
+  margin: 0;
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  color: color-mix(in srgb, var(--text-secondary) 72%, #fff 28%);
+}
+
+.commandGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.52fr);
+  gap: 6px;
+}
+
+.commandPrimary,
+.commandSecondary {
+  display: grid;
+  gap: 6px;
+}
+
+.itemsSection {
+  display: grid;
+  gap: 6px;
+  padding: 9px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--primary-start) 36%, var(--ui-border-soft) 64%);
+  background:
+    radial-gradient(180% 160% at 100% 0%, color-mix(in srgb, var(--primary-start) 9%, transparent) 0%, transparent 56%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ui-surface-1) 98%, black 2%) 0%,
+      color-mix(in srgb, var(--ui-surface-2) 98%, black 2%) 100%
+    );
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #fff 8%, transparent) inset,
+    0 0 0 1px color-mix(in srgb, var(--primary-start) 18%, transparent) inset,
+    0 18px 30px color-mix(in srgb, black 24%, transparent);
+}
+
+.contextSection {
+  display: grid;
+  gap: 6px;
+  padding: 9px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 90%, #fff 10%);
+  background: color-mix(in srgb, var(--ui-surface-2) 98%, black 2%);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #fff 8%, transparent) inset,
+    0 8px 18px color-mix(in srgb, black 16%, transparent);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--font-size-16);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.01em;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.sectionHint {
+  margin: 0;
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  color: color-mix(in srgb, var(--text-secondary) 78%, #fff 22%);
+}
+
+.sideColumn,
+.splitPreviewColumn {
+  min-width: 0;
+}
+
+.splitPreviewColumn {
+  display: grid;
+}
+
+.sideShell {
+  position: sticky;
+  top: 10px;
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 90%, #fff 10%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ui-surface-2) 98%, black 2%) 0%,
+      color-mix(in srgb, var(--ui-surface-3) 98%, black 2%) 100%
+    );
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #fff 7%, transparent) inset,
+    0 12px 24px color-mix(in srgb, black 22%, transparent);
+}
+
+.summaryStack {
+  display: grid;
+  gap: 9px;
+}
+
+.sideCard {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 88%, #fff 12%);
+  background: color-mix(in srgb, var(--ui-surface-2) 98%, black 2%);
+}
+
+.summaryCard {
+  gap: 9px;
+  border-color: color-mix(in srgb, var(--primary-start) 34%, var(--ui-border-soft) 66%);
+  background:
+    radial-gradient(170% 140% at 100% 0%, color-mix(in srgb, var(--primary-start) 15%, transparent) 0%, transparent 56%),
+    color-mix(in srgb, var(--ui-surface-2) 98%, black 2%);
+}
+
+.documentAnchor {
+  display: grid;
+  gap: 2px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 86%, #fff 14%);
+  background: color-mix(in srgb, var(--ui-surface-1) 98%, black 2%);
+}
+
+.anchorLabel {
+  margin: 0;
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  color: color-mix(in srgb, var(--text-secondary) 80%, #fff 20%);
+}
+
+.anchorValue {
+  margin: 0;
+  font-size: var(--font-size-16);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryRows {
+  display: grid;
+  gap: 6px;
+}
+
+.lifecycleInline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 86%, #fff 14%);
+  background: color-mix(in srgb, var(--ui-surface-1) 98%, black 2%);
+}
+
+.summaryRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 86%, #fff 14%);
+  background: color-mix(in srgb, var(--ui-surface-1) 98%, black 2%);
+}
+
+.summaryRowAccent {
+  border-color: color-mix(in srgb, var(--primary-start) 52%, var(--ui-border-soft) 48%);
+  background: color-mix(in srgb, var(--primary-start) 16%, var(--ui-surface-1) 84%);
+}
+
+.totalLabel {
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  color: color-mix(in srgb, var(--text-secondary) 84%, #fff 16%);
+}
+
+.totalValue,
+.totalValueLarge {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  line-height: 1.05;
+}
+
+.totalValue {
+  font-size: 18px;
+  font-weight: var(--font-weight-bold);
+}
+
+.totalValueLarge {
+  font-size: 31px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: color-mix(in srgb, #fff 96%, var(--primary-start) 4%);
+}
+
+.paymentCard {
+  gap: 9px;
+  border-color: color-mix(in srgb, var(--focus) 30%, var(--ui-border-soft) 70%);
+}
+
+.paymentStatusBadge,
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--primary-start) 36%, var(--ui-border-soft) 64%);
+  background: color-mix(in srgb, var(--primary-start) 16%, var(--ui-surface-1) 84%);
+  color: color-mix(in srgb, var(--text-primary) 92%, #fff 8%);
+  font-size: var(--font-size-11);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.paymentSummaryRows {
+  display: grid;
+  gap: 6px;
+}
+
+.paymentSummaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 86%, #fff 14%);
+  background: color-mix(in srgb, var(--ui-surface-1) 98%, black 2%);
+}
+
+.paymentFields {
+  display: grid;
+  gap: 6px;
+}
+
+.sideField {
+  display: grid;
+  gap: 4px;
+}
+
+.sideFieldLabel {
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  letter-spacing: 0.03em;
+  color: color-mix(in srgb, var(--text-secondary) 84%, #fff 16%);
+}
+
+.sideFieldControl {
+  width: 100%;
+  min-height: 29px;
+  border: 1px solid color-mix(in srgb, var(--ui-field-border) 80%, #fff 20%);
+  border-radius: 8px;
+  padding: 0 8px;
+  background: color-mix(in srgb, var(--ui-field-bg) 96%, black 4%);
+  color: var(--text-primary);
+  font-size: var(--font-size-13);
+  line-height: var(--lh-normal);
+  transition: border-color var(--tr-fast), background var(--tr-fast), box-shadow var(--tr-fast);
+}
+
+.sideFieldControl:hover {
+  border-color: var(--ui-field-border-hover);
+}
+
+.sideFieldControl:focus-visible {
+  outline: none;
+  border-color: var(--ui-field-border-focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-field-border-focus) 20%, transparent);
+}
+
+.sideFieldControl:disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
+.lifecycleCard {
+  gap: 7px;
+}
+
+.sourceCard {
+  border-color: color-mix(in srgb, var(--ui-border-soft) 92%, transparent);
+}
+
+.sourceValue {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.sideTitle {
+  margin: 0;
+  font-size: var(--font-size-11);
+  line-height: var(--lh-normal);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: color-mix(in srgb, var(--text-secondary) 86%, #fff 14%);
+}
+
+.sideHint {
+  margin: 0;
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  color: color-mix(in srgb, var(--text-secondary) 74%, #fff 26%);
+}
+
+.helperCard {
+  border-color: color-mix(in srgb, var(--focus) 16%, var(--ui-border-soft) 84%);
+}
+
+.helperText {
+  margin: 0;
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  color: color-mix(in srgb, var(--text-primary) 90%, #fff 10%);
+}
+
+.helperDanger {
+  border-color: color-mix(in srgb, var(--danger) 52%, var(--ui-border-soft) 48%);
+  background: color-mix(in srgb, var(--danger) 8%, var(--ui-surface-2) 92%);
+}
+
+.helperDanger .helperText,
+.helperDanger .infoBadgeValue {
+  color: color-mix(in srgb, var(--danger) 90%, #fff 10%);
+}
+
+.helperSuccess {
+  border-color: color-mix(in srgb, var(--success) 44%, var(--ui-border-soft) 56%);
+  background: color-mix(in srgb, var(--success) 10%, var(--ui-surface-2) 90%);
+}
+
+.helperNeutral {
+  border-color: color-mix(in srgb, var(--ui-border-soft) 92%, transparent);
+}
+
+.splitPreviewSticky {
+  position: relative;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 82%, #fff 18%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ui-surface-2) 93%, black 7%) 0%,
+      color-mix(in srgb, var(--ui-surface-3) 92%, black 8%) 100%
+    );
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #fff 7%, transparent) inset,
+    0 16px 30px color-mix(in srgb, black 26%, transparent);
+  padding: 14px;
+  height: calc(100vh - 152px);
+}
+
+.splitPreviewFrame {
+  height: 100%;
+  overflow: auto;
+  padding-right: 2px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.previewOnlyPane {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 6px 0 10px;
+}
+
+.previewOnlyFrame {
+  width: min(100%, 1520px);
+  max-height: calc(100vh - 142px);
+  overflow: auto;
+  padding: 2px 3px 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+@media (max-width: 1240px) {
+  .layout,
+  .layoutSplit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .layoutSplit .splitPreviewColumn {
+    display: none;
+  }
+
+  .workspaceSplit {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .workspaceSplit .infoStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .sideShell,
+  .splitPreviewSticky {
+    position: static;
+    top: auto;
+    height: auto;
+  }
+
+  .splitPreviewFrame,
+  .previewOnlyFrame {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .commandGrid {
+    grid-template-columns: 1fr;
+  }
+}

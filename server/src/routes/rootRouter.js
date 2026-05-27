@@ -27,6 +27,44 @@ rootRouter.use("/contacts", auth, companyIdGuard, require("./crm/contactRouter")
 rootRouter.use("/deals", auth, companyIdGuard, require("./crm/dealRouter"));
 rootRouter.use("/tasks", auth, companyIdGuard, require("./crm/taskRouter"));
 rootRouter.use("/notes", auth, companyIdGuard, require("./crm/noteRouter"));
+rootRouter.use("/documents", auth, companyIdGuard, require("./crm/documentRouter"));
+rootRouter.use("/offers", auth, companyIdGuard, require("./oms/offerRouter"));
+rootRouter.use(
+  "/document-numbering-settings",
+  auth,
+  companyIdGuard,
+  require("./crm/documentNumberingSettingsRouter")
+);
+rootRouter.use(
+  "/company/document-numbering",
+  auth,
+  companyIdGuard,
+  require("./crm/companyDocumentNumberingRouter")
+);
+rootRouter.use(
+  "/company-settings/orders",
+  auth,
+  companyIdGuard,
+  require("./crm/companyOrderSettingsRouter")
+);
+rootRouter.use(
+  "/company-settings/invoices",
+  auth,
+  companyIdGuard,
+  require("./crm/companyInvoiceSettingsRouter")
+);
+rootRouter.use(
+  "/company-settings/offers",
+  auth,
+  companyIdGuard,
+  require("./crm/companyOfferSettingsRouter")
+);
+rootRouter.use(
+  "/company-settings/warehouse-documents",
+  auth,
+  companyIdGuard,
+  require("./crm/companyWarehouseDocumentSettingsRouter")
+);
 
 /* ============== PIM: CRUD ============== */
 rootRouter.use("/products", auth, companyIdGuard, require("./pim/product.router")); // содержит и команды (см. ниже)

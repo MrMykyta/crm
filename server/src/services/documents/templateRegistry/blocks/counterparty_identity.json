@@ -1,0 +1,31 @@
+{
+  "type": "counterparty_identity",
+  "displayName": "Counterparty Identity",
+  "family": "identity",
+  "defaultProps": {
+    "label": "Nabywca",
+    "showAddress": true,
+    "showNip": true,
+    "showRegon": false
+  },
+  "layout": {
+    "widthMode": "fraction",
+    "widthValue": 0.5,
+    "minWidthPx": 220
+  },
+  "bindingSchema": {
+    "supportedPaths": [
+      "counterparty.legalName",
+      "counterparty.name",
+      "counterparty.addressLine1",
+      "counterparty.city",
+      "counterparty.postalCode",
+      "counterparty.country",
+      "counterparty.nip",
+      "counterparty.regon"
+    ],
+    "requiredPaths": [
+      "counterparty.legalName"
+    ]
+  }
+}

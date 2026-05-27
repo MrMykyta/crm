@@ -1,0 +1,126 @@
+.wrap {
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  border: 1px solid var(--glass-brd);
+  border-radius: 12px;
+  overflow: auto;
+  background:
+    radial-gradient(1400px 740px at 50% -40%, rgba(37, 99, 235, 0.12), transparent 64%),
+    linear-gradient(180deg, #131a2b 0%, #0f1421 100%);
+}
+
+.workspace {
+  min-width: max-content;
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pageOuter {
+  min-width: max-content;
+  padding-inline: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.pageToolbar {
+  width: calc(210mm * var(--canvas-zoom, 1));
+  max-width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  color: color-mix(in srgb, var(--text-3) 84%, #cbd5e1);
+  font-size: 12px;
+}
+
+.page {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  transform: scale(var(--canvas-zoom, 1));
+  transform-origin: top center;
+  margin-bottom: calc(297mm * (var(--canvas-zoom, 1) - 1));
+  background: #ffffff;
+  color: #111827;
+  border-radius: 2px;
+  box-shadow:
+    0 2px 4px rgba(2, 6, 23, 0.08),
+    0 12px 32px rgba(2, 6, 23, 0.16),
+    0 28px 48px rgba(2, 6, 23, 0.2);
+  overflow: hidden;
+}
+
+.marginOverlay {
+  position: absolute;
+  top: var(--page-margin-top, 20mm);
+  right: var(--page-margin-right, 15mm);
+  bottom: var(--page-margin-bottom, 20mm);
+  left: var(--page-margin-left, 15mm);
+  border: 1px dashed rgba(37, 99, 235, 0.35);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pageContent {
+  position: relative;
+  z-index: 2;
+  padding:
+    var(--page-margin-top, 20mm)
+    var(--page-margin-right, 15mm)
+    var(--page-margin-bottom, 20mm)
+    var(--page-margin-left, 15mm);
+  min-height: calc(297mm - var(--page-margin-top, 20mm) - var(--page-margin-bottom, 20mm));
+  box-sizing: border-box;
+}
+
+.printBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  border: 1px solid #f59e0b;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.14);
+  color: #92400e;
+  font-size: 11px;
+  line-height: 1.2;
+  padding: 4px 10px;
+}
+
+.stateCard {
+  width: min(520px, 100%);
+  min-height: 260px;
+  margin: auto;
+  border: 1px dashed color-mix(in srgb, var(--glass-brd) 80%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  padding: 14px;
+  text-align: center;
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-1);
+}
+
+.stateText {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 12px;
+  max-width: 520px;
+}

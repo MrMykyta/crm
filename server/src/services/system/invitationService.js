@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');            // ← добавили
 const mailer = require('./mailer');
 const { parsePagination, packResult, applyCommonFilters } = require('../../utils/pagination');
+const { buildPublicUrl } = require('../../config/publicUrl');
 
 const INVITE_TTL_DAYS = Number(process.env.INVITE_TTL_DAYS || 7);
 const SORT_WHITELIST = ['createdAt', 'updatedAt', 'email', 'status', 'role'];
@@ -24,8 +25,7 @@ function expiresAtFromNow() {
 }
 // inviteLink: выполняет вспомогательную бизнес-логику сервиса.
 function inviteLink(token) {
-  const base = process.env.APP_URL || 'http://localhost:3000';
-  return `${base}/invite/accept?token=${encodeURIComponent(token)}`;
+  return buildPublicUrl('/invite/accept', { token });
 }
 // sendInviteEmail: выполняет вспомогательную бизнес-логику сервиса.
 async function sendInviteEmail({ to, token, repeat = false, companyName, invitedByName }) {
@@ -278,4 +278,3 @@ module.exports.accept = async (token, password, patch = {}) => {
     companyId: outCompanyId,
   };
 };
-

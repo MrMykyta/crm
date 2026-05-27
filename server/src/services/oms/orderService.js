@@ -1,4 +1,9 @@
 const { Sequelize, Order, OrderItem, Offer, OfferItem, Discount, Invoice, Payment, ProductVariant, Uom } = require('../../models');
+const {
+  getCompanyOrderSettings,
+  resolveOrderAnnotation,
+  shouldReserveProducts,
+} = require('../crm/companyOrderSettingsService');
 
 // parsePaging: парсит и нормализует входные параметры.
 const parsePaging = (q={}) => { const page=Math.max(parseInt(q.page||'1',10),1); const limit=Math.min(Math.max(parseInt(q.limit||'20',10),1),200); return { page,limit,offset:(page-1)*limit }; };
@@ -51,10 +56,19 @@ module.exports.create = async (payload, user) => {
   const t = await Order.sequelize.transaction();
   try {
     const { items=[], ...head } = payload;
+    const companyId = head.companyId || user.companyId;
+    const orderSettings = await getCompanyOrderSettings({
+      companyId,
+      transaction: t,
+    });
     const totals = calcTotals(items);
     const order = await Order.create({
       ...head,
-      companyId: head.companyId || user.companyId,
+      notes: resolveOrderAnnotation({
+        orderSettings,
+        incomingAnnotation: head.notes,
+      }),
+      companyId,
       status: head.status || 'new',
       paymentStatus: head.paymentStatus || 'pending',
       fulfillmentStatus: head.fulfillmentStatus || 'unfulfilled',
@@ -64,6 +78,11 @@ module.exports.create = async (payload, user) => {
     for (const it of items) {
       await OrderItem.create({ ...it, orderId: order.id, companyId: order.companyId }, { transaction:t });
     }
+
+    if (shouldReserveProducts(orderSettings)) {
+      // TODO(order-reservation): reserve stock for order items when warehouse reservation flow is finalized.
+    }
+
     await t.commit();
     return module.exports.get(order.id);
   } catch (e) { await t.rollback(); throw e; }
@@ -75,6 +94,10 @@ module.exports.fromOffer = async (offerId, head={}) => {
   try {
     const offer = await Offer.findByPk(offerId, { include:[{ model: OfferItem, as:'items' }], transaction:t });
     if (!offer) throw new Error('Offer not found');
+    const orderSettings = await getCompanyOrderSettings({
+      companyId: offer.companyId,
+      transaction: t,
+    });
 
     const order = await Order.create({
       companyId: offer.companyId,
@@ -87,6 +110,11 @@ module.exports.fromOffer = async (offerId, head={}) => {
       totalNet: offer.totalNet,
       totalTax: offer.totalTax,
       totalGross: offer.totalGross,
+      notes: resolveOrderAnnotation({
+        orderSettings,
+        incomingAnnotation: head.notes,
+        sourceDocumentAnnotation: offer.notes,
+      }),
       ...head
     }, { transaction:t });
 
@@ -105,6 +133,11 @@ module.exports.fromOffer = async (offerId, head={}) => {
         discountAmount: it.discountAmount
       }, { transaction:t });
     }
+
+    if (shouldReserveProducts(orderSettings)) {
+      // TODO(order-reservation): reserve stock for converted order items once reservation strategy is implemented.
+    }
+
     await t.commit();
     return module.exports.get(order.id);
   } catch (e) { await t.rollback(); throw e; }

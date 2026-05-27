@@ -37,6 +37,7 @@ import {
   toEditableMeasurement,
   UNIT_FACTORS,
 } from '../../../../utils/measurements';
+import { withApiOrigin } from '../../../../config/api';
 import s from './ProductDetailPage.module.css';
 
 // formatDateTime: форматирует данные для отображения.
@@ -74,11 +75,7 @@ function formatBytes(value) {
 
 // normalizeUrl: нормализует данные для отображения и ввода.
 function normalizeUrl(value = '') {
-  if (!value) return '';
-  if (/^https?:\/\//i.test(value)) return value;
-  const base = (process.env.REACT_APP_API_URL || 'http://localhost:5001').replace(/\/+$/, '');
-  if (value.startsWith('/')) return `${base}${value}`;
-  return `${base}/${value}`;
+  return withApiOrigin(value);
 }
 
 // parseOwnerFilesPayload: парсит входные данные для UI.
@@ -1821,4 +1818,3 @@ export default function ProductDetailTabs({ tab, data, values, onChange }) {
 
   return null;
 }
-

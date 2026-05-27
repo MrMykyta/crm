@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../../../hooks/useSignedFileUrl";
 import { useLazyGetSignedDownloadUrlQuery } from "../../../../store/rtk/filesApi";
 import AudioMessagePlayer from "../../../../components/chat/AudioMessagePlayer";
+import { withApiOrigin } from "../../../../config/api";
 import s from "../../ChatPage.module.css";
 
 const PREVIEW_MIME = [
@@ -49,12 +50,7 @@ const prettySize = (size) => {
 
 // normalizeUrl: нормализует данные для отображения и ввода.
 const normalizeUrl = (u) => {
-  if (!u) return "";
-  if (/^https?:\/\//i.test(u)) return u;
-  const base =
-    (process.env.REACT_APP_API_URL || "http://localhost:5001").replace(/\/+$/, "");
-  if (u.startsWith("/")) return `${base}${u}`;
-  return u;
+  return withApiOrigin(u);
 };
 
 // Extract file extension from filename for fallback checks.
@@ -286,4 +282,3 @@ const buildPreview = async () => {
     </div>
   );
 }
-

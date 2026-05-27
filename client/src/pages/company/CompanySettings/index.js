@@ -6,14 +6,14 @@ import s from "./CompanySettings.module.css";
 
 // Компонент CompanySettings: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CompanySettings(){
-  const { setTitle, setSubtitle, reset } = useTopbar(); // ← получаем методы провайдера
+  const { setTitle, reset } = useTopbar(); // ← получаем методы провайдера
   const { t } = useTranslation();
 
 
   useEffect(() => {
     setTitle(t("companySettings.title"));  // можно ключ перевода: 'company.settings'
     return () => reset();            // при выходе вернуть дефолтное значение
-  }, [setTitle, setSubtitle, reset]);
+  }, [reset, setTitle, t]);
 
    const items = useMemo(() => [
     { key: "modules",      label: t("companySettings.modules"),      to: "modules" },

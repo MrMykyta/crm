@@ -1,0 +1,26 @@
+{
+  "type": "document_dates",
+  "displayName": "Document Dates",
+  "family": "document_meta",
+  "defaultProps": {
+    "showIssueDate": true,
+    "showSaleDate": true,
+    "showDueDate": true,
+    "dateFormat": "date.PL"
+  },
+  "layout": {
+    "widthMode": "fraction",
+    "widthValue": 0.5,
+    "minWidthPx": 180
+  },
+  "bindingSchema": {
+    "supportedPaths": [
+      "document.issueDate",
+      "document.saleDate",
+      "payment.dueDate"
+    ],
+    "requiredPaths": [
+      "document.issueDate"
+    ]
+  }
+}

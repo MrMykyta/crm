@@ -1,0 +1,19 @@
+{
+  "type": "legal_footer",
+  "displayName": "Legal Footer",
+  "family": "legal",
+  "defaultProps": {
+    "allowAppendOnly": true,
+    "showKsefReference": true
+  },
+  "layout": {
+    "widthMode": "auto",
+    "minWidthPx": 320
+  },
+  "bindingSchema": {
+    "supportedPaths": [
+      "document.ksefNumber",
+      "document.ksefDate"
+    ]
+  }
+}

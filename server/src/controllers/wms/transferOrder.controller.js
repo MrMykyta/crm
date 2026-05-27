@@ -12,7 +12,7 @@ module.exports.list = async (req, res) => {
 // Возвращает одну сущность по её идентификатору.
 module.exports.getById = async (req, res) => {
   try {
-    const item = await transferOrderService.getById(req.params.id);
+    const item = await transferOrderService.getById(req.params.id, req.user?.companyId || null);
     if (!item) return res.sendStatus(404);
     res.status(200).send(item);
   } catch (e) { console.error('[TransferOrderController.getById]', e); res.status(400).send({ error: e.message }); }
@@ -29,7 +29,7 @@ module.exports.create = async (req, res) => {
 // Обновляет существующую сущность по идентификатору.
 module.exports.update = async (req, res) => {
   try {
-    const updated = await transferOrderService.update(req.params.id, req.body);
+    const updated = await transferOrderService.update(req.params.id, req.body, req.user?.companyId || null);
     if (!updated) return res.sendStatus(404);
     res.status(200).send(updated);
   } catch (e) { console.error('[TransferOrderController.update]', e); res.status(400).send({ error: e.message }); }
@@ -37,9 +37,8 @@ module.exports.update = async (req, res) => {
 // Удаляет сущность по идентификатору.
 module.exports.remove = async (req, res) => {
   try {
-    const n = await transferOrderService.remove(req.params.id);
+    const n = await transferOrderService.remove(req.params.id, req.user?.companyId || null);
     if (!n) return res.sendStatus(404);
     res.status(200).send({ deleted: n });
   } catch (e) { console.error('[TransferOrderController.remove]', e); res.status(400).send({ error: e.message }); }
 };
-

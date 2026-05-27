@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "block.schema.json",
+  "title": "BlockRegistryEntry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "displayName", "defaultProps", "layout", "bindingSchema"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "family": {
+      "type": "string"
+    },
+    "allowedDocumentTypes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "forbiddenDocumentTypes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "requiredCapabilityFlags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "defaultProps": {
+      "type": "object"
+    },
+    "propertySchema": {
+      "type": "object"
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["widthMode"],
+      "properties": {
+        "widthMode": {
+          "type": "string",
+          "enum": ["auto", "fraction", "fixed"]
+        },
+        "widthValue": {
+          "type": "number"
+        },
+        "minWidthPx": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "bindingSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supportedPaths"],
+      "properties": {
+        "supportedPaths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "requiredPaths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "renderBehavior": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supportsPrint", "supportsPdf", "supportsPreview"],
+      "properties": {
+        "supportsPrint": { "type": "boolean" },
+        "supportsPdf": { "type": "boolean" },
+        "supportsPreview": { "type": "boolean" }
+      }
+    }
+  }
+}

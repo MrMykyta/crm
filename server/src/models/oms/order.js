@@ -1,166 +1,252 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
-// Инициализирует и возвращает Sequelize-модель текущей сущности.
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class Order extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // define association here
-      Order.belongsTo(models.Company, { 
-        as: 'company', 
-        foreignKey: 'companyId' 
+      Order.belongsTo(models.Company, {
+        as: 'company',
+        foreignKey: 'companyId',
       });
-      Order.belongsTo(models.Offer, { 
-        as: 'offer', 
-        foreignKey: 'offerId' 
+      Order.belongsTo(models.Offer, {
+        as: 'offer',
+        foreignKey: 'offerId',
       });
-      Order.belongsTo(models.Counterparty, { 
-        as: 'customer', 
-        foreignKey: 'customerId' 
+      Order.belongsTo(models.Counterparty, {
+        as: 'customer',
+        foreignKey: 'customerId',
       });
-      Order.belongsTo(models.ShippingClass, { 
-        as: 'shippingClass', 
-        foreignKey: 'shippingClassId' 
+      Order.belongsTo(models.Counterparty, {
+        as: 'counterparty',
+        foreignKey: 'customerId',
       });
-      Order.belongsTo(models.Channel, { 
-        as: 'salesChannel', 
-        foreignKey: 'salesChannelId' 
+      Order.belongsTo(models.Contact, {
+        as: 'contact',
+        foreignKey: 'contactId',
       });
-
-      Order.hasMany(models.OrderItem, { 
-        as: 'items', 
-        foreignKey: 'orderId', 
-        onDelete: 'CASCADE' 
+      Order.belongsTo(models.User, {
+        as: 'owner',
+        foreignKey: 'ownerId',
       });
-      Order.hasMany(models.Payment, { 
-        as: 'payments', 
-        foreignKey: 'orderId', 
-        onDelete: 'CASCADE' 
+      Order.belongsTo(models.User, {
+        as: 'createdByUser',
+        foreignKey: 'createdBy',
       });
-      Order.hasMany(models.Invoice, { 
-        as: 'invoices', 
-        foreignKey: 'orderId', 
-        onDelete: 'CASCADE' 
+      Order.belongsTo(models.User, {
+        as: 'updatedByUser',
+        foreignKey: 'updatedBy',
       });
-      Order.hasMany(models.Shipment, { 
-        as: 'shipments', 
-        foreignKey: 'orderId', 
-        onDelete: 'CASCADE' 
+      Order.belongsTo(models.Offer, {
+        as: 'sourceOffer',
+        foreignKey: 'sourceOfferId',
+        constraints: false,
       });
-      Order.hasMany(models.OrderEvent, { 
-        as: 'events', 
-        foreignKey: 'orderId', 
-        onDelete: 'CASCADE' 
+      Order.belongsTo(models.ShippingClass, {
+        as: 'shippingClass',
+        foreignKey: 'shippingClassId',
       });
-      Order.hasMany(models.OrderNote, { 
-        as: 'notes', 
-        foreignKey: 'orderId', 
-        onDelete: 'CASCADE' 
+      Order.belongsTo(models.Channel, {
+        as: 'salesChannel',
+        foreignKey: 'salesChannelId',
       });
 
-      Order.hasMany(models.Discount, { 
-        as: 'discounts', 
-        foreignKey: 'ownerId', 
-        scope: { ownerType: 'order' } 
+      Order.hasMany(models.OrderItem, {
+        as: 'items',
+        foreignKey: 'orderId',
+        onDelete: 'CASCADE',
+      });
+      Order.hasMany(models.Payment, {
+        as: 'payments',
+        foreignKey: 'orderId',
+        onDelete: 'CASCADE',
+      });
+      Order.hasMany(models.Invoice, {
+        as: 'invoices',
+        foreignKey: 'orderId',
+        onDelete: 'CASCADE',
+      });
+      Order.hasMany(models.Shipment, {
+        as: 'shipments',
+        foreignKey: 'orderId',
+        onDelete: 'CASCADE',
+      });
+      Order.hasMany(models.OrderEvent, {
+        as: 'events',
+        foreignKey: 'orderId',
+        onDelete: 'CASCADE',
+      });
+      Order.hasMany(models.OrderNote, {
+        as: 'orderNotes',
+        foreignKey: 'orderId',
+        onDelete: 'CASCADE',
+      });
+
+      Order.hasMany(models.Discount, {
+        as: 'discounts',
+        foreignKey: 'ownerId',
+        scope: { ownerType: 'order' },
       });
     }
   }
+
   Order.init({
-    id: { 
-      type: DataTypes.UUID, 
-      primaryKey: true, 
-      allowNull: false, 
-      defaultValue: DataTypes.UUIDV4 
+    id: {
+      type: DataTypes.UUID,
+      primaryKey: true,
+      allowNull: false,
+      defaultValue: DataTypes.UUIDV4,
     },
-    companyId: { 
-      type: DataTypes.UUID, 
-      allowNull: false, 
-      field: 'company_id' 
+    companyId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: 'company_id',
     },
-    offerId: { 
-      type: DataTypes.UUID, 
-      field: 'offer_id' 
+    number: {
+      type: DataTypes.STRING(128),
+      allowNull: true,
     },
-    customerId: { 
-      type: DataTypes.UUID, 
-      allowNull: false, 
-      field: 'customer_id' 
+    offerId: {
+      type: DataTypes.UUID,
+      field: 'offer_id',
     },
-    salesChannelId: { 
-      type: DataTypes.UUID, 
-      field: 'sales_channel_id' 
+    customerId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: 'customer_id',
     },
-    shippingClassId: { 
-      type: DataTypes.UUID, 
-      field: 'shipping_class_id' 
+    contactId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'contact_id',
     },
-    currencyCode: { 
-      type: DataTypes.STRING(3), 
-      allowNull: false, 
-      field: 'currency_code' 
+    ownerId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'owner_id',
     },
-    status: { 
-      type: DataTypes.ENUM('draft','new','confirmed','paid','shipped','completed','cancelled','returned'), 
-      defaultValue: 'draft' 
+    salesChannelId: {
+      type: DataTypes.UUID,
+      field: 'sales_channel_id',
     },
-    paymentStatus: { 
-      type: DataTypes.ENUM('pending','paid','refunded','partially_refunded'), 
-      field: 'payment_status', 
-      defaultValue: 'pending' 
+    shippingClassId: {
+      type: DataTypes.UUID,
+      field: 'shipping_class_id',
     },
-    fulfillmentStatus: { 
-      type: DataTypes.ENUM('unfulfilled','partial','fulfilled'), 
-      field: 'fulfillment_status', 
-      defaultValue: 'unfulfilled' 
+    currencyCode: {
+      type: DataTypes.STRING(3),
+      allowNull: false,
+      field: 'currency_code',
     },
-    placedAt: { 
-      type: DataTypes.DATE, 
-      field: 'placed_at' 
+    status: {
+      type: DataTypes.ENUM('draft', 'new', 'confirmed', 'paid', 'shipped', 'completed', 'cancelled', 'returned'),
+      defaultValue: 'draft',
     },
-    confirmedAt: { 
-      type: DataTypes.DATE, 
-      field: 'confirmed_at' 
+    paymentStatus: {
+      type: DataTypes.ENUM('pending', 'paid', 'refunded', 'partially_refunded'),
+      field: 'payment_status',
+      defaultValue: 'pending',
     },
-    shippedAt: { 
-      type: DataTypes.DATE, 
-      field: 'shipped_at' 
+    fulfillmentStatus: {
+      type: DataTypes.ENUM('unfulfilled', 'partial', 'fulfilled'),
+      field: 'fulfillment_status',
+      defaultValue: 'unfulfilled',
     },
-    completedAt: { 
-      type: DataTypes.DATE, 
-      field: 'completed_at' 
+    placedAt: {
+      type: DataTypes.DATE,
+      field: 'placed_at',
     },
-    cancelledAt: { 
-      type: DataTypes.DATE, 
-      field: 'cancelled_at' 
+    confirmedAt: {
+      type: DataTypes.DATE,
+      field: 'confirmed_at',
     },
-    totalNet: { 
-      type: DataTypes.DECIMAL(14,2), 
-      field: 'total_net', 
-      defaultValue: 0 
+    shippedAt: {
+      type: DataTypes.DATE,
+      field: 'shipped_at',
     },
-    totalTax: { 
-      type: DataTypes.DECIMAL(14,2), 
-      field: 'total_tax', 
-      defaultValue: 0 
+    completedAt: {
+      type: DataTypes.DATE,
+      field: 'completed_at',
     },
-    totalGross: { 
-      type: DataTypes.DECIMAL(14,2), 
-      field: 'total_gross', 
-      defaultValue: 0 
+    cancelledAt: {
+      type: DataTypes.DATE,
+      field: 'cancelled_at',
+    },
+    notes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    paymentTerms: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'payment_terms',
+    },
+    deliveryTerms: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'delivery_terms',
+    },
+    leadTime: {
+      type: DataTypes.STRING(128),
+      allowNull: true,
+      field: 'lead_time',
+    },
+    sourceType: {
+      type: DataTypes.STRING(32),
+      allowNull: true,
+      field: 'source_type',
+    },
+    sourceId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'source_id',
+    },
+    sourceOfferId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'source_offer_id',
+    },
+    createdBy: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'created_by',
+    },
+    updatedBy: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'updated_by',
+    },
+    totalNet: {
+      type: DataTypes.DECIMAL(14, 2),
+      field: 'total_net',
+      defaultValue: 0,
+    },
+    totalTax: {
+      type: DataTypes.DECIMAL(14, 2),
+      field: 'total_tax',
+      defaultValue: 0,
+    },
+    totalGross: {
+      type: DataTypes.DECIMAL(14, 2),
+      field: 'total_gross',
+      defaultValue: 0,
+    },
+    counterpartyId: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return this.getDataValue('customerId');
+      },
+      set(value) {
+        this.setDataValue('customerId', value);
+      },
     },
   }, {
     sequelize,
     modelName: 'Order',
     tableName: 'orders',
-    timestamps: true, 
-    paranoid: true, 
-    underscored: true
+    timestamps: true,
+    paranoid: true,
+    underscored: true,
   });
+
   return Order;
 };

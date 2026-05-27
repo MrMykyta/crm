@@ -1,6 +1,7 @@
 // src/store/rtk/crmApi.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { setAuth, logout } from '../slices/authSlice';
+import { apiBase } from '../../config/api';
 
 /** ==============================================================
  *  SESSION CONTEXT — один источник правды (в памяти)
@@ -70,12 +71,8 @@ const loadCID = () => {
 /** ==============================================================
  *  BASE QUERY (fetch)
  *  ============================================================== */
-const baseUrl =
-  (process.env.REACT_APP_API_URL?.replace(/\/+$/, '') ||
-    'http://localhost:5001') + '/api';
-
 const rawBaseQuery = fetchBaseQuery({
-  baseUrl,
+  baseUrl: apiBase,
   credentials: 'include',
     // prepareHeaders: вспомогательная логика для слоя RTK Query.
 prepareHeaders: (headers) => {
@@ -226,10 +223,21 @@ export const crmApi = createApi({
     'ProductSpec',
     'BrandLookup',
     'CategoryLookup',
+    'Offer',
+    'OfferList',
+    'Order',
+    'Document',
+    'DocumentList',
+    'DocumentNumberingSettings',
+    'CompanyOrderSettings',
+    'CompanyInvoiceSettings',
+    'CompanyOfferSettings',
+    'CompanyWarehouseDocumentSettings',
+    'DocumentTemplate',
+    'TemplateDraft',
   ],
     // endpoints: описывает набор endpoint-ов RTK Query.
 endpoints: () => ({}),
 });
 
 export default crmApi;
-

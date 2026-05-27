@@ -2,6 +2,7 @@ import { useMemo, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useGetSignedFileUrlQuery } from "../store/rtk/filesApi";
 import { extractFileId } from "../utils/fileUrl";
+import { withApiOrigin } from "../config/api";
 
 /**
  * Returns signed inline URL for private files (/api/files/:id/download).
@@ -22,18 +23,9 @@ const useSignedFileUrl = (value) => {
 
   const signed = canRequest ? (data?.data?.url || data?.url || "") : "";
 
-  const apiOrigin = useMemo(() => {
-    const raw =
-      (process.env.REACT_APP_API_URL || "http://localhost:5001").replace(/\/+$/, "");
-    return raw;
-  }, []);
-
     // normalize: нормализует входные и выходные данные.
 const normalize = (u) => {
-    if (!u) return "";
-    if (/^https?:\/\//i.test(u)) return u;
-    if (u.startsWith("/")) return `${apiOrigin}${u}`;
-    return u;
+    return withApiOrigin(u);
   };
 
   const url = fileId ? normalize(signed) : (value || "");
@@ -52,4 +44,3 @@ const normalize = (u) => {
 
   return { url, fileId, onError };
 };
-

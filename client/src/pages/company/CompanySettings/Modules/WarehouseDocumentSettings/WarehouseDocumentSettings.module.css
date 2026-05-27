@@ -1,0 +1,119 @@
+.wrap {
+  display: grid;
+  gap: 12px;
+}
+
+.card {
+  border: 1px solid color-mix(in srgb, var(--glass-brd) 84%, transparent);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.header {
+  display: grid;
+  gap: 6px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.label {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: color-mix(in srgb, var(--text) 88%, transparent);
+}
+
+.selectWrap {
+  width: min(360px, 100%);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.primaryButton,
+.ghostButton {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.primaryButton {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-start) 34%, transparent),
+    color-mix(in srgb, var(--focus) 30%, transparent)
+  );
+}
+
+.ghostButton {
+  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+}
+
+.primaryButton:disabled,
+.ghostButton:disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+}
+
+.error,
+.success {
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+
+.error {
+  color: #ff9090;
+}
+
+.success {
+  color: #89dbab;
+}
+
+.skeleton,
+.stateCard {
+  border: 1px solid color-mix(in srgb, var(--card-brd) 74%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+  padding: 16px;
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--fs-md);
+}
+
+.stateText {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 900px) {
+  .actions {
+    justify-content: flex-start;
+  }
+}

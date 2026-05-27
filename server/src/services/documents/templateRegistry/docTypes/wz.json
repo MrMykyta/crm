@@ -1,0 +1,71 @@
+{
+  "key": "wz",
+  "displayName": "WZ",
+  "family": "warehouse",
+  "capabilities": {
+    "hasVat": false,
+    "hasKSeFFields": false,
+    "hasPaymentBlock": false,
+    "hasItemTable": true,
+    "itemTablePriceVisible": false,
+    "hasWarehouseBlock": true,
+    "hasSignatureBlock": true,
+    "hasCarrierBlock": false,
+    "hasCorrectionReference": false,
+    "hasAdvanceReference": false,
+    "isLegalDocument": true,
+    "requiresSellerNip": false,
+    "requiresBuyerNip": false,
+    "requiresLegalFooter": false,
+    "allowedLocales": ["pl", "en"],
+    "defaultLocale": "pl"
+  },
+  "requiredSections": [
+    "header",
+    "seller_buyer",
+    "document_meta",
+    "items_table"
+  ],
+  "forbiddenSections": [
+    "totals",
+    "payment"
+  ],
+  "lockedSections": [],
+  "requiredBindings": [
+    "document.number",
+    "document.issueDate",
+    "items[*].name",
+    "items[*].quantity",
+    "items[*].unit"
+  ],
+  "legalConstraintRuleSetKey": "PL_WZ",
+  "defaultSections": [
+    "header",
+    "seller_buyer",
+    "document_meta",
+    "items_table",
+    "notes"
+  ],
+  "allowedBlockTypes": [
+    "document_title",
+    "document_number",
+    "document_dates",
+    "company_identity",
+    "counterparty_identity",
+    "items_table",
+    "notes"
+  ],
+  "forbiddenBlockTypes": [
+    "totals_table",
+    "payment",
+    "legal_footer"
+  ],
+  "allowedItemTableColumnSets": ["warehouse_basic", "warehouse_batch_expiry"],
+  "sectionHeightEstimates": {
+    "header": 80,
+    "seller_buyer": 120,
+    "document_meta": 70,
+    "items_table": 260,
+    "notes": 90
+  }
+}

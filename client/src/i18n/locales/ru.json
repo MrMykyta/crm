@@ -145,6 +145,7 @@
     "receipts": "Квитанции",
     "orders": "Заказы",
     "offers": "Оферты",
+    "documents": "Документы",
     "promotions": "Акции",
     "coupons": "Купоны",
     "shipments": "Отгрузки",
@@ -631,6 +632,7 @@
     "offers": "Предложения",
     "orders": "Заказы",
     "invoices": "Фактуры",
+    "documentNumbering": "Нумерация документов",
     "warehouseDoc": "Складские документы",
     "automation": "Автоматизация",
     "integrations": "Интеграции",
@@ -646,6 +648,214 @@
       "catalog": "Продукты / Услуги",
       "warehouse": "Склад",
       "other": "Другое"
+    },
+    "documents": {
+      "common": {
+        "basicSettings": "Основные настройки",
+        "refresh": "Обновить",
+        "saveSettings": "Сохранить настройки",
+        "saving": "Сохранение...",
+        "retry": "Повторить",
+        "loadErrorBody": "Произошла ошибка при загрузке данных",
+        "annotationTemplateLabel": "Шаблон аннотации",
+        "selectMode": "Выберите режим",
+        "selectAnnotationMode": "Выберите режим аннотации",
+        "selectDocumentType": "Выберите тип документа",
+        "selectInvoiceType": "Выберите тип фактуры",
+        "selectPaymentMethod": "Выберите способ оплаты",
+        "selectPaymentTerm": "Выберите срок оплаты",
+        "selectCurrency": "Выберите валюту",
+        "selectStockMode": "Выберите режим",
+        "filters": {
+          "all": "Все"
+        }
+      },
+      "validation": {
+        "cannotDisableDefaultType": "Нельзя выключить тип, выбранный по умолчанию.",
+        "defaultTypeMustBeEnabled": "Тип по умолчанию должен быть активным."
+      },
+      "numbering": {
+        "title": "Типы документов и нумерация",
+        "columns": {
+          "documentType": "Тип документа",
+          "numberPattern": "Шаблон номера",
+          "lastNumber": "Последний номер",
+          "nextNumber": "Следующий номер",
+          "enabled": "Активный"
+        },
+        "hints": {
+          "button": "Подсказка",
+          "available": "Доступные переменные:",
+          "examples": "Примеры:",
+          "tokens": {
+            "year": "$Y — год, например 2026",
+            "shortYear": "$YY — короткий год, например 26",
+            "month": "$M — месяц, например 04",
+            "day": "$D — день, например 24",
+            "sequence4": "$NY(4) — порядковый номер с 4 цифрами, например 0001",
+            "sequence5": "$NY(5) — порядковый номер с 5 цифрами, например 00001"
+          }
+        },
+        "validation": {
+          "required": "Шаблон номера обязателен",
+          "maxLength": "Максимальная длина 80 символов",
+          "unknownToken": "Неизвестный токен",
+          "missingSequence": "Шаблон должен содержать $NY(n)"
+        },
+        "aria": {
+          "toggleEnabled": "Переключить активность типа: {{type}}"
+        }
+      },
+      "templates": {
+        "title": "Шаблоны",
+        "add": "Добавить",
+        "edit": "Редактировать",
+        "delete": "Удалить шаблон",
+        "setDefault": "Сделать по умолчанию",
+        "defaultBadge": "По умолчанию",
+        "emptyTitle": "Нет шаблонов",
+        "emptyText": "Добавьте первый шаблон документа",
+        "loadError": "Не удалось загрузить шаблоны.",
+        "sync": "Синхронизация...",
+        "untitled": "Без названия",
+        "documentTypeFallback": "Документ",
+        "confirmDelete": "Удалить шаблон \"{{name}}\"?",
+        "confirmSetDefault": "Установить \"{{name}}\" шаблоном по умолчанию?",
+        "errors": {
+          "cannotDeleteDefault": "Нельзя удалить шаблон по умолчанию.",
+          "deleteFailed": "Не удалось удалить шаблон.",
+          "setDefaultFailed": "Не удалось установить шаблон по умолчанию."
+        },
+        "success": {
+          "deleted": "Шаблон удалён.",
+          "defaultUpdated": "Шаблон по умолчанию обновлён."
+        }
+      },
+      "options": {
+        "reservation": {
+          "disabled": "Выключена",
+          "enabled": "Включена"
+        },
+        "annotation": {
+          "empty": "Пустая",
+          "copyFromDocuments": "Копируется с документов",
+          "template": "Шаблонная"
+        },
+        "stockUpdate": {
+          "disabled": "Выключена",
+          "create_warehouse_document": "Создать складской документ"
+        },
+        "paymentMethod": {
+          "bank_transfer": "Банковский перевод",
+          "cash": "Наличные",
+          "card": "Банковская карта",
+          "blik": "BLIK",
+          "online": "Онлайн-оплата",
+          "cash_on_delivery": "Наложенный платёж",
+          "other": "Другое"
+        },
+        "paymentTermDays": "{{count}} дн."
+      },
+      "types": {
+        "offer": "Предложение",
+        "order": "Заказ",
+        "invoice": "Фактура",
+        "correction": "Фактура корректирующая",
+        "proforma": "Фактура proforma",
+        "advance": "Фактура авансовая",
+        "advance_proforma": "Фактура авансовая proforma",
+        "wdt": "Фактура WDT",
+        "pz": "PZ",
+        "wz": "WZ",
+        "mm": "MM",
+        "rw": "RW",
+        "pw": "PW"
+      },
+      "orders": {
+        "subtitle": "Настройки применяются на уровне компании.",
+        "fields": {
+          "productReservation": "Резервация продуктов",
+          "annotation": "Аннотация на заказах"
+        },
+        "annotationTemplatePlaceholder": "Введите шаблон аннотации...",
+        "annotationTemplateHelper": "HTML будет сохранён и использован как основа аннотации заказа.",
+        "validation": {
+          "templateRequired": "Для шаблонной аннотации заполните шаблон."
+        },
+        "loading": "Загрузка настроек заказов...",
+        "success": {
+          "saved": "Настройки сохранены."
+        },
+        "errors": {
+          "loadTitle": "Не удалось загрузить настройки заказов",
+          "saveFailed": "Не удалось сохранить настройки заказов."
+        }
+      },
+      "offers": {
+        "fields": {
+          "annotation": "Аннотация на предложениях"
+        },
+        "annotationTemplatePlaceholder": "Введите шаблон аннотации...",
+        "validation": {
+          "templateRequired": "Для шаблонной аннотации заполните шаблон."
+        },
+        "loading": "Загрузка настроек предложений...",
+        "success": {
+          "saved": "Настройки сохранены."
+        },
+        "errors": {
+          "loadTitle": "Не удалось загрузить настройки предложений",
+          "saveFailed": "Не удалось сохранить настройки предложений."
+        }
+      },
+      "invoices": {
+        "fields": {
+          "defaultType": "Стандартный тип фактуры",
+          "defaultPaymentMethod": "Стандартный способ оплаты",
+          "defaultPaymentTerm": "Стандартный срок оплаты",
+          "defaultCurrency": "Стандартная валюта",
+          "stockUpdateMode": "Актуализация складских остатков",
+          "annotation": "Аннотация на фактурах"
+        },
+        "filter": {
+          "invoice": "Фактура",
+          "correction": "Коррекция",
+          "proforma": "Proforma",
+          "advance": "Аванс",
+          "advance_proforma": "Аванс proforma",
+          "wdt": "WDT"
+        },
+        "annotationTemplatePlaceholder": "Введите шаблон аннотации...",
+        "validation": {
+          "atLeastOneEnabled": "Нельзя выключить последний активный тип.",
+          "templateRequired": "Для шаблонной аннотации заполните шаблон."
+        },
+        "loading": "Загрузка настроек фактур...",
+        "success": {
+          "saved": "Настройки сохранены."
+        },
+        "errors": {
+          "loadTitle": "Не удалось загрузить настройки фактур",
+          "saveFailed": "Не удалось сохранить настройки фактур."
+        }
+      },
+      "warehouse": {
+        "subtitle": "Тип документа по умолчанию используется в сценарии фактура -> склад.",
+        "fields": {
+          "defaultType": "Тип складского документа по умолчанию"
+        },
+        "validation": {
+          "atLeastOneEnabled": "Нельзя выключить последний активный тип."
+        },
+        "loading": "Загрузка настроек складских документов...",
+        "success": {
+          "saved": "Настройки складских документов сохранены."
+        },
+        "errors": {
+          "loadTitle": "Не удалось загрузить настройки складских документов",
+          "saveFailed": "Не удалось сохранить настройки складских документов."
+        }
+      }
     }
   },
   "companyMenu": {
@@ -1018,6 +1228,33 @@
         "links": "Ссылки",
         "documents": "Документы"
       }
+    }
+  },
+  "htmlEditor": {
+    "placeholder": "Начните вводить текст...",
+    "annotation": {
+      "ariaLabel": "Панель инструментов редактора аннотации",
+      "linkPrompt": "Укажите ссылку",
+      "bold": "Жирный",
+      "alignLeft": "По левому краю",
+      "alignCenter": "По центру",
+      "link": "Ссылка"
+    },
+    "toolbar": {
+      "ariaLabel": "Панель инструментов HTML редактора",
+      "undo": "Отменить",
+      "redo": "Повторить",
+      "heading": "Заголовок",
+      "bold": "Жирный",
+      "italic": "Курсив",
+      "underline": "Подчёркнутый",
+      "bulletList": "Маркированный список",
+      "orderedList": "Нумерованный список",
+      "link": "Ссылка",
+      "textColor": "Цвет текста",
+      "clearTextColor": "Сбросить цвет текста",
+      "highlightColor": "Цвет выделения",
+      "clearHighlight": "Сбросить выделение фона"
     }
   }
 }

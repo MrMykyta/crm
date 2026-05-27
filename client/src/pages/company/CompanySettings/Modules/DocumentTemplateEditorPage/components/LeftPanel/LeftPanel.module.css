@@ -1,0 +1,381 @@
+.wrap {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  min-height: 0;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.tabBtn {
+  height: 30px;
+  border: 1px solid var(--glass-brd);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  color: var(--text-2);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.active {
+  background: color-mix(in srgb, var(--focus) 14%, var(--card-bg));
+  border-color: color-mix(in srgb, var(--focus) 40%, var(--glass-brd));
+  color: var(--text-1);
+}
+
+.content {
+  min-height: 0;
+  border: 1px solid var(--glass-brd);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--sidebar-bg) 88%, transparent);
+  padding: 10px;
+  overflow: auto;
+}
+
+.placeholder {
+  color: var(--text-3);
+  font-size: 13px;
+  padding: 8px 6px;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Legacy single-button list item (kept for BlockLibraryTab / DataBindingsTab) */
+.listItem {
+  width: 100%;
+  border: 1px solid var(--glass-brd);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card-bg) 80%, transparent);
+  color: var(--text-2);
+  text-align: left;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.listItemActive {
+  border-color: color-mix(in srgb, var(--focus) 44%, var(--glass-brd));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 18%, transparent) inset;
+}
+
+.primaryText {
+  font-size: 13px;
+  color: var(--text-1);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.secondaryText {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+/* ─── DnD sortable wrapper ─────────────────────────────────────────────────── */
+
+.sortableItem {
+  list-style: none;
+  touch-action: none;
+  will-change: transform;
+}
+
+/* ─── Sections tab ─────────────────────────────────────────────────────────── */
+
+.sectionsTabWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionToolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.sectionTypeSelect {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--glass-brd);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sidebar-bg) 84%, transparent);
+  color: var(--text-1);
+  font-size: 12px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.sectionTypeSelect:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--focus) 45%, var(--glass-brd));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 22%, transparent);
+}
+
+.sectionAddButton {
+  flex: 0 0 auto;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--focus) 38%, var(--glass-brd));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--focus) 10%, var(--card-bg) 90%);
+  color: var(--text-1);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sectionAddButton:hover {
+  border-color: color-mix(in srgb, var(--focus) 55%, var(--glass-brd));
+  background: color-mix(in srgb, var(--focus) 16%, var(--card-bg) 84%);
+}
+
+.sectionRow {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  border: 1px solid var(--glass-brd);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card-bg) 80%, transparent);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Active dragged row — inline transform moves it, this adds visual lift */
+.sectionRowSource {
+  border-color: color-mix(in srgb, var(--focus) 55%, var(--glass-brd));
+  background: color-mix(in srgb, var(--focus) 10%, var(--card-bg) 90%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+.dragHandle {
+  flex: 0 0 auto;
+  width: 22px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 14px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+  color: var(--text-2);
+}
+
+.sectionRowActive {
+  border-color: color-mix(in srgb, var(--focus) 44%, var(--glass-brd));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 18%, transparent) inset;
+}
+
+.sectionRowDisabled {
+  opacity: 0.55;
+}
+
+.sectionRowMain {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  text-align: left;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+}
+
+.sectionRowMain:hover {
+  background: color-mix(in srgb, var(--focus) 6%, transparent);
+}
+
+.sectionRowActions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 4px 4px 0;
+}
+
+.sectionMoveButton {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--glass-brd);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  color: var(--text-3);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.sectionMoveButton:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--focus) 36%, var(--glass-brd));
+  color: var(--text-1);
+}
+
+.sectionMoveButton:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.sectionBadge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--focus) 32%, var(--glass-brd));
+  background: color-mix(in srgb, var(--focus) 10%, transparent);
+  color: color-mix(in srgb, var(--focus) 80%, var(--text-2));
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
+.sectionMuted {
+  border-color: var(--glass-brd);
+  background: transparent;
+  color: var(--text-3);
+}
+
+/* ─── Block groups ─────────────────────────────────────────────────────────── */
+
+.blockGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.blockGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.searchInput {
+  width: 100%;
+  border: 1px solid var(--glass-brd);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sidebar-bg) 84%, transparent);
+  color: var(--text-1);
+  font-size: 12px;
+  padding: 7px 8px;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--focus) 45%, var(--glass-brd));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 22%, transparent);
+}
+
+/* ─── Data bindings ────────────────────────────────────────────────────────── */
+
+.bindingGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bindingGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bindingGroupTitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bindingRows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bindingRowButton {
+  width: 100%;
+  border: 1px solid var(--glass-brd);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card-bg) 80%, transparent);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.bindingRowButton:hover {
+  border-color: color-mix(in srgb, var(--focus) 35%, var(--glass-brd));
+}
+
+.bindingLabel {
+  color: var(--text-1);
+  font-size: 13px;
+}
+
+.bindingPath {
+  color: var(--text-2);
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.bindingSample {
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.selectedBlockHint {
+  margin: 0 0 10px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.emptyState {
+  color: var(--text-3);
+  font-size: 12px;
+  padding: 8px 4px;
+}

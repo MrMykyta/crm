@@ -11,7 +11,10 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      TransferItem.belongsTo(models.TransferOrder, {
+        as: 'transfer',
+        foreignKey: { name: 'transferId', field: 'transfer_id' },
+      });
     }
   }
   TransferItem.init({
@@ -46,6 +49,12 @@ module.exports = (sequelize, DataTypes) => {
     qty:{ 
       type:DataTypes.DECIMAL,
       allowNull: false,
+    },
+    movedQty:{
+      type: DataTypes.DECIMAL,
+      allowNull: false,
+      defaultValue: 0,
+      field: 'moved_qty',
     },
   }, {
     sequelize,

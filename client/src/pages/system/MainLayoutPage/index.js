@@ -131,4 +131,3 @@ const checkWallpaper = () => {
     </div>
   );
 }
-

@@ -4,6 +4,7 @@ const userService = require('../crm/userService');
 const { User } = require('../../models');
 const mailer = require('./mailer');
 const tokenService = require('../../utils/tokenService');
+const { buildPublicUrl } = require('../../config/publicUrl');
 
 const VERIF_TTL_HOURS = 24;
 
@@ -24,7 +25,7 @@ module.exports.register = async ({ email, password, firstName, lastName }, meta=
     );
     
 
-    const link = `${process.env.APP_URL}/auth/verify?token=${verificationToken}`;
+    const link = buildPublicUrl('/auth/verify', { token: verificationToken });
     await mailer.sendMail({
       to: email,
       subject: 'Подтверждение регистрации',
@@ -93,7 +94,7 @@ module.exports.resendVerificationMail = async (email) => {
       });
     }
 
-    const link = `${process.env.APP_URL}/auth/verify?token=${token}`;
+    const link = buildPublicUrl('/auth/verify', { token });
 
     await mailer.sendMail({
       to: safeEmail,

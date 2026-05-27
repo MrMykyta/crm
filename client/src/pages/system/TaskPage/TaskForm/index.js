@@ -13,6 +13,7 @@ import st from './TaskForm.module.css';
 const TASK_STATUS = ['todo', 'in_progress', 'done', 'blocked', 'canceled'];
 const MAX = { title: 300, category: 64, description: 4000 };
 const EMPTY_OPTIONS = [];
+const EMPTY_INITIAL = {};
 
 // toBaseValues: вспомогательная логика компонента.
 function toBaseValues(initial = {}) {
@@ -65,7 +66,7 @@ function contactSecondary(contact = {}) {
 // Компонент TaskForm: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function TaskForm({
   id,
-  initial = {},
+  initial = EMPTY_INITIAL,
   onSubmit,
   onCancel,
   loading = false,
@@ -453,4 +454,3 @@ const handleWithTimeToggle = (nextHasTime) => {
     </form>
   );
 }
-

@@ -41,6 +41,31 @@ static associate(models) {
         foreignKey: { name: 'companyId', field: 'company_id' },
         as: 'userPermissions',
       });
+
+      Company.hasOne(models.CompanyOrderSetting, {
+        foreignKey: { name: 'companyId', field: 'company_id' },
+        as: 'orderSettings',
+      });
+
+      Company.hasOne(models.CompanyInvoiceSetting, {
+        foreignKey: { name: 'companyId', field: 'company_id' },
+        as: 'invoiceSettings',
+      });
+
+      Company.hasOne(models.CompanyOfferSetting, {
+        foreignKey: { name: 'companyId', field: 'company_id' },
+        as: 'offerSettings',
+      });
+
+      Company.hasOne(models.CompanyWarehouseDocumentSetting, {
+        foreignKey: { name: 'companyId', field: 'company_id' },
+        as: 'warehouseDocumentSettings',
+      });
+
+      Company.hasMany(models.CompanyInvoiceTypeSetting, {
+        foreignKey: { name: 'companyId', field: 'company_id' },
+        as: 'invoiceTypeSettings',
+      });
     }
   }
 

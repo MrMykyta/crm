@@ -1,0 +1,102 @@
+.modeGrid {
+  display: grid;
+  gap: 7px;
+}
+
+.group {
+  display: grid;
+  gap: 6px;
+  padding: 7px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 88%, #fff 12%);
+  background: color-mix(in srgb, var(--ui-surface-2) 98%, black 2%);
+}
+
+.groupHeader {
+  display: grid;
+  gap: 2px;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+  color: color-mix(in srgb, var(--text-secondary) 82%, #fff 18%);
+}
+
+.groupHint {
+  margin: 0;
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  color: color-mix(in srgb, var(--text-secondary) 72%, #fff 28%);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  grid-column: span 4;
+}
+
+.label {
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--text-secondary) 84%, #fff 16%);
+}
+
+.control {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid color-mix(in srgb, var(--ui-field-border) 80%, #fff 20%);
+  border-radius: 8px;
+  padding: 0 9px;
+  background: color-mix(in srgb, var(--ui-field-bg) 96%, black 4%);
+  color: var(--text-primary);
+  font-size: var(--font-size-13);
+  line-height: var(--lh-normal);
+  transition: border-color var(--tr-fast), background var(--tr-fast), box-shadow var(--tr-fast);
+}
+
+.control:hover {
+  border-color: var(--ui-field-border-hover);
+  background: color-mix(in srgb, var(--ui-field-bg-hover) 94%, black 6%);
+}
+
+.control:focus-visible {
+  outline: none;
+  border-color: var(--ui-field-border-focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-field-border-focus) 22%, transparent);
+}
+
+.helperText {
+  margin: 0;
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  color: color-mix(in srgb, var(--text-secondary) 86%, #fff 14%);
+}
+
+@media (max-width: 1120px) {
+  .field {
+    grid-column: span 6;
+  }
+}
+
+@media (max-width: 760px) {
+  .fields {
+    grid-template-columns: 1fr;
+  }
+
+  .field {
+    grid-column: auto;
+  }
+}

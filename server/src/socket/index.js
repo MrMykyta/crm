@@ -2,27 +2,14 @@
 const { Server } = require('socket.io');
 const tokenService = require('../utils/tokenService');
 const logger = require('../lib/logger');
-
-const originsFromEnv =
-  (process.env.CORS_ORIGINS &&
-    process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)) ||
-  (process.env.APP_URL ? [process.env.APP_URL.trim()] : []);
-
-const WHITELIST = new Set([
-  ...originsFromEnv,
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-]);
+const { validateOrigin } = require('../config/cors');
 
 // Инициализирует Socket.IO, настраивает auth и подключает прикладные сокет-модули.
 module.exports = function initSocket(server) {
   const io = new Server(server, {
     cors: {
-      // Проверяет origin входящего socket-соединения по whitelist.
-origin(origin, cb) {
-        if (!origin || WHITELIST.has(origin)) return cb(null, true);
-        return cb(new Error(`Socket CORS blocked: ${origin}`));
-      },
+      // Проверяет origin входящего socket-соединения по CORS_ORIGINS.
+      origin: validateOrigin,
       credentials: true,
     },
   });

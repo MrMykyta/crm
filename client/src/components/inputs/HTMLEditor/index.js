@@ -8,7 +8,9 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Highlight from '@tiptap/extension-highlight';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
+import TextAlign from '@tiptap/extension-text-align';
 import { Redo2, Undo2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import FontSizeControl from './FontSizeControl';
 import s from './HTMLEditor.module.css';
 
@@ -71,7 +73,7 @@ unsetFontSize:
 const normalizeUrl = (value = '') => {
   const url = String(value || '').trim();
   if (!url) return '';
-  if (/^(https?:\/\/|mailto:|tel:)/i.test(url)) return url;
+  if (/^(https?:\/\/|mailto:|tel:|\/|#|\.\.?\/)/i.test(url)) return url;
   if (/^www\./i.test(url)) return `https://${url}`;
   return '';
 };
@@ -157,15 +159,25 @@ export default function HTMLEditor({
   value,
   defaultValue = '',
   onChange,
-  placeholder = 'Начните вводить текст…',
+  placeholder,
   minHeight = 220,
+  disabled = false,
+  toolbarPreset = 'full',
+  linkPromptLabel,
 }) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder || t('htmlEditor.placeholder');
+  const resolvedLinkPromptLabel = linkPromptLabel || t('htmlEditor.annotation.linkPrompt');
+
   const extensions = useMemo(
     () => [
       StarterKit.configure({
         heading: { levels: [2, 3] },
         bulletList: { keepMarks: true, keepAttributes: false },
         orderedList: { keepMarks: true, keepAttributes: false },
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
       }),
       Underline,
       TextStyle,
@@ -179,14 +191,15 @@ export default function HTMLEditor({
         protocols: ['http', 'https', 'mailto', 'tel'],
         HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
       }),
-      Placeholder.configure({ placeholder }),
+      Placeholder.configure({ placeholder: resolvedPlaceholder }),
     ],
-    [placeholder]
+    [resolvedPlaceholder]
   );
 
   const editor = useEditor({
     extensions,
     content: value ?? defaultValue,
+    editable: !disabled,
     editorProps: {
       attributes: {
         class: s.editor,
@@ -205,6 +218,11 @@ onUpdate: ({ editor: instance }) => {
     if (value === editor.getHTML()) return;
     editor.commands.setContent(value || '', false);
   }, [editor, value]);
+
+  useEffect(() => {
+    if (!editor) return;
+    editor.setEditable(!disabled);
+  }, [editor, disabled]);
 
   const [fontState, setFontState] = useState({
     size: DEFAULT_FONT,
@@ -236,9 +254,9 @@ const syncFontState = () => {
   }, [editor]);
 
     // chain: вспомогательная логика компонента.
-const chain = () => editor?.chain().focus();
-  const canUndo = !!editor?.can().chain().focus().undo().run();
-  const canRedo = !!editor?.can().chain().focus().redo().run();
+const chain = () => (disabled ? null : editor?.chain().focus());
+  const canUndo = !disabled && !!editor?.can().chain().focus().undo().run();
+  const canRedo = !disabled && !!editor?.can().chain().focus().redo().run();
 
     // applyFontSize: вспомогательная логика компонента.
 const applyFontSize = (next) => {
@@ -259,6 +277,7 @@ const stepFontSize = (delta) => {
     // toggleLink: переключает состояние компонента.
 const toggleLink = () => {
     if (!editor) return;
+    if (disabled) return;
 
     if (editor.isActive('link')) {
       chain()?.extendMarkRange('link').unsetLink().run();
@@ -273,41 +292,110 @@ const toggleLink = () => {
     chain()?.extendMarkRange('link').setLink({ href: clean }).run();
   };
 
+const setAlignLeft = () => {
+    chain()?.setTextAlign('left').run();
+  };
+
+const setAlignCenter = () => {
+    chain()?.setTextAlign('center').run();
+  };
+
+const setPromptLink = () => {
+    if (!editor || disabled) return;
+
+    const currentHref = String(editor.getAttributes('link')?.href || '').trim();
+    const suggested = currentHref || 'https://';
+    const raw = window.prompt(resolvedLinkPromptLabel, suggested);
+    if (raw === null) return;
+
+    const normalized = normalizeUrl(raw);
+    if (!normalized) {
+      chain()?.extendMarkRange('link').unsetLink().run();
+      return;
+    }
+    chain()?.extendMarkRange('link').setLink({ href: normalized }).run();
+  };
+
+  if (toolbarPreset === 'annotation') {
+    return (
+      <div className={s.wrap}>
+        <div className={s.toolbar} role="toolbar" aria-label={t('htmlEditor.annotation.ariaLabel')}>
+          <ToolButton
+            title={t('htmlEditor.annotation.bold')}
+            active={editor?.isActive('bold')}
+            disabled={disabled}
+            onClick={() => chain()?.toggleBold().run()}
+          >
+            {t('htmlEditor.annotation.bold')}
+          </ToolButton>
+          <ToolButton
+            title={t('htmlEditor.annotation.alignLeft')}
+            active={editor?.isActive({ textAlign: 'left' })}
+            disabled={disabled}
+            onClick={setAlignLeft}
+          >
+            {t('htmlEditor.annotation.alignLeft')}
+          </ToolButton>
+          <ToolButton
+            title={t('htmlEditor.annotation.alignCenter')}
+            active={editor?.isActive({ textAlign: 'center' })}
+            disabled={disabled}
+            onClick={setAlignCenter}
+          >
+            {t('htmlEditor.annotation.alignCenter')}
+          </ToolButton>
+          <ToolButton
+            title={t('htmlEditor.annotation.link')}
+            active={editor?.isActive('link')}
+            disabled={disabled}
+            onClick={setPromptLink}
+          >
+            {t('htmlEditor.annotation.link')}
+          </ToolButton>
+        </div>
+
+        <div className={s.editorWrap}>
+          <EditorContent editor={editor} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={s.wrap}>
-      <div className={s.toolbar} role="toolbar" aria-label="HTML editor toolbar">
-        <ToolButton title="Отменить" disabled={!canUndo} onClick={() => chain()?.undo().run()}>
+      <div className={s.toolbar} role="toolbar" aria-label={t('htmlEditor.toolbar.ariaLabel')}>
+        <ToolButton title={t('htmlEditor.toolbar.undo')} disabled={!canUndo} onClick={() => chain()?.undo().run()}>
           <Undo2 className={s.toolIcon} />
         </ToolButton>
-        <ToolButton title="Повторить" disabled={!canRedo} onClick={() => chain()?.redo().run()}>
+        <ToolButton title={t('htmlEditor.toolbar.redo')} disabled={!canRedo} onClick={() => chain()?.redo().run()}>
           <Redo2 className={s.toolIcon} />
         </ToolButton>
 
         <span className={s.divider} />
 
         <ToolButton
-          title="Заголовок"
+          title={t('htmlEditor.toolbar.heading')}
           active={editor?.isActive('heading', { level: 2 })}
           onClick={() => chain()?.toggleHeading({ level: 2 }).run()}
         >
           H2
         </ToolButton>
         <ToolButton
-          title="Жирный"
+          title={t('htmlEditor.toolbar.bold')}
           active={editor?.isActive('bold')}
           onClick={() => chain()?.toggleBold().run()}
         >
           B
         </ToolButton>
         <ToolButton
-          title="Курсив"
+          title={t('htmlEditor.toolbar.italic')}
           active={editor?.isActive('italic')}
           onClick={() => chain()?.toggleItalic().run()}
         >
           I
         </ToolButton>
         <ToolButton
-          title="Подчёркнутый"
+          title={t('htmlEditor.toolbar.underline')}
           active={editor?.isActive('underline')}
           onClick={() => chain()?.toggleUnderline().run()}
         >
@@ -329,21 +417,21 @@ const toggleLink = () => {
         <span className={s.divider} />
 
         <ToolButton
-          title="Маркированный список"
+          title={t('htmlEditor.toolbar.bulletList')}
           active={editor?.isActive('bulletList')}
           onClick={() => chain()?.toggleBulletList().run()}
         >
           •
         </ToolButton>
         <ToolButton
-          title="Нумерованный список"
+          title={t('htmlEditor.toolbar.orderedList')}
           active={editor?.isActive('orderedList')}
           onClick={() => chain()?.toggleOrderedList().run()}
         >
           1.
         </ToolButton>
         <ToolButton
-          title="Ссылка"
+          title={t('htmlEditor.toolbar.link')}
           active={editor?.isActive('link')}
           onClick={toggleLink}
         >
@@ -352,7 +440,7 @@ const toggleLink = () => {
 
         <span className={s.divider} />
 
-        <label className={s.colorControl} title="Цвет текста">
+        <label className={s.colorControl} title={t('htmlEditor.toolbar.textColor')}>
           <span className={s.colorLabel}>A</span>
           <input
             className={s.colorInput}
@@ -361,11 +449,11 @@ const toggleLink = () => {
             onChange={(e) => chain()?.setColor(e.target.value).run()}
           />
         </label>
-        <ToolButton title="Сбросить цвет текста" onClick={() => chain()?.unsetColor().run()}>
+        <ToolButton title={t('htmlEditor.toolbar.clearTextColor')} onClick={() => chain()?.unsetColor().run()}>
           A×
         </ToolButton>
 
-        <label className={s.colorControl} title="Цвет выделения">
+        <label className={s.colorControl} title={t('htmlEditor.toolbar.highlightColor')}>
           <span className={s.colorLabel}>▦</span>
           <input
             className={s.colorInput}
@@ -374,7 +462,7 @@ const toggleLink = () => {
             onChange={(e) => chain()?.setHighlight({ color: e.target.value }).run()}
           />
         </label>
-        <ToolButton title="Сбросить выделение фона" onClick={() => chain()?.unsetHighlight().run()}>
+        <ToolButton title={t('htmlEditor.toolbar.clearHighlight')} onClick={() => chain()?.unsetHighlight().run()}>
           ⌫
         </ToolButton>
       </div>
@@ -385,4 +473,3 @@ const toggleLink = () => {
     </div>
   );
 }
-

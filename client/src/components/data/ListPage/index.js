@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useEffect,
 } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import DataTable from '../DataTable';
 import DefaultToolbar from '../../filters/FilterToolbar';
@@ -23,6 +24,7 @@ import { useGetDealsQuery } from '../../../store/rtk/dealsApi';
 import { useGetNotesQuery } from '../../../store/rtk/notesApi';
 import { useGetContactsQuery } from '../../../store/rtk/contactsApi';
 import { useListProductsQuery } from '../../../store/rtk/productsApi';
+import { useListDocumentsQuery } from '../../../store/rtk/documentsApi';
 
 const REGISTRY = {
   counterparties: {
@@ -90,6 +92,19 @@ adapt: (data) => {
   },
   products: {
     useQuery: useListProductsQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  documents: {
+    useQuery: useListDocumentsQuery,
         // adapt: вспомогательная логика компонента.
 adapt: (data) => {
       const items = Array.isArray(data) ? data : (data?.items || []);
@@ -327,6 +342,67 @@ function normalizeQuery(q = {}) {
   };
 }
 
+const LIST_SCROLL_STORAGE_PREFIX = 'listPage:scroll:';
+
+// readScrollSnapshot: читает сохраненную позицию прокрутки из sessionStorage.
+function readScrollSnapshot(key) {
+  if (!key || typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const top = Number(parsed?.top);
+    const left = Number(parsed?.left);
+    return {
+      top: Number.isFinite(top) && top > 0 ? top : 0,
+      left: Number.isFinite(left) && left > 0 ? left : 0,
+      attempts: 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// findVerticalScrollContainer: ищет ближайший вертикальный scroll-контейнер.
+function findVerticalScrollContainer(node) {
+  if (!node || typeof window === 'undefined') return null;
+
+  const isScrollableElement = (element) => {
+    if (!element) return false;
+    const styles = window.getComputedStyle(element);
+    const overflowY = String(styles.overflowY || '').toLowerCase();
+    return overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay';
+  };
+
+  if (isScrollableElement(node)) return node;
+
+  let current = node.parentElement;
+  while (current) {
+    if (isScrollableElement(current)) return current;
+    current = current.parentElement;
+  }
+
+  return document.scrollingElement || document.documentElement;
+}
+
+// findHorizontalScrollContainer: ищет элемент с горизонтальным скроллом внутри таблицы.
+function findHorizontalScrollContainer(node) {
+  if (!node || typeof window === 'undefined') return null;
+
+  const candidates = [node, ...Array.from(node.querySelectorAll('*'))];
+  for (let index = 0; index < candidates.length; index += 1) {
+    const candidate = candidates[index];
+    if (!(candidate instanceof HTMLElement)) continue;
+    const styles = window.getComputedStyle(candidate);
+    const overflowX = String(styles.overflowX || '').toLowerCase();
+    const canScroll = (overflowX === 'auto' || overflowX === 'scroll' || overflowX === 'overlay')
+      && candidate.scrollWidth > candidate.clientWidth;
+    if (canScroll) return candidate;
+  }
+
+  return node;
+}
+
 // Компонент Button: отвечает за отображение UI и обработку взаимодействий пользователя.
 export function Button({ variant = 'primary', children, className = '', ...props }) {
   const cls = variant === 'primary' ? s.primary : s.btn;
@@ -343,6 +419,7 @@ const ListPage = forwardRef(function ListPage(
     externalData,
     externalMeta,
     externalLoading,
+    externalError,
     onExternalRefetch,
     query: controlledQuery,
     onQueryChange,
@@ -369,10 +446,24 @@ const ListPage = forwardRef(function ListPage(
     columnManagerTitle,
     enableSavedViews = true,
     dynamicColumnsMode = 'all',
+    className = '',
+    cardClassName = '',
+    toolbarShellClassName = '',
+    metaBarClassName = '',
+    tableRegionClassName = '',
+    emptyStateText,
+    emptyStateContent,
   },
   ref
 ) {
   const { t } = useTranslation();
+  const location = useLocation();
+  const rootRef = React.useRef(null);
+  const verticalRootRef = React.useRef(null);
+  const horizontalRootRef = React.useRef(null);
+  const verticalScrollRef = React.useRef(null);
+  const horizontalScrollRef = React.useRef(null);
+  const pendingScrollRestoreRef = React.useRef(null);
 
   const isExternal = typeof externalData !== 'undefined';
   const baseColumns = useMemo(() => normalizeColumns(columns), [columns]);
@@ -392,6 +483,26 @@ const ListPage = forwardRef(function ListPage(
   const effectiveColumnVisibility = columnVisibility ?? localColumnVisibility;
   const effectiveSavedViews = savedViews ?? localSavedViews;
   const effectiveActiveViewId = String((activeViewId ?? localActiveViewId) || DEFAULT_GRID_VIEW_ID);
+  const scrollStorageKey = useMemo(
+    () => `${LIST_SCROLL_STORAGE_PREFIX}${location.pathname}::${String(source || 'external')}`,
+    [location.pathname, source]
+  );
+
+  const persistScrollSnapshot = useCallback(() => {
+    if (!scrollStorageKey || typeof window === 'undefined') return;
+
+    const vertical = verticalScrollRef.current;
+    const horizontal = horizontalScrollRef.current;
+
+    const top = Number(vertical?.scrollTop || 0);
+    const left = Number(horizontal?.scrollLeft || 0);
+
+    try {
+      window.sessionStorage.setItem(scrollStorageKey, JSON.stringify({ top, left }));
+    } catch {
+      // ignore storage write errors
+    }
+  }, [scrollStorageKey]);
 
   const updateColumnWidths = useCallback((next) => {
     if (onColumnResize) {
@@ -467,7 +578,7 @@ useQuery: () => ({
         data: { items: externalData, total: externalMeta?.total, page: externalMeta?.page, limit: externalMeta?.limit },
         isFetching: !!externalLoading,
         refetch: onExternalRefetch || (() => {}),
-        error: null,
+        error: externalError || null,
       }),
             // adapt: вспомогательная логика компонента.
 adapt: (_data, q) => {
@@ -478,7 +589,7 @@ adapt: (_data, q) => {
         return { items, total, page, limit };
       },
     };
-  }, [isExternal, source, externalData, externalMeta, externalLoading, onExternalRefetch]);
+  }, [isExternal, source, externalData, externalMeta, externalLoading, onExternalRefetch, externalError]);
 
   const r = reg.useQuery(query);
 
@@ -932,10 +1043,62 @@ const onEscape = (event) => {
     enableSavedViews,
   ]);
 
+  useEffect(() => {
+    const verticalRoot = verticalRootRef.current || rootRef.current;
+    if (!verticalRoot || typeof window === 'undefined') return undefined;
+
+    const vertical = findVerticalScrollContainer(verticalRoot);
+    const horizontal = findHorizontalScrollContainer(horizontalRootRef.current);
+
+    verticalScrollRef.current = vertical;
+    horizontalScrollRef.current = horizontal;
+    pendingScrollRestoreRef.current = readScrollSnapshot(scrollStorageKey);
+
+    const onVerticalScroll = () => persistScrollSnapshot();
+    const onHorizontalScroll = () => persistScrollSnapshot();
+
+    vertical?.addEventListener('scroll', onVerticalScroll, { passive: true });
+    if (horizontal && horizontal !== vertical) {
+      horizontal.addEventListener('scroll', onHorizontalScroll, { passive: true });
+    }
+
+    return () => {
+      vertical?.removeEventListener('scroll', onVerticalScroll);
+      if (horizontal && horizontal !== vertical) {
+        horizontal.removeEventListener('scroll', onHorizontalScroll);
+      }
+      persistScrollSnapshot();
+    };
+  }, [persistScrollSnapshot, scrollStorageKey]);
+
+  useEffect(() => {
+    const snapshot = pendingScrollRestoreRef.current;
+    if (!snapshot || r.isFetching) return;
+
+    const vertical = verticalScrollRef.current;
+    const horizontal = horizontalScrollRef.current;
+
+    if (vertical) vertical.scrollTop = snapshot.top;
+    if (horizontal) horizontal.scrollLeft = snapshot.left;
+
+    snapshot.attempts += 1;
+
+    const verticalReady = !vertical
+      || Math.abs(Number(vertical.scrollTop || 0) - snapshot.top) <= 1
+      || (vertical.scrollHeight - vertical.clientHeight) <= snapshot.top;
+    const horizontalReady = !horizontal
+      || Math.abs(Number(horizontal.scrollLeft || 0) - snapshot.left) <= 1
+      || (horizontal.scrollWidth - horizontal.clientWidth) <= snapshot.left;
+
+    if ((verticalReady && horizontalReady) || snapshot.attempts >= 6) {
+      pendingScrollRestoreRef.current = null;
+    }
+  }, [adapted.items.length, r.isFetching, scrollStorageKey]);
+
   return (
-    <div className={s.wrap}>
-      <div className={s.card}>
-        <div className={s.toolbarShell}>
+    <div className={`${s.wrap} ${className}`.trim()} ref={rootRef}>
+      <div className={`${s.card} ${cardClassName}`.trim()}>
+        <div className={`${s.toolbarShell} ${toolbarShellClassName}`.trim()}>
           <div className={s.toolbarLeft}>
             <ToolbarToRender
               query={query}
@@ -1059,7 +1222,7 @@ const onEscape = (event) => {
           </div>
         </div>
 
-        <div className={s.metaBar}>
+        <div className={`${s.metaBar} ${metaBarClassName}`.trim()}>
           <div className={s.metaLeft}>
             <span className={s.count}>
               {t('list.rangeOfTotal', { start, end, total })}
@@ -1105,13 +1268,15 @@ const onEscape = (event) => {
 
         {r.error && <div className={s.error}>{String(r.error?.data?.error || r.error?.message || 'Error')}</div>}
 
-        <div className={s.tableRegion}>
-          <div className={s.tableViewport}>
-            <div className={s.scrollX}>
+        <div className={`${s.tableRegion} ${tableRegionClassName}`.trim()}>
+          <div className={s.tableViewport} ref={verticalRootRef}>
+            <div className={s.scrollX} ref={horizontalRootRef}>
               <DataTable
                 columns={normalizedColumns}
                 data={adapted.items}
                 loading={!!r.isFetching}
+                emptyStateText={emptyStateText}
+                emptyStateContent={emptyStateContent}
                 rowActions={rowActions}
                 sortKey={query.sort}
                 sortDir={query.dir}
@@ -1199,4 +1364,3 @@ const onEscape = (event) => {
 });
 
 export default ListPage;
-

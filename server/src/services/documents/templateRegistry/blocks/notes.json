@@ -1,0 +1,19 @@
+{
+  "type": "notes",
+  "displayName": "Notes",
+  "family": "notes",
+  "defaultProps": {
+    "label": "Uwagi",
+    "maxHeightMode": "expand"
+  },
+  "layout": {
+    "widthMode": "auto",
+    "minWidthPx": 320
+  },
+  "bindingSchema": {
+    "supportedPaths": [
+      "document.notes",
+      "document.privateNotes"
+    ]
+  }
+}

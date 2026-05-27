@@ -1,5 +1,6 @@
 // src/sockets/io.js
 import { io } from 'socket.io-client';
+import { socketBaseUrl } from '../config/api';
 
 let socket = null;
 let manualDisconnect = false;
@@ -26,10 +27,7 @@ export function initSocket(accessToken) {
 
   manualDisconnect = false;
 
-  const baseURL =
-    process.env.REACT_APP_API_URL || 'http://localhost:5001';
-
-  socket = io(baseURL, {
+  socket = io(socketBaseUrl, {
     transports: ['websocket'],
     auth: { token: accessToken },
 

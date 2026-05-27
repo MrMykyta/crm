@@ -1,0 +1,32 @@
+{
+  "type": "company_identity",
+  "displayName": "Company Identity",
+  "family": "identity",
+  "defaultProps": {
+    "showAddress": true,
+    "showNip": true,
+    "showRegon": true,
+    "showBankAccount": false
+  },
+  "layout": {
+    "widthMode": "fraction",
+    "widthValue": 0.5,
+    "minWidthPx": 220
+  },
+  "bindingSchema": {
+    "supportedPaths": [
+      "company.legalName",
+      "company.name",
+      "company.addressLine1",
+      "company.city",
+      "company.postalCode",
+      "company.country",
+      "company.nip",
+      "company.regon",
+      "company.bankAccount"
+    ],
+    "requiredPaths": [
+      "company.legalName"
+    ]
+  }
+}

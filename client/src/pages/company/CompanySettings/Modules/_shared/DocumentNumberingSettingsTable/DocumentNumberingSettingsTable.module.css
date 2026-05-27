@@ -1,0 +1,170 @@
+.card {
+  border: 1px solid color-mix(in srgb, var(--glass-brd) 84%, transparent);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.header {
+  display: grid;
+  gap: 6px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+}
+
+.hintButton {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 74%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.hintButton:disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+}
+
+.hintCard {
+  border: 1px solid color-mix(in srgb, var(--card-brd) 74%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.hintTitle {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: color-mix(in srgb, var(--text) 80%, transparent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hintList {
+  display: grid;
+  gap: 4px;
+}
+
+.hintList p {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: color-mix(in srgb, var(--text) 74%, transparent);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 74%, transparent);
+}
+
+.table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+}
+
+.table th {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: color-mix(in srgb, var(--text) 70%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
+}
+
+.patternCell {
+  display: grid;
+  gap: 6px;
+}
+
+.patternInput {
+  width: min(320px, 100%);
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 72%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+  color: var(--text);
+  font-size: var(--fs-sm);
+}
+
+.patternInput:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--focus) 64%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus) 25%, transparent);
+}
+
+.patternInputError {
+  border-color: color-mix(in srgb, #ff7a7a 76%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ff7a7a 60%, transparent);
+}
+
+.rowError {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: #ff9090;
+}
+
+.toggle {
+  width: 48px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  position: relative;
+  cursor: pointer;
+  transition: background-color var(--tr-fast), border-color var(--tr-fast), opacity var(--tr-fast);
+}
+
+.toggleOn {
+  background: color-mix(in srgb, #2ecc71 42%, transparent);
+  border-color: color-mix(in srgb, #2ecc71 65%, transparent);
+}
+
+.toggleOff {
+  background: color-mix(in srgb, #c0392b 30%, transparent);
+  border-color: color-mix(in srgb, #c0392b 60%, transparent);
+}
+
+.toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggleKnob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, #ffffff 92%, transparent);
+  transition: transform var(--tr-fast);
+}
+
+.toggleOn .toggleKnob {
+  transform: translateX(22px);
+}

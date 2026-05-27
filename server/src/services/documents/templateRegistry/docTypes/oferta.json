@@ -1,0 +1,70 @@
+{
+  "key": "oferta",
+  "displayName": "Oferta Handlowa",
+  "family": "sales",
+  "capabilities": {
+    "hasVat": false,
+    "hasKSeFFields": false,
+    "hasPaymentBlock": true,
+    "hasItemTable": true,
+    "itemTablePriceVisible": true,
+    "hasWarehouseBlock": false,
+    "hasSignatureBlock": false,
+    "hasCarrierBlock": false,
+    "hasCorrectionReference": false,
+    "hasAdvanceReference": false,
+    "isLegalDocument": false,
+    "requiresSellerNip": false,
+    "requiresBuyerNip": false,
+    "requiresLegalFooter": false,
+    "allowedLocales": ["pl", "en", "de"],
+    "defaultLocale": "pl"
+  },
+  "requiredSections": [
+    "header",
+    "seller_buyer",
+    "document_meta",
+    "items_table"
+  ],
+  "forbiddenSections": [],
+  "lockedSections": [],
+  "requiredBindings": [
+    "document.number",
+    "document.issueDate",
+    "items[*].name",
+    "items[*].quantity"
+  ],
+  "legalConstraintRuleSetKey": "COMMERCIAL_DEFAULT",
+  "defaultSections": [
+    "header",
+    "seller_buyer",
+    "document_meta",
+    "items_table",
+    "totals",
+    "payment",
+    "notes"
+  ],
+  "allowedBlockTypes": [
+    "document_title",
+    "document_number",
+    "document_dates",
+    "company_identity",
+    "counterparty_identity",
+    "items_table",
+    "totals_table",
+    "payment",
+    "notes",
+    "legal_footer"
+  ],
+  "forbiddenBlockTypes": [],
+  "allowedItemTableColumnSets": ["offer_basic", "offer_with_discount"],
+  "sectionHeightEstimates": {
+    "header": 80,
+    "seller_buyer": 120,
+    "document_meta": 70,
+    "items_table": 240,
+    "totals": 110,
+    "payment": 80,
+    "notes": 90
+  }
+}

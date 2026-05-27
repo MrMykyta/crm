@@ -1,0 +1,605 @@
+.page {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  padding-bottom: var(--space-5);
+  isolation: isolate;
+  position: relative;
+}
+
+.page::before {
+  content: "";
+  position: absolute;
+  inset: -10px -10px auto -10px;
+  height: 340px;
+  border-radius: calc(var(--radius-xl) + 4px);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ui-surface-1) 92%, transparent) 0%,
+      color-mix(in srgb, var(--ui-surface-2) 84%, transparent) 62%,
+      color-mix(in srgb, var(--ui-surface-3) 58%, transparent) 100%
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ui-surface-1) 34%, transparent) 0%,
+      color-mix(in srgb, var(--ui-surface-2) 56%, transparent) 100%
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 90%, #fff 10%);
+  background:
+    radial-gradient(150% 130% at 100% 0%, color-mix(in srgb, var(--primary-start) 9%, transparent) 0%, transparent 58%),
+    color-mix(in srgb, var(--ui-surface-1) 98%, black 2%);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #fff 8%, transparent) inset,
+    0 10px 22px color-mix(in srgb, black 22%, transparent);
+  position: relative;
+  z-index: 1;
+}
+
+.headerMain {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.backButton {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 84%, #fff 16%);
+  background: color-mix(in srgb, var(--ui-surface-2) 96%, transparent);
+  color: var(--text-primary);
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: border-color var(--tr-fast), background var(--tr-fast), opacity var(--tr-fast);
+}
+
+.backButton:hover {
+  border-color: var(--ui-border-focus);
+  background: color-mix(in srgb, var(--ui-surface-hover) 72%, transparent);
+}
+
+.breadcrumb {
+  margin: 0;
+  font-size: var(--font-size-11);
+  line-height: var(--lh-normal);
+  color: color-mix(in srgb, var(--text-secondary) 78%, #fff 22%);
+  margin-top: 1px;
+}
+
+.headerMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.headerTypeBadge,
+.headerStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 82%, #fff 18%);
+  background: color-mix(in srgb, var(--ui-surface-2) 96%, transparent);
+  font-size: var(--font-size-11);
+  line-height: var(--lh-normal);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text-primary) 92%, #fff 8%);
+}
+
+.headerTypeBadge {
+  border-color: color-mix(in srgb, var(--primary-start) 42%, var(--ui-border-soft) 58%);
+  background: color-mix(in srgb, var(--primary-start) 14%, var(--ui-surface-2) 86%);
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin-top: 3px;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  color: color-mix(in srgb, var(--text-secondary) 82%, #fff 18%);
+  margin-top: 1px;
+}
+
+.headerFacts {
+  margin-top: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.factChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 86%, #fff 14%);
+  background: color-mix(in srgb, var(--ui-surface-2) 95%, transparent);
+  font-size: var(--font-size-11);
+  line-height: var(--lh-normal);
+  color: color-mix(in srgb, var(--text-secondary) 92%, #fff 8%);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.factChipMuted {
+  border-color: color-mix(in srgb, var(--ui-border-soft) 92%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-3) 96%, transparent);
+  color: color-mix(in srgb, var(--text-secondary) 82%, #fff 18%);
+}
+
+.actions {
+  flex-shrink: 0;
+  display: grid;
+  gap: 7px;
+  justify-items: end;
+  align-content: end;
+}
+
+.convertActionBlock {
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+}
+
+.convertLabel {
+  margin: 0;
+  font-size: var(--font-size-11);
+  line-height: var(--lh-normal);
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+  color: color-mix(in srgb, var(--text-secondary) 74%, #fff 26%);
+}
+
+.convertControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.convertSelect {
+  min-height: 30px;
+  min-width: 190px;
+  border: 1px solid color-mix(in srgb, var(--ui-field-border) 82%, #fff 18%);
+  border-radius: 8px;
+  padding: 0 10px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ui-field-bg) 99%, black 1%) 0%,
+      color-mix(in srgb, var(--ui-field-bg) 95%, black 5%) 100%
+    );
+  color: var(--text-primary);
+  font-size: var(--font-size-13);
+  box-shadow: 0 1px 0 color-mix(in srgb, #fff 5%, transparent) inset;
+  transition: border-color var(--tr-fast), box-shadow var(--tr-fast), background var(--tr-fast);
+}
+
+.convertSelect:hover {
+  border-color: var(--ui-field-border-hover);
+}
+
+.convertSelect:focus-visible {
+  outline: none;
+  border-color: var(--ui-field-border-focus);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--ui-field-border-focus) 22%, transparent),
+    0 1px 0 color-mix(in srgb, #fff 6%, transparent) inset;
+}
+
+.convertButton {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 78%, #fff 22%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ui-surface-soft) 97%, transparent) 0%,
+      color-mix(in srgb, var(--ui-surface-2) 96%, transparent) 100%
+    );
+  color: var(--text-primary);
+  font-size: var(--font-size-13);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: border-color var(--tr-fast), background var(--tr-fast), transform var(--tr-fast), opacity var(--tr-fast);
+}
+
+.convertButton:hover {
+  border-color: var(--ui-border-focus);
+  background: color-mix(in srgb, var(--ui-surface-hover) 80%, transparent);
+  transform: translateY(-1px);
+}
+
+.convertButton:disabled,
+.convertSelect:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.convertError {
+  margin: 0;
+  font-size: var(--font-size-12);
+  line-height: var(--lh-normal);
+  max-width: 320px;
+  text-align: right;
+  color: color-mix(in srgb, var(--danger) 90%, #fff 10%);
+}
+
+.saveButton {
+  min-height: 32px;
+  min-width: 126px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-action-primary-border) 72%, #fff 28%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ui-action-primary-bg) 96%, #fff 4%) 0%,
+      color-mix(in srgb, var(--ui-action-primary-bg) 86%, black 14%) 100%
+    );
+  color: var(--ui-action-primary-text);
+  font-size: var(--font-size-14);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #fff 24%, transparent) inset,
+    0 10px 20px color-mix(in srgb, var(--ui-action-primary-bg) 28%, transparent);
+  transition: opacity var(--tr-fast), transform var(--tr-fast), box-shadow var(--tr-fast);
+}
+
+.printButton {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 82%, #fff 18%);
+  background: color-mix(in srgb, var(--ui-surface-2) 95%, transparent);
+  color: var(--text-primary);
+  font-size: var(--font-size-13);
+  font-weight: var(--font-weight-medium);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: border-color var(--tr-fast), background var(--tr-fast), opacity var(--tr-fast);
+}
+
+.printButton:hover {
+  border-color: var(--ui-border-focus);
+  background: color-mix(in srgb, var(--ui-surface-hover) 76%, transparent);
+}
+
+.printButton:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.saveButton:hover {
+  opacity: 1;
+  transform: translateY(-0.5px);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #fff 26%, transparent) inset,
+    0 14px 24px color-mix(in srgb, var(--ui-action-primary-bg) 32%, transparent);
+}
+
+.saveButton:active {
+  transform: translateY(0);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #fff 18%, transparent) inset,
+    0 8px 16px color-mix(in srgb, var(--ui-action-primary-bg) 24%, transparent);
+}
+
+.saveButton:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--ui-action-primary-bg) 26%, transparent),
+    0 1px 0 color-mix(in srgb, #fff 24%, transparent) inset,
+    0 14px 26px color-mix(in srgb, var(--ui-action-primary-bg) 30%, transparent);
+}
+
+.saveButton:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.stateCard {
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 86%, #fff 14%);
+  background: color-mix(in srgb, var(--ui-surface-1) 98%, black 2%);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, #fff 8%, transparent) inset,
+    var(--ui-shadow-sm);
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-3);
+  position: relative;
+  z-index: 1;
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--font-size-20);
+  color: var(--text-primary);
+}
+
+.stateText {
+  margin: 0;
+  font-size: var(--font-size-13);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.stateActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.stateButton,
+.stateButtonGhost {
+  min-height: var(--ui-control-height-sm);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-13);
+  cursor: pointer;
+}
+
+.stateButton {
+  border: 1px solid var(--ui-action-primary-border);
+  background: var(--ui-action-primary-bg);
+  color: var(--ui-action-primary-text);
+}
+
+.stateButtonGhost {
+  border: 1px solid var(--ui-border-soft);
+  background: color-mix(in srgb, var(--ui-surface-soft) 85%, transparent);
+  color: var(--text-primary);
+}
+
+@media (max-width: 920px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .headerFacts {
+    width: 100%;
+  }
+
+  .factChip {
+    max-width: 100%;
+  }
+
+  .actions {
+    width: 100%;
+    justify-items: stretch;
+  }
+
+  .convertActionBlock {
+    justify-items: stretch;
+  }
+
+  .convertControls {
+    width: 100%;
+  }
+
+  .convertSelect {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .convertError {
+    text-align: left;
+    max-width: none;
+  }
+
+  .saveButton {
+    width: 100%;
+  }
+}
+
+/* --- Template preview layout --- */
+
+.templatePreviewFull {
+  width: 100%;
+  overflow: auto;
+}
+
+.templatePreviewViewport {
+  width: 100%;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px 16px;
+}
+
+.templatePreviewSplitWrap {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.templatePreviewSplitForm {
+  flex: 1;
+  min-width: 0;
+}
+
+.templatePreviewSplitCanvas {
+  width: 50%;
+  min-width: 600px;
+  overflow: auto;
+}
+
+.templatePreviewPageShell {
+  /* width and min-height are set via inline style for orientation support */
+  flex-shrink: 0;
+  background: #fff;
+  color: #111827;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 16px 40px rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.templatePreviewPageContent {
+  padding:
+    var(--preview-margin-top, 20mm)
+    var(--preview-margin-right, 15mm)
+    var(--preview-margin-bottom, 20mm)
+    var(--preview-margin-left, 15mm);
+  box-sizing: border-box;
+}
+
+.templatePreviewSkeleton {
+  background: color-mix(in srgb, var(--ui-surface-2) 80%, transparent);
+  border-radius: 6px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 180px;
+}
+
+.templatePreviewSkeletonBar {
+  height: 12px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ui-surface-3) 60%, transparent);
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.templatePreviewError {
+  border: 1px dashed #f87171;
+  border-radius: 6px;
+  background: #fef2f2;
+  padding: 16px;
+  color: #991b1b;
+  font-size: 13px;
+}
+
+.templatePreviewSourceBadge {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+/* --- Print styles --- */
+
+@media print {
+  body {
+    background: #fff;
+    margin: 0;
+    padding: 0;
+  }
+
+  /*
+   * Hide every element on the page via visibility so the DOM structure and
+   * positioning context remain intact (display:none on ancestors would
+   * prevent descendants from ever being visible).
+   */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Reveal only the designated print area and everything inside it. */
+  [data-print-area="document-template"],
+  [data-print-area="document-template"] * {
+    visibility: visible;
+  }
+
+  /*
+   * position:fixed is always relative to the CSS page box (physical paper),
+   * so it bypasses any position:relative/absolute ancestors in the React tree.
+   * This guarantees the template starts at paper origin regardless of the
+   * sidebar/topbar/layout wrappers that are still in the DOM but invisible.
+   */
+  [data-print-area="document-template"] {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  /* Remove screen-only chrome that lives inside the print area */
+  .templatePreviewSourceBadge,
+  .templatePreviewSkeleton,
+  .templatePreviewError {
+    display: none;
+  }
+
+  /* Strip screen decoration from the A4 page shell */
+  .templatePreviewPageShell {
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .templatePreviewPageContent {
+    overflow: visible;
+  }
+
+  /* Remove decorative pseudo-elements on the page wrapper */
+  .page::before,
+  .page::after {
+    display: none;
+  }
+}

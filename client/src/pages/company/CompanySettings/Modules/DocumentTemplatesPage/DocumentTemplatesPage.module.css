@@ -1,0 +1,166 @@
+.wrap {
+  display: grid;
+  gap: 12px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.createCard,
+.tableWrap,
+.emptyCard,
+.skeleton,
+.stateCard {
+  border: 1px solid color-mix(in srgb, var(--glass-brd) 84%, transparent);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+}
+
+.createCard,
+.emptyCard,
+.skeleton,
+.stateCard {
+  padding: 14px;
+}
+
+.createForm {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(180px, 220px) minmax(220px, 1fr) auto;
+  align-items: end;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: color-mix(in srgb, var(--text) 74%, transparent);
+}
+
+.input,
+.select {
+  width: 100%;
+  min-height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 80%, transparent);
+  background: var(--input-bg);
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.tableWrap {
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--card-brd) 74%, transparent);
+  vertical-align: middle;
+}
+
+.table th {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: color-mix(in srgb, var(--text) 68%, transparent);
+  position: sticky;
+  top: 0;
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
+  z-index: 1;
+}
+
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--sidebar-hover) 42%, transparent);
+}
+
+.primaryButton,
+.ghostButton {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 75%, transparent);
+  cursor: pointer;
+  color: var(--text);
+}
+
+.primaryButton {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-start) 34%, transparent),
+    color-mix(in srgb, var(--focus) 30%, transparent)
+  );
+}
+
+.ghostButton {
+  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+}
+
+.primaryButton:disabled,
+.ghostButton:disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--fs-md);
+}
+
+.stateText {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.errorText {
+  margin: 10px 0 0;
+  color: #ff8f8f;
+  font-size: var(--fs-sm);
+}
+
+.syncText {
+  margin: 0;
+  color: color-mix(in srgb, var(--text) 62%, transparent);
+  font-size: var(--fs-xs);
+}
+
+@media (max-width: 980px) {
+  .header {
+    flex-direction: column;
+  }
+
+  .createForm {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+}

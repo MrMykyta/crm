@@ -1,8 +1,8 @@
 // src/store/rtk/realtime.js
 import { crmApi } from './crmApi';
+import { apiBase } from '../../config/api';
 
-const API_ROOT =
-  (process.env.REACT_APP_API_URL?.replace(/\/+$/, '') || 'http://localhost:5001') + '/api';
+const API_ROOT = apiBase;
 
 let currentES = null;
 

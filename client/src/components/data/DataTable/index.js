@@ -43,6 +43,7 @@ export default function DataTable({
   loading = false,
   loadingRows = 8,
   emptyStateText = 'Ничего не найдено',
+  emptyStateContent = null,
   rowKey = 'id',
   onSort,
   sortKey,
@@ -375,7 +376,9 @@ const onDrop = (key) => (e) => {
             ))
           ) : data.length === 0 ? (
             <tr>
-              <td className={`${s.td} ${s.muted}`} colSpan={visibleCount}>{emptyStateText}</td>
+              <td className={`${s.td} ${s.muted}`} colSpan={visibleCount}>
+                {emptyStateContent || emptyStateText}
+              </td>
             </tr>
           ) : (
             data.map((row, ri) => {
@@ -411,4 +414,3 @@ const onDrop = (key) => (e) => {
     </div>
   );
 }
-

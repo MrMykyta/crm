@@ -1,0 +1,28 @@
+{
+  "type": "payment",
+  "displayName": "Payment",
+  "family": "payment",
+  "defaultProps": {
+    "showMethod": true,
+    "showBankAccount": true,
+    "showDueDate": true
+  },
+  "layout": {
+    "widthMode": "fraction",
+    "widthValue": 0.5,
+    "minWidthPx": 220
+  },
+  "bindingSchema": {
+    "supportedPaths": [
+      "payment.method",
+      "payment.methodLabel",
+      "payment.bankAccount",
+      "payment.bankName",
+      "payment.dueDate",
+      "payment.daysNet"
+    ],
+    "requiredPaths": [
+      "payment.method"
+    ]
+  }
+}

@@ -1,0 +1,124 @@
+.wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--glass-brd);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.left {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.templateName {
+  color: var(--text-1);
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saveStatus {
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.center,
+.right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.select {
+  min-width: 86px;
+  height: 30px;
+  border: 1px solid var(--glass-brd);
+  border-radius: 999px;
+  background: var(--sidebar-bg);
+  color: var(--text-2);
+  padding: 0 10px;
+}
+
+.select:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--focus) 40%, var(--glass-brd));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 20%, transparent);
+}
+
+.zoomSelect {
+  min-width: 78px;
+}
+
+.ghostBtn,
+.secondaryBtn,
+.primaryBtn {
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-brd);
+  padding: 0 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background var(--tr-fast), border-color var(--tr-fast), opacity var(--tr-fast);
+}
+
+.ghostBtn {
+  background: color-mix(in srgb, var(--card-bg) 80%, transparent);
+  color: var(--text-2);
+}
+
+.secondaryBtn {
+  background: color-mix(in srgb, var(--focus) 10%, var(--card-bg));
+  color: var(--text-1);
+}
+
+.primaryBtn {
+  background: color-mix(in srgb, var(--focus) 22%, var(--card-bg));
+  border-color: color-mix(in srgb, var(--focus) 42%, var(--glass-brd));
+  color: var(--text-1);
+}
+
+.ghostBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondaryBtn:disabled,
+.primaryBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.panelBtnCollapsed {
+  border-color: color-mix(in srgb, var(--text-3) 55%, var(--glass-brd));
+  background: color-mix(in srgb, var(--sidebar-bg) 88%, transparent);
+  color: var(--text-3);
+}
+
+@media (max-width: 1100px) {
+  .wrap {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .center,
+  .right {
+    flex-wrap: wrap;
+  }
+}

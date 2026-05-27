@@ -1,0 +1,78 @@
+{
+  "key": "faktura_vat",
+  "displayName": "Faktura VAT",
+  "family": "sales",
+  "capabilities": {
+    "hasVat": true,
+    "hasKSeFFields": true,
+    "hasPaymentBlock": true,
+    "hasItemTable": true,
+    "itemTablePriceVisible": true,
+    "hasWarehouseBlock": false,
+    "hasSignatureBlock": false,
+    "hasCarrierBlock": false,
+    "hasCorrectionReference": false,
+    "hasAdvanceReference": false,
+    "isLegalDocument": true,
+    "requiresSellerNip": true,
+    "requiresBuyerNip": false,
+    "requiresLegalFooter": true,
+    "allowedLocales": ["pl", "en", "de"],
+    "defaultLocale": "pl"
+  },
+  "requiredSections": [
+    "header",
+    "seller_buyer",
+    "document_meta",
+    "items_table",
+    "totals",
+    "legal_footer"
+  ],
+  "forbiddenSections": [],
+  "lockedSections": ["legal_footer"],
+  "requiredBindings": [
+    "company.nip",
+    "document.number",
+    "document.issueDate",
+    "document.saleDate",
+    "items[*].name",
+    "items[*].quantity",
+    "items[*].unit",
+    "totals.gross"
+  ],
+  "legalConstraintRuleSetKey": "PL_VAT_2024",
+  "defaultSections": [
+    "header",
+    "seller_buyer",
+    "document_meta",
+    "items_table",
+    "totals",
+    "payment",
+    "notes",
+    "legal_footer"
+  ],
+  "allowedBlockTypes": [
+    "document_title",
+    "document_number",
+    "document_dates",
+    "company_identity",
+    "counterparty_identity",
+    "items_table",
+    "totals_table",
+    "payment",
+    "notes",
+    "legal_footer"
+  ],
+  "forbiddenBlockTypes": [],
+  "allowedItemTableColumnSets": ["invoice_vat", "invoice_basic"],
+  "sectionHeightEstimates": {
+    "header": 80,
+    "seller_buyer": 120,
+    "document_meta": 70,
+    "items_table": 240,
+    "totals": 120,
+    "payment": 90,
+    "notes": 80,
+    "legal_footer": 70
+  }
+}

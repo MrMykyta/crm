@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       TransferOrder.hasMany(models.TransferItem,{ 
-        foreignKey:'transfer_id', 
+        foreignKey:{ name:'transferId', field:'transfer_id' }, 
         as:'items' 
       });
     }

@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../hooks/useSignedFileUrl";
 import { useLazyGetSignedDownloadUrlQuery } from "../../store/rtk/filesApi";
+import { withApiOrigin } from "../../config/api";
 import s from "./MediaViewer.module.css";
 
 /**
@@ -13,12 +14,7 @@ import s from "./MediaViewer.module.css";
  * @returns {string}
  */
 const normalizeUrl = (u) => {
-  if (!u) return "";
-  if (/^https?:\/\//i.test(u)) return u;
-  const base =
-    (process.env.REACT_APP_API_URL || "http://localhost:5001").replace(/\/+$/, "");
-  if (u.startsWith("/")) return `${base}${u}`;
-  return u;
+  return withApiOrigin(u);
 };
 
 /**
@@ -231,4 +227,3 @@ const build = async () => {
     </div>
   );
 }
-

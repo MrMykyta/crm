@@ -1,12 +1,11 @@
 // src/store/slices/authSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 import { setApiSession } from '../../store/rtk/crmApi';
+import { apiBase } from '../../config/api';
 
 // --------- helpers ----------
 const getApiBase = () => {
-  // если задан REACT_APP_API_URL — используем его, иначе относительный /api
-  const base = (process.env.REACT_APP_API_URL || '').replace(/\/+$/, '');
-  return base ? `${base}/api` : '/api';
+  return apiBase;
 };
 
 const initialState = {
@@ -137,4 +136,3 @@ const doLogout = () => async (dispatch) => {
   // уводим на /auth, чтобы не оставаться на защищённых маршрутах
   if (typeof window !== 'undefined') window.location.replace('/auth');
 };
-

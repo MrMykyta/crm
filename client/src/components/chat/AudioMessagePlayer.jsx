@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useLazyGetSignedFileUrlQuery } from "../../store/rtk/filesApi";
 import { setActiveAudio, clearActiveAudio } from "../../store/slices/chatSlice";
 import { generateWaveformBars } from "./audio/waveform";
+import { withApiOrigin } from "../../config/api";
 import s from "./AudioMessagePlayer.module.css";
 
 // Fixed number of waveform bars for stable layout.
@@ -22,12 +23,7 @@ const formatTime = (sec) => {
 
 // normalizeUrl: нормализует данные для отображения и ввода.
 const normalizeUrl = (u) => {
-  if (!u) return "";
-  if (/^https?:\/\//i.test(u)) return u;
-  const base =
-    (process.env.REACT_APP_API_URL || "http://localhost:5001").replace(/\/+$/, "");
-  if (u.startsWith("/")) return `${base}${u}`;
-  return u;
+  return withApiOrigin(u);
 };
 
 // Компонент AudioMessagePlayer: отвечает за отображение UI и обработку взаимодействий пользователя.
@@ -258,4 +254,3 @@ const handleSeek = (e) => {
     </div>
   );
 }
-

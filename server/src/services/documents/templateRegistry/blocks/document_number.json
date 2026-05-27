@@ -1,0 +1,21 @@
+{
+  "type": "document_number",
+  "displayName": "Document Number",
+  "family": "document_meta",
+  "defaultProps": {
+    "label": "Nr",
+    "showLabel": true
+  },
+  "layout": {
+    "widthMode": "auto",
+    "minWidthPx": 120
+  },
+  "bindingSchema": {
+    "supportedPaths": [
+      "document.number"
+    ],
+    "requiredPaths": [
+      "document.number"
+    ]
+  }
+}

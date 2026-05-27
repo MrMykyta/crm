@@ -52,6 +52,7 @@ import Modal from "../../../components/Modal";
 import ConfirmDialog from "../../../components/dialogs/ConfirmDialog";
 import ChatInfoPanel from "../../../components/chat/info/ChatInfoPanel";
 import MediaViewer from "../../../components/chat/MediaViewer";
+import { withApiOrigin } from "../../../config/api";
 
 // простая проверка Safari
 const isSafari =
@@ -97,12 +98,7 @@ const DOC_EXTS = new Set(["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"]);
 
 // normalizeUrl: нормализует данные для отображения и ввода.
 const normalizeUrl = (u) => {
-  if (!u) return "";
-  if (/^https?:\/\//i.test(u)) return u;
-  const base =
-    (process.env.REACT_APP_API_URL || "http://localhost:5001").replace(/\/+$/, "");
-  if (u.startsWith("/")) return `${base}${u}`;
-  return u;
+  return withApiOrigin(u);
 };
 
 // normalizeAttachment: нормализует данные для отображения и ввода.
@@ -2335,4 +2331,3 @@ const handleToggleDropdown = (e) => {
     </div>
   );
 }
-

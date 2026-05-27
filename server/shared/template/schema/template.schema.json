@@ -1,0 +1,176 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "template.schema.json",
+  "title": "TemplateVersionDraft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "templateName",
+    "documentTypeKey",
+    "schemaVersion",
+    "defaultLocale",
+    "page",
+    "sections",
+    "styleTokens",
+    "locales",
+    "printSettings",
+    "legalConstraints"
+  ],
+  "properties": {
+    "templateVersionId": {
+      "type": "string"
+    },
+    "templateName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "documentTypeKey": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "defaultLocale": {
+      "type": "string",
+      "minLength": 2
+    },
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["size", "orientation", "margins"],
+      "properties": {
+        "size": {
+          "type": "string",
+          "minLength": 1
+        },
+        "orientation": {
+          "type": "string",
+          "enum": ["portrait", "landscape"]
+        },
+        "margins": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["top", "right", "bottom", "left"],
+          "properties": {
+            "top": { "type": "number", "minimum": 0 },
+            "right": { "type": "number", "minimum": 0 },
+            "bottom": { "type": "number", "minimum": 0 },
+            "left": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "type", "order", "enabled", "locked", "layoutMode", "blocks"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "type": { "type": "string", "minLength": 1 },
+          "order": { "type": "integer", "minimum": 0 },
+          "enabled": { "type": "boolean" },
+          "locked": { "type": "boolean" },
+          "layoutMode": {
+            "type": "string",
+            "enum": ["flow", "grid", "fixed"]
+          },
+          "pageBreakBefore": { "type": "boolean" },
+          "visibilityCondition": { "type": "string" },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["key", "type", "props"],
+              "properties": {
+                "key": { "type": "string", "minLength": 1 },
+                "type": { "type": "string", "minLength": 1 },
+                "props": { "type": "object" },
+                "layout": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "widthMode": {
+                      "type": "string",
+                      "enum": ["auto", "fraction", "fixed"]
+                    },
+                    "widthValue": { "type": "number" },
+                    "minWidthPx": { "type": "number", "minimum": 0 },
+                    "horizontalAlign": {
+                      "type": "string",
+                      "enum": ["start", "center", "end"]
+                    }
+                  }
+                },
+                "bindings": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["path"],
+                    "properties": {
+                      "path": { "type": "string", "minLength": 1 },
+                      "format": { "type": ["string", "null"] },
+                      "fallback": { "type": ["string", "null"] },
+                      "hideWhenNull": { "type": "boolean" }
+                    }
+                  }
+                },
+                "visibilityCondition": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "styleTokens": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "number", "boolean"]
+      }
+    },
+    "locales": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    },
+    "printSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["headerRepeat", "tableHeaderRepeat", "pageBreakBefore", "orphanControl"],
+      "properties": {
+        "headerRepeat": { "type": "boolean" },
+        "tableHeaderRepeat": { "type": "boolean" },
+        "pageBreakBefore": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "orphanControl": { "type": "boolean" }
+      }
+    },
+    "legalConstraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inherited", "documentTypeKey", "overrides"],
+      "properties": {
+        "inherited": { "type": "boolean" },
+        "documentTypeKey": { "type": "string", "minLength": 1 },
+        "overrides": { "type": "array" }
+      }
+    },
+    "numberingPresetKey": {
+      "type": ["string", "null"]
+    },
+    "layoutPresetKey": {
+      "type": ["string", "null"]
+    }
+  }
+}

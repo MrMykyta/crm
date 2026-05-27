@@ -1,0 +1,597 @@
+.wrap {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 10px;
+  min-height: 0;
+}
+
+.main,
+.legal {
+  min-height: 0;
+}
+
+.panel {
+  border: 1px solid var(--glass-brd);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card-bg) 84%, transparent);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: auto;
+}
+
+/* ─── Title row ─────────────────────────────────────────────────────────────── */
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-1);
+  flex: 0 0 auto;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Badges ────────────────────────────────────────────────────────────────── */
+
+.badgeRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--focus) 32%, var(--glass-brd));
+  background: color-mix(in srgb, var(--focus) 10%, transparent);
+  color: color-mix(in srgb, var(--focus) 80%, var(--text-2));
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.badgeMuted {
+  border-color: var(--glass-brd);
+  background: transparent;
+  color: var(--text-3);
+}
+
+/* ─── Meta / rows ───────────────────────────────────────────────────────────── */
+
+.metaList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.label {
+  color: var(--text-3);
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.value {
+  color: var(--text-2);
+  font-size: 12px;
+  text-align: right;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.note {
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.warningNote {
+  color: #f59e0b;
+  font-size: 11px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, #f59e0b 32%, var(--glass-brd));
+  border-radius: 7px;
+  background: color-mix(in srgb, #f59e0b 8%, transparent);
+}
+
+/* ─── Forms ─────────────────────────────────────────────────────────────────── */
+
+.formBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  color: var(--text-3);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.input,
+.select,
+.jsonArea {
+  width: 100%;
+  border: 1px solid var(--glass-brd);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sidebar-bg) 84%, transparent);
+  color: var(--text-1);
+  font-size: 12px;
+  padding: 7px 8px;
+  box-sizing: border-box;
+}
+
+.select {
+  cursor: pointer;
+}
+
+.input:focus,
+.select:focus,
+.jsonArea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--focus) 45%, var(--glass-brd));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 22%, transparent);
+}
+
+.inputError {
+  border-color: color-mix(in srgb, #ff6b6b 55%, var(--glass-brd));
+}
+
+.inputError:focus {
+  border-color: color-mix(in srgb, #ff6b6b 70%, var(--glass-brd));
+  box-shadow: 0 0 0 1px color-mix(in srgb, #ff6b6b 22%, transparent);
+}
+
+.jsonArea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* ─── Section key edit row ──────────────────────────────────────────────────── */
+
+.sectionKeyEditRow {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.sectionKeyEditRow .input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+.smallButton {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--focus) 36%, var(--glass-brd));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--focus) 10%, var(--card-bg) 90%);
+  color: var(--text-1);
+  font-size: 12px;
+  padding: 0 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.smallButton:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--focus) 55%, var(--glass-brd));
+  background: color-mix(in srgb, var(--focus) 16%, var(--card-bg) 84%);
+}
+
+.smallButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ─── Checkbox ──────────────────────────────────────────────────────────────── */
+
+.checkboxList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkboxRow input[type="checkbox"] {
+  accent-color: var(--focus, #6ea8ff);
+}
+
+/* ─── Action buttons ────────────────────────────────────────────────────────── */
+
+.actionRow {
+  display: flex;
+  gap: 8px;
+}
+
+.actionButton,
+.dangerButton {
+  flex: 1 1 auto;
+  border: 1px solid var(--glass-brd);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  color: var(--text-1);
+  font-size: 12px;
+  padding: 7px 8px;
+  cursor: pointer;
+}
+
+.actionButton:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--focus) 36%, var(--glass-brd));
+}
+
+.dangerButton {
+  color: #ffb9b9;
+  border-color: color-mix(in srgb, #ff6b6b 42%, var(--glass-brd));
+}
+
+.dangerButton:hover:not(:disabled) {
+  border-color: color-mix(in srgb, #ff6b6b 62%, var(--glass-brd));
+  background: color-mix(in srgb, #ff6b6b 12%, var(--card-bg) 88%);
+}
+
+.disabledButton,
+.actionButton:disabled,
+.dangerButton:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ─── Blocks mini list ──────────────────────────────────────────────────────── */
+
+.blocksList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.blockMiniItem {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  list-style: none;
+  touch-action: none;
+  will-change: transform;
+}
+
+.blockMiniRow {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--glass-brd);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sidebar-bg) 80%, transparent);
+  text-align: left;
+  padding: 6px 8px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.blockMiniRow:active {
+  cursor: grabbing;
+}
+
+.blockMiniRow:hover {
+  border-color: color-mix(in srgb, var(--focus) 32%, var(--glass-brd));
+  background: color-mix(in srgb, var(--focus) 6%, var(--sidebar-bg) 94%);
+}
+
+.blockMiniRowActive {
+  border-color: color-mix(in srgb, var(--focus) 50%, var(--glass-brd));
+  background: color-mix(in srgb, var(--focus) 12%, var(--sidebar-bg) 88%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 18%, transparent) inset;
+}
+
+.blockMiniMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.blockMiniKey {
+  font-size: 12px;
+  color: var(--text-1);
+  overflow-wrap: anywhere;
+}
+
+.blockMiniType {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.blockMiniItemDragging {
+  border-color: color-mix(in srgb, var(--focus) 55%, var(--glass-brd));
+  background: color-mix(in srgb, var(--focus) 10%, var(--sidebar-bg) 90%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.blockMiniActions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.blockMiniActionBtn {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--glass-brd);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  color: var(--text-3);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  touch-action: auto;
+}
+
+.blockMiniActionBtn:hover {
+  border-color: color-mix(in srgb, var(--focus) 36%, var(--glass-brd));
+  color: var(--text-1);
+}
+
+.blockMiniActionDanger {
+  color: #ffb9b9;
+  border-color: color-mix(in srgb, #ff6b6b 30%, var(--glass-brd));
+}
+
+.blockMiniActionDanger:hover {
+  border-color: color-mix(in srgb, #ff6b6b 55%, var(--glass-brd));
+  background: color-mix(in srgb, #ff6b6b 10%, var(--card-bg) 90%);
+  color: #ffb9b9;
+}
+
+/* ─── Misc ──────────────────────────────────────────────────────────────────── */
+
+.localError {
+  color: #ff9898;
+  font-size: 11px;
+}
+
+.bindingList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bindingPill {
+  border: 1px solid var(--glass-brd);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sidebar-bg) 80%, transparent);
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bindingPillMeta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bindingPillKey {
+  color: var(--text-1);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bindingPillPath {
+  color: var(--text-3);
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  overflow-wrap: anywhere;
+}
+
+.removeBindingButton {
+  border: 1px solid color-mix(in srgb, #ff6b6b 38%, var(--glass-brd));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--card-bg) 78%, transparent);
+  color: #ffb9b9;
+  font-size: 11px;
+  padding: 4px 7px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.removeBindingButton:hover {
+  border-color: color-mix(in srgb, #ff6b6b 58%, var(--glass-brd));
+  background: color-mix(in srgb, #ff6b6b 10%, var(--card-bg) 90%);
+}
+
+.issues {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.issueItem {
+  border: 1px solid var(--glass-brd);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--sidebar-bg) 80%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.issueHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.issueMessage {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* ─── Field config list ──────────────────────────────────────────────────────── */
+
+.fieldConfigList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fieldConfigItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 0;
+  border: 1px solid var(--glass-brd);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--sidebar-bg) 80%, transparent);
+  min-height: 34px;
+  touch-action: none;
+  will-change: transform;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.fieldDragHandle {
+  flex: 0 0 22px;
+  width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  cursor: grab;
+  color: var(--text-3);
+  font-size: 14px;
+  user-select: none;
+  border-radius: 6px 0 0 6px;
+  transition: color 0.1s, background 0.1s;
+}
+
+.fieldDragHandle:hover {
+  color: var(--text-2);
+  background: color-mix(in srgb, var(--focus) 9%, transparent);
+}
+
+.fieldDragHandle:active {
+  cursor: grabbing;
+}
+
+.fieldConfigToggle {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.fieldConfigToggle input[type="checkbox"] {
+  accent-color: var(--focus, #6ea8ff);
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+}
+
+.fieldConfigMeta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.fieldConfigKey {
+  color: var(--text-3);
+  font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fieldConfigLabelInput {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 12px;
+  padding: 2px 4px;
+  box-sizing: border-box;
+  transition: border-color 0.1s, background 0.1s;
+}
+
+.fieldConfigLabelInput:hover {
+  border-color: var(--glass-brd);
+  background: color-mix(in srgb, var(--sidebar-bg) 60%, transparent);
+}
+
+.fieldConfigLabelInput:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--focus) 45%, var(--glass-brd));
+  background: color-mix(in srgb, var(--sidebar-bg) 80%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 18%, transparent);
+}
+
+.fieldConfigItemDragging {
+  opacity: 0.65;
+  border-color: color-mix(in srgb, var(--focus) 55%, var(--glass-brd));
+  background: color-mix(in srgb, var(--focus) 10%, var(--sidebar-bg) 90%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  z-index: 10;
+}

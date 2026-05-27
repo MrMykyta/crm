@@ -106,6 +106,7 @@
     "receipts": "Receipts",
     "orders": "Orders",
     "offers": "Offers",
+    "documents": "Documents",
     "promotions": "Promotions",
     "coupons": "Coupons",
     "shipments": "Shipments",
@@ -833,6 +834,257 @@
         "links": "Links",
         "documents": "Documents"
       }
+    }
+  },
+  "companySettings": {
+    "title": "Company settings",
+    "modules": "Modules",
+    "lists": "Lists",
+    "deals": "Deals",
+    "offers": "Offers",
+    "orders": "Orders",
+    "invoices": "Invoices",
+    "documentNumbering": "Document numbering",
+    "warehouseDoc": "Warehouse docs",
+    "automation": "Automation",
+    "integrations": "Integrations",
+    "catalog": "Products / Services",
+    "warehouse": "Warehouse",
+    "other": "Other",
+    "documents": {
+      "common": {
+        "basicSettings": "Basic settings",
+        "refresh": "Refresh",
+        "saveSettings": "Save settings",
+        "saving": "Saving...",
+        "retry": "Try again",
+        "loadErrorBody": "An error occurred while loading data",
+        "annotationTemplateLabel": "Annotation template",
+        "selectMode": "Select mode",
+        "selectAnnotationMode": "Select annotation mode",
+        "selectDocumentType": "Select document type",
+        "selectInvoiceType": "Select invoice type",
+        "selectPaymentMethod": "Select payment method",
+        "selectPaymentTerm": "Select payment term",
+        "selectCurrency": "Select currency",
+        "selectStockMode": "Select mode",
+        "filters": {
+          "all": "All"
+        }
+      },
+      "validation": {
+        "cannotDisableDefaultType": "Cannot disable the type selected as default.",
+        "defaultTypeMustBeEnabled": "Default type must be enabled."
+      },
+      "numbering": {
+        "title": "Document types and numbering",
+        "columns": {
+          "documentType": "Document type",
+          "numberPattern": "Number pattern",
+          "lastNumber": "Last number",
+          "nextNumber": "Next number",
+          "enabled": "Enabled"
+        },
+        "hints": {
+          "button": "Hint",
+          "available": "Available variables:",
+          "examples": "Examples:",
+          "tokens": {
+            "year": "$Y — year, for example 2026",
+            "shortYear": "$YY — short year, for example 26",
+            "month": "$M — month, for example 04",
+            "day": "$D — day, for example 24",
+            "sequence4": "$NY(4) — sequential number with 4 digits, for example 0001",
+            "sequence5": "$NY(5) — sequential number with 5 digits, for example 00001"
+          }
+        },
+        "validation": {
+          "required": "Number pattern is required",
+          "maxLength": "Maximum length is 80 characters",
+          "unknownToken": "Unknown token",
+          "missingSequence": "Pattern must contain $NY(n)"
+        },
+        "aria": {
+          "toggleEnabled": "Toggle type enabled state: {{type}}"
+        }
+      },
+      "templates": {
+        "title": "Templates",
+        "add": "Add",
+        "edit": "Edit",
+        "delete": "Delete template",
+        "setDefault": "Set as default",
+        "defaultBadge": "Default",
+        "emptyTitle": "No templates",
+        "emptyText": "Add your first document template",
+        "loadError": "Failed to load templates.",
+        "sync": "Syncing...",
+        "untitled": "Untitled",
+        "documentTypeFallback": "Document",
+        "confirmDelete": "Delete template \"{{name}}\"?",
+        "confirmSetDefault": "Set \"{{name}}\" as the default template?",
+        "errors": {
+          "cannotDeleteDefault": "Cannot delete default template.",
+          "deleteFailed": "Failed to delete template.",
+          "setDefaultFailed": "Failed to set default template."
+        },
+        "success": {
+          "deleted": "Template deleted.",
+          "defaultUpdated": "Default template updated."
+        }
+      },
+      "options": {
+        "reservation": {
+          "disabled": "Disabled",
+          "enabled": "Enabled"
+        },
+        "annotation": {
+          "empty": "Empty",
+          "copyFromDocuments": "Copied from documents",
+          "template": "Template"
+        },
+        "stockUpdate": {
+          "disabled": "Disabled",
+          "create_warehouse_document": "Create warehouse document"
+        },
+        "paymentMethod": {
+          "bank_transfer": "Bank transfer",
+          "cash": "Cash",
+          "card": "Payment card",
+          "blik": "BLIK",
+          "online": "Online payment",
+          "cash_on_delivery": "Cash on delivery",
+          "other": "Other"
+        },
+        "paymentTermDays": "{{count}} days"
+      },
+      "types": {
+        "offer": "Offer",
+        "order": "Order",
+        "invoice": "Invoice",
+        "correction": "Correction invoice",
+        "proforma": "Proforma invoice",
+        "advance": "Advance invoice",
+        "advance_proforma": "Advance proforma invoice",
+        "wdt": "WDT invoice",
+        "pz": "PZ",
+        "wz": "WZ",
+        "mm": "MM",
+        "rw": "RW",
+        "pw": "PW"
+      },
+      "orders": {
+        "subtitle": "Settings are applied at company level.",
+        "fields": {
+          "productReservation": "Product reservation",
+          "annotation": "Order annotation"
+        },
+        "annotationTemplatePlaceholder": "Enter annotation template...",
+        "annotationTemplateHelper": "HTML will be saved and used as the base for order annotation.",
+        "validation": {
+          "templateRequired": "Fill in annotation template content."
+        },
+        "loading": "Loading order settings...",
+        "success": {
+          "saved": "Settings saved."
+        },
+        "errors": {
+          "loadTitle": "Failed to load order settings",
+          "saveFailed": "Failed to save order settings."
+        }
+      },
+      "offers": {
+        "fields": {
+          "annotation": "Offer annotation"
+        },
+        "annotationTemplatePlaceholder": "Enter annotation template...",
+        "validation": {
+          "templateRequired": "Fill in annotation template content."
+        },
+        "loading": "Loading offer settings...",
+        "success": {
+          "saved": "Settings saved."
+        },
+        "errors": {
+          "loadTitle": "Failed to load offer settings",
+          "saveFailed": "Failed to save offer settings."
+        }
+      },
+      "invoices": {
+        "fields": {
+          "defaultType": "Default invoice type",
+          "defaultPaymentMethod": "Default payment method",
+          "defaultPaymentTerm": "Default payment term",
+          "defaultCurrency": "Default currency",
+          "stockUpdateMode": "Warehouse stock update",
+          "annotation": "Invoice annotation"
+        },
+        "filter": {
+          "invoice": "Invoice",
+          "correction": "Correction",
+          "proforma": "Proforma",
+          "advance": "Advance",
+          "advance_proforma": "Advance proforma",
+          "wdt": "WDT"
+        },
+        "annotationTemplatePlaceholder": "Enter annotation template...",
+        "validation": {
+          "atLeastOneEnabled": "Cannot disable the last active type.",
+          "templateRequired": "Fill in annotation template content."
+        },
+        "loading": "Loading invoice settings...",
+        "success": {
+          "saved": "Settings saved."
+        },
+        "errors": {
+          "loadTitle": "Failed to load invoice settings",
+          "saveFailed": "Failed to save invoice settings."
+        }
+      },
+      "warehouse": {
+        "subtitle": "Default document type is used in the invoice -> warehouse scenario.",
+        "fields": {
+          "defaultType": "Default warehouse document type"
+        },
+        "validation": {
+          "atLeastOneEnabled": "Cannot disable the last active type."
+        },
+        "loading": "Loading warehouse document settings...",
+        "success": {
+          "saved": "Warehouse document settings saved."
+        },
+        "errors": {
+          "loadTitle": "Failed to load warehouse document settings",
+          "saveFailed": "Failed to save warehouse document settings."
+        }
+      }
+    }
+  },
+  "htmlEditor": {
+    "placeholder": "Start typing text...",
+    "annotation": {
+      "ariaLabel": "Annotation editor toolbar",
+      "linkPrompt": "Enter link",
+      "bold": "Bold",
+      "alignLeft": "Align left",
+      "alignCenter": "Align center",
+      "link": "Link"
+    },
+    "toolbar": {
+      "ariaLabel": "HTML editor toolbar",
+      "undo": "Undo",
+      "redo": "Redo",
+      "heading": "Heading",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "bulletList": "Bullet list",
+      "orderedList": "Ordered list",
+      "link": "Link",
+      "textColor": "Text color",
+      "clearTextColor": "Clear text color",
+      "highlightColor": "Highlight color",
+      "clearHighlight": "Clear highlight color"
     }
   }
 }

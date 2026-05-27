@@ -2,6 +2,11 @@
 // transferOrderService.js (generated)
 const { Op } = require('sequelize');
 const { TransferOrder } = require('../../models');
+const { assertDocumentTypeEnabled, generateNextDocumentNumber } = require('../crm/documentNumberingService');
+
+function asText(value) {
+  return String(value ?? '').trim();
+}
 
 // parsePaging: парсит и нормализует входные параметры.
 const parsePaging = (query = {}) => {
@@ -40,20 +45,57 @@ module.exports.list = async ({ query = {}, user = {} } = {}) => {
 };
 
 // getById: возвращает данные по входным параметрам сервиса.
-module.exports.getById = async (id) => id ? TransferOrder.findByPk(id, {  }) : null;
+module.exports.getById = async (id, companyId = null) => {
+  if (!id) return null;
+  const where = companyId ? { id, companyId } : { id };
+  return TransferOrder.findOne({ where });
+};
 // create: создаёт новую запись и возвращает результат.
 module.exports.create  = async (payload = {}) => {
   if (!payload.companyId) throw new Error('companyId is required');
-  return TransferOrder.create(payload);
+  const tx = await TransferOrder.sequelize.transaction();
+  try {
+    const manualNumber = asText(payload.number);
+    await assertDocumentTypeEnabled({
+      companyId: payload.companyId,
+      documentType: 'MM',
+      transaction: tx,
+    });
+    const generatedNumber = manualNumber
+      ? null
+      : await generateNextDocumentNumber({
+        companyId: payload.companyId,
+        documentType: 'MM',
+        issueDate: payload.issueDate || new Date(),
+        transaction: tx,
+      });
+    const created = await TransferOrder.create(
+      {
+        ...payload,
+        number: manualNumber || generatedNumber,
+        status: payload.status || 'draft',
+      },
+      { transaction: tx }
+    );
+    await tx.commit();
+    return created;
+  } catch (error) {
+    await tx.rollback();
+    throw error;
+  }
 };
 // update: обновляет запись и возвращает актуальные данные.
-module.exports.update  = async (id, payload = {}) => {
+module.exports.update  = async (id, payload = {}, companyId = null) => {
   if (!id) throw new Error('id is required');
-  const row = await TransferOrder.findByPk(id); if (!row) return null;
+  const row = await module.exports.getById(id, companyId);
+  if (!row) return null;
   if (payload.companyId && payload.companyId !== row.companyId) throw new Error('companyId mismatch');
   await row.update(payload);
-  return module.exports.getById(id);
+  return module.exports.getById(id, row.companyId);
 };
 // remove: удаляет запись с учётом бизнес-ограничений.
-module.exports.remove  = async (id) => id ? TransferOrder.destroy({ where:{ id } }) : 0;
-
+module.exports.remove  = async (id, companyId = null) => {
+  if (!id) return 0;
+  const where = companyId ? { id, companyId } : { id };
+  return TransferOrder.destroy({ where });
+};

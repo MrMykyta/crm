@@ -1,0 +1,322 @@
+.root {
+  --dtr-font-size-base: 12px;
+  --dtr-text-color: #111827;
+  --dtr-muted-color: #64748b;
+  --dtr-accent-color: #2563eb;
+  --dtr-border-color: #e2e8f0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--dtr-text-color, #111827);
+  font-size: var(--dtr-font-size-base);
+  line-height: 1.45;
+}
+
+.emptyState {
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: var(--dtr-muted-color);
+  padding: 12px;
+}
+
+.section {
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.root[data-render-channel="editor"] .section {
+  border-color: rgba(37, 99, 235, 0.14);
+  background: rgba(37, 99, 235, 0.025);
+}
+
+.root[data-render-channel="editor"] .sectionSelected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+.sectionDisabled {
+  opacity: 0.45;
+}
+
+.sectionEmptyHint {
+  border: 1px dashed rgba(37, 99, 235, 0.35);
+  border-radius: 4px;
+  color: #64748b;
+  font-size: 11px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sectionTitle {
+  color: #64748b;
+  font-size: calc(var(--dtr-font-size-base) - 1px);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sectionContent {
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.modeFlow {
+  flex-direction: column;
+}
+
+.modeGrid {
+  flex-wrap: wrap;
+}
+
+.modeFixed {
+  flex-wrap: nowrap;
+  overflow: auto;
+}
+
+.block {
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  padding: 6px;
+  min-width: 120px;
+  flex: 1 1 auto;
+}
+
+.root[data-render-channel="editor"] .block {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(248, 250, 252, 0.75);
+  cursor: grab;
+  user-select: none;
+  position: relative;
+}
+
+.root[data-render-channel="editor"] .blockSelected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.16);
+}
+
+.root[data-render-channel="editor"] .blockDragging {
+  border-color: rgba(37, 99, 235, 0.55);
+  background: rgba(37, 99, 235, 0.06);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  cursor: grabbing;
+}
+
+.root[data-render-channel="editor"] .sectionDropTarget {
+  border-color: rgba(37, 99, 235, 0.45);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.sectionEmptyHintDropTarget {
+  border-color: rgba(37, 99, 235, 0.75);
+  background: rgba(37, 99, 235, 0.10);
+  color: #2563eb;
+}
+
+.blockDropIndicator {
+  height: 0;
+  border-top: 2px solid #2563eb;
+  margin: 4px 0;
+  position: relative;
+  flex: 0 0 100%;
+  pointer-events: none;
+}
+
+.blockDropIndicator::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #2563eb;
+}
+
+.unknownBlock {
+  color: #92400e;
+  font-size: calc(var(--dtr-font-size-base) - 1px);
+  border: 1px dashed #f59e0b;
+  border-radius: 4px;
+  background: #fffbeb;
+  padding: 8px;
+}
+
+.titleBlock {
+  font-size: calc(var(--dtr-font-size-base) + 6px);
+  line-height: 1.3;
+  font-weight: 700;
+  color: #111827;
+}
+
+.numberBlock,
+.datesBlock,
+.identityBlock,
+.itemsTableBlock,
+.totalsBlock,
+.paymentBlock,
+.notesBlock,
+.legalBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metaRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.label {
+  color: #64748b;
+  font-size: calc(var(--dtr-font-size-base) - 1px);
+}
+
+.labelMuted {
+  color: #64748b;
+  font-size: calc(var(--dtr-font-size-base) - 1px);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.value {
+  color: #111827;
+  font-size: var(--dtr-font-size-base);
+  overflow-wrap: anywhere;
+}
+
+.valueStrong {
+  color: #111827;
+  font-size: calc(var(--dtr-font-size-base) + 1px);
+  font-weight: 600;
+}
+
+.denseList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.noteText {
+  color: #111827;
+  white-space: pre-wrap;
+}
+
+.dataTable,
+.compactTable {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #e2e8f0;
+}
+
+.dataTable th,
+.dataTable td,
+.compactTable th,
+.compactTable td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 6px 8px;
+  vertical-align: top;
+}
+
+.dataTable th,
+.compactTable th {
+  color: #475569;
+  background: #f8fafc;
+  font-size: calc(var(--dtr-font-size-base) - 1px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-align: left;
+}
+
+.dataTable td,
+.compactTable td {
+  color: #111827;
+}
+
+.dataTable tbody tr:last-child td,
+.compactTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.dataTable .alignRight,
+.compactTable .alignRight {
+  text-align: right;
+}
+
+.emptyTableCell {
+  color: #64748b;
+  text-align: center;
+}
+
+.totalsRows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ─── Block resize handle ─────────────────────────────────────────────────── */
+
+.blockResizeHandle {
+  position: absolute;
+  top: 0;
+  right: -5px;
+  width: 10px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+
+.blockResizeHandle::after {
+  content: "";
+  width: 3px;
+  height: 20px;
+  border-radius: 2px;
+  background: #2563eb;
+  opacity: 0.6;
+  transition: height 0.1s, opacity 0.1s;
+  pointer-events: none;
+}
+
+.blockResizeHandle:hover::after {
+  height: 32px;
+  opacity: 1;
+}
+
+/* Override grab cursor while a resize is in progress */
+.root[data-render-channel="editor"] .blockResizing {
+  cursor: ew-resize;
+}
+
+/* ─── 12-column snap grid ─────────────────────────────────────────────────── */
+
+/* Visible in editor only when the section (and thus any block in it) is selected */
+.root[data-render-channel="editor"] .sectionSelected .sectionContent {
+  background-image: linear-gradient(
+    to right,
+    rgba(37, 99, 235, 0.07) 1px,
+    transparent 1px
+  );
+  background-size: calc(100% / 12) 100%;
+  background-position: 0 0;
+}

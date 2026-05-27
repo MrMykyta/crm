@@ -106,6 +106,7 @@
     "receipts": "Paragony",
     "orders": "Zamówienia",
     "offers": "Oferty",
+    "documents": "Dokumenty",
     "promotions": "Promocje",
     "coupons": "Kupony",
     "shipments": "Wysyłki",
@@ -506,6 +507,7 @@
     "offers": "Oferty",
     "orders": "Zamówienia",
     "invoices": "Faktury",
+    "documentNumbering": "Numeracja dokumentów",
     "warehouseDoc": "Dokumenty magazynowe",
     "automation": "Automatyzacja",
     "integrations": "Integracje",
@@ -521,6 +523,214 @@
       "catalog": "Produkty / Usługi",
       "warehouse": "Magazyn",
       "other": "Inne"
+    },
+    "documents": {
+      "common": {
+        "basicSettings": "Podstawowe ustawienia",
+        "refresh": "Odśwież",
+        "saveSettings": "Zapisz ustawienia",
+        "saving": "Zapisywanie...",
+        "retry": "Spróbuj ponownie",
+        "loadErrorBody": "Wystąpił błąd podczas ładowania danych",
+        "annotationTemplateLabel": "Szablon adnotacji",
+        "selectMode": "Wybierz tryb",
+        "selectAnnotationMode": "Wybierz tryb adnotacji",
+        "selectDocumentType": "Wybierz typ dokumentu",
+        "selectInvoiceType": "Wybierz typ faktury",
+        "selectPaymentMethod": "Wybierz sposób płatności",
+        "selectPaymentTerm": "Wybierz termin płatności",
+        "selectCurrency": "Wybierz walutę",
+        "selectStockMode": "Wybierz tryb",
+        "filters": {
+          "all": "Wszystkie"
+        }
+      },
+      "validation": {
+        "cannotDisableDefaultType": "Nie można wyłączyć typu ustawionego jako domyślny.",
+        "defaultTypeMustBeEnabled": "Domyślny typ musi być aktywny."
+      },
+      "numbering": {
+        "title": "Typy dokumentów i numeracja",
+        "columns": {
+          "documentType": "Typ dokumentu",
+          "numberPattern": "Szablon numeru",
+          "lastNumber": "Ostatni numer",
+          "nextNumber": "Następny numer",
+          "enabled": "Aktywny"
+        },
+        "hints": {
+          "button": "Podpowiedź",
+          "available": "Dostępne zmienne:",
+          "examples": "Przykłady:",
+          "tokens": {
+            "year": "$Y — rok, na przykład 2026",
+            "shortYear": "$YY — krótki rok, na przykład 26",
+            "month": "$M — miesiąc, na przykład 04",
+            "day": "$D — dzień, na przykład 24",
+            "sequence4": "$NY(4) — numer kolejny z 4 cyframi, na przykład 0001",
+            "sequence5": "$NY(5) — numer kolejny z 5 cyframi, na przykład 00001"
+          }
+        },
+        "validation": {
+          "required": "Szablon numeru jest wymagany",
+          "maxLength": "Maksymalna długość to 80 znaków",
+          "unknownToken": "Nieznany token",
+          "missingSequence": "Szablon musi zawierać $NY(n)"
+        },
+        "aria": {
+          "toggleEnabled": "Przełącz aktywność typu: {{type}}"
+        }
+      },
+      "templates": {
+        "title": "Szablony",
+        "add": "Dodaj",
+        "edit": "Edytuj",
+        "delete": "Usuń szablon",
+        "setDefault": "Ustaw jako domyślny",
+        "defaultBadge": "Domyślny",
+        "emptyTitle": "Brak szablonów",
+        "emptyText": "Dodaj pierwszy szablon dokumentu",
+        "loadError": "Nie udało się załadować szablonów.",
+        "sync": "Synchronizacja...",
+        "untitled": "Bez nazwy",
+        "documentTypeFallback": "Dokument",
+        "confirmDelete": "Usunąć szablon \"{{name}}\"?",
+        "confirmSetDefault": "Ustawić \"{{name}}\" jako domyślny szablon?",
+        "errors": {
+          "cannotDeleteDefault": "Nie można usunąć domyślnego szablonu.",
+          "deleteFailed": "Nie udało się usunąć szablonu.",
+          "setDefaultFailed": "Nie udało się ustawić domyślnego szablonu."
+        },
+        "success": {
+          "deleted": "Szablon został usunięty.",
+          "defaultUpdated": "Domyślny szablon został zaktualizowany."
+        }
+      },
+      "options": {
+        "reservation": {
+          "disabled": "Wyłączona",
+          "enabled": "Włączona"
+        },
+        "annotation": {
+          "empty": "Pusta",
+          "copyFromDocuments": "Kopiowana z dokumentów",
+          "template": "Szablonowa"
+        },
+        "stockUpdate": {
+          "disabled": "Wyłączona",
+          "create_warehouse_document": "Utwórz dokument magazynowy"
+        },
+        "paymentMethod": {
+          "bank_transfer": "Przelew bankowy",
+          "cash": "Gotówka",
+          "card": "Karta płatnicza",
+          "blik": "BLIK",
+          "online": "Płatność online",
+          "cash_on_delivery": "Za pobraniem",
+          "other": "Inne"
+        },
+        "paymentTermDays": "{{count}} dni"
+      },
+      "types": {
+        "offer": "Oferta",
+        "order": "Zamówienie",
+        "invoice": "Faktura",
+        "correction": "Faktura korygująca",
+        "proforma": "Faktura proforma",
+        "advance": "Faktura zaliczkowa",
+        "advance_proforma": "Faktura zaliczkowa proforma",
+        "wdt": "Faktura WDT",
+        "pz": "PZ",
+        "wz": "WZ",
+        "mm": "MM",
+        "rw": "RW",
+        "pw": "PW"
+      },
+      "orders": {
+        "subtitle": "Ustawienia obowiązują na poziomie firmy.",
+        "fields": {
+          "productReservation": "Rezerwacja produktów",
+          "annotation": "Adnotacja na zamówieniach"
+        },
+        "annotationTemplatePlaceholder": "Wpisz szablon adnotacji...",
+        "annotationTemplateHelper": "HTML zostanie zapisany i użyty jako baza adnotacji zamówienia.",
+        "validation": {
+          "templateRequired": "Uzupełnij treść szablonu adnotacji."
+        },
+        "loading": "Ładowanie ustawień zamówień...",
+        "success": {
+          "saved": "Ustawienia zostały zapisane."
+        },
+        "errors": {
+          "loadTitle": "Nie udało się załadować ustawień zamówień",
+          "saveFailed": "Nie udało się zapisać ustawień zamówień."
+        }
+      },
+      "offers": {
+        "fields": {
+          "annotation": "Adnotacja na ofertach"
+        },
+        "annotationTemplatePlaceholder": "Wpisz szablon adnotacji...",
+        "validation": {
+          "templateRequired": "Uzupełnij treść szablonu adnotacji."
+        },
+        "loading": "Ładowanie ustawień ofert...",
+        "success": {
+          "saved": "Ustawienia zostały zapisane."
+        },
+        "errors": {
+          "loadTitle": "Nie udało się załadować ustawień ofert",
+          "saveFailed": "Nie udało się zapisać ustawień ofert."
+        }
+      },
+      "invoices": {
+        "fields": {
+          "defaultType": "Standardowy typ faktury",
+          "defaultPaymentMethod": "Standardowy sposób płatności",
+          "defaultPaymentTerm": "Standardowy termin płatności",
+          "defaultCurrency": "Standardowa waluta",
+          "stockUpdateMode": "Aktualizacja stanów magazynowych",
+          "annotation": "Adnotacja na fakturach"
+        },
+        "filter": {
+          "invoice": "Faktura",
+          "correction": "Korekta",
+          "proforma": "Proforma",
+          "advance": "Zaliczka",
+          "advance_proforma": "Zaliczka proforma",
+          "wdt": "WDT"
+        },
+        "annotationTemplatePlaceholder": "Wpisz szablon adnotacji...",
+        "validation": {
+          "atLeastOneEnabled": "Nie można wyłączyć ostatniego aktywnego typu.",
+          "templateRequired": "Uzupełnij treść szablonu adnotacji."
+        },
+        "loading": "Ładowanie ustawień faktur...",
+        "success": {
+          "saved": "Ustawienia zostały zapisane."
+        },
+        "errors": {
+          "loadTitle": "Nie udało się załadować ustawień faktur",
+          "saveFailed": "Nie udało się zapisać ustawień faktur."
+        }
+      },
+      "warehouse": {
+        "subtitle": "Domyślny typ dokumentu jest używany w scenariuszu faktura -> magazyn.",
+        "fields": {
+          "defaultType": "Domyślny typ dokumentu magazynowego"
+        },
+        "validation": {
+          "atLeastOneEnabled": "Nie można wyłączyć ostatniego aktywnego typu."
+        },
+        "loading": "Ładowanie ustawień dokumentów magazynowych...",
+        "success": {
+          "saved": "Ustawienia dokumentów magazynowych zostały zapisane."
+        },
+        "errors": {
+          "loadTitle": "Nie udało się załadować ustawień dokumentów magazynowych",
+          "saveFailed": "Nie udało się zapisać ustawień dokumentów magazynowych."
+        }
+      }
     }
   },
   "companyMenu": {
@@ -839,6 +1049,33 @@
         "links": "Linki",
         "documents": "Dokumenty"
       }
+    }
+  },
+  "htmlEditor": {
+    "placeholder": "Zacznij wpisywać tekst...",
+    "annotation": {
+      "ariaLabel": "Pasek narzędzi edytora adnotacji",
+      "linkPrompt": "Podaj link",
+      "bold": "Pogrubienie",
+      "alignLeft": "Do lewej",
+      "alignCenter": "Do środka",
+      "link": "Link"
+    },
+    "toolbar": {
+      "ariaLabel": "Pasek narzędzi edytora HTML",
+      "undo": "Cofnij",
+      "redo": "Ponów",
+      "heading": "Nagłówek",
+      "bold": "Pogrubienie",
+      "italic": "Kursywa",
+      "underline": "Podkreślenie",
+      "bulletList": "Lista wypunktowana",
+      "orderedList": "Lista numerowana",
+      "link": "Link",
+      "textColor": "Kolor tekstu",
+      "clearTextColor": "Wyczyść kolor tekstu",
+      "highlightColor": "Kolor tła",
+      "clearHighlight": "Wyczyść kolor tła"
     }
   }
 }

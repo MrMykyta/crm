@@ -1,0 +1,30 @@
+{
+  "type": "totals_table",
+  "displayName": "Totals Table",
+  "family": "totals",
+  "defaultProps": {
+    "showByVatRate": true,
+    "showCurrency": true,
+    "showRoundingInfo": false
+  },
+  "layout": {
+    "widthMode": "fraction",
+    "widthValue": 0.6,
+    "minWidthPx": 280
+  },
+  "bindingSchema": {
+    "supportedPaths": [
+      "totals.byVatRate[].rate",
+      "totals.byVatRate[].net",
+      "totals.byVatRate[].vat",
+      "totals.byVatRate[].gross",
+      "totals.net",
+      "totals.vat",
+      "totals.gross"
+    ],
+    "requiredPaths": [
+      "totals.net",
+      "totals.gross"
+    ]
+  }
+}

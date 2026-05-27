@@ -1,64 +1,141 @@
-const service = require('../../services/oms/offerService');
-const orderService = require('../../services/oms/orderService');
+const offerService = require('../../services/oms/offerService');
 
-// Возвращает список сущностей с учётом фильтров и пагинации.
-module.exports.list = async (req,res,next) => { 
-    try{ 
-        const query = { ...req.query };
-        delete query.companyId;
-        res.json(await service.list(query, req.user)); 
-    } catch(e) { 
-        next(e);
-    } 
-};
-// Возвращает одну сущность по её идентификатору.
-module.exports.get = async (req,res,next) => { 
-    try{ 
-        const r=await service.get(req.params.id); 
-        if(!r) return res.status(404).json({message:'Offer not found'}); 
-        res.json(r);
-    } catch(e){ 
-        next(e);
-    } 
+module.exports.list = async (req, res, next) => {
+  try {
+    const data = await offerService.listOffers(req.query || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
 };
 
-// Создаёт новую сущность и возвращает результат создания.
-module.exports.create = async (req,res,next) => { 
-    try{ 
-        const payload = { ...req.body, companyId: req.user.companyId };
-        res.status(201).json(await service.create(payload, req.user)); 
-    } catch(e){ 
-        next(e);
-    } 
+module.exports.getById = async (req, res, next) => {
+  try {
+    const data = await offerService.getOfferById(req.params.id, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
 };
 
-// Обновляет существующую сущность по идентификатору.
-module.exports.update = async (req,res,next) => { 
-    try{ 
-        const payload = { ...req.body };
-        delete payload.companyId;
-        res.json(await service.update(req.params.id, payload)); 
-    } catch(e){ 
-        next(e);
-    } 
+module.exports.create = async (req, res, next) => {
+  try {
+    const data = await offerService.createOffer(req.body || {}, req.user);
+    res.status(201).json(data);
+  } catch (error) {
+    next(error);
+  }
 };
 
-// Удаляет сущность по идентификатору.
-module.exports.remove = async (req,res,next)=>{ 
-    try{ 
-        res.json(await service.remove(req.params.id)); 
-    } catch(e){ 
-        next(e);
-    } 
+module.exports.update = async (req, res, next) => {
+  try {
+    const data = await offerService.updateOffer(req.params.id, req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
 };
-// Конвертирует предложение в следующий бизнес-документ.
-module.exports.convert= async (req,res,next)=>{ 
-    try{ 
-        const payload = { ...req.body };
-        delete payload.companyId;
-        res.status(201).json(await orderService.fromOffer(req.params.id, payload)); 
-    } catch(e){ 
-        next(e);
-    } 
+
+module.exports.remove = async (req, res, next) => {
+  try {
+    const data = await offerService.deleteOffer(req.params.id, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
 };
+
+module.exports.saveItems = async (req, res, next) => {
+  try {
+    const data = await offerService.saveOfferItems(req.params.id, req.body?.items || [], req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.send = async (req, res, next) => {
+  try {
+    const data = await offerService.changeOfferStatus(req.params.id, 'sent', req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.view = async (req, res, next) => {
+  try {
+    const data = await offerService.changeOfferStatus(req.params.id, 'viewed', req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.accept = async (req, res, next) => {
+  try {
+    const data = await offerService.changeOfferStatus(req.params.id, 'accepted', req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.reject = async (req, res, next) => {
+  try {
+    const data = await offerService.changeOfferStatus(req.params.id, 'rejected', req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.cancel = async (req, res, next) => {
+  try {
+    const data = await offerService.changeOfferStatus(req.params.id, 'cancelled', req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.expire = async (req, res, next) => {
+  try {
+    const data = await offerService.changeOfferStatus(req.params.id, 'expired', req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.duplicate = async (req, res, next) => {
+  try {
+    const data = await offerService.duplicateOffer(req.params.id, req.body || {}, req.user);
+    res.status(201).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.convertToOrder = async (req, res, next) => {
+  try {
+    const data = await offerService.convertOfferToOrder(req.params.id, req.body || {}, req.user);
+    res.status(201).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.meta = async (req, res, next) => {
+  try {
+    const data = await offerService.getMeta(req.query || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Backward compatibility with previous controller method names
+module.exports.get = module.exports.getById;
+module.exports.convert = module.exports.convertToOrder;
 

@@ -3,6 +3,7 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useLazyGetSignedDownloadUrlQuery } from "../../../../store/rtk/filesApi";
+import { withApiOrigin } from "../../../../config/api";
 import s from "../ChatInfoPanel.module.css";
 
 // prettySize: вспомогательная логика компонента.
@@ -21,12 +22,7 @@ const prettySize = (size) => {
 
 // normalizeUrl: нормализует данные для отображения и ввода.
 const normalizeUrl = (u) => {
-  if (!u) return "";
-  if (/^https?:\/\//i.test(u)) return u;
-  const base =
-    (process.env.REACT_APP_API_URL || "http://localhost:5001").replace(/\/+$/, "");
-  if (u.startsWith("/")) return `${base}${u}`;
-  return u;
+  return withApiOrigin(u);
 };
 
 /**
@@ -113,4 +109,3 @@ export default function DocumentsTab({
     </div>
   );
 }
-

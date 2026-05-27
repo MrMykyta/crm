@@ -1,0 +1,41 @@
+{
+  "type": "items_table",
+  "displayName": "Items Table",
+  "family": "items",
+  "defaultProps": {
+    "showHeader": true,
+    "columns": [
+      "lp",
+      "name",
+      "quantity",
+      "unit",
+      "unitNetPrice",
+      "vatRate",
+      "netAmount",
+      "vatAmount",
+      "grossAmount"
+    ]
+  },
+  "layout": {
+    "widthMode": "auto",
+    "minWidthPx": 500
+  },
+  "bindingSchema": {
+    "supportedPaths": [
+      "items[*].lp",
+      "items[*].name",
+      "items[*].quantity",
+      "items[*].unit",
+      "items[*].unitNetPrice",
+      "items[*].vatRate",
+      "items[*].netAmount",
+      "items[*].vatAmount",
+      "items[*].grossAmount"
+    ],
+    "requiredPaths": [
+      "items[*].name",
+      "items[*].quantity",
+      "items[*].unit"
+    ]
+  }
+}
