@@ -29,6 +29,7 @@ rootRouter.use("/tasks", auth, companyIdGuard, require("./crm/taskRouter"));
 rootRouter.use("/notes", auth, companyIdGuard, require("./crm/noteRouter"));
 rootRouter.use("/documents", auth, companyIdGuard, require("./crm/documentRouter"));
 rootRouter.use("/offers", auth, companyIdGuard, require("./oms/offerRouter"));
+rootRouter.use("/orders", auth, companyIdGuard, require("./oms/orderRouter"));
 rootRouter.use(
   "/document-numbering-settings",
   auth,
