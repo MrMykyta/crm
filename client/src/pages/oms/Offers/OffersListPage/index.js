@@ -6,6 +6,7 @@ import ListPage from '../../../../components/data/ListPage';
 import FilterToolbar from '../../../../components/filters/FilterToolbar';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import useGridPrefs from '../../../../hooks/useGridPrefs';
+import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { createOffersColumns } from '../../../../components/data/ListPage/columnSchemas/offersColumns';
 
 const STATUS_OPTIONS = ['', 'draft', 'sent', 'viewed', 'accepted', 'rejected', 'expired', 'cancelled'];
@@ -13,6 +14,9 @@ const STATUS_OPTIONS = ['', 'draft', 'sent', 'viewed', 'accepted', 'rejected', '
 export default function OffersListPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { can } = useAclPermissions();
+  const canReadOffers = can('offer:read');
+  const canCreateOffers = can('offer:create');
 
   const {
     colWidths,
@@ -49,6 +53,14 @@ export default function OffersListPage() {
     [t]
   );
 
+  if (!canReadOffers) {
+    return (
+      <div style={{ padding: 16, color: 'var(--ui-text-2)' }}>
+        {t('common.noPermission', 'No permission')}
+      </div>
+    );
+  }
+
   return (
     <ListPage
       source="offers"
@@ -56,7 +68,11 @@ export default function OffersListPage() {
       columns={columns}
       defaultQuery={{ sort: 'updatedAt', dir: 'DESC', limit: 25 }}
       actions={(
-        <AddButton onClick={() => navigate('/main/oms/offers/new')}>
+        <AddButton
+          onClick={() => navigate('/main/oms/offers/new')}
+          disabled={!canCreateOffers}
+          title={!canCreateOffers ? t('common.noPermission', 'No permission') : undefined}
+        >
           {t('oms.offers.add', 'Add offer')}
         </AddButton>
       )}

@@ -6,6 +6,7 @@ import ListPage from '../../../../components/data/ListPage';
 import FilterToolbar from '../../../../components/filters/FilterToolbar';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import useGridPrefs from '../../../../hooks/useGridPrefs';
+import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { createOrdersColumns } from '../../../../components/data/ListPage/columnSchemas/ordersColumns';
 
 const STATUS_OPTIONS = [
@@ -23,6 +24,9 @@ const STATUS_OPTIONS = [
 export default function OrdersListPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { can } = useAclPermissions();
+  const canReadOrders = can('order:read');
+  const canCreateOrders = can('order:create');
 
   const {
     colWidths,
@@ -59,6 +63,14 @@ export default function OrdersListPage() {
     [t]
   );
 
+  if (!canReadOrders) {
+    return (
+      <div style={{ padding: 16, color: 'var(--ui-text-2)' }}>
+        {t('common.noPermission', 'No permission')}
+      </div>
+    );
+  }
+
   return (
     <ListPage
       source="orders"
@@ -66,7 +78,11 @@ export default function OrdersListPage() {
       columns={columns}
       defaultQuery={{ sort: 'updatedAt', dir: 'DESC', limit: 25 }}
       actions={(
-        <AddButton onClick={() => navigate('/main/oms/orders/new')}>
+        <AddButton
+          onClick={() => navigate('/main/oms/orders/new')}
+          disabled={!canCreateOrders}
+          title={!canCreateOrders ? t('common.noPermission', 'No permission') : undefined}
+        >
           {t('oms.orders.add', 'Add order')}
         </AddButton>
       )}

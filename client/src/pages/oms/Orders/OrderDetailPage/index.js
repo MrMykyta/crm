@@ -1,13 +1,15 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import EntityDetailPage from '../../../_scaffold/EntityDetailPage';
 import OmsStatusActionsMenu from '../../../../components/oms/OmsStatusActionsMenu';
+import useAclPermissions from '../../../../hooks/useAclPermissions';
 import {
   useCancelOrderMutation,
   useCompleteOrderMutation,
   useConfirmOrderMutation,
+  useConvertOrderToInvoiceMutation,
   useGetOrderByIdQuery,
   useReturnOrderMutation,
   useShipOrderMutation,
@@ -305,7 +307,12 @@ function OrderRightTabs({ tab, data, locale, actions, loadingKey, actionError, o
 
 export default function OrderDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const { can } = useAclPermissions();
+  const canReadOrder = can('order:read');
+  const canUpdateOrder = can('order:update');
+  const canConvertOrder = can('order:convert');
   const tabs = useMemo(() => buildTabs(t), [t]);
   const [actionLoadingKey, setActionLoadingKey] = useState('');
   const [actionError, setActionError] = useState('');
@@ -320,14 +327,21 @@ export default function OrderDetailPage() {
   const [completeOrder] = useCompleteOrderMutation();
   const [cancelOrder] = useCancelOrderMutation();
   const [returnOrder] = useReturnOrderMutation();
+  const [convertOrderToInvoice] = useConvertOrderToInvoiceMutation();
 
-  const runAction = useCallback(async (key, runner) => {
+  const runAction = useCallback(async (key, runner, options = {}) => {
     if (!id) return;
     setActionError('');
     setActionLoadingKey(key);
     try {
-      await runner().unwrap();
+      const result = await runner().unwrap();
+      const redirect = typeof options.redirect === 'function' ? options.redirect(result) : null;
+      if (redirect) {
+        navigate(redirect);
+        return result;
+      }
       await refetch();
+      return result;
     } catch (err) {
       const message = getErrorText(err, 'Failed to run action');
       setActionError(message);
@@ -337,7 +351,7 @@ export default function OrderDetailPage() {
     } finally {
       setActionLoadingKey('');
     }
-  }, [id, refetch]);
+  }, [id, navigate, refetch]);
 
   const actions = useMemo(() => {
     const available = base?.availableActions || {};
@@ -345,22 +359,22 @@ export default function OrderDetailPage() {
       {
         key: 'confirm',
         label: 'Confirm',
-        enabled: Boolean(available.canConfirm),
+        enabled: canUpdateOrder && Boolean(available.canConfirm),
       },
       {
         key: 'ship',
         label: 'Ship',
-        enabled: Boolean(available.canShip),
+        enabled: canUpdateOrder && Boolean(available.canShip),
       },
       {
         key: 'complete',
         label: 'Complete',
-        enabled: Boolean(available.canComplete),
+        enabled: canUpdateOrder && Boolean(available.canComplete),
       },
       {
         key: 'cancel',
         label: 'Cancel',
-        enabled: Boolean(available.canCancel),
+        enabled: canUpdateOrder && Boolean(available.canCancel),
         destructive: true,
         confirm: {
           title: 'Cancel order',
@@ -371,7 +385,7 @@ export default function OrderDetailPage() {
       {
         key: 'return',
         label: 'Return',
-        enabled: Boolean(available.canReturn),
+        enabled: canUpdateOrder && Boolean(available.canReturn),
         destructive: true,
         confirm: {
           title: 'Return order',
@@ -379,8 +393,13 @@ export default function OrderDetailPage() {
           okText: 'Return order',
         },
       },
+      {
+        key: 'convert-to-invoice',
+        label: 'Convert to Invoice',
+        enabled: canConvertOrder && Boolean(available.canConvertToInvoice),
+      },
     ];
-  }, [base?.availableActions]);
+  }, [base?.availableActions, canConvertOrder, canUpdateOrder]);
 
   const handleAction = useCallback((action) => {
     if (!action?.key) return;
@@ -402,8 +421,30 @@ export default function OrderDetailPage() {
     }
     if (action.key === 'return') {
       runAction('return', () => returnOrder({ id, payload: {} }));
+      return;
     }
-  }, [id, runAction, confirmOrder, shipOrder, completeOrder, cancelOrder, returnOrder]);
+    if (action.key === 'convert-to-invoice') {
+      runAction(
+        'convert-to-invoice',
+        () => convertOrderToInvoice({ id, payload: {} }),
+        {
+          redirect: (result) => {
+            const invoiceId = result?.invoice?.id || result?.data?.invoice?.id;
+            return invoiceId ? `/main/documents/${invoiceId}` : null;
+          },
+        }
+      );
+    }
+  }, [
+    id,
+    runAction,
+    confirmOrder,
+    shipOrder,
+    completeOrder,
+    cancelOrder,
+    returnOrder,
+    convertOrderToInvoice,
+  ]);
 
   const schemaBuilder = useCallback(() => buildSchema(), []);
   const toForm = useCallback((entity) => toFormOrder(entity, t, i18n.language), [t, i18n.language]);
@@ -430,6 +471,10 @@ export default function OrderDetailPage() {
     () => formatMoney(base?.totalGross, base?.currencyCode || 'PLN', i18n.language),
     [base?.totalGross, base?.currencyCode, i18n.language]
   );
+
+  if (!canReadOrder) {
+    return <div style={{ padding: 16, color: 'var(--ui-text-2)' }}>{t('common.noPermission', 'No permission')}</div>;
+  }
 
   if (isLoading || isFetching) {
     return <div style={{ padding: 16, color: 'var(--ui-text-2)' }}>{t('common.loading', 'Loading...')}</div>;

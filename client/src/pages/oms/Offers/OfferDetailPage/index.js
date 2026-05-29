@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import EntityDetailPage from '../../../_scaffold/EntityDetailPage';
 import OmsStatusActionsMenu from '../../../../components/oms/OmsStatusActionsMenu';
+import useAclPermissions from '../../../../hooks/useAclPermissions';
 import {
   useAcceptOfferMutation,
   useCancelOfferMutation,
@@ -305,6 +306,12 @@ export default function OfferDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const { can } = useAclPermissions();
+  const canReadOffer = can('offer:read');
+  const canUpdateOffer = can('offer:update');
+  const canCreateOffer = can('offer:create');
+  const canConvertOffer = can('offer:convert');
+  const canCreateOrder = can('order:create');
   const tabs = useMemo(() => buildTabs(t), [t]);
   const [actionLoadingKey, setActionLoadingKey] = useState('');
   const [actionError, setActionError] = useState('');
@@ -353,17 +360,17 @@ export default function OfferDetailPage() {
       {
         key: 'send',
         label: 'Send',
-        enabled: Boolean(available.canSend),
+        enabled: canUpdateOffer && Boolean(available.canSend),
       },
       {
         key: 'accept',
         label: 'Accept',
-        enabled: Boolean(available.canAccept),
+        enabled: canUpdateOffer && Boolean(available.canAccept),
       },
       {
         key: 'reject',
         label: 'Reject',
-        enabled: Boolean(available.canReject),
+        enabled: canUpdateOffer && Boolean(available.canReject),
         destructive: true,
         confirm: {
           title: 'Reject offer',
@@ -374,7 +381,7 @@ export default function OfferDetailPage() {
       {
         key: 'cancel',
         label: 'Cancel',
-        enabled: Boolean(available.canCancel),
+        enabled: canUpdateOffer && Boolean(available.canCancel),
         destructive: true,
         confirm: {
           title: 'Cancel offer',
@@ -385,20 +392,20 @@ export default function OfferDetailPage() {
       {
         key: 'expire',
         label: 'Expire',
-        enabled: Boolean(available.canExpire),
+        enabled: canUpdateOffer && Boolean(available.canExpire),
       },
       {
         key: 'duplicate',
         label: 'Duplicate',
-        enabled: Boolean(available.canDuplicate),
+        enabled: canCreateOffer && Boolean(available.canDuplicate),
       },
       {
         key: 'convert-to-order',
         label: 'Convert to order',
-        enabled: Boolean(available.canConvertToOrder),
+        enabled: canConvertOffer && canCreateOrder && Boolean(available.canConvertToOrder),
       },
     ];
-  }, [base?.availableActions]);
+  }, [base?.availableActions, canConvertOffer, canCreateOffer, canCreateOrder, canUpdateOffer]);
 
   const handleAction = useCallback((action) => {
     if (!action?.key) return;
@@ -476,6 +483,10 @@ export default function OfferDetailPage() {
     () => formatMoney(base?.totalGross, base?.currency || base?.currencyCode || 'PLN', i18n.language),
     [base?.totalGross, base?.currency, base?.currencyCode, i18n.language]
   );
+
+  if (!canReadOffer) {
+    return <div style={{ padding: 16, color: 'var(--ui-text-2)' }}>{t('common.noPermission', 'No permission')}</div>;
+  }
 
   if (isLoading || isFetching) {
     return <div style={{ padding: 16, color: 'var(--ui-text-2)' }}>{t('common.loading', 'Loading...')}</div>;

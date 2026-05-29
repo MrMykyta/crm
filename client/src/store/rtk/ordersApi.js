@@ -159,6 +159,18 @@ export const ordersApi = crmApi.injectEndpoints({
       ],
     }),
 
+    convertOrderToInvoice: build.mutation({
+      query: ({ id, payload = {} }) => ({
+        url: `/orders/${encodeURIComponent(id)}/actions/convert-to-invoice`,
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: 'Order', id },
+        { type: 'OrderList', id: 'LIST' },
+      ],
+    }),
+
     getOrderMeta: build.query({
       query: (args = {}) => ({
         url: '/orders/meta',
@@ -183,5 +195,6 @@ export const {
   useCompleteOrderMutation,
   useCancelOrderMutation,
   useReturnOrderMutation,
+  useConvertOrderToInvoiceMutation,
   useGetOrderMetaQuery,
 } = ordersApi;

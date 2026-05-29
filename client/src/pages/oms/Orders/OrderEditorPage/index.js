@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import ThemedSelect from '../../../../components/inputs/RadixSelect';
 import DateTimePicker from '../../../../components/inputs/DateTimePicker';
 import OmsProductPicker from '../../../../components/oms/OmsProductPicker';
+import useAclPermissions from '../../../../hooks/useAclPermissions';
 import {
   useCreateOrderMutation,
   useGetOrderByIdQuery,
@@ -170,6 +171,10 @@ export default function OrderEditorPage() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const { i18n } = useTranslation();
+  const { can } = useAclPermissions();
+  const canReadOrder = can('order:read');
+  const canCreateOrder = can('order:create');
+  const canUpdateOrder = can('order:update');
 
   const [form, setForm] = useState({
     counterpartyId: '',
@@ -403,6 +408,17 @@ export default function OrderEditorPage() {
     );
   }
 
+  if ((isEdit && !canReadOrder) || (isEdit && !canUpdateOrder) || (!isEdit && !canCreateOrder)) {
+    return (
+      <div className={s.page}>
+        <section className={s.stateCard}>
+          <h2 className={s.stateTitle}>No permission</h2>
+          <p className={s.stateText}>You do not have enough permissions to access order editor.</p>
+        </section>
+      </div>
+    );
+  }
+
   if (isEdit && isOrderError) {
     return (
       <div className={s.page}>
@@ -443,7 +459,7 @@ export default function OrderEditorPage() {
               >
                 Cancel
               </button>
-              <button type="button" className={s.primaryButton} onClick={onSave} disabled={isSaving}>
+              <button type="button" className={s.primaryButton} onClick={onSave} disabled={isSaving || (isEdit ? !canUpdateOrder : !canCreateOrder)}>
                 {isSaving ? 'Saving...' : 'Save'}
               </button>
             </div>
