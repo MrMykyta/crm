@@ -1,5 +1,9 @@
 node_modules
 npm-debug.log
+build
+dist
+logs
+.git
 uploads
 uploads-tmp
 public-uploads

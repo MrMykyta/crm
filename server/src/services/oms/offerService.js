@@ -8,6 +8,7 @@ const {
   OfferItem,
   Order,
   OrderItem,
+  Invoice,
   Counterparty,
   Contact,
   Deal,
@@ -19,6 +20,7 @@ const {
   UserCompany,
 } = require('../../models');
 const eventService = require('../system/eventService');
+const invoiceService = require('./invoiceService');
 const {
   assertDocumentTypeEnabled,
   generateNextDocumentNumber,
@@ -261,13 +263,29 @@ function mapDealSummary(deal) {
 
 function mapOrderSummary(order) {
   if (!order) return null;
+  const currencyCode = order.currencyCode || order.currency || null;
   return {
     id: order.id,
     number: order.number || null,
     status: order.status || null,
     totalGross: asNumber(order.totalGross, 0),
-    currency: order.currencyCode || null,
+    currency: currencyCode,
+    currencyCode,
     createdAt: order.createdAt || null,
+  };
+}
+
+function mapInvoiceSummary(invoice, fallbackCurrencyCode = null) {
+  if (!invoice) return null;
+  return {
+    id: invoice.id || null,
+    number: invoice.number || null,
+    status: invoice.status || null,
+    invoiceType: invoice.invoiceType || null,
+    totalGross: asNumber(invoice.totalGross, 0),
+    currencyCode: invoice.currencyCode || fallbackCurrencyCode || null,
+    issueDate: invoice.issueDate || null,
+    createdAt: invoice.createdAt || null,
   };
 }
 
@@ -354,7 +372,7 @@ function mapOfferToListDto(offer) {
   };
 }
 
-function mapOfferToDetailDto(offer) {
+function mapOfferToDetailDto(offer, related = {}) {
   const actions = getAvailableActions(offer);
   const statusMetadata = {
     status: offer.status,
@@ -401,7 +419,9 @@ function mapOfferToDetailDto(offer) {
     billingAddressSnapshot: offer.billingAddressSnapshot || null,
     shippingAddressSnapshot: offer.shippingAddressSnapshot || null,
     convertedOrderId: offer.convertedOrderId || null,
-    convertedOrder: mapOrderSummary(offer.convertedOrder),
+    convertedOrder: related.convertedOrder || mapOrderSummary(offer.convertedOrder),
+    convertedInvoice: related.convertedInvoice || null,
+    invoices: Array.isArray(related.invoices) ? related.invoices : [],
     createdBy: offer.createdBy || null,
     updatedBy: offer.updatedBy || null,
     createdByUser: mapUserSummary(offer.createdByUser),
@@ -417,6 +437,37 @@ function mapOfferToDetailDto(offer) {
     updatedAt: offer.updatedAt || null,
     deletedAt: offer.deletedAt || null,
   };
+}
+
+function hasInvoiceAttribute(field) {
+  return Boolean(Invoice?.rawAttributes?.[field]);
+}
+
+function buildOfferInvoiceWhereClause({ companyId, offerId, convertedOrderId }) {
+  const whereClause = { companyId };
+  const or = [];
+
+  if (convertedOrderId) {
+    or.push({ orderId: convertedOrderId });
+  }
+
+  if (hasInvoiceAttribute('sourceId')) {
+    if (hasInvoiceAttribute('sourceType')) {
+      or.push({ sourceType: 'offer', sourceId: offerId });
+    } else {
+      or.push({ sourceId: offerId });
+    }
+  }
+
+  if (hasInvoiceAttribute('sourceOfferId')) {
+    or.push({ sourceOfferId: offerId });
+  }
+
+  if (!or.length) {
+    return convertedOrderId ? { companyId, orderId: convertedOrderId } : { companyId, id: null };
+  }
+
+  return { ...whereClause, [Op.or]: or };
 }
 
 async function assertCounterpartyInCompany(counterpartyId, companyId, transaction) {
@@ -797,10 +848,10 @@ function buildListWhere({ query, companyId }) {
       { subject: { [Op.iLike]: like } },
       { notes: { [Op.iLike]: like } },
       { internalNotes: { [Op.iLike]: like } },
-      { '$counterparty.shortName$': { [Op.iLike]: like } },
-      { '$counterparty.fullName$': { [Op.iLike]: like } },
-      { '$contact.firstName$': { [Op.iLike]: like } },
-      { '$contact.lastName$': { [Op.iLike]: like } },
+      { '$counterparty.short_name$': { [Op.iLike]: like } },
+      { '$counterparty.full_name$': { [Op.iLike]: like } },
+      { '$contact.first_name$': { [Op.iLike]: like } },
+      { '$contact.last_name$': { [Op.iLike]: like } },
       sqlWhere(fn('concat', col('contact.first_name'), ' ', col('contact.last_name')), {
         [Op.iLike]: like,
       }),
@@ -927,7 +978,30 @@ async function getOfferById(id, userContext = {}) {
   if (!offer) {
     throw new AppError(404, 'Offer not found', { code: 'NOT_FOUND' });
   }
-  return mapOfferToDetailDto(offer);
+
+  const convertedOrderSummary = mapOrderSummary(offer.convertedOrder);
+  const convertedOrderId = offer.convertedOrderId || offer.convertedOrder?.id || null;
+  const invoiceWhereClause = buildOfferInvoiceWhereClause({
+    companyId,
+    offerId: offer.id,
+    convertedOrderId,
+  });
+  const invoiceRows = await Invoice.findAll({
+    where: invoiceWhereClause,
+    order: [['createdAt', 'ASC']],
+  });
+
+  const invoices = invoiceRows.map((invoice) => {
+    const fallbackCurrency = convertedOrderSummary?.currencyCode || offer.currency || null;
+    return mapInvoiceSummary(invoice, fallbackCurrency);
+  });
+  const convertedInvoice = invoices[0] || null;
+
+  return mapOfferToDetailDto(offer, {
+    convertedOrder: convertedOrderSummary,
+    convertedInvoice,
+    invoices,
+  });
 }
 
 async function createOffer(payload = {}, userContext = {}) {
@@ -1483,14 +1557,6 @@ async function convertOfferToOrder(id, payload = {}, userContext = {}) {
   try {
     const offer = await Offer.findOne({
       where: { id, companyId },
-      include: [
-        {
-          model: OfferItem,
-          as: 'items',
-          required: false,
-          order: [['sortOrder', 'ASC']],
-        },
-      ],
       transaction: tx,
       lock: tx.LOCK.UPDATE,
     });
@@ -1568,9 +1634,13 @@ async function convertOfferToOrder(id, payload = {}, userContext = {}) {
       throw new AppError(409, 'Unable to reserve order number', { code: 'NUMBERING_FAILURE' });
     }
 
-    const items = Array.isArray(offer.items)
-      ? [...offer.items].sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
-      : [];
+    const sourceItems = await OfferItem.findAll({
+      where: { offerId: offer.id, companyId },
+      order: [['sortOrder', 'ASC'], ['createdAt', 'ASC']],
+      transaction: tx,
+    });
+
+    const items = Array.isArray(sourceItems) ? sourceItems : [];
     if (items.length) {
       await OrderItem.bulkCreate(
         items.map((item) => ({
@@ -1636,6 +1706,114 @@ async function convertOfferToOrder(id, payload = {}, userContext = {}) {
   }
 }
 
+async function convertOfferToInvoice(id, payload = {}, userContext = {}) {
+  const companyId = userContext?.companyId;
+  if (!companyId) throw new AppError(403, 'Company context required');
+
+  const offer = await Offer.findOne({
+    where: { id, companyId },
+    attributes: ['id', 'companyId', 'status', 'convertedOrderId', 'number', 'counterpartyId', 'contactId', 'currency'],
+  });
+  if (!offer) {
+    throw new AppError(404, 'Offer not found', { code: 'NOT_FOUND' });
+  }
+
+  if (asText(offer.status).toLowerCase() !== 'accepted') {
+    throw new AppError(409, 'Only accepted offer can be converted to invoice', {
+      code: 'OFFER_NOT_CONVERTIBLE',
+    });
+  }
+
+  let targetOrderId = offer.convertedOrderId;
+  if (!targetOrderId) {
+    const conversion = await convertOfferToOrder(id, {}, userContext);
+    targetOrderId = conversion?.order?.id;
+  }
+
+  if (!targetOrderId) {
+    throw new AppError(409, 'Unable to resolve order for invoice conversion', {
+      code: 'OFFER_INVOICE_CONVERSION_FAILED',
+    });
+  }
+
+  const targetOrder = await Order.findOne({
+    where: { id: targetOrderId, companyId },
+    attributes: ['id', 'number', 'companyId', 'status', 'customerId', 'contactId', 'currencyCode', 'paymentTerms', 'notes', 'totalNet', 'totalTax', 'totalGross'],
+  });
+  if (!targetOrder) {
+    throw new AppError(404, 'Order for converted offer not found', { code: 'NOT_FOUND' });
+  }
+
+  const existingInvoice = await Invoice.findOne({
+    where: { companyId, orderId: targetOrder.id },
+    attributes: ['id'],
+  });
+  if (existingInvoice) {
+    throw new AppError(409, 'Offer is already converted to invoice', {
+      code: 'OFFER_ALREADY_CONVERTED_TO_INVOICE',
+    });
+  }
+
+  const invoicePayload = {
+    number: asOptionalText(payload.number) || undefined,
+    issueDate: payload.issueDate || undefined,
+    notes: asOptionalText(payload.notes) || undefined,
+    invoiceType: asOptionalText(payload.invoiceType) || undefined,
+    sourceType: 'offer',
+    sourceId: offer.id,
+  };
+  const invoice = await invoiceService.issue(targetOrder.id, invoicePayload);
+
+  await logOfferEvent({
+    companyId,
+    type: 'offer.converted_to_invoice',
+    offerId: offer.id,
+    userId: userContext?.id,
+    payload: {
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.number,
+      orderId: targetOrder.id,
+      source: {
+        counterpartyId: targetOrder.customerId,
+        contactId: targetOrder.contactId || null,
+        currencyCode: targetOrder.currencyCode || null,
+        paymentTerms: targetOrder.paymentTerms || null,
+        notes: targetOrder.notes || null,
+        totalNet: asNumber(targetOrder.totalNet, 0),
+        totalTax: asNumber(targetOrder.totalTax, 0),
+        totalGross: asNumber(targetOrder.totalGross, 0),
+      },
+    },
+  });
+
+  return {
+    invoice,
+    sourceOffer: {
+      id: offer.id,
+      number: offer.number || null,
+      status: offer.status,
+      counterpartyId: offer.counterpartyId || null,
+      contactId: offer.contactId || null,
+      currency: offer.currency || null,
+    },
+    sourceOrder: {
+      id: targetOrder.id,
+      number: targetOrder.number || null,
+      status: targetOrder.status,
+      counterpartyId: targetOrder.customerId || null,
+      contactId: targetOrder.contactId || null,
+      currencyCode: targetOrder.currencyCode || null,
+      paymentTerms: targetOrder.paymentTerms || null,
+      notes: targetOrder.notes || null,
+      totals: {
+        totalNet: asNumber(targetOrder.totalNet, 0),
+        totalTax: asNumber(targetOrder.totalTax, 0),
+        totalGross: asNumber(targetOrder.totalGross, 0),
+      },
+    },
+  };
+}
+
 async function getMeta(_query = {}, _userContext = {}) {
   return {
     statuses: OFFER_STATUSES,
@@ -1654,6 +1832,7 @@ module.exports = {
   changeOfferStatus,
   duplicateOffer,
   convertOfferToOrder,
+  convertOfferToInvoice,
   validateStatusTransition,
   buildOfferItemSnapshots,
   calculateOfferItemTotals,
@@ -1671,4 +1850,5 @@ module.exports = {
   create: createOffer,
   update: updateOffer,
   remove: deleteOffer,
+  convertToInvoice: convertOfferToInvoice,
 };

@@ -43,6 +43,18 @@ function mapEventToTags(msg) {
     if (e === 'company') {
       return [{ type: 'Company' }];
     }
+    if (e === 'order') {
+      return [
+        { type: 'OrderList', id: 'LIST' },
+        ...ids.map(id => ({ type: 'Order', id })),
+      ];
+    }
+    if (e === 'offer') {
+      return [
+        { type: 'OfferList', id: 'LIST' },
+        ...ids.map(id => ({ type: 'Offer', id })),
+      ];
+    }
     return [];
   }
 
@@ -70,6 +82,18 @@ function mapEventToTags(msg) {
   }
   if (t.startsWith('company.')) {
     return [{ type: 'Company' }];
+  }
+  if (t.startsWith('order.')) {
+    return [
+      { type: 'OrderList', id: 'LIST' },
+      ...ids.map(id => ({ type: 'Order', id })),
+    ];
+  }
+  if (t.startsWith('offer.')) {
+    return [
+      { type: 'OfferList', id: 'LIST' },
+      ...ids.map(id => ({ type: 'Offer', id })),
+    ];
   }
   return [];
 }

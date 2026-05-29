@@ -1,4 +1,5 @@
 const { Invoice, Order } = require('../../models');
+const AppError = require('../../errors/AppError');
 const { assertDocumentTypeEnabled, generateNextDocumentNumber } = require('../crm/documentNumberingService');
 const {
   getCompanyInvoiceSettingsForUsage,
@@ -14,7 +15,18 @@ module.exports.issue = async (orderId, payload={}) => {
     const t = await Invoice.sequelize.transaction();
     try {
         const order = await Order.findByPk(orderId, { transaction:t });
-        if (!order) throw new Error('Order not found');
+        if (!order) {
+          throw new AppError(404, 'Order not found', { code: 'NOT_FOUND' });
+        }
+        const existingInvoice = await Invoice.findOne({
+          where: { companyId: order.companyId, orderId: order.id },
+          transaction: t,
+        });
+        if (existingInvoice) {
+          throw new AppError(409, 'Invoice already exists for this order', {
+            code: 'INVOICE_ALREADY_EXISTS',
+          });
+        }
         const invoiceSettings = await getCompanyInvoiceSettingsForUsage({
           companyId: order.companyId,
           transaction: t,
@@ -24,7 +36,7 @@ module.exports.issue = async (orderId, payload={}) => {
         const issueDateSource = payload.issueDate || new Date();
         const issueDate = new Date(issueDateSource);
         if (Number.isNaN(issueDate.getTime())) {
-          throw new Error('issueDate is invalid');
+          throw new AppError(400, 'issueDate is invalid', { code: 'VALIDATION_ERROR' });
         }
 
         const manualNumber = String(payload.number || '').trim();
@@ -49,7 +61,7 @@ module.exports.issue = async (orderId, payload={}) => {
           ? new Date(payload.dueDate)
           : new Date(issueDate.getTime() + paymentDays * 24 * 60 * 60 * 1000);
         if (Number.isNaN(dueDate.getTime())) {
-          throw new Error('dueDate is invalid');
+          throw new AppError(400, 'dueDate is invalid', { code: 'VALIDATION_ERROR' });
         }
 
         // TODO(invoice-foundation): persist invoice subtype/payout method/currency/annotation in Invoice model.

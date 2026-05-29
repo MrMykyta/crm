@@ -126,6 +126,15 @@ module.exports.convertToOrder = async (req, res, next) => {
   }
 };
 
+module.exports.convertToInvoice = async (req, res, next) => {
+  try {
+    const data = await offerService.convertOfferToInvoice(req.params.id, req.body || {}, req.user);
+    res.status(201).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports.meta = async (req, res, next) => {
   try {
     const data = await offerService.getMeta(req.query || {}, req.user);
@@ -138,4 +147,3 @@ module.exports.meta = async (req, res, next) => {
 // Backward compatibility with previous controller method names
 module.exports.get = module.exports.getById;
 module.exports.convert = module.exports.convertToOrder;
-

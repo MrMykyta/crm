@@ -32,7 +32,7 @@ module.exports.PERMISSIONS = [
   'offer:read','offer:create','offer:update','offer:delete','offer:convert',
 
   // Заказы
-  'order:read','order:create','order:update','order:delete','order:from_offer',
+  'order:read','order:create','order:update','order:delete','order:from_offer','order:convert',
 
   // Заметки
   'note:read','note:create','note:update','note:delete',

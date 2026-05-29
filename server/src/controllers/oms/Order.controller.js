@@ -85,7 +85,7 @@ module.exports.remove = async (req, res, next) => {
 
 module.exports.saveItems = async (req, res, next) => {
   try {
-    const data = await orderService.update(req.params.id, { items: req.body?.items || [] }, req.user);
+    const data = await orderService.saveOrderItems(req.params.id, req.body?.items || [], req.user);
     res.status(200).json(data);
   } catch (error) {
     next(error);
@@ -96,6 +96,60 @@ module.exports.fromOffer = async (req, res, next) => {
   try {
     const payload = normalizeOrderPayload(req.body || {});
     const data = await orderService.fromOffer(req.params.id, payload, req.user);
+    res.status(201).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.confirm = async (req, res, next) => {
+  try {
+    const data = await orderService.changeOrderStatus(req.params.id, 'confirmed', req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.cancel = async (req, res, next) => {
+  try {
+    const data = await orderService.changeOrderStatus(req.params.id, 'cancelled', req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.ship = async (req, res, next) => {
+  try {
+    const data = await orderService.changeOrderStatus(req.params.id, 'shipped', req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.complete = async (req, res, next) => {
+  try {
+    const data = await orderService.changeOrderStatus(req.params.id, 'completed', req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.markReturned = async (req, res, next) => {
+  try {
+    const data = await orderService.changeOrderStatus(req.params.id, 'returned', req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.convertToInvoice = async (req, res, next) => {
+  try {
+    const data = await orderService.convertOrderToInvoice(req.params.id, req.body || {}, req.user);
     res.status(201).json(data);
   } catch (error) {
     next(error);

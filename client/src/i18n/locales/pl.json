@@ -119,6 +119,49 @@
     "settings": "Ustawienia",
     "userSettings": "Ustawienia użytkownika"
   },
+  "oms": {
+    "stub": "Ta strona jest zaplanowana na kolejny etap.",
+    "orders": {
+      "title": "Zamówienia",
+      "add": "Dodaj zamówienie",
+      "search": "Szukaj po numerze lub kontrahencie...",
+      "newTitle": "Nowe zamówienie",
+      "detailTitle": "Szczegóły zamówienia",
+      "editTitle": "Edycja zamówienia"
+    },
+    "offers": {
+      "title": "Oferty",
+      "add": "Dodaj ofertę",
+      "search": "Szukaj po numerze lub kontrahencie...",
+      "newTitle": "Nowa oferta",
+      "detailTitle": "Szczegóły oferty",
+      "editTitle": "Edycja oferty"
+    },
+    "relations": {
+      "title": "Powiązania",
+      "sourceOffer": "Oferta źródłowa",
+      "convertedOrder": "Zamówienie docelowe",
+      "invoices": "Faktury",
+      "counterparty": "Kontrahent",
+      "contact": "Kontakt",
+      "empty": "Brak powiązanych encji"
+    }
+  },
+  "statuses": {
+    "draft": "Szkic",
+    "new": "Nowe",
+    "confirmed": "Potwierdzone",
+    "paid": "Opłacone",
+    "shipped": "Wysłane",
+    "completed": "Zakończone",
+    "cancelled": "Anulowane",
+    "returned": "Zwrócone",
+    "sent": "Wysłana",
+    "viewed": "Wyświetlona",
+    "accepted": "Zaakceptowana",
+    "rejected": "Odrzucona",
+    "expired": "Wygasła"
+  },
   "widgets": {
     "kpi": "KPI",
     "funnel": "Lejek sprzedaży",
@@ -496,6 +539,20 @@
         "required": "Pole wymagane",
         "max": "Maksymalnie {{max}} znaków",
         "badPriority": "Priorytet musi być liczbą od 0 do 100"
+      }
+    },
+    "counterparties": {
+      "tabs": {
+        "offers": "Oferty",
+        "orders": "Zamówienia"
+      },
+      "offers": {
+        "empty": "Brak ofert dla tego kontrahenta",
+        "new": "Nowa oferta"
+      },
+      "orders": {
+        "empty": "Brak zamówień dla tego kontrahenta",
+        "new": "Nowe zamówienie"
       }
     }
   },

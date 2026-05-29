@@ -41,6 +41,8 @@ export const MENU = [
   { key: "oms", icon: FileText, labelKey: "menu.oms", type: "section" },
   { key: "invoices", icon: FileText, labelKey: "menu.invoices", route: "/main/oms/invoices", type: "item" },
   { key: "receipts", icon: FileText, labelKey: "menu.receipts", route: "/main/oms/receipts", type: "item" },
+  { key: "orders", icon: ClipboardList, labelKey: "menu.orders", route: "/main/oms/orders", type: "item" },
+  { key: "offers", icon: FileText, labelKey: "menu.offers", route: "/main/oms/offers", type: "item" },
   { key: "documents", icon: FileText, labelKey: "menu.documents", route: "/main/documents", type: "item" },
   { key: "promotions", icon: Tag, labelKey: "menu.promotions", route: "/main/oms/promotions", type: "item" },
   { key: "coupons", icon: Ticket, labelKey: "menu.coupons", route: "/main/oms/coupons", type: "item" },

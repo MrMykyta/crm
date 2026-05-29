@@ -25,6 +25,8 @@ import { useGetNotesQuery } from '../../../store/rtk/notesApi';
 import { useGetContactsQuery } from '../../../store/rtk/contactsApi';
 import { useListProductsQuery } from '../../../store/rtk/productsApi';
 import { useListDocumentsQuery } from '../../../store/rtk/documentsApi';
+import { useListOrdersQuery } from '../../../store/rtk/ordersApi';
+import { useListOffersQuery } from '../../../store/rtk/offersApi';
 
 const REGISTRY = {
   counterparties: {
@@ -105,6 +107,32 @@ adapt: (data) => {
   },
   documents: {
     useQuery: useListDocumentsQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  orders: {
+    useQuery: useListOrdersQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  offers: {
+    useQuery: useListOffersQuery,
         // adapt: вспомогательная логика компонента.
 adapt: (data) => {
       const items = Array.isArray(data) ? data : (data?.items || []);

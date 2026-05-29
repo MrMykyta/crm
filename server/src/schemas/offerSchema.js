@@ -178,4 +178,5 @@ module.exports.convertPayload = Joi.object({
   number: Joi.string().max(128).allow('', null),
   issueDate: dateISO.optional(),
   notes: Joi.string().allow('', null),
+  invoiceType: Joi.string().valid('INVOICE', 'PROFORMA', 'ADVANCE_INVOICE').default('INVOICE'),
 });

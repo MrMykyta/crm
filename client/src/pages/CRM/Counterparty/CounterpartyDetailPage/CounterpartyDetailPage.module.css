@@ -1,0 +1,43 @@
+.relatedSection {
+  display: grid;
+  gap: 12px;
+}
+
+.relatedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.relatedTitle {
+  margin: 0;
+  color: var(--ui-text-1);
+  font-size: var(--font-size-16, 16px);
+  font-weight: var(--fw-semibold, 600);
+}
+
+.linkButton {
+  border: 0;
+  background: transparent;
+  color: var(--ui-link, #93c5fd);
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+.errorState {
+  border: 1px solid color-mix(in srgb, #ef4444 45%, transparent);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  color: #fecaca;
+  font-size: 13px;
+}

@@ -1,0 +1,148 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - generic [ref=e4]:
+      - button "CO Codex Orders Smoke Co" [ref=e6] [cursor=pointer]:
+        - generic [ref=e8] [cursor=pointer]: CO
+        - generic [ref=e10] [cursor=pointer]: Codex Orders Smoke Co
+      - button "Toggle sidebar" [ref=e11] [cursor=pointer]
+    - navigation [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - img [ref=e16]
+          - generic [ref=e18]: Bookmarks
+        - link "Dashboard" [ref=e20] [cursor=pointer]:
+          - /url: /main/pulpit
+          - img [ref=e21] [cursor=pointer]
+          - generic [ref=e24] [cursor=pointer]: Dashboard
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - img [ref=e27]
+          - generic [ref=e32]: CRM
+        - generic [ref=e33]:
+          - link "Counterparties" [ref=e34] [cursor=pointer]:
+            - /url: /main/counterparties
+            - img [ref=e35] [cursor=pointer]
+            - generic [ref=e39] [cursor=pointer]: Counterparties
+          - link "Leads" [ref=e40] [cursor=pointer]:
+            - /url: /main/leads
+            - img [ref=e41] [cursor=pointer]
+            - generic [ref=e44] [cursor=pointer]: Leads
+          - link "Clients" [ref=e45] [cursor=pointer]:
+            - /url: /main/clients
+            - img [ref=e46] [cursor=pointer]
+            - generic [ref=e51] [cursor=pointer]: Clients
+          - link "Deals" [ref=e52] [cursor=pointer]:
+            - /url: /main/deals
+            - img [ref=e53] [cursor=pointer]
+            - generic [ref=e56] [cursor=pointer]: Deals
+          - link "Tasks" [ref=e57] [cursor=pointer]:
+            - /url: /main/tasks
+            - img [ref=e58] [cursor=pointer]
+            - generic [ref=e61] [cursor=pointer]: Tasks
+          - link "Notes" [ref=e62] [cursor=pointer]:
+            - /url: /main/notes
+            - img [ref=e63] [cursor=pointer]
+            - generic [ref=e66] [cursor=pointer]: Notes
+          - link "Contacts" [ref=e67] [cursor=pointer]:
+            - /url: /main/contacts
+            - img [ref=e68] [cursor=pointer]
+            - generic [ref=e73] [cursor=pointer]: Contacts
+          - link "Calendar" [ref=e74] [cursor=pointer]:
+            - /url: /main/calendar
+            - img [ref=e75] [cursor=pointer]
+            - generic [ref=e77] [cursor=pointer]: Calendar
+          - link "menu.chat" [ref=e78] [cursor=pointer]:
+            - /url: /main/chat
+            - img [ref=e79] [cursor=pointer]
+            - generic [ref=e82] [cursor=pointer]: menu.chat
+      - generic [ref=e83]:
+        - generic [ref=e84]:
+          - img [ref=e85]
+          - generic [ref=e88]: OMS
+        - generic [ref=e89]:
+          - link "Invoices" [ref=e90] [cursor=pointer]:
+            - /url: /main/oms/invoices
+            - img [ref=e91] [cursor=pointer]
+            - generic [ref=e94] [cursor=pointer]: Invoices
+          - link "Receipts" [ref=e95] [cursor=pointer]:
+            - /url: /main/oms/receipts
+            - img [ref=e96] [cursor=pointer]
+            - generic [ref=e99] [cursor=pointer]: Receipts
+          - link "Orders" [ref=e100] [cursor=pointer]:
+            - /url: /main/oms/orders
+            - img [ref=e101] [cursor=pointer]
+            - generic [ref=e104] [cursor=pointer]: Orders
+          - link "Offers" [ref=e105] [cursor=pointer]:
+            - /url: /main/oms/offers
+            - img [ref=e106] [cursor=pointer]
+            - generic [ref=e109] [cursor=pointer]: Offers
+          - link "Documents" [ref=e110] [cursor=pointer]:
+            - /url: /main/documents
+            - img [ref=e111] [cursor=pointer]
+            - generic [ref=e114] [cursor=pointer]: Documents
+          - link "Promotions" [ref=e115] [cursor=pointer]:
+            - /url: /main/oms/promotions
+            - img [ref=e116] [cursor=pointer]
+            - generic [ref=e119] [cursor=pointer]: Promotions
+          - link "Coupons" [ref=e120] [cursor=pointer]:
+            - /url: /main/oms/coupons
+            - img [ref=e121] [cursor=pointer]
+            - generic [ref=e123] [cursor=pointer]: Coupons
+          - link "Shipments" [ref=e124] [cursor=pointer]:
+            - /url: /main/oms/shipments
+            - img [ref=e125] [cursor=pointer]
+            - generic [ref=e130] [cursor=pointer]: Shipments
+      - generic [ref=e131]:
+        - generic [ref=e132]:
+          - img [ref=e133]
+          - generic [ref=e136]: PIM
+        - generic [ref=e137]:
+          - link "Products" [ref=e138] [cursor=pointer]:
+            - /url: /main/products
+            - img [ref=e139] [cursor=pointer]
+            - generic [ref=e143] [cursor=pointer]: Products
+          - link "Services" [ref=e144] [cursor=pointer]:
+            - /url: /main/pim/services
+            - img [ref=e145] [cursor=pointer]
+            - generic [ref=e147] [cursor=pointer]: Services
+      - generic [ref=e148]:
+        - generic [ref=e149]:
+          - img [ref=e150]
+          - generic [ref=e153]: WMS
+        - generic [ref=e154]:
+          - link "Warehouse" [ref=e155] [cursor=pointer]:
+            - /url: /main/wms/warehouse
+            - img [ref=e156] [cursor=pointer]
+            - generic [ref=e159] [cursor=pointer]: Warehouse
+          - link "Warehouse docs" [ref=e160] [cursor=pointer]:
+            - /url: /main/wms/docs
+            - img [ref=e161] [cursor=pointer]
+            - generic [ref=e164] [cursor=pointer]: Warehouse docs
+          - link "menu.users" [ref=e165] [cursor=pointer]:
+            - /url: /main/company-users
+            - img [ref=e166] [cursor=pointer]
+            - generic [ref=e171] [cursor=pointer]: menu.users
+  - generic [ref=e172]:
+    - banner [ref=e173]:
+      - generic [ref=e175]: Orders
+      - generic [ref=e176]:
+        - textbox "Search… (Ctrl/⌘K)" [ref=e177]
+        - button [ref=e178] [cursor=pointer]:
+          - img
+      - generic [ref=e179]:
+        - generic [ref=e180]: "CP: idle"
+        - button "2" [ref=e181] [cursor=pointer]:
+          - img [ref=e182] [cursor=pointer]
+          - generic: "2"
+        - button "1" [ref=e185] [cursor=pointer]:
+          - img [ref=e186] [cursor=pointer]
+          - generic: "1"
+        - button "CO" [ref=e190] [cursor=pointer]:
+          - generic [ref=e191] [cursor=pointer]: CO
+    - generic [ref=e193]:
+      - heading "New order" [level=2] [ref=e194]
+      - paragraph [ref=e195]: This page is planned for the next stage.
+```

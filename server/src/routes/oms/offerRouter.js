@@ -27,6 +27,6 @@ offerRouter.post('/:id/actions/cancel', validateBody(offerSchema.actionPayload),
 offerRouter.post('/:id/actions/expire', validateBody(offerSchema.actionPayload), authorize('offer:update'), OfferController.expire);
 offerRouter.post('/:id/actions/duplicate', validateBody(offerSchema.duplicatePayload), authorize('offer:create'), OfferController.duplicate);
 offerRouter.post('/:id/actions/convert-to-order', validateBody(offerSchema.convertPayload), authorize('offer:convert'), OfferController.convertToOrder);
+offerRouter.post('/:id/actions/convert-to-invoice', validateBody(offerSchema.convertPayload), authorize('offer:convert'), OfferController.convertToInvoice);
 
 module.exports = offerRouter;
-

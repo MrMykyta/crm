@@ -1,0 +1,2 @@
+> git status -z -uall
+fatal: unable to read 86f9e15d10f01732dffb060767bd0e096ea95263

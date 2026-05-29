@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { Provider, useSelector, useDispatch } from "react-redux";
 import store, { startRealtime } from "./store";
 
@@ -51,6 +51,19 @@ import ProductDetailPage from "./pages/PIM/Product/ProductDetailPage";
 import DocumentCreatePage from "./pages/documents/DocumentCreatePage";
 import DocumentDetailsPage from "./pages/documents/DocumentDetailsPage";
 import DocumentsListPage from "./pages/documents/DocumentsListPage";
+
+const OrdersListPage = lazy(() => import('./pages/oms/Orders/OrdersListPage'));
+const OffersListPage = lazy(() => import('./pages/oms/Offers/OffersListPage'));
+const OrderDetailPage = lazy(() => import('./pages/oms/Orders/OrderDetailPage'));
+const OrderEditorPage = lazy(() => import('./pages/oms/Orders/OrderEditorPage'));
+const OfferDetailPage = lazy(() => import('./pages/oms/Offers/OfferDetailPage'));
+const OfferEditorPage = lazy(() => import('./pages/oms/Offers/OfferEditorPage'));
+
+const LazyPage = ({ children }) => (
+  <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
+    {children}
+  </Suspense>
+);
 
 // ===== Protected
 const Protected = ({ children }) => {
@@ -167,6 +180,17 @@ function AppShell() {
           <Route path="documents" element={<DocumentsListPage />} />
           <Route path="documents/create" element={<DocumentCreatePage />} />
           <Route path="documents/:id" element={<DocumentDetailsPage />} />
+
+          <Route path="oms/orders" element={<LazyPage><OrdersListPage /></LazyPage>} />
+          <Route path="oms/orders/new" element={<LazyPage><OrderEditorPage /></LazyPage>} />
+          <Route path="oms/orders/:id" element={<LazyPage><OrderDetailPage /></LazyPage>} />
+          <Route path="oms/orders/:id/edit" element={<LazyPage><OrderEditorPage /></LazyPage>} />
+
+          <Route path="oms/offers" element={<LazyPage><OffersListPage /></LazyPage>} />
+          <Route path="oms/offers/new" element={<LazyPage><OfferEditorPage /></LazyPage>} />
+          <Route path="oms/offers/:id" element={<LazyPage><OfferDetailPage /></LazyPage>} />
+          <Route path="oms/offers/:id/edit" element={<LazyPage><OfferEditorPage /></LazyPage>} />
+
           <Route path="company-users" element={<CompanyUsers />} />
           <Route path="users/:userId" element={<UserEntityPage />} />
 

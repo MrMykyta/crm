@@ -119,6 +119,49 @@
     "settings": "Settings",
     "userSettings": "User settings"
   },
+  "oms": {
+    "stub": "This page is planned for the next stage.",
+    "orders": {
+      "title": "Orders",
+      "add": "Add order",
+      "search": "Search by number or counterparty...",
+      "newTitle": "New order",
+      "detailTitle": "Order details",
+      "editTitle": "Edit order"
+    },
+    "offers": {
+      "title": "Offers",
+      "add": "Add offer",
+      "search": "Search by number or counterparty...",
+      "newTitle": "New offer",
+      "detailTitle": "Offer details",
+      "editTitle": "Edit offer"
+    },
+    "relations": {
+      "title": "Relations",
+      "sourceOffer": "Source offer",
+      "convertedOrder": "Converted order",
+      "invoices": "Invoices",
+      "counterparty": "Counterparty",
+      "contact": "Contact",
+      "empty": "No related entities"
+    }
+  },
+  "statuses": {
+    "draft": "Draft",
+    "new": "New",
+    "confirmed": "Confirmed",
+    "paid": "Paid",
+    "shipped": "Shipped",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "returned": "Returned",
+    "sent": "Sent",
+    "viewed": "Viewed",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "expired": "Expired"
+  },
   "widgets": {
     "kpi": "KPI",
     "funnel": "Sales funnel",
@@ -520,6 +563,20 @@
       "allTypes": "All types",
       "allStatuses": "All statuses",
       "searchPlaceholder": "Search (name, NIP, REGON...)"
+    },
+    "counterparties": {
+      "tabs": {
+        "offers": "Offers",
+        "orders": "Orders"
+      },
+      "offers": {
+        "empty": "No offers for this counterparty",
+        "new": "New offer"
+      },
+      "orders": {
+        "empty": "No orders for this counterparty",
+        "new": "New order"
+      }
     }
   },
   "deals": {

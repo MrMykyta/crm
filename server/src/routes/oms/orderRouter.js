@@ -25,5 +25,41 @@ orderRouter.post(
   authorize('order:from_offer'),
   OrderController.fromOffer
 );
+orderRouter.post(
+  '/:id/actions/confirm',
+  validateBody(orderSchema.actionPayload),
+  authorize('order:update'),
+  OrderController.confirm
+);
+orderRouter.post(
+  '/:id/actions/cancel',
+  validateBody(orderSchema.actionPayload),
+  authorize('order:update'),
+  OrderController.cancel
+);
+orderRouter.post(
+  '/:id/actions/ship',
+  validateBody(orderSchema.actionPayload),
+  authorize('order:update'),
+  OrderController.ship
+);
+orderRouter.post(
+  '/:id/actions/complete',
+  validateBody(orderSchema.actionPayload),
+  authorize('order:update'),
+  OrderController.complete
+);
+orderRouter.post(
+  '/:id/actions/return',
+  validateBody(orderSchema.actionPayload),
+  authorize('order:update'),
+  OrderController.markReturned
+);
+orderRouter.post(
+  '/:id/actions/convert-to-invoice',
+  validateBody(orderSchema.convertPayload),
+  authorize('order:convert'),
+  OrderController.convertToInvoice
+);
 
 module.exports = orderRouter;
