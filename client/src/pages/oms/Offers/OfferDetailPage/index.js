@@ -2,8 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import DocumentVisualEditor from '../../../../components/documents/DocumentVisualEditor';
-import { mapOfferToVisualModel } from '../../../../components/documents/DocumentVisualEditor/omsDocumentModel';
+import DocumentEnginePage, { mapOfferToDocumentModel } from '../../../../components/documents/DocumentEngine';
 import LineItemsEditor from '../../../../components/documents/LineItemsEditor';
 import {
   asNumber,
@@ -263,21 +262,21 @@ export default function OfferDetailPage() {
   }, [base?.availableActions, canConvertOffer, canCreateOffer, canCreateOrder, canUpdateOffer, handleAction, t]);
 
   if (!canReadOffer) {
-    return <DocumentVisualEditor.State title={t('common.noPermission')} text={t('documents.editor.noPermissionHint')} />;
+    return <DocumentEnginePage.State title={t('common.noPermission')} text={t('documents.editor.noPermissionHint')} />;
   }
   if (isLoading || (isFetching && !base)) {
-    return <DocumentVisualEditor.State title={t('common.loading')} text={t('documents.editor.loadingHint')} />;
+    return <DocumentEnginePage.State title={t('common.loading')} text={t('documents.editor.loadingHint')} />;
   }
   if (isError) {
     const message = error?.data?.message || error?.data?.error || error?.message || t('oms.errors.offerLoadFailed');
-    return <DocumentVisualEditor.State title={t('oms.errors.offerLoadFailed')} text={message} />;
+    return <DocumentEnginePage.State title={t('oms.errors.offerLoadFailed')} text={message} />;
   }
   if (!base) {
-    return <DocumentVisualEditor.State title={t('oms.errors.offerNotFound')} text={t('documents.editor.notFoundHint')} />;
+    return <DocumentEnginePage.State title={t('oms.errors.offerNotFound')} text={t('documents.editor.notFoundHint')} />;
   }
 
   const isEdit = viewMode === 'edit' && editable;
-  const model = mapOfferToVisualModel(base, { t, locale });
+  const model = mapOfferToDocumentModel(base, { t, locale });
   const documentRelations = buildDocumentRelations(base, t);
   const timelineEvents = buildTimelineEvents(base, t);
   const counterparty = base?.counterparty || null;
@@ -363,8 +362,8 @@ export default function OfferDetailPage() {
   } : {};
 
   return (
-    <DocumentVisualEditor
-      {...model}
+    <DocumentEnginePage
+      model={model}
       mode={isEdit ? 'edit' : 'preview'}
       back={{ label: t('oms.offers.title'), onClick: () => navigate('/main/oms/offers') }}
       breadcrumb={`${t('oms.offers.title')} / ${model.number}`}

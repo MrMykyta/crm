@@ -2,8 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import DocumentVisualEditor from '../../../../components/documents/DocumentVisualEditor';
-import { mapOrderToVisualModel } from '../../../../components/documents/DocumentVisualEditor/omsDocumentModel';
+import DocumentEnginePage, { mapOrderToDocumentModel } from '../../../../components/documents/DocumentEngine';
 import LineItemsEditor from '../../../../components/documents/LineItemsEditor';
 import {
   asNumber,
@@ -247,21 +246,21 @@ export default function OrderDetailPage() {
   }, [base?.availableActions, canConvertOrder, canUpdateOrder, handleAction, t]);
 
   if (!canReadOrder) {
-    return <DocumentVisualEditor.State title={t('common.noPermission')} text={t('documents.editor.noPermissionHint')} />;
+    return <DocumentEnginePage.State title={t('common.noPermission')} text={t('documents.editor.noPermissionHint')} />;
   }
   if (isLoading || (isFetching && !base)) {
-    return <DocumentVisualEditor.State title={t('common.loading')} text={t('documents.editor.loadingHint')} />;
+    return <DocumentEnginePage.State title={t('common.loading')} text={t('documents.editor.loadingHint')} />;
   }
   if (isError) {
     const message = error?.data?.message || error?.data?.error || error?.message || t('oms.errors.orderLoadFailed');
-    return <DocumentVisualEditor.State title={t('oms.errors.orderLoadFailed')} text={message} />;
+    return <DocumentEnginePage.State title={t('oms.errors.orderLoadFailed')} text={message} />;
   }
   if (!base) {
-    return <DocumentVisualEditor.State title={t('oms.errors.orderNotFound')} text={t('documents.editor.notFoundHint')} />;
+    return <DocumentEnginePage.State title={t('oms.errors.orderNotFound')} text={t('documents.editor.notFoundHint')} />;
   }
 
   const isEdit = viewMode === 'edit' && editable;
-  const model = mapOrderToVisualModel(base, { t, locale });
+  const model = mapOrderToDocumentModel(base, { t, locale });
   const documentRelations = buildDocumentRelations(base, t);
   const timelineEvents = buildTimelineEvents(base, t);
   const counterparty = base?.counterparty || base?.customer;
@@ -338,8 +337,8 @@ export default function OrderDetailPage() {
   } : {};
 
   return (
-    <DocumentVisualEditor
-      {...model}
+    <DocumentEnginePage
+      model={model}
       mode={isEdit ? 'edit' : 'preview'}
       back={{ label: t('oms.orders.title'), onClick: () => navigate('/main/oms/orders') }}
       breadcrumb={`${t('oms.orders.title')} / ${model.number}`}

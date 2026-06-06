@@ -2,8 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import DocumentVisualEditor from '../../../../components/documents/DocumentVisualEditor';
-import { mapInvoiceToVisualModel } from '../../../../components/documents/DocumentVisualEditor/omsDocumentModel';
+import DocumentEnginePage, { mapInvoiceToDocumentModel } from '../../../../components/documents/DocumentEngine';
 import { DocumentRelations, DocumentTimeline } from '../../../../components/documents/DocumentShell';
 import { asText } from '../../../../lib/format';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
@@ -96,20 +95,20 @@ export default function InvoiceDetailPage() {
   }, [invoice?.status, invoice?.orderId, canIssueInvoices, handleAction, t]);
 
   if (!canReadInvoices) {
-    return <DocumentVisualEditor.State title={t('common.noPermission')} text={t('documents.editor.noPermissionHint')} />;
+    return <DocumentEnginePage.State title={t('common.noPermission')} text={t('documents.editor.noPermissionHint')} />;
   }
   if (isLoading || isFetching) {
-    return <DocumentVisualEditor.State title={t('common.loading')} text={t('documents.editor.loadingHint')} />;
+    return <DocumentEnginePage.State title={t('common.loading')} text={t('documents.editor.loadingHint')} />;
   }
   if (isError) {
     const message = error?.data?.message || error?.data?.error || error?.message || t('oms.errors.invoiceLoadFailed');
-    return <DocumentVisualEditor.State title={t('oms.errors.invoiceLoadFailed')} text={message} />;
+    return <DocumentEnginePage.State title={t('oms.errors.invoiceLoadFailed')} text={message} />;
   }
   if (!invoice) {
-    return <DocumentVisualEditor.State title={t('oms.errors.invoiceNotFound')} text={t('documents.editor.notFoundHint')} />;
+    return <DocumentEnginePage.State title={t('oms.errors.invoiceNotFound')} text={t('documents.editor.notFoundHint')} />;
   }
 
-  const model = mapInvoiceToVisualModel(invoice, { t, locale });
+  const model = mapInvoiceToDocumentModel(invoice, { t, locale });
   const relations = buildDocumentRelations(invoice, t);
   const timelineEvents = buildTimelineEvents(invoice, t);
   const orderId = invoice?.order?.id || invoice?.orderId || null;
@@ -133,8 +132,8 @@ export default function InvoiceDetailPage() {
   );
 
   return (
-    <DocumentVisualEditor
-      {...model}
+    <DocumentEnginePage
+      model={model}
       back={{ label: t('oms.invoices.title'), onClick: () => navigate('/main/oms/invoices') }}
       breadcrumb={`${t('oms.invoices.title')} / ${model.number}`}
       showViewModeToggle

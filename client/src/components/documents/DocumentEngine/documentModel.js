@@ -1,5 +1,6 @@
-// Adapters: map OMS order/offer/invoice DTOs into the DocumentVisualEditor model.
-// Pure data shaping — no UI, no mutations. Pages add actions / sections / navigation.
+// Adapters: map OMS order/offer/invoice DTOs into the generic DocumentEngine model.
+// Pure data shaping — no UI, no mutations. Pages add actions / sections / navigation
+// and (for editable docs) override fields/itemsSlot/totals with live edit state.
 
 import { asNumber, asText, calculateLine, toEditorItem } from '../LineItemsEditor/lineModel';
 import { isInventoryLine } from '../../oms/lineItemSemantics';
@@ -15,7 +16,7 @@ function counterpartyName(cp) {
   return cp?.name || cp?.shortName || cp?.fullName || '';
 }
 
-// Build visual line rows (read-only) with computed net/vat/gross, preserving A4 badges.
+// Build read-only visual line rows with computed net/vat/gross, preserving A4 badges.
 function buildItems(rawItems, t, locale) {
   const list = Array.isArray(rawItems) ? rawItems : [];
   return list.map((raw, index) => {
@@ -50,10 +51,11 @@ function totalsModel(net, vat, gross, t) {
   };
 }
 
-export function mapOrderToVisualModel(order, { t, locale }) {
+export function mapOrderToDocumentModel(order, { t, locale }) {
   const cp = order?.counterparty || order?.customer;
   const name = counterpartyName(cp);
   const currency = order?.currencyCode || 'PLN';
+  const fmtDate = (v) => (v ? new Date(v).toLocaleDateString(locale) : '—');
   return {
     typeLabel: t('documents.types.order'),
     title: order?.number || `#${String(order?.id || '').slice(0, 8)}`,
@@ -62,7 +64,7 @@ export function mapOrderToVisualModel(order, { t, locale }) {
     summaryStatusLabel: statusText(order?.status, t),
     number: order?.number || `#${String(order?.id || '').slice(0, 8)}`,
     facts: [
-      { label: t('oms.detailLabels.placedAt'), value: order?.placedAt ? new Date(order.placedAt).toLocaleDateString(locale) : '—' },
+      { label: t('oms.detailLabels.placedAt'), value: fmtDate(order?.placedAt) },
       { label: t('oms.detailLabels.counterparty'), value: name || '—' },
       { label: t('oms.summaryLabels.currency'), value: currency },
     ],
@@ -76,7 +78,7 @@ export function mapOrderToVisualModel(order, { t, locale }) {
     secondaryFields: [
       { label: t('oms.detailLabels.paymentStatus'), value: statusText(order?.paymentStatus, t) },
       { label: t('oms.detailLabels.fulfillmentStatus'), value: statusText(order?.fulfillmentStatus, t) },
-      { label: t('oms.detailLabels.placedAt'), value: order?.placedAt ? new Date(order.placedAt).toLocaleDateString(locale) : '' },
+      { label: t('oms.detailLabels.placedAt'), value: fmtDate(order?.placedAt) },
       { label: t('oms.summaryLabels.currency'), value: currency },
       { label: t('oms.detailLabels.paymentTerms'), value: order?.paymentTerms || '' },
       { label: t('oms.detailLabels.deliveryTerms'), value: order?.deliveryTerms || '' },
@@ -87,10 +89,11 @@ export function mapOrderToVisualModel(order, { t, locale }) {
   };
 }
 
-export function mapOfferToVisualModel(offer, { t, locale }) {
+export function mapOfferToDocumentModel(offer, { t, locale }) {
   const cp = offer?.counterparty;
   const name = counterpartyName(cp);
   const currency = offer?.currency || offer?.currencyCode || 'PLN';
+  const fmtDate = (v) => (v ? new Date(v).toLocaleDateString(locale) : '—');
   return {
     typeLabel: t('documents.types.offer'),
     title: offer?.number || `#${String(offer?.id || '').slice(0, 8)}`,
@@ -99,8 +102,8 @@ export function mapOfferToVisualModel(offer, { t, locale }) {
     summaryStatusLabel: statusText(offer?.status, t),
     number: offer?.number || `#${String(offer?.id || '').slice(0, 8)}`,
     facts: [
-      { label: t('oms.detailLabels.issueDate'), value: offer?.issueDate ? new Date(offer.issueDate).toLocaleDateString(locale) : '—' },
-      { label: t('oms.detailLabels.validUntil'), value: offer?.validUntil ? new Date(offer.validUntil).toLocaleDateString(locale) : '—' },
+      { label: t('oms.detailLabels.issueDate'), value: fmtDate(offer?.issueDate) },
+      { label: t('oms.detailLabels.validUntil'), value: fmtDate(offer?.validUntil) },
       { label: t('oms.detailLabels.counterparty'), value: name || '—' },
     ],
     paramsTitle: t('documents.editor.header'),
@@ -112,8 +115,8 @@ export function mapOfferToVisualModel(offer, { t, locale }) {
       { label: t('oms.detailLabels.notes'), value: stripHtml(offer?.notes) },
     ],
     secondaryFields: [
-      { label: t('oms.detailLabels.issueDate'), value: offer?.issueDate ? new Date(offer.issueDate).toLocaleDateString(locale) : '' },
-      { label: t('oms.detailLabels.validUntil'), value: offer?.validUntil ? new Date(offer.validUntil).toLocaleDateString(locale) : '' },
+      { label: t('oms.detailLabels.issueDate'), value: fmtDate(offer?.issueDate) },
+      { label: t('oms.detailLabels.validUntil'), value: fmtDate(offer?.validUntil) },
       { label: t('oms.summaryLabels.currency'), value: currency },
       { label: t('oms.detailLabels.paymentTerms'), value: offer?.paymentTerms || '' },
       { label: t('oms.detailLabels.deliveryTerms'), value: offer?.deliveryTerms || '' },
@@ -124,7 +127,7 @@ export function mapOfferToVisualModel(offer, { t, locale }) {
   };
 }
 
-export function mapInvoiceToVisualModel(invoice, { t, locale }) {
+export function mapInvoiceToDocumentModel(invoice, { t, locale }) {
   const cp = invoice?.counterparty || invoice?.order?.counterparty;
   const name = counterpartyName(cp) || '—';
   const currency = invoice?.currencyCode || 'PLN';

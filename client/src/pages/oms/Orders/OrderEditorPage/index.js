@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import DocumentEditor from '../../../../components/documents/DocumentEditor';
+import DocumentEnginePage from '../../../../components/documents/DocumentEngine';
 import LineItemsEditor from '../../../../components/documents/LineItemsEditor';
 import {
   asNumber,
@@ -13,7 +13,6 @@ import {
   toEditorItem,
 } from '../../../../components/documents/LineItemsEditor/lineModel';
 import { normalizeItemSortOrder, sortItemsBySortOrder } from '../../../../components/oms/useReorderItems';
-import { formatMoney } from '../../../../lib/format';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import {
   useCreateOrderMutation,
@@ -34,7 +33,7 @@ export default function OrderEditorPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { can } = useAclPermissions();
   const canReadOrder = can('order:read');
   const canCreateOrder = can('order:create');
@@ -80,7 +79,6 @@ export default function OrderEditorPage() {
 
   useEffect(() => {
     if (!isEdit || initialized || !order) return;
-
     setForm({
       counterpartyId: order.counterpartyId || order.customerId || order.counterparty?.id || '',
       contactId: order.contactId || order.contact?.id || '',
@@ -92,7 +90,6 @@ export default function OrderEditorPage() {
       deliveryTerms: order.deliveryTerms || '',
       leadTime: order.leadTime || '',
     });
-
     const mappedItems = Array.isArray(order.items) && order.items.length
       ? normalizeItemSortOrder(sortItemsBySortOrder(order.items).map(toEditorItem))
       : normalizeItemSortOrder([createEmptyItem()]);
@@ -144,45 +141,34 @@ export default function OrderEditorPage() {
     return source.map((type) => ({ value: type, label: type }));
   }, [meta?.discountTypes]);
 
-  const totals = useMemo(() => calculateTotals(items), [items]);
   const isSaving = isCreating || isUpdating || isSavingItems;
-  const currency = form.currencyCode || 'PLN';
 
   const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
 
-  const dateLocale = i18n.language === 'pl' ? 'pl-PL' : 'ru-RU';
-
-  const fields = [
-    {
-      name: 'counterpartyId',
-      label: t('oms.detailLabels.counterparty'),
-      type: 'select',
-      value: form.counterpartyId,
-      onChange: (value) => { setField('counterpartyId', value); setField('contactId', ''); },
-      options: counterpartyOptions,
-      placeholder: t('documents.editor.selectCounterparty'),
-      required: true,
-      error: errors.counterpartyId,
-    },
-    { name: 'contactId', label: t('oms.detailLabels.contact'), type: 'select', value: form.contactId, onChange: (v) => setField('contactId', v), options: contactOptions, placeholder: t('documents.editor.noContact') },
-    { name: 'ownerId', label: t('oms.detailLabels.owner'), type: 'select', value: form.ownerId, onChange: (v) => setField('ownerId', v), options: ownerOptions, placeholder: t('documents.editor.noOwner') },
-    { name: 'currencyCode', label: t('oms.summaryLabels.currency'), type: 'select', value: form.currencyCode, onChange: (v) => setField('currencyCode', v), options: currencyOptions, placeholder: t('documents.editor.selectCurrency') },
-    { name: 'placedAt', label: t('oms.detailLabels.placedAt'), type: 'date', value: form.placedAt, onChange: (v) => setField('placedAt', v), withTime: false, locale: dateLocale },
-    { name: 'leadTime', label: t('oms.detailLabels.leadTime'), type: 'text', value: form.leadTime, onChange: (v) => setField('leadTime', v) },
-    { name: 'paymentTerms', label: t('oms.detailLabels.paymentTerms'), type: 'text', value: form.paymentTerms, onChange: (v) => setField('paymentTerms', v) },
-    { name: 'deliveryTerms', label: t('oms.detailLabels.deliveryTerms'), type: 'text', value: form.deliveryTerms, onChange: (v) => setField('deliveryTerms', v) },
-    { name: 'notes', label: t('oms.detailLabels.notes'), type: 'textarea', value: form.notes, onChange: (v) => setField('notes', v), colSpan: 2 },
+  const primaryFields = [
+    { label: t('oms.detailLabels.counterparty'), type: 'select', value: form.counterpartyId, onChange: (v) => { setField('counterpartyId', v); setField('contactId', ''); }, options: counterpartyOptions },
+    { label: t('oms.detailLabels.contact'), type: 'select', value: form.contactId, onChange: (v) => setField('contactId', v), options: contactOptions },
+    { label: t('oms.detailLabels.owner'), type: 'select', value: form.ownerId, onChange: (v) => setField('ownerId', v), options: ownerOptions },
+    { label: t('oms.detailLabels.notes'), type: 'textarea', value: form.notes, onChange: (v) => setField('notes', v) },
   ];
 
-  const summary = [
-    { label: t('oms.summaryLabels.net'), value: formatMoney(totals.net, currency, i18n.language) },
-    { label: t('oms.summaryLabels.vat'), value: formatMoney(totals.vat, currency, i18n.language) },
-    { label: t('oms.summaryLabels.gross'), value: formatMoney(totals.gross, currency, i18n.language), strong: true },
-    { label: t('oms.summaryLabels.currency'), value: currency, strong: true },
+  const secondaryFields = [
+    { label: t('oms.summaryLabels.currency'), type: 'select', value: form.currencyCode, onChange: (v) => setField('currencyCode', v), options: currencyOptions },
+    { label: t('oms.detailLabels.placedAt'), type: 'date', value: form.placedAt, onChange: (v) => setField('placedAt', v) },
+    { label: t('oms.detailLabels.paymentTerms'), type: 'text', value: form.paymentTerms, onChange: (v) => setField('paymentTerms', v) },
+    { label: t('oms.detailLabels.deliveryTerms'), type: 'text', value: form.deliveryTerms, onChange: (v) => setField('deliveryTerms', v) },
+    { label: t('oms.detailLabels.leadTime'), type: 'text', value: form.leadTime, onChange: (v) => setField('leadTime', v) },
   ];
+
+  const totals = {
+    netLabel: t('oms.summaryLabels.net'),
+    vatLabel: t('oms.summaryLabels.vat'),
+    grossLabel: t('oms.summaryLabels.gross'),
+    ...calculateTotals(items),
+  };
 
   const validate = () => {
     const nextErrors = {};
@@ -193,7 +179,7 @@ export default function OrderEditorPage() {
       if (asNumber(item.priceNet, -1) < 0) nextErrors[`item:${item.localId}:priceNet`] = t('documents.editor.validation.priceNonNegative');
     });
     setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    return nextErrors;
   };
 
   const buildHeaderPayload = () => ({
@@ -210,7 +196,11 @@ export default function OrderEditorPage() {
 
   const onSave = async () => {
     setSaveError('');
-    if (!validate()) return;
+    const nextErrors = validate();
+    if (Object.keys(nextErrors).length) {
+      setSaveError(nextErrors.counterpartyId || t('documents.editor.validation.itemNameRequired'));
+      return;
+    }
 
     const headerPayload = buildHeaderPayload();
     const itemsPayload = mapLinesToPayload(items);
@@ -222,7 +212,6 @@ export default function OrderEditorPage() {
         navigate(`/main/oms/orders/${id}`);
         return;
       }
-
       const created = await createOrder({ ...headerPayload, items: itemsPayload }).unwrap();
       const createdId = created?.id || created?.data?.id;
       navigate(createdId ? `/main/oms/orders/${createdId}` : '/main/oms/orders');
@@ -232,61 +221,49 @@ export default function OrderEditorPage() {
   };
 
   if (isEdit && isOrderLoading) {
-    return <DocumentEditor.State title={t('common.loading')} text={t('documents.editor.loadingHint')} />;
+    return <DocumentEnginePage.State title={t('common.loading')} text={t('documents.editor.loadingHint')} />;
   }
   if ((isEdit && !canReadOrder) || (isEdit && !canUpdateOrder) || (!isEdit && !canCreateOrder)) {
-    return <DocumentEditor.State title={t('documents.editor.noPermission')} text={t('documents.editor.noPermissionHint')} />;
+    return <DocumentEnginePage.State title={t('documents.editor.noPermission')} text={t('documents.editor.noPermissionHint')} />;
   }
   if (isEdit && isOrderError) {
-    return <DocumentEditor.State title={t('documents.editor.loadFailed')} text={getErrorText(orderError, t('documents.editor.loadFailed'))} />;
+    return <DocumentEnginePage.State title={t('documents.editor.loadFailed')} text={getErrorText(orderError, t('documents.editor.loadFailed'))} />;
   }
   if (isEdit && !order) {
-    return <DocumentEditor.State title={t('documents.editor.notFound')} text={t('documents.editor.notFoundHint')} />;
+    return <DocumentEnginePage.State title={t('documents.editor.notFound')} text={t('documents.editor.notFoundHint')} />;
   }
 
-  const actions = [
-    {
-      key: 'cancel',
-      label: t('common.cancel'),
-      variant: 'secondary',
-      disabled: isSaving,
-      onClick: () => navigate(isEdit ? `/main/oms/orders/${id}` : '/main/oms/orders'),
-    },
-    {
-      key: 'save',
-      label: isSaving ? t('common.saving') : t('common.save'),
-      variant: 'primary',
-      loading: isSaving,
-      disabled: isSaving || (isEdit ? !canUpdateOrder : !canCreateOrder),
-      onClick: onSave,
-    },
-  ];
+  const displayNumber = isEdit ? (order?.number || order?.id) : t('common.new');
 
   return (
-    <DocumentEditor
-      documentType={t('documents.types.order')}
-      mode={isEdit ? 'edit' : 'create'}
+    <DocumentEnginePage
+      mode="edit"
+      typeLabel={t('documents.types.order')}
       title={isEdit ? t('oms.orders.editTitle') : t('oms.orders.newTitle')}
-      number={isEdit ? (order?.number || order?.id) : t('common.new')}
-      status={isEdit ? order?.status : undefined}
-      breadcrumbs={[
-        { label: t('menu.orders'), to: '/main/oms/orders' },
-        { label: isEdit ? (order?.number || order?.id) : t('common.new') },
-      ]}
-      actions={actions}
-      fields={fields}
-      fieldsTitle={t('documents.editor.header')}
-      summary={summary}
+      number={displayNumber}
+      statusLabel={isEdit && order?.status ? t(`statuses.${String(order.status).toLowerCase()}`, order.status) : undefined}
+      back={{ label: t('common.cancel'), onClick: () => navigate(isEdit ? `/main/oms/orders/${id}` : '/main/oms/orders') }}
+      breadcrumb={`${t('menu.orders')} / ${displayNumber}`}
+      paramsTitle={t('documents.editor.header')}
+      primaryFields={primaryFields}
+      secondaryFields={secondaryFields}
+      itemsTitle={t('documents.lines.title')}
       summaryTitle={t('documents.editor.summaryTitle')}
-      error={saveError}
-    >
-      <LineItemsEditor
-        lines={items}
-        onChange={setItems}
-        discountTypeOptions={discountTypeOptions}
-        errors={errors}
-        productPickerTitle={t('documents.lines.productPickerTitle')}
-      />
-    </DocumentEditor>
+      totals={totals}
+      showSaveButton
+      onSave={onSave}
+      saveDisabled={isSaving || (isEdit ? !canUpdateOrder : !canCreateOrder)}
+      saveLoading={isSaving}
+      actionError={saveError}
+      itemsSlot={(
+        <LineItemsEditor
+          lines={items}
+          onChange={setItems}
+          discountTypeOptions={discountTypeOptions}
+          errors={errors}
+          productPickerTitle={t('documents.lines.productPickerTitle')}
+        />
+      )}
+    />
   );
 }

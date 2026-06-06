@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next';
 import ConfirmDialog from '../../dialogs/ConfirmDialog';
 import StatusBadge from '../../shared/StatusBadge';
 import DocumentViewModeSwitch from '../DocumentViewModeSwitch';
-// Reuse the EXISTING document visual layer — no new styles are introduced.
+// Source of truth: reuse the EXISTING Documents-module visual layer (DocumentDetailsPage
+// / DocumentForm / DocumentItemsTable). No new visual style is introduced here.
 import pageStyles from '../../../pages/documents/DocumentEditorPage.module.css';
 import formStyles from '../DocumentForm.module.css';
 import itemStyles from '../DocumentItemsTable.module.css';
@@ -17,16 +18,12 @@ function formatAmount(value) {
 }
 
 /**
- * DocumentVisualEditor — presentational, data-agnostic read-only document surface.
- *
- * Renders the SAME visual language as /main/documents/:id (DocumentDetailsPage /
- * DocumentForm): page header chrome + left workspace (params + items) + right
- * summary panel. It reuses the existing CSS modules verbatim, so OMS documents are
- * visually indistinguishable from the documents module.
- *
- * It owns no data and performs no mutations — feed it a normalized model via adapters.
+ * EngineView — generic, data-agnostic document surface. Renders the same visual
+ * language as /main/documents/:id for any commercial document (offer/order/invoice/…).
+ * Owns no data and performs no mutations; everything comes from props (the model).
+ * See documentEngineTypes.js for the model shape.
  */
-export default function DocumentVisualEditor({
+function EngineView({
   back,                 // { label, onClick }
   breadcrumb,           // string
   mode = 'preview',     // 'preview' | 'edit' — drives field/items editability
@@ -55,9 +52,9 @@ export default function DocumentVisualEditor({
   actionError = '',
   paramsTitle,
   paramsHint,
-  primaryFields = [],   // [{ label, value }]
-  secondaryFields = [], // [{ label, value }]
-  items = [],           // [{ key, name, lineTypeLabel, lineTypeTone, affectsStock, qty, unit, priceNet, vatRate, sumNet, sumVat, sumGross }]
+  primaryFields = [],   // [{ label, value, type?, value?, onChange?, options? }]
+  secondaryFields = [],
+  items = [],           // read-only rows [{ key, name, lineTypeLabel, lineTypeTone, affectsStock, qty, unit, priceNet, vatRate, sumNet, sumVat, sumGross }]
   itemsTitle,
   itemsSubtitle,
   emptyItemsLabel,
@@ -362,7 +359,7 @@ export default function DocumentVisualEditor({
 }
 
 // State card (loading / not found / error) — reuses the documents page state styles.
-function DocumentVisualEditorState({ title, text, actions = [] }) {
+function DocumentEngineState({ title, text, actions = [] }) {
   return (
     <div className={pageStyles.page}>
       <section className={pageStyles.stateCard}>
@@ -387,4 +384,14 @@ function DocumentVisualEditorState({ title, text, actions = [] }) {
   );
 }
 
-DocumentVisualEditor.State = DocumentVisualEditorState;
+/**
+ * DocumentEnginePage — canonical generic document engine.
+ *
+ * Accepts a single `model` view-model (see documentEngineTypes.js) and/or granular
+ * props (which override the model). Pages own state and build the model each render.
+ */
+export default function DocumentEnginePage({ model, ...rest }) {
+  return <EngineView {...(model || {})} {...rest} />;
+}
+
+DocumentEnginePage.State = DocumentEngineState;

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import DocumentEditor from '../../../../components/documents/DocumentEditor';
+import DocumentEnginePage from '../../../../components/documents/DocumentEngine';
 import LineItemsEditor from '../../../../components/documents/LineItemsEditor';
 import {
   asNumber,
@@ -14,7 +14,6 @@ import {
   toEditorItem,
 } from '../../../../components/documents/LineItemsEditor/lineModel';
 import { normalizeItemSortOrder, sortItemsBySortOrder } from '../../../../components/oms/useReorderItems';
-import { formatMoney } from '../../../../lib/format';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import {
   useCreateOfferMutation,
@@ -35,7 +34,7 @@ export default function OfferEditorPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { can } = useAclPermissions();
   const canReadOffer = can('offer:read');
   const canCreateOffer = can('offer:create');
@@ -85,7 +84,6 @@ export default function OfferEditorPage() {
 
   useEffect(() => {
     if (!isEdit || initialized || !offer) return;
-
     setForm({
       counterpartyId: offer.counterpartyId || offer.counterparty?.id || '',
       contactId: offer.contactId || offer.contact?.id || '',
@@ -100,7 +98,6 @@ export default function OfferEditorPage() {
       deliveryTerms: offer.deliveryTerms || '',
       leadTime: offer.leadTime || '',
     });
-
     const mappedItems = Array.isArray(offer.items) && offer.items.length
       ? normalizeItemSortOrder(sortItemsBySortOrder(offer.items).map(toEditorItem))
       : normalizeItemSortOrder([createEmptyItem()]);
@@ -153,48 +150,37 @@ export default function OfferEditorPage() {
     return source.map((type) => ({ value: type, label: type }));
   }, [meta?.discountTypes]);
 
-  const totals = useMemo(() => calculateTotals(items), [items]);
   const isSaving = isCreating || isUpdating || isSavingItems;
-  const currency = form.currencyCode || 'PLN';
 
   const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
 
-  const dateLocale = i18n.language === 'pl' ? 'pl-PL' : i18n.language === 'en' ? 'en-US' : 'ru-RU';
-
-  const fields = [
-    {
-      name: 'counterpartyId',
-      label: t('oms.detailLabels.counterparty'),
-      type: 'select',
-      value: form.counterpartyId,
-      onChange: (value) => { setField('counterpartyId', value); setField('contactId', ''); },
-      options: counterpartyOptions,
-      placeholder: t('documents.editor.selectCounterparty'),
-      required: true,
-      error: errors.counterpartyId,
-    },
-    { name: 'contactId', label: t('oms.detailLabels.contact'), type: 'select', value: form.contactId, onChange: (v) => setField('contactId', v), options: contactOptions, placeholder: t('documents.editor.noContact') },
-    { name: 'ownerId', label: t('oms.detailLabels.owner'), type: 'select', value: form.ownerId, onChange: (v) => setField('ownerId', v), options: ownerOptions, placeholder: t('documents.editor.noOwner') },
-    { name: 'currencyCode', label: t('oms.summaryLabels.currency'), type: 'select', value: form.currencyCode, onChange: (v) => setField('currencyCode', v), options: currencyOptions, placeholder: t('documents.editor.selectCurrency') },
-    { name: 'issueDate', label: t('oms.detailLabels.issueDate'), type: 'date', value: form.issueDate, onChange: (v) => setField('issueDate', v), withTime: false, locale: dateLocale },
-    { name: 'validUntil', label: t('oms.detailLabels.validUntil'), type: 'date', value: form.validUntil, onChange: (v) => setField('validUntil', v), withTime: false, locale: dateLocale },
-    { name: 'title', label: t('documents.editor.fieldTitle'), type: 'text', value: form.title, onChange: (v) => setField('title', v) },
-    { name: 'subject', label: t('documents.editor.fieldSubject'), type: 'text', value: form.subject, onChange: (v) => setField('subject', v) },
-    { name: 'paymentTerms', label: t('oms.detailLabels.paymentTerms'), type: 'text', value: form.paymentTerms, onChange: (v) => setField('paymentTerms', v) },
-    { name: 'deliveryTerms', label: t('oms.detailLabels.deliveryTerms'), type: 'text', value: form.deliveryTerms, onChange: (v) => setField('deliveryTerms', v) },
-    { name: 'leadTime', label: t('oms.detailLabels.leadTime'), type: 'text', value: form.leadTime, onChange: (v) => setField('leadTime', v) },
-    { name: 'notes', label: t('oms.detailLabels.notes'), type: 'textarea', value: form.notes, onChange: (v) => setField('notes', v), colSpan: 2 },
+  const primaryFields = [
+    { label: t('oms.detailLabels.counterparty'), type: 'select', value: form.counterpartyId, onChange: (v) => { setField('counterpartyId', v); setField('contactId', ''); }, options: counterpartyOptions },
+    { label: t('oms.detailLabels.contact'), type: 'select', value: form.contactId, onChange: (v) => setField('contactId', v), options: contactOptions },
+    { label: t('oms.detailLabels.owner'), type: 'select', value: form.ownerId, onChange: (v) => setField('ownerId', v), options: ownerOptions },
+    { label: t('documents.editor.fieldTitle'), type: 'text', value: form.title, onChange: (v) => setField('title', v) },
+    { label: t('documents.editor.fieldSubject'), type: 'text', value: form.subject, onChange: (v) => setField('subject', v) },
+    { label: t('oms.detailLabels.notes'), type: 'textarea', value: form.notes, onChange: (v) => setField('notes', v) },
   ];
 
-  const summary = [
-    { label: t('oms.summaryLabels.net'), value: formatMoney(totals.net, currency, i18n.language) },
-    { label: t('oms.summaryLabels.vat'), value: formatMoney(totals.vat, currency, i18n.language) },
-    { label: t('oms.summaryLabels.gross'), value: formatMoney(totals.gross, currency, i18n.language), strong: true },
-    { label: t('oms.summaryLabels.currency'), value: currency, strong: true },
+  const secondaryFields = [
+    { label: t('oms.summaryLabels.currency'), type: 'select', value: form.currencyCode, onChange: (v) => setField('currencyCode', v), options: currencyOptions },
+    { label: t('oms.detailLabels.issueDate'), type: 'date', value: form.issueDate, onChange: (v) => setField('issueDate', v) },
+    { label: t('oms.detailLabels.validUntil'), type: 'date', value: form.validUntil, onChange: (v) => setField('validUntil', v) },
+    { label: t('oms.detailLabels.paymentTerms'), type: 'text', value: form.paymentTerms, onChange: (v) => setField('paymentTerms', v) },
+    { label: t('oms.detailLabels.deliveryTerms'), type: 'text', value: form.deliveryTerms, onChange: (v) => setField('deliveryTerms', v) },
+    { label: t('oms.detailLabels.leadTime'), type: 'text', value: form.leadTime, onChange: (v) => setField('leadTime', v) },
   ];
+
+  const totals = {
+    netLabel: t('oms.summaryLabels.net'),
+    vatLabel: t('oms.summaryLabels.vat'),
+    grossLabel: t('oms.summaryLabels.gross'),
+    ...calculateTotals(items),
+  };
 
   const validate = () => {
     const nextErrors = {};
@@ -205,7 +191,7 @@ export default function OfferEditorPage() {
       if (asNumber(item.priceNet, -1) < 0) nextErrors[`item:${item.localId}:priceNet`] = t('documents.editor.validation.priceNonNegative');
     });
     setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    return nextErrors;
   };
 
   const buildHeaderPayload = () => ({
@@ -225,7 +211,11 @@ export default function OfferEditorPage() {
 
   const onSave = async () => {
     setSaveError('');
-    if (!validate()) return;
+    const nextErrors = validate();
+    if (Object.keys(nextErrors).length) {
+      setSaveError(nextErrors.counterpartyId || t('documents.editor.validation.itemNameRequired'));
+      return;
+    }
 
     const headerPayload = buildHeaderPayload();
     const itemsPayload = mapLinesToPayload(items);
@@ -233,17 +223,14 @@ export default function OfferEditorPage() {
     try {
       if (isEdit) {
         await updateOffer({ id, payload: headerPayload }).unwrap();
-
         const nextHash = stableItemsHash(items);
         if (nextHash !== initialItemsHashRef.current) {
           await saveOfferItems({ id, items: itemsPayload }).unwrap();
           initialItemsHashRef.current = nextHash;
         }
-
         navigate(`/main/oms/offers/${id}`);
         return;
       }
-
       const created = await createOffer({ ...headerPayload, items: itemsPayload }).unwrap();
       const createdId = created?.id || created?.data?.id;
       navigate(createdId ? `/main/oms/offers/${createdId}` : '/main/oms/offers');
@@ -253,61 +240,49 @@ export default function OfferEditorPage() {
   };
 
   if (isEdit && isOfferLoading) {
-    return <DocumentEditor.State title={t('common.loading')} text={t('documents.editor.loadingHint')} />;
+    return <DocumentEnginePage.State title={t('common.loading')} text={t('documents.editor.loadingHint')} />;
   }
   if ((isEdit && !canReadOffer) || (isEdit && !canUpdateOffer) || (!isEdit && !canCreateOffer)) {
-    return <DocumentEditor.State title={t('documents.editor.noPermission')} text={t('documents.editor.noPermissionHint')} />;
+    return <DocumentEnginePage.State title={t('documents.editor.noPermission')} text={t('documents.editor.noPermissionHint')} />;
   }
   if (isEdit && isOfferError) {
-    return <DocumentEditor.State title={t('documents.editor.loadFailed')} text={getErrorText(offerError, t('documents.editor.loadFailed'))} />;
+    return <DocumentEnginePage.State title={t('documents.editor.loadFailed')} text={getErrorText(offerError, t('documents.editor.loadFailed'))} />;
   }
   if (isEdit && !offer) {
-    return <DocumentEditor.State title={t('documents.editor.notFound')} text={t('documents.editor.notFoundHint')} />;
+    return <DocumentEnginePage.State title={t('documents.editor.notFound')} text={t('documents.editor.notFoundHint')} />;
   }
 
-  const actions = [
-    {
-      key: 'cancel',
-      label: t('common.cancel'),
-      variant: 'secondary',
-      disabled: isSaving,
-      onClick: () => navigate(isEdit ? `/main/oms/offers/${id}` : '/main/oms/offers'),
-    },
-    {
-      key: 'save',
-      label: isSaving ? t('common.saving') : t('common.save'),
-      variant: 'primary',
-      loading: isSaving,
-      disabled: isSaving || (isEdit ? !canUpdateOffer : !canCreateOffer),
-      onClick: onSave,
-    },
-  ];
+  const displayNumber = isEdit ? (offer?.number || offer?.id) : t('common.new');
 
   return (
-    <DocumentEditor
-      documentType={t('documents.types.offer')}
-      mode={isEdit ? 'edit' : 'create'}
+    <DocumentEnginePage
+      mode="edit"
+      typeLabel={t('documents.types.offer')}
       title={isEdit ? t('oms.offers.editTitle') : t('oms.offers.newTitle')}
-      number={isEdit ? (offer?.number || offer?.id) : t('common.new')}
-      status={isEdit ? offer?.status : undefined}
-      breadcrumbs={[
-        { label: t('menu.offers'), to: '/main/oms/offers' },
-        { label: isEdit ? (offer?.number || offer?.id) : t('common.new') },
-      ]}
-      actions={actions}
-      fields={fields}
-      fieldsTitle={t('documents.editor.header')}
-      summary={summary}
+      number={displayNumber}
+      statusLabel={isEdit && offer?.status ? t(`statuses.${String(offer.status).toLowerCase()}`, offer.status) : undefined}
+      back={{ label: t('common.cancel'), onClick: () => navigate(isEdit ? `/main/oms/offers/${id}` : '/main/oms/offers') }}
+      breadcrumb={`${t('menu.offers')} / ${displayNumber}`}
+      paramsTitle={t('documents.editor.header')}
+      primaryFields={primaryFields}
+      secondaryFields={secondaryFields}
+      itemsTitle={t('documents.lines.title')}
       summaryTitle={t('documents.editor.summaryTitle')}
-      error={saveError}
-    >
-      <LineItemsEditor
-        lines={items}
-        onChange={setItems}
-        discountTypeOptions={discountTypeOptions}
-        errors={errors}
-        productPickerTitle={t('documents.lines.productPickerTitle')}
-      />
-    </DocumentEditor>
+      totals={totals}
+      showSaveButton
+      onSave={onSave}
+      saveDisabled={isSaving || (isEdit ? !canUpdateOffer : !canCreateOffer)}
+      saveLoading={isSaving}
+      actionError={saveError}
+      itemsSlot={(
+        <LineItemsEditor
+          lines={items}
+          onChange={setItems}
+          discountTypeOptions={discountTypeOptions}
+          errors={errors}
+          productPickerTitle={t('documents.lines.productPickerTitle')}
+        />
+      )}
+    />
   );
 }
