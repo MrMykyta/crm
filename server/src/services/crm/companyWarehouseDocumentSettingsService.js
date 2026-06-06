@@ -1,7 +1,7 @@
 'use strict';
 
 const AppError = require('../../errors/AppError');
-const { CompanyWarehouseDocumentSetting } = require('../../models');
+const { CompanyWarehouseDocumentSetting, Warehouse } = require('../../models');
 const {
   listCompanyNumberingSettings,
   updateCompanyNumberingSetting,
@@ -48,6 +48,22 @@ function ensureCompanyId(companyId) {
   if (!companyId) {
     throw new AppError(403, 'Company context required', { code: 'COMPANY_CONTEXT_REQUIRED' });
   }
+}
+
+async function normalizeDefaultWarehouseId(companyId, value, transaction) {
+  const text = asText(value);
+  if (!text) return null;
+  const warehouse = await Warehouse.findOne({
+    where: { id: text, companyId, isActive: true },
+    attributes: ['id'],
+    transaction,
+  });
+  if (!warehouse) {
+    throw new AppError(400, 'defaultWarehouseId must reference an active company warehouse', {
+      code: 'VALIDATION_ERROR',
+    });
+  }
+  return warehouse.id;
 }
 
 function normalizeDefaultType(
@@ -204,6 +220,8 @@ function buildUsageState({ settingsRow, numberingItems }) {
     || getWarehouseDocumentTypeDefinition(DEFAULT_WAREHOUSE_DOCUMENT_SETTINGS.warehouseDefaultDocumentType);
 
   return {
+    defaultWarehouseId: rowData?.defaultWarehouseId || null,
+    costingInitializedAt: rowData?.costingInitializedAt || null,
     warehouseDefaultDocumentType,
     warehouseDefaultNumberingType: defaultDefinition?.numberingType || 'WZ',
     warehouseDefaultNumberingSourceType: defaultDefinition?.numberingSourceType || 'WZ',
@@ -235,6 +253,8 @@ async function getCompanyWarehouseDocumentSettingsForUsage({ companyId, transact
   const usage = buildUsageState(rows);
 
   return {
+    defaultWarehouseId: usage.defaultWarehouseId || null,
+    costingInitializedAt: usage.costingInitializedAt || null,
     warehouseDefaultDocumentType: usage.warehouseDefaultDocumentType,
     warehouseDefaultNumberingType: usage.warehouseDefaultNumberingType,
     warehouseDefaultNumberingSourceType: usage.warehouseDefaultNumberingSourceType,
@@ -253,6 +273,8 @@ async function getCompanyWarehouseDocumentSettings({ companyId, transaction = nu
   const usage = buildUsageState(rows);
 
   return {
+    defaultWarehouseId: usage.defaultWarehouseId || null,
+    costingInitializedAt: usage.costingInitializedAt || null,
     warehouseDefaultDocumentType: usage.warehouseDefaultDocumentType,
     warehouseDocumentTypes: usage.warehouseDocumentTypes.map((entry) => ({
       typeKey: entry.typeKey,
@@ -294,16 +316,25 @@ async function updateCompanyWarehouseDocumentSettings({ companyId, payload = {},
     );
     ensureDefaultTypeEnabled(nextTypeState, nextDefaultType);
 
+    const settingsPatch = { warehouseDefaultDocumentType: nextDefaultType };
+    if (hasOwn(payload, 'defaultWarehouseId')) {
+      settingsPatch.defaultWarehouseId = await normalizeDefaultWarehouseId(
+        companyId,
+        payload.defaultWarehouseId,
+        tx
+      );
+    }
+
     if (rows.settingsRow) {
       await rows.settingsRow.update(
-        { warehouseDefaultDocumentType: nextDefaultType },
+        settingsPatch,
         { transaction: tx }
       );
     } else {
       await CompanyWarehouseDocumentSetting.create(
         {
           companyId,
-          warehouseDefaultDocumentType: nextDefaultType,
+          ...settingsPatch,
         },
         { transaction: tx }
       );

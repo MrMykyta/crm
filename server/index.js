@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('./src/config/loadEnv');
 const http = require('http');
 const app = require('./app');
 const initSocket = require('./src/socket');

@@ -43,3 +43,32 @@ module.exports.remove = async (req, res) => {
   } catch (e) { console.error('[StockMoveController.remove]', e); res.status(400).send({ error: e.message }); }
 };
 
+// Возвращает историю движений по документу (refType + refId).
+module.exports.historyByDocument = async (req, res) => {
+  try {
+    const result = await stockMoveService.listHistoryByDocument({
+      companyId: req.user?.companyId,
+      refType: req.query.refType,
+      refId: req.query.refId,
+      refItemId: req.query.refItemId,
+      page: req.query.page,
+      limit: req.query.limit,
+    });
+    res.status(200).send({ data: result.rows, meta: { count: result.count, page: result.page, limit: result.limit } });
+  } catch (e) { console.error('[StockMoveController.historyByDocument]', e); res.status(400).send({ error: e.message }); }
+};
+
+// Возвращает историю движений по товару (productId + optional variantId).
+module.exports.historyByProduct = async (req, res) => {
+  try {
+    const result = await stockMoveService.listHistoryByProduct({
+      companyId: req.user?.companyId,
+      productId: req.query.productId,
+      variantId: req.query.variantId,
+      refItemId: req.query.refItemId,
+      page: req.query.page,
+      limit: req.query.limit,
+    });
+    res.status(200).send({ data: result.rows, meta: { count: result.count, page: result.page, limit: result.limit } });
+  } catch (e) { console.error('[StockMoveController.historyByProduct]', e); res.status(400).send({ error: e.message }); }
+};

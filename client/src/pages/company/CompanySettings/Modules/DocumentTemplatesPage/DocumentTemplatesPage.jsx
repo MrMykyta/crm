@@ -7,6 +7,7 @@ import {
 } from "../../../../../store/rtk/documentTemplateApi";
 import { deleteTemplate } from "../../../../../api/documentTemplates.api";
 import { resolveTemplateDocumentTypeKey } from "../_shared/templateRouteUtils";
+import StatusBadge from "../../../../../components/shared/StatusBadge";
 import s from "./DocumentTemplatesPage.module.css";
 
 const DOCUMENT_TYPE_OPTIONS = ["faktura_vat", "oferta", "zamowienie", "wz"];
@@ -285,8 +286,8 @@ export default function DocumentTemplatesPage() {
                     <td>
                       {template?.name || template?.templateName || "—"}
                       {isDefault ? (
-                        <span style={{ marginLeft: 6, fontSize: 11, padding: "1px 6px", borderRadius: 10, background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe", fontWeight: 500 }}>
-                          Default
+                        <span style={{ marginLeft: 6 }}>
+                          <StatusBadge tone="info" size="sm">Default</StatusBadge>
                         </span>
                       ) : null}
                     </td>

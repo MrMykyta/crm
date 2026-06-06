@@ -1,0 +1,306 @@
+.wrap {
+  display: grid;
+  gap: 14px;
+}
+
+.header {
+  display: grid;
+  gap: 4px;
+}
+
+.header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-xl);
+}
+
+.header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tabs button,
+.button,
+.primaryButton,
+.rowActions button {
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+  color: var(--text);
+  padding: 7px 12px;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.tabs button:hover,
+.button:hover,
+.rowActions button:hover {
+  border-color: var(--focus);
+}
+
+.activeTab {
+  border-color: color-mix(in srgb, var(--focus) 70%, var(--card-brd)) !important;
+  background: var(--sidebar-active) !important;
+}
+
+.primaryButton {
+  border-color: color-mix(in srgb, var(--success) 52%, var(--card-brd));
+  background: color-mix(in srgb, var(--success) 22%, var(--card-bg));
+  font-weight: var(--fw-semibold);
+}
+
+.button:disabled,
+.primaryButton:disabled,
+.rowActions button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.stack {
+  display: grid;
+  gap: 14px;
+}
+
+.gridTwo {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.panel {
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.panel h3 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  color: var(--text);
+}
+
+.panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.statusPill {
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-full);
+  padding: 5px 10px;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+.statusOk {
+  border-color: color-mix(in srgb, var(--success) 50%, var(--card-brd));
+  color: color-mix(in srgb, var(--success) 82%, white);
+}
+
+.statusWarn {
+  border-color: color-mix(in srgb, var(--warning) 50%, var(--card-brd));
+  color: color-mix(in srgb, var(--warning) 86%, white);
+}
+
+.warningBox,
+.resultBox {
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-lg);
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: var(--fs-sm);
+}
+
+.warningBox {
+  border-color: color-mix(in srgb, var(--warning) 45%, var(--card-brd));
+  background: color-mix(in srgb, var(--warning) 9%, transparent);
+}
+
+.resultBox {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+}
+
+.resultBox strong {
+  flex-basis: 100%;
+}
+
+.defaultBox,
+.readonlyField {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-lg);
+  padding: 10px;
+}
+
+.defaultBox span,
+.readonlyField span {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+.defaultBox strong,
+.readonlyField strong {
+  color: var(--text);
+  font-size: var(--fs-sm);
+}
+
+.counters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.counters div {
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.counters span {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+.counters strong {
+  color: var(--text);
+  font-size: var(--font-size-24);
+}
+
+.formGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.formGrid label {
+  display: grid;
+  gap: 6px;
+}
+
+.formGrid label span {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+.formGrid input,
+.formGrid select {
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  color: var(--text);
+  padding: 9px 10px;
+  font-size: var(--fs-sm);
+}
+
+.checkboxRow {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tableWrap {
+  overflow: auto;
+  border: 1px solid var(--card-brd);
+  border-radius: var(--radius-lg);
+}
+
+.table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid var(--card-brd);
+  padding: 8px 10px;
+  text-align: left;
+  color: var(--text);
+  font-size: var(--fs-xs);
+}
+
+.table th {
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.empty,
+.state {
+  color: var(--muted);
+  text-align: center;
+}
+
+.success,
+.error {
+  border-radius: var(--radius-lg);
+  padding: 10px 12px;
+  font-size: var(--fs-sm);
+}
+
+.success {
+  border: 1px solid color-mix(in srgb, var(--success) 45%, var(--card-brd));
+  color: color-mix(in srgb, var(--success) 82%, white);
+}
+
+.error {
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--card-brd));
+  color: color-mix(in srgb, var(--danger) 82%, white);
+}
+
+.inlineLink {
+  color: var(--focus);
+  text-decoration: none;
+  font-size: var(--fs-sm);
+}
+
+.inlineLink:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1120px) {
+  .gridTwo,
+  .counters {
+    grid-template-columns: 1fr;
+  }
+}

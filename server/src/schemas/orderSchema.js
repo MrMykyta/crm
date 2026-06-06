@@ -13,6 +13,7 @@ const ORDER_STATUSES = [
 const PAYMENT_STATUSES = ['pending', 'paid', 'refunded', 'partially_refunded'];
 const FULFILLMENT_STATUSES = ['unfulfilled', 'partial', 'fulfilled'];
 const DISCOUNT_TYPES = ['none', 'fixed', 'percent'];
+const LINE_TYPES = ['product', 'service', 'custom', 'fee', 'discount'];
 
 const itemSchema = Joi.object({
   id: uuid.optional(),
@@ -34,6 +35,11 @@ const itemSchema = Joi.object({
   taxRate: Joi.number().min(0).max(999.9999).optional(),
   productTypeSnapshot: Joi.string().max(32).allow('', null),
   metadataSnapshot: Joi.object().unknown(true).allow(null),
+  lineType: Joi.string().valid(...LINE_TYPES).optional(),
+  affectsInventory: Joi.boolean().optional(),
+  isStockTrackedSnapshot: Joi.boolean().optional(),
+  taxCategoryId: uuid.allow(null),
+  parentLineItemId: uuid.allow(null),
   quantity: Joi.number().greater(0).required(),
   qty: Joi.number().greater(0).optional(),
   unitPriceNet: Joi.number().min(0).required(),

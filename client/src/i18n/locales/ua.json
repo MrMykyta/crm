@@ -44,6 +44,12 @@
     "createNew": "Створити нову"
   },
   "common": {
+    "comingSoon": {
+      "title": "Незабаром",
+      "badge": "В розробці",
+      "description": "Цей модуль вже запланований, але ще не реалізований.",
+      "backToDashboard": "Повернутись до дашборду"
+    },
     "email": "Email",
     "password": "Пароль",
     "required": "Обов’язкове поле",
@@ -61,15 +67,95 @@
     "error": "Помилка",
     "success": "Успіх",
     "loading": "Завантаження…",
+    "noPermission": "Немає доступу",
     "sending": "Надсилання…",
     "save": "Зберегти",
     "edit": "Редагувати",
     "reset": "Скинути",
     "none": "—",
     "cancel": "Скасувати",
+    "new": "Новий",
     "primary": "Основний",
     "saved": "Збережено",
-    "unsaved": "Є незбережені зміни"
+    "unsaved": "Є незбережені зміни",
+    "yes": "Так",
+    "no": "Ні",
+    "all": "Усі",
+    "clear": "Очистити",
+    "refresh": "Оновити"
+  },
+  "documents": {
+    "types": {
+      "offer": "Пропозиція",
+      "order": "Замовлення",
+      "invoice": "Рахунок"
+    },
+    "shell": {
+      "unknownNumber": "Без номера",
+      "breadcrumbsAria": "Навігаційний шлях",
+      "tabsAria": "Розділи документа",
+      "confirmTitle": "Підтвердьте дію",
+      "confirmText": "Ви впевнені?",
+      "confirmOk": "Підтвердити"
+    },
+    "relations": {
+      "document": "Документ",
+      "empty": "Немає пов'язаних документів"
+    },
+    "timeline": {
+      "empty": "Немає подій історії",
+      "systemActor": "Система",
+      "created": "Створено",
+      "updated": "Оновлено",
+      "confirmed": "Підтверджено",
+      "issued": "Виставлено"
+    },
+    "editor": {
+      "header": "Заголовок",
+      "summaryTitle": "Попередній перегляд сум",
+      "selectCounterparty": "Виберіть контрагента",
+      "noContact": "Без контакту",
+      "noOwner": "Без відповідального",
+      "selectCurrency": "Виберіть валюту",
+      "fieldTitle": "Заголовок",
+      "fieldSubject": "Тема",
+      "loadingHint": "Підготовка редактора.",
+      "noPermission": "Немає доступу",
+      "noPermissionHint": "У вас недостатньо прав для доступу до редактора.",
+      "loadFailed": "Не вдалося завантажити документ",
+      "notFound": "Документ не знайдено",
+      "notFoundHint": "Немає даних у поточній компанії.",
+      "saveFailed": "Не вдалося зберегти документ",
+      "validation": {
+        "counterpartyRequired": "Контрагент обов'язковий",
+        "itemNameRequired": "Вкажіть найменування позиції",
+        "qtyPositive": "Кількість має бути більшою за 0",
+        "priceNonNegative": "Ціна не може бути від'ємною"
+      }
+    },
+    "lines": {
+      "title": "Позиції",
+      "addCustom": "Додати власну позицію",
+      "addProduct": "Додати товар",
+      "name": "Найменування",
+      "type": "Тип",
+      "qty": "К-сть",
+      "priceNet": "Ціна нетто",
+      "taxRate": "Ставка ПДВ %",
+      "discountType": "Тип знижки",
+      "discountValue": "Значення знижки",
+      "remove": "Видалити",
+      "affectsStock": "Впливає на склад",
+      "available": "Доступно",
+      "productNamePlaceholder": "Назва товару",
+      "customNamePlaceholder": "Назва позиції",
+      "dragToReorder": "Перетягніть для сортування",
+      "productPickerTitle": "Додати товар"
+    },
+    "locked": {
+      "label": "Заблоковано",
+      "text": "Документ заблоковано. Подальші зміни — через коригування або наступний документ."
+    }
   },
   "countries": {
     "PL": "PL — Польща",
@@ -114,9 +200,20 @@
     "services": "Послуги",
     "wms": "WMS",
     "warehouse": "Склад",
+    "stockBalances": "Складські залишки",
+    "wmsDocuments": "Складські документи",
     "wmsDocs": "Складські документи",
+    "wmsReceipts": "Приймання PZ",
+    "transfers": "Переміщення",
+    "wmsShipments": "Відвантаження WZ",
+    "wmsAdjustments": "Коригування RW/PW",
+    "wmsCycleCounts": "Листи інвентаризації",
     "settings": "Налаштування",
-    "userSettings": "Налаштування користувача"
+    "userSettings": "Налаштування користувача",
+    "stockValuation": "Вартість складу",
+    "stockTurnover": "Обороти складу",
+    "stockAsOf": "Залишки на дату",
+    "inventoryLedger": "Картка складу"
   },
   "oms": {
     "stub": "Ця сторінка запланована на наступний етап.",
@@ -144,6 +241,511 @@
       "counterparty": "Контрагент",
       "contact": "Контакт",
       "empty": "Немає пов'язаних сутностей"
+    },
+    "actions": {
+      "print": "Друкувати",
+      "downloadPdf": "Завантажити PDF"
+    },
+    "actionLabels": {
+      "send": "Надіслати",
+      "accept": "Прийняти",
+      "reject": "Відхилити",
+      "cancel": "Скасувати",
+      "expire": "Позначити простроченою",
+      "duplicate": "Дублювати",
+      "confirm": "Підтвердити",
+      "ship": "Відвантажити",
+      "complete": "Завершити",
+      "return": "Повернути",
+      "convertToOrder": "Конвертувати в замовлення",
+      "convertToInvoice": "Конвертувати в рахунок",
+      "openSettings": "Відкрити налаштування",
+      "issueInvoice": "Виставити рахунок"
+    },
+    "confirm": {
+      "offerRejectTitle": "Відхилити пропозицію",
+      "offerRejectText": "Відхилити цю пропозицію?",
+      "offerRejectOk": "Відхилити",
+      "offerCancelTitle": "Скасувати пропозицію",
+      "offerCancelText": "Скасувати цю пропозицію?",
+      "offerCancelOk": "Скасувати пропозицію",
+      "orderCancelTitle": "Скасувати замовлення",
+      "orderCancelText": "Скасувати це замовлення?",
+      "orderCancelOk": "Скасувати замовлення",
+      "orderReturnTitle": "Повернути замовлення",
+      "orderReturnText": "Позначити замовлення як повернене?",
+      "orderReturnOk": "Повернути замовлення"
+    },
+    "tabs": {
+      "items": "Позиції",
+      "summary": "Підсумки",
+      "relations": "Зв'язки",
+      "history": "Історія",
+      "actions": "Дії"
+    },
+    "detailSections": {
+      "counterparty": "Контрагент",
+      "dates": "Дати",
+      "termsNotes": "Умови та нотатки"
+    },
+    "detailLabels": {
+      "number": "Номер",
+      "status": "Статус",
+      "paymentStatus": "Статус оплати",
+      "fulfillmentStatus": "Статус виконання",
+      "counterparty": "Контрагент",
+      "contact": "Контакт",
+      "owner": "Власник",
+      "deal": "Угода",
+      "placedAt": "Розміщено",
+      "confirmedAt": "Підтверджено",
+      "createdAt": "Створено",
+      "updatedAt": "Оновлено",
+      "paymentTerms": "Умови оплати",
+      "deliveryTerms": "Умови доставки",
+      "leadTime": "Термін виконання",
+      "notes": "Нотатки",
+      "issueDate": "Дата виставлення",
+      "validUntil": "Дійсна до",
+      "dueDate": "Термін оплати"
+    },
+    "itemsTable": {
+      "name": "Найменування",
+      "qty": "К-сть",
+      "priceNet": "Ціна нетто",
+      "vat": "ПДВ %",
+      "lineGross": "Сума брутто",
+      "empty": "Немає позицій",
+      "lineType": "Тип"
+    },
+    "summaryLabels": {
+      "net": "Нетто",
+      "vat": "ПДВ",
+      "gross": "Брутто",
+      "currency": "Валюта"
+    },
+    "errors": {
+      "actionFailed": "Не вдалося виконати дію",
+      "orderLoadFailed": "Не вдалося завантажити замовлення",
+      "offerLoadFailed": "Не вдалося завантажити пропозицію",
+      "orderNotFound": "Замовлення не знайдено",
+      "offerNotFound": "Пропозицію не знайдено",
+      "costingNotInitialized": "FIFO-оцінку не ініціалізовано для цієї компанії. Перейдіть до Налаштування компанії → Склад/WMS → Оцінка.",
+      "invoiceLoadFailed": "Не вдалося завантажити рахунок",
+      "invoiceNotFound": "Рахунок не знайдено"
+    },
+    "print": {
+      "loading": "Підготовка версії для друку",
+      "notFound": "Сутність не знайдено",
+      "backToDetail": "Назад до деталей"
+    },
+    "invoices": {
+      "title": "Рахунки",
+      "search": "Пошук за номером або контрагентом...",
+      "open": "Відкрити рахунок",
+      "columns": {
+        "number": "Номер",
+        "counterparty": "Контрагент",
+        "status": "Статус",
+        "issueDate": "Дата виставлення",
+        "dueDate": "Термін оплати",
+        "totalNet": "Нетто",
+        "totalGross": "Брутто"
+      }
+    },
+    "lineTypes": {
+      "product": "Товар",
+      "service": "Послуга",
+      "custom": "Довільна"
+    }
+  },
+  "wms": {
+    "backToList": "Назад до списку",
+    "relations": {
+      "originalDocument": "Вихідний документ",
+      "correctionDocument": "Документ коригування"
+    },
+    "print": {
+      "print": "Друк",
+      "loading": "Підготовка форми для друку...",
+      "notFound": "Документ не знайдено",
+      "backToDetail": "Назад до деталей",
+      "date": "Дата",
+      "status": "Статус",
+      "warehouse": "Склад",
+      "document": "Документ",
+      "location": "Локація",
+      "lotSerial": "Партія / серійний номер",
+      "plannedQty": "План",
+      "processedQty": "Виконано",
+      "issuedBy": "Видав",
+      "receivedBy": "Прийняв"
+    },
+    "tabs": {
+      "items": "Позиції",
+      "history": "Історія",
+      "summary": "Підсумок"
+    },
+    "items": {
+      "empty": "Немає позицій"
+    },
+    "summary": {
+      "items": "Позицій",
+      "qtyTotal": "Кількість всього",
+      "qtyProcessed": "Кількість оброблено",
+      "order": "Замовлення"
+    },
+    "columns": {
+      "product": "Товар",
+      "variant": "Варіант",
+      "qty": "К-сть",
+      "progress": "Оброблено"
+    },
+    "history": {
+      "empty": "Немає складських рухів",
+      "columns": {
+        "date": "Дата",
+        "type": "Тип",
+        "product": "Товар",
+        "qty": "К-сть",
+        "from": "Звідки",
+        "to": "Куди",
+        "refItem": "Ref позиції"
+      }
+    },
+    "receipts": {
+      "title": "Приймання PZ",
+      "detailTitle": "Деталі приймання",
+      "search": "Пошук за номером...",
+      "empty": "Немає документів PZ",
+      "columns": {
+        "number": "Номер",
+        "status": "Статус",
+        "warehouse": "Склад",
+        "createdAt": "Створено"
+      }
+    },
+    "transfers": {
+      "title": "Переміщення MM",
+      "detailTitle": "Деталі переміщення",
+      "search": "Пошук за номером...",
+      "empty": "Немає документів MM",
+      "columns": {
+        "number": "Номер",
+        "status": "Статус",
+        "fromWarehouse": "Зі складу",
+        "toWarehouse": "На склад",
+        "createdAt": "Створено"
+      }
+    },
+    "shipments": {
+      "title": "Відвантаження WZ",
+      "detailTitle": "Деталі відвантаження",
+      "search": "Пошук за номером...",
+      "empty": "Немає документів WZ",
+      "columns": {
+        "number": "Номер",
+        "status": "Статус",
+        "warehouse": "Склад",
+        "order": "Замовлення",
+        "createdAt": "Створено"
+      }
+    },
+    "adjustments": {
+      "title": "Коригування RW/PW",
+      "detailTitle": "Деталі коригування",
+      "search": "Пошук за номером...",
+      "empty": "Немає документів RW/PW",
+      "actions": {
+        "post": "Провести"
+      },
+      "filters": {
+        "documentType": "Тип"
+      },
+      "types": {
+        "PW": "PW",
+        "RW": "RW"
+      },
+      "columns": {
+        "number": "Номер",
+        "documentType": "Тип",
+        "status": "Статус",
+        "warehouse": "Склад",
+        "date": "Дата",
+        "itemsCount": "Позицій",
+        "createdAt": "Створено",
+        "postedAt": "Проведено"
+      }
+    },
+    "stockBalances": {
+      "title": "Складські залишки",
+      "search": "Пошук за назвою або SKU...",
+      "onlyPositive": "Лише додатні",
+      "empty": "Немає складських залишків",
+      "openProduct": "Відкрити товар",
+      "columns": {
+        "warehouse": "Склад",
+        "product": "Товар",
+        "sku": "SKU",
+        "variant": "Варіант",
+        "onHand": "Залишок",
+        "reserved": "У резерві",
+        "available": "Доступно"
+      }
+    },
+    "cycleCounts": {
+      "title": "Листи інвентаризації",
+      "createTitle": "Новий лист інвентаризації",
+      "createSubtle": "Спочатку створіть лист, потім додайте пораховані позиції у деталях",
+      "detailTitle": "Лист інвентаризації",
+      "detailSubtle": "Склад",
+      "empty": "Немає листів інвентаризації",
+      "emptyDifferences": "Ще немає порахованих позицій",
+      "selectWarehouse": "Оберіть склад",
+      "selectLocation": "Оберіть локацію",
+      "selectProduct": "Оберіть товар",
+      "noProduct": "Товар не обрано",
+      "reconciledNoNew": "Лист уже звірено. У цій сесії нові коригування не створювались.",
+      "notReconciledYet": "Звірку ще не запускали.",
+      "actions": {
+        "new": "Новий лист",
+        "create": "Створити",
+        "addLine": "Додати рядок",
+        "addItems": "Додати пораховані позиції",
+        "reconcile": "Звірити",
+        "openAdjustment": "Відкрити коригування",
+        "selectProduct": "Обрати товар",
+        "changeProduct": "Змінити товар"
+      },
+      "sections": {
+        "header": "Шапка",
+        "differenceSummary": "Підсумок розбіжностей",
+        "addItems": "Додати пораховані позиції",
+        "reconcileResult": "Результат звірки"
+      },
+      "fields": {
+        "warehouse": "Склад"
+      },
+      "columns": {
+        "sheet": "Лист",
+        "status": "Статус",
+        "warehouse": "Склад",
+        "itemsCount": "Пораховані позиції",
+        "createdAt": "Створено",
+        "location": "Локація",
+        "product": "Товар",
+        "variant": "Варіант",
+        "lot": "Партія",
+        "serial": "Серійний номер",
+        "counted": "Пораховано",
+        "system": "Система",
+        "diff": "Різниця",
+        "movement": "Запланований рух"
+      },
+      "summary": {
+        "pw": "Сума PW",
+        "rw": "Сума RW",
+        "equal": "Рядків без розбіжностей"
+      },
+      "placeholders": {
+        "variant": "ID варіанта",
+        "lot": "ID партії",
+        "serial": "ID серійного номера"
+      },
+      "validation": {
+        "warehouseRequired": "Склад обов'язковий",
+        "locationRequired": "Локація обов'язкова",
+        "productRequired": "Товар обов'язковий",
+        "qtyNonNegative": "Порахована кількість має бути >= 0"
+      },
+      "errors": {
+        "create": "Не вдалося створити лист інвентаризації",
+        "addItems": "Не вдалося додати пораховані позиції",
+        "reconcile": "Не вдалося виконати звірку"
+      }
+    },
+    "stockValuation": {
+      "title": "Вартість складу",
+      "subtitle": "FIFO-оцінка за залишками cost layers.",
+      "empty": "Немає рядків оцінки.",
+      "error": "Не вдалося завантажити звіт вартості складу.",
+      "asOfComingSoon": "Незабаром",
+      "filters": {
+        "warehouse": "Склад",
+        "productSearch": "Пошук товару",
+        "productSearchPlaceholder": "Пошук за назвою або SKU...",
+        "product": "Товар",
+        "currency": "Валюта",
+        "groupBy": "Групувати за",
+        "asOf": "На дату"
+      },
+      "groupBy": {
+        "product": "Товар",
+        "warehouse": "Склад",
+        "productWarehouse": "Товар + склад"
+      },
+      "totals": {
+        "qtyRemaining": "Залишилось",
+        "stockValue": "Вартість складу",
+        "currency": "Валюта"
+      },
+      "columns": {
+        "warehouse": "Склад",
+        "product": "Товар",
+        "sku": "SKU",
+        "variant": "Варіант",
+        "qtyRemaining": "Залишилось",
+        "stockValue": "Вартість",
+        "currency": "Валюта"
+      }
+    },
+    "stockTurnover": {
+      "title": "Обороти складу",
+      "subtitle": "Обороти складських рухів на основі FIFO-собівартості.",
+      "empty": "Немає оборотів за вибраний період.",
+      "error": "Не вдалося завантажити звіт оборотів складу.",
+      "validation": {
+        "dateRangeRequired": "Дата початку і дата завершення обов’язкові."
+      },
+      "filters": {
+        "dateFrom": "Дата з",
+        "dateTo": "Дата до",
+        "warehouse": "Склад",
+        "productSearch": "Пошук товару",
+        "productSearchPlaceholder": "Шукати за назвою або SKU...",
+        "product": "Товар",
+        "currency": "Валюта",
+        "groupBy": "Групувати за"
+      },
+      "groupBy": {
+        "product": "Товар",
+        "warehouse": "Склад",
+        "productWarehouse": "Товар + склад",
+        "documentType": "Тип документа"
+      },
+      "totals": {
+        "qtyIn": "Прихід, к-сть",
+        "qtyOut": "Витрата, к-сть",
+        "valueIn": "Прихід, сума",
+        "valueOut": "Витрата, сума",
+        "netQty": "Нетто к-сть",
+        "netValue": "Нетто сума",
+        "currency": "Валюта"
+      },
+      "columns": {
+        "warehouse": "Склад",
+        "product": "Товар",
+        "sku": "SKU",
+        "variant": "Варіант",
+        "documentType": "Тип документа",
+        "qtyIn": "Прихід, к-сть",
+        "qtyOut": "Витрата, к-сть",
+        "valueIn": "Прихід, сума",
+        "valueOut": "Витрата, сума",
+        "netQty": "Нетто к-сть",
+        "netValue": "Нетто сума",
+        "currency": "Валюта"
+      }
+    },
+    "stockAsOf": {
+      "title": "Залишки складу на дату",
+      "subtitle": "Історичний залишок і FIFO-вартість, відновлені зі складських рухів.",
+      "empty": "Немає залишків на вибрану дату.",
+      "error": "Не вдалося завантажити звіт залишків на дату.",
+      "validation": {
+        "asOfRequired": "Дата звіту обов’язкова."
+      },
+      "filters": {
+        "asOf": "На дату",
+        "warehouse": "Склад",
+        "productSearch": "Пошук товару",
+        "productSearchPlaceholder": "Шукати за назвою або SKU...",
+        "product": "Товар",
+        "currency": "Валюта",
+        "groupBy": "Групувати за"
+      },
+      "groupBy": {
+        "product": "Товар",
+        "warehouse": "Склад",
+        "productWarehouse": "Товар + склад"
+      },
+      "totals": {
+        "qty": "Кількість",
+        "stockValue": "Вартість складу",
+        "currency": "Валюта"
+      },
+      "columns": {
+        "warehouse": "Склад",
+        "product": "Товар",
+        "sku": "SKU",
+        "variant": "Варіант",
+        "qty": "Кількість",
+        "stockValue": "Вартість",
+        "currency": "Валюта"
+      }
+    },
+    "inventoryLedger": {
+      "title": "Картка складу",
+      "subtitle": "Рухи товару з накопичувальною кількістю і вартістю.",
+      "empty": "Немає рядків картки за вибраними фільтрами.",
+      "error": "Не вдалося завантажити картку складу.",
+      "validation": {
+        "productRequired": "Товар обов’язковий.",
+        "dateRangeRequired": "Дата початку і дата завершення обов’язкові."
+      },
+      "filters": {
+        "productSearch": "Пошук товару",
+        "productSearchPlaceholder": "Шукати за назвою або SKU...",
+        "product": "Товар",
+        "selectProduct": "Виберіть товар",
+        "variant": "Варіант",
+        "dateFrom": "Дата з",
+        "dateTo": "Дата до",
+        "warehouse": "Склад",
+        "currency": "Валюта"
+      },
+      "totals": {
+        "qtyIn": "Прихід, к-сть",
+        "qtyOut": "Витрата, к-сть",
+        "valueIn": "Прихід, сума",
+        "valueOut": "Витрата, сума",
+        "balanceAfter": "Залишок",
+        "valueBalance": "Залишок, сума",
+        "currency": "Валюта"
+      },
+      "columns": {
+        "date": "Дата",
+        "documentType": "Тип документа",
+        "documentNumber": "Номер документа",
+        "warehouse": "Склад",
+        "location": "Локація",
+        "qtyIn": "Прихід, к-сть",
+        "qtyOut": "Витрата, к-сть",
+        "balanceAfter": "Залишок",
+        "unitCost": "Собівартість од.",
+        "valueIn": "Прихід, сума",
+        "valueOut": "Витрата, сума",
+        "valueBalance": "Залишок, сума",
+        "currency": "Валюта"
+      }
+    },
+    "corrections": {
+      "create": "Створити коригування",
+      "title": "Створити коригування",
+      "submit": "Створити коригування",
+      "fullLineHint": "MVP підтримує лише коригування цілих рядків. Кількість доступна тільки для читання і дорівнює початково проведеній кількості.",
+      "reason": "Причина",
+      "reasonPlaceholder": "Причина необов’язкова",
+      "noLines": "Немає рядків, доступних для коригування",
+      "select": "Вибрати",
+      "selectLine": "Вибрати рядок",
+      "errors": {
+        "LAYER_PARTIALLY_CONSUMED": "Цей шар надходження вже був списаний. Спочатку розгорніть наступні рухи.",
+        "DOCUMENT_ALREADY_CORRECTED": "Цей документ вже має коригування.",
+        "CORRECTION_OF_CORRECTION_NOT_ALLOWED": "Коригування документа коригування заборонено.",
+        "PARTIAL_PZ_CORRECTION_NOT_SUPPORTED": "Часткове коригування PZ не підтримується в MVP.",
+        "PARTIAL_WZ_CORRECTION_NOT_SUPPORTED": "Часткове коригування WZ не підтримується в MVP."
+      }
     }
   },
   "statuses": {
@@ -159,7 +761,16 @@
     "viewed": "Переглянуто",
     "accepted": "Прийнято",
     "rejected": "Відхилено",
-    "expired": "Термін дії минув"
+    "expired": "Термін дії минув",
+    "received": "Прийнято",
+    "putaway": "Розміщено",
+    "in_transit": "У дорозі",
+    "packing": "Комплектація",
+    "posted": "Проведено",
+    "planned": "Заплановано",
+    "counting": "Підрахунок",
+    "reconciled": "Звірено",
+    "issued": "Виставлений"
   },
   "widgets": {
     "kpi": "KPI",
@@ -241,7 +852,11 @@
       "textSizeLarge": "Великий",
       "densityCompact": "Компактно",
       "densityComfortable": "Комфортно",
-      "densitySpacious": "Просторо"
+      "densitySpacious": "Просторо",
+      "skin": "Стиль інтерфейсу",
+      "skinV1": "Sunset Classic (V1)",
+      "skinV2": "Sunset Modern (V2)",
+      "skinV3": "Sunset Enterprise (V3)"
     },
     "preferences": {
       "language": "Мова",
@@ -719,6 +1334,81 @@
           "saveFailed": "Не вдалося зберегти налаштування складських документів."
         }
       }
+    },
+    "module": {
+      "crm": "CRM",
+      "oms": "OMS",
+      "pim": "PIM",
+      "automation": "Автоматизація",
+      "integrations": "Інтеграції",
+      "catalog": "Товари / Послуги",
+      "warehouse": "Склад",
+      "other": "Інше"
+    },
+    "wms": {
+      "title": "Warehouse / WMS",
+      "subtitle": "Налаштування складів, локацій і типової поведінки WMS.",
+      "defaultWarehouse": "Склад за замовчуванням",
+      "tabs": {
+        "overview": "Огляд",
+        "warehouses": "Склади",
+        "locations": "Локації",
+        "settings": "Налаштування"
+      },
+      "overview": {
+        "title": "Warehouse / WMS",
+        "description": "Налаштування складу для WMS-документів, залишків та інвентаризації."
+      },
+      "counters": {
+        "warehouses": "Склади",
+        "locations": "Локації",
+        "activeWarehouses": "Активні склади"
+      },
+      "actions": {
+        "configure": "Налаштувати",
+        "addWarehouse": "Додати склад",
+        "editWarehouse": "Редагувати склад",
+        "setDefault": "Зробити типовим",
+        "activate": "Активувати",
+        "deactivate": "Деактивувати",
+        "addLocation": "Додати локацію",
+        "editLocation": "Редагувати локацію"
+      },
+      "fields": {
+        "code": "Код",
+        "name": "Назва",
+        "isActive": "Активний",
+        "isDefault": "Типовий",
+        "warehouse": "Склад",
+        "type": "Тип"
+      },
+      "placeholders": {
+        "selectWarehouse": "Оберіть склад"
+      },
+      "settings": {
+        "negativeStock": "Політика від’ємного залишку",
+        "hardMode": "Жорсткий режим",
+        "costMethod": "Метод собівартості",
+        "costComingSoon": "FIFO/AVCO незабаром",
+        "numberingLink": "Налаштування нумерації PZ/WZ/MM/RW/PW"
+      },
+      "empty": {
+        "warehouses": "Немає складів.",
+        "locations": "Немає локацій."
+      },
+      "messages": {
+        "saved": "Збережено.",
+        "defaultSaved": "Типовий склад оновлено."
+      },
+      "errors": {
+        "saveWarehouse": "Не вдалося зберегти склад.",
+        "saveLocation": "Не вдалося зберегти локацію.",
+        "defaultWarehouse": "Не вдалося оновити типовий склад."
+      },
+      "validation": {
+        "warehouseRequired": "Код і назва обов’язкові.",
+        "locationRequired": "Склад, код і тип обов’язкові."
+      }
     }
   },
   "htmlEditor": {
@@ -746,6 +1436,94 @@
       "clearTextColor": "Скинути колір тексту",
       "highlightColor": "Колір виділення",
       "clearHighlight": "Скинути виділення"
+    }
+  },
+  "wmsDocsList": {
+    "subtitle": "Єдине представлення PZ / WZ / MM / RW / PW. Фільтр за типом — через попап Workspace Views.",
+    "searchPlaceholder": "Пошук за номером…",
+    "empty": "У цьому представленні немає документів",
+    "paginationCount": "{{from}}–{{to}} з {{total}}",
+    "relation": {
+      "correction": "Коригування"
+    },
+    "cols": {
+      "type": "Тип",
+      "number": "Номер",
+      "date": "Дата",
+      "status": "Статус",
+      "warehouse": "Склад",
+      "itemsCount": "Рядків",
+      "totalQty": "К-сть"
+    }
+  },
+  "wmsViews": {
+    "popoverTitle": "Складські документи",
+    "placeholderDescription": "Це представлення — частина Workspace Views. Єдиний список документів з'явиться після підключення наскрізного backend-ендпоінта.",
+    "all": "Усі документи",
+    "pz": "PZ — Приймання",
+    "wz": "WZ — Відвантаження",
+    "mm": "MM — Переміщення",
+    "rw": "RW — Списання",
+    "pw": "PW — Внутрішні приймання",
+    "pzk": "PZK — Коригування PZ",
+    "wzk": "WZK — Коригування WZ",
+    "inventory": "Інвентаризація",
+    "returns": "Повернення"
+  },
+  "workspaceViews": {
+    "manage": "Керування виглядами",
+    "manageComingSoon": "Керування виглядами — скоро",
+    "create": "Створити вигляд",
+    "createNewView": "Створити новий вигляд",
+    "saveAsView": "Зберегти як вигляд",
+    "comingSoon": "Скоро",
+    "editor": {
+      "title": "Створити вигляд",
+      "name": "Назва вигляду",
+      "namePlaceholder": "напр. WZ Łódź проведені",
+      "description": "Опис",
+      "descriptionPlaceholder": "Необов'язкові нотатки",
+      "filterPreview": "Перегляд фільтрів",
+      "noFilters": "Фільтри відсутні — буде збережено повний список.",
+      "cancel": "Скасувати",
+      "create": "Створити",
+      "createdToast": "Особистий вигляд створено",
+      "errorLimitExceeded": "Досягнуто ліміт особистих виглядів (50). Видаліть або сховайте існуючий і повторіть.",
+      "type": "Тип",
+      "status": "Статус",
+      "warehouse": "Склад",
+      "search": "Пошук",
+      "dateFrom": "Дата з",
+      "dateTo": "Дата по"
+    },
+    "searchPlaceholder": "Пошук виглядів…",
+    "noMatch": "Збігів не знайдено",
+    "noViews": "Немає виглядів",
+    "allViews": "Усі вигляди",
+    "empty": "Вигляди недоступні",
+    "moreCount": "+ ще {{count}}",
+    "system": "Системний",
+    "personal": "Особистий",
+    "default": "За замовчуванням",
+    "pin": "Закріпити",
+    "unpin": "Відкріпити",
+    "hide": "Сховати",
+    "show": "Показати",
+    "rename": "Перейменувати",
+    "delete": "Видалити",
+    "confirmDelete": "Видалити цей вигляд? Дію не можна скасувати.",
+    "wms": {
+      "documents": {
+        "all": "Усі документи",
+        "pz": "PZ — Приймання",
+        "wz": "WZ — Відвантаження",
+        "pzk": "PZK — Коригування PZ",
+        "wzk": "WZK — Коригування WZ",
+        "mm": "MM — Переміщення",
+        "rw": "RW — Списання",
+        "pw": "PW — Внутрішні приймання",
+        "postedToday": "Проведено сьогодні"
+      }
     }
   }
 }

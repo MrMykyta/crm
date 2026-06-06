@@ -251,11 +251,20 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(12,3)
     },
 
-    trackInventory: { 
+    trackInventory: {
       type: DataTypes.BOOLEAN,
-      allowNull: false, 
-      field:'track_inventory', 
-      defaultValue:false 
+      allowNull: false,
+      field:'track_inventory',
+      defaultValue:false
+    },
+    // A2: line-item foundation — marks a product as a service for unified line items.
+    // When true, OfferItem/OrderItem/InvoiceItem.lineType is derived as 'service' and
+    // affectsInventory is forced to false regardless of trackInventory.
+    isService: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      field: 'is_service',
+      defaultValue: false,
     },
     publishedAt: { 
       type: DataTypes.DATE, 

@@ -1,0 +1,64 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.sm {
+  padding: 2px 8px;
+  font-size: var(--font-size-11);
+}
+
+.md {
+  padding: 4px 10px;
+  font-size: var(--font-size-12);
+}
+
+.label {
+  letter-spacing: .01em;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  opacity: .9;
+}
+
+/* Tones — derive from semantic color tokens so they stay skin/theme aware */
+.neutral {
+  background: var(--ui-surface-soft);
+  border-color: var(--ui-border-soft);
+  color: var(--ui-text-2);
+}
+
+.success {
+  background: var(--success-weak);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  color: color-mix(in srgb, var(--success) 88%, var(--ui-text-1) 12%);
+}
+
+.warning {
+  background: var(--warning-weak);
+  border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+  color: color-mix(in srgb, var(--warning) 90%, var(--ui-text-1) 10%);
+}
+
+.danger {
+  background: var(--danger-weak);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  color: color-mix(in srgb, var(--danger) 88%, var(--ui-text-1) 12%);
+}
+
+.info {
+  background: var(--info-weak);
+  border-color: color-mix(in srgb, var(--info) 40%, transparent);
+  color: color-mix(in srgb, var(--info) 88%, var(--ui-text-1) 12%);
+}

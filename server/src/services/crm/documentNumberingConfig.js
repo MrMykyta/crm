@@ -99,6 +99,21 @@ const DOCUMENT_TYPE_DEFINITIONS = Object.freeze({
     typeCode: 'PW',
     defaultPattern: 'PW/{YYYY}/{MM}/{SEQ:4}',
   }),
+  // K1: warehouse correction series (PZK/WZK). Polish norm — separate sequence per type.
+  PZ_KOREKTA: Object.freeze({
+    documentType: 'PZ_KOREKTA',
+    label: 'PZ Korekta',
+    category: 'warehouse',
+    typeCode: 'PZK',
+    defaultPattern: 'PZK/{YYYY}/{MM}/{SEQ:4}',
+  }),
+  WZ_KOREKTA: Object.freeze({
+    documentType: 'WZ_KOREKTA',
+    label: 'WZ Korekta',
+    category: 'warehouse',
+    typeCode: 'WZK',
+    defaultPattern: 'WZK/{YYYY}/{MM}/{SEQ:4}',
+  }),
   STOCK_ADJUSTMENT: Object.freeze({
     documentType: 'STOCK_ADJUSTMENT',
     label: 'Korekta magazynowa',

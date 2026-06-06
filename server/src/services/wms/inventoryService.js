@@ -1,71 +1,185 @@
+'use strict';
 
-// inventoryService.js (generated)
+// inventoryService — WMS stock engine (Phase 0).
+// Источник истины: inventory_items.qty_on_hand (остаток) + reservations (резерв, status='active').
+// inventory_items.qty_reserved в MVP НЕ используется как источник истины (только default 0 при создании строки).
+
 const { withTx } = require('../../utils/tx');
-const { withCompany } = require('../../utils/withCompany');
-const { sequelize, InventoryItem, Reservation, StockMove } = require('../../models');
+const AppError = require('../../errors/AppError');
+const { InventoryItem, StockMove, Reservation } = require('../../models');
+const productStockCacheService = require('../pim/productStockCacheService');
 
-// getOnHand: возвращает данные по входным параметрам сервиса.
-module.exports.getOnHand = async (companyId, { warehouseId, productId, variantId, locationId=null, lotId=null }) => {
-  const where = { companyId, warehouseId, productId, variantId };
-  if (locationId) where.locationId = locationId;
-  if (lotId) where.lotId = lotId;
-  const rows = await InventoryItem.findAll({ where });
-  const onHand = rows.reduce((s,r)=> s + (r.qty - r.reservedQty), 0);
-  return { onHand, rows };
-};
+const MOVE_TYPES = new Set(['receipt', 'putaway', 'pick', 'pack', 'ship', 'adjustment', 'transfer']);
 
-// reserve: выполняет вспомогательную бизнес-логику сервиса.
-module.exports.reserve = async (companyId, { warehouseId, productId, variantId, qty, orderRef }, outerTx=null) => {
-  return await withTx(async (t) => {
-    const items = await InventoryItem.findAll({ where:{ companyId, warehouseId, productId, variantId }, transaction:t, lock:t.LOCK.UPDATE });
-    let need = qty; const created = [];
-    for (const inv of items) {
-      const free = inv.qty - inv.reservedQty;
-      if (free <= 0) continue;
-      const take = Math.min(free, need);
-      await inv.update({ reservedQty: inv.reservedQty + take }, { transaction:t });
-      const r = await Reservation.create({ companyId, warehouseId, productId, variantId, inventoryItemId: inv.id, qty: take, orderRef, status:'reserved' }, { transaction:t });
-      created.push(r);
-      need -= take; if (need <= 0) break;
-    }
-    if (need > 0) throw new Error('Not enough stock to reserve');
-    return created;
-  }, outerTx);
-};
+function round4(value) {
+  return Math.round((Number(value) + Number.EPSILON) * 1e4) / 1e4;
+}
 
-// releaseReservation: выполняет вспомогательную бизнес-логику сервиса.
-module.exports.releaseReservation = async (companyId, reservationId, outerTx=null) => {
-  return await withTx(async (t) => {
-    const r = await Reservation.findOne({ where:{ companyId, id: reservationId }, transaction:t });
-    if (!r) return null;
-    const inv = await InventoryItem.findOne({ where:{ companyId, id: r.inventoryItemId }, transaction:t, lock:t.LOCK.UPDATE });
-    if (inv) await inv.update({ reservedQty: Math.max(0, inv.reservedQty - r.qty) }, { transaction:t });
-    await r.update({ status:'released' }, { transaction:t });
-    return r;
-  }, outerTx);
-};
+function toNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
 
-// applyMove: выполняет вспомогательную бизнес-логику сервиса.
-module.exports.applyMove = async (companyId, { warehouseId, productId, variantId, qty, fromLocationId=null, toLocationId=null, lotId=null, reason='move' }, outerTx=null) => {
-  return await withTx(async (t) => {
+function assertPositiveQty(qty) {
+  const n = Number(qty);
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new AppError(400, 'qty must be greater than 0', { code: 'VALIDATION_ERROR' });
+  }
+  return n;
+}
+
+// Ключ строки остатка (склад+локация+продукт+вариант+партия+серийник).
+// Для nullable полей передаём явный null → Sequelize строит `field IS NULL`.
+function buildItemWhere({ companyId, warehouseId, locationId, productId, variantId, lotId, serialId }) {
+  return {
+    companyId,
+    warehouseId,
+    locationId,
+    productId,
+    variantId: variantId ?? null,
+    lotId: lotId ?? null,
+    serialId: serialId ?? null,
+  };
+}
+
+async function findItemForUpdate(key, transaction) {
+  return InventoryItem.findOne({
+    where: buildItemWhere(key),
+    transaction,
+    lock: transaction ? transaction.LOCK.UPDATE : undefined,
+  });
+}
+
+async function findOrCreateItemForUpdate(key, transaction) {
+  const where = buildItemWhere(key);
+  const [row] = await InventoryItem.findOrCreate({
+    where,
+    defaults: { ...where, qtyOnHand: 0, qtyReserved: 0 },
+    transaction,
+    lock: transaction ? transaction.LOCK.UPDATE : undefined,
+  });
+  return row;
+}
+
+// getOnHand: Σ inventory_items.qty_on_hand по companyId + warehouseId + productId + variantId.
+async function getOnHand({ companyId, warehouseId, productId, variantId = null }, { transaction = null } = {}) {
+  const sum = await InventoryItem.sum('qtyOnHand', {
+    where: { companyId, warehouseId, productId, variantId: variantId ?? null },
+    transaction,
+  });
+  return toNumber(sum);
+}
+
+// getReserved: Σ reservations.qty WHERE status='active' (источник истины по резерву в MVP).
+async function getReserved({ companyId, warehouseId, productId, variantId = null }, { transaction = null } = {}) {
+  const sum = await Reservation.sum('qty', {
+    where: { companyId, warehouseId, productId, variantId: variantId ?? null, status: 'active' },
+    transaction,
+  });
+  return toNumber(sum);
+}
+
+// getAvailable = getOnHand − getReserved.
+async function getAvailable(params, { transaction = null } = {}) {
+  const [onHand, reserved] = await Promise.all([
+    getOnHand(params, { transaction }),
+    getReserved(params, { transaction }),
+  ]);
+  return round4(onHand - reserved);
+}
+
+// applyMove: единственная точка мутации остатка. Всё внутри транзакции, под FOR UPDATE.
+async function applyMove(payload = {}, { transaction } = {}) {
+  const {
+    companyId,
+    type,
+    warehouseId,
+    fromLocationId = null,
+    toLocationId = null,
+    productId,
+    variantId = null,
+    lotId = null,
+    serialId = null,
+    qty,
+    refType = null,
+    refId = null,
+    refItemId = null,
+  } = payload;
+
+  if (!companyId) throw new AppError(400, 'companyId is required', { code: 'VALIDATION_ERROR' });
+  if (!warehouseId) throw new AppError(400, 'warehouseId is required', { code: 'VALIDATION_ERROR' });
+  if (!productId) throw new AppError(400, 'productId is required', { code: 'VALIDATION_ERROR' });
+  if (!type || !MOVE_TYPES.has(type)) {
+    throw new AppError(400, `Invalid stock move type "${type}"`, { code: 'VALIDATION_ERROR' });
+  }
+  if (!fromLocationId && !toLocationId) {
+    throw new AppError(400, 'fromLocationId or toLocationId is required', { code: 'VALIDATION_ERROR' });
+  }
+  const moveQty = assertPositiveQty(qty);
+
+  return withTx(async (t) => {
     if (fromLocationId) {
-      const from = await InventoryItem.findOrCreate({
-        where:{ companyId, warehouseId, productId, variantId, locationId: fromLocationId, lotId },
-        defaults:{ companyId, warehouseId, productId, variantId, locationId: fromLocationId, lotId, qty:0, reservedQty:0 },
-        transaction:t, lock:t.LOCK.UPDATE
-      }).then(([r])=>r);
-      if (from.qty - from.reservedQty < qty) throw new Error('Insufficient stock at source');
-      await from.update({ qty: from.qty - qty }, { transaction:t });
-    }
-    if (toLocationId) {
-      const to = await InventoryItem.findOrCreate({
-        where:{ companyId, warehouseId, productId, variantId, locationId: toLocationId, lotId },
-        defaults:{ companyId, warehouseId, productId, variantId, locationId: toLocationId, lotId, qty:0, reservedQty:0 },
-        transaction:t, lock:t.LOCK.UPDATE
-      }).then(([r])=>r);
-      await to.update({ qty: to.qty + qty }, { transaction:t });
-    }
-    return await StockMove.create({ companyId, warehouseId, productId, variantId, qty, fromLocationId, toLocationId, lotId, reason, status:'done' }, { transaction:t });
-  }, outerTx);
-};
+      // Лочим строку-источник, затем считаем доступность в той же транзакции.
+      const from = await findItemForUpdate(
+        { companyId, warehouseId, locationId: fromLocationId, productId, variantId, lotId, serialId },
+        t
+      );
+      const onHandAtLocation = from ? round4(from.qtyOnHand) : 0;
 
+      // Hard-режим: нельзя списать больше, чем доступно (on_hand − reserved) по продукту/варианту на складе.
+      const available = await getAvailable({ companyId, warehouseId, productId, variantId }, { transaction: t });
+      if (available < moveQty) {
+        throw new AppError(409, 'Insufficient available stock to issue', {
+          code: 'INSUFFICIENT_STOCK',
+          details: { companyId, warehouseId, productId, variantId: variantId ?? null, requested: moveQty, available },
+        });
+      }
+      // Физическая проверка: в указанной локации должно лежать достаточно (нельзя уводить локацию в минус).
+      if (!from || onHandAtLocation < moveQty) {
+        throw new AppError(409, 'Insufficient stock at source location', {
+          code: 'INSUFFICIENT_STOCK',
+          details: { companyId, warehouseId, productId, fromLocationId, requested: moveQty, onHandAtLocation },
+        });
+      }
+      await from.update({ qtyOnHand: round4(onHandAtLocation - moveQty) }, { transaction: t });
+    }
+
+    if (toLocationId) {
+      const to = await findOrCreateItemForUpdate(
+        { companyId, warehouseId, locationId: toLocationId, productId, variantId, lotId, serialId },
+        t
+      );
+      await to.update({ qtyOnHand: round4(toNumber(to.qtyOnHand) + moveQty) }, { transaction: t });
+    }
+
+    const move = await StockMove.create(
+      {
+        companyId,
+        type,
+        warehouseId,
+        fromLocationId,
+        toLocationId,
+        productId,
+        variantId: variantId ?? null,
+        lotId: lotId ?? null,
+        serialId: serialId ?? null,
+        qty: moveQty,
+        refType,
+        refId,
+        refItemId,
+      },
+      { transaction: t }
+    );
+
+    await productStockCacheService.recalcProductStock(companyId, productId, { transaction: t });
+
+    return move;
+  }, transaction);
+}
+
+module.exports = {
+  applyMove,
+  getOnHand,
+  getReserved,
+  getAvailable,
+};

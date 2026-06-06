@@ -37,6 +37,28 @@ module.exports = (sequelize, DataTypes) => {
           isIn: [WAREHOUSE_DOCUMENT_TYPE_KEYS],
         },
       },
+      defaultWarehouseId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        field: 'default_warehouse_id',
+      },
+      inventoryCostMethod: {
+        type: DataTypes.STRING(16),
+        allowNull: false,
+        defaultValue: 'FIFO',
+        field: 'inventory_cost_method',
+        validate: {
+          isIn: [['FIFO', 'AVCO']],
+        },
+      },
+      costingInitializedAt: {
+        // Per-company opt-in for FIFO costing on outgoing flows. Set exclusively by
+        // costingOpeningBalanceService.initializeForCompany; outgoing costing is blocked
+        // (COSTING_NOT_INITIALIZED) while null.
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'costing_initialized_at',
+      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,

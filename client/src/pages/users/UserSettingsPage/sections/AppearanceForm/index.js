@@ -18,6 +18,7 @@ const Schema = Yup.object().shape({
   fontScale: Yup.number().min(70).max(160).required(),
   textSize: Yup.mixed().oneOf(["small", "medium", "large"]).required(),
   density: Yup.mixed().oneOf(["compact", "comfortable", "spacious"]).required(),
+  skin: Yup.mixed().oneOf(["v1", "v2", "v3"]).required(),
   backgroundPath: Yup.string().trim().nullable(),
   urlDraft: Yup.string().trim().nullable(),
 });
@@ -54,11 +55,21 @@ export default function AppearanceForm({ initial }) {
     [t]
   );
 
+  const skinOptions = useMemo(
+    () => [
+      { value: "v1", label: t("settings.appearance.skinV1", "Sunset Classic (V1)") },
+      { value: "v2", label: t("settings.appearance.skinV2", "Sunset Modern (V2)") },
+      { value: "v3", label: t("settings.appearance.skinV3", "Sunset Enterprise (V3)") },
+    ],
+    [t]
+  );
+
   const initValues = useMemo(
     () => ({
       fontScale: initial?.fontScale ?? appearance.fontScale ?? 100,
       textSize: initial?.textSize ?? appearance.textSize ?? "medium",
       density: initial?.density ?? appearance.density ?? "comfortable",
+      skin: initial?.skin ?? appearance.skin ?? "v1",
       backgroundPath: initial?.backgroundPath ?? appearance.backgroundPath ?? "",
       urlDraft: "",
     }),
@@ -140,6 +151,7 @@ const handleSubmit = async (values, { setSubmitting }) => {
           fontScale: values.fontScale,
           textSize: values.textSize,
           density: values.density,
+          skin: values.skin,
           backgroundPath: values.backgroundPath || null,
         },
       }).unwrap();
@@ -148,6 +160,7 @@ const handleSubmit = async (values, { setSubmitting }) => {
         fontScale: values.fontScale,
         textSize: values.textSize,
         density: values.density,
+        skin: values.skin,
         backgroundPath: values.backgroundPath || null,
       });
       setSaveOk("Сохранено");
@@ -194,6 +207,23 @@ const handleSubmit = async (values, { setSubmitting }) => {
                   const next = String(value || "comfortable");
                   setFieldValue("density", next);
                   setAppearance({ density: next });
+                }}
+              />
+            </div>
+
+            <div className={page.field}>
+              <label className={page.label}>
+                {t("settings.appearance.skin", "Стиль интерфейса")}
+              </label>
+              <ThemedSelect
+                className={page.input}
+                value={values.skin}
+                options={skinOptions}
+                size="sm"
+                onChange={(value) => {
+                  const next = ["v1", "v2", "v3"].includes(String(value)) ? String(value) : "v1";
+                  setFieldValue("skin", next);
+                  setAppearance({ skin: next });
                 }}
               />
             </div>

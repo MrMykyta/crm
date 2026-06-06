@@ -38,6 +38,23 @@ module.exports = (sequelize, DataTypes) => {
         as: 'reservations',
         foreignKey: 'orderItemId',
       });
+      // A2: line item foundation associations.
+      if (models.TaxCategory) {
+        OrderItem.belongsTo(models.TaxCategory, {
+          as: 'taxCategory',
+          foreignKey: 'taxCategoryId',
+        });
+      }
+      OrderItem.belongsTo(models.OrderItem, {
+        as: 'parentLineItem',
+        foreignKey: 'parentLineItemId',
+      });
+      if (models.InvoiceItem) {
+        OrderItem.hasMany(models.InvoiceItem, {
+          as: 'invoiceItems',
+          foreignKey: 'orderItemId',
+        });
+      }
     }
   }
 
@@ -179,6 +196,35 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: false,
       field: 'is_custom_line',
+    },
+    // A2: shared product_service_line_type ENUM (see migration 20260607120000).
+    lineType: {
+      type: DataTypes.ENUM('product', 'service', 'custom', 'fee', 'discount'),
+      allowNull: false,
+      defaultValue: 'product',
+      field: 'line_type',
+    },
+    affectsInventory: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'affects_inventory',
+    },
+    isStockTrackedSnapshot: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'is_stock_tracked_snapshot',
+    },
+    taxCategoryId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'tax_category_id',
+    },
+    parentLineItemId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'parent_line_item_id',
     },
     notes: {
       type: DataTypes.TEXT,

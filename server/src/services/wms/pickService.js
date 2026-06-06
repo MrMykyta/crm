@@ -23,13 +23,22 @@ module.exports.completeTask = async (companyId, taskId, outerTx=null) => {
     const task = await PickTask.findOne({ where:{ companyId, id: taskId }, include:[{ model: Reservation }], transaction:t });
     if (!task) return null;
     const r = task.reservation;
-    await Inventory.applyMove(companyId, {
-      warehouseId: r.warehouseId, productId: r.productId, variantId: r.variantId,
-      qty: r.qty, fromLocationId: r.locationId, toLocationId: r.pickToLocationId || null, lotId: r.lotId, reason:'pick'
-    }, t);
+    await Inventory.applyMove(
+      {
+        companyId,
+        type: 'pick',
+        warehouseId: r.warehouseId,
+        productId: r.productId,
+        variantId: r.variantId || null,
+        qty: r.qty,
+        fromLocationId: r.locationId,
+        toLocationId: r.pickToLocationId || null,
+        lotId: r.lotId || null,
+      },
+      { transaction: t }
+    );
     await task.update({ status:'done' }, { transaction:t });
     await r.update({ status:'picked' }, { transaction:t });
     return task;
   }, outerTx);
 };
-

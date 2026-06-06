@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ConfirmDialog from '../dialogs/ConfirmDialog';
 import s from './OmsStatusActionsMenu.module.css';
 
@@ -6,8 +8,10 @@ export default function OmsStatusActionsMenu({
   actions = [],
   loadingKey = '',
   error = '',
+  errorLink = null,
   onAction,
 }) {
+  const { t } = useTranslation();
   const [pendingConfirm, setPendingConfirm] = useState(null);
 
   const visibleActions = useMemo(
@@ -26,7 +30,7 @@ export default function OmsStatusActionsMenu({
       return;
     }
 
-    const ok = window.confirm(action.confirm?.text || 'Confirm action?');
+    const ok = window.confirm(action.confirm?.text || t('documents.shell.confirmText'));
     if (ok) onAction?.(action);
   };
 
@@ -54,22 +58,32 @@ export default function OmsStatusActionsMenu({
               onClick={() => handleClick(action)}
               disabled={Boolean(loadingKey)}
             >
-              {isActive ? 'Processing...' : action.label}
+              {isActive ? (action.loadingLabel || t('common.loading')) : action.label}
             </button>
           );
         })}
       </div>
 
-      {error ? <div className={s.error}>{error}</div> : null}
+      {error ? (
+        <div className={s.error}>
+          {error}
+          {errorLink?.to ? (
+            <>
+              {' '}
+              <Link to={errorLink.to}>{errorLink.label || errorLink.to}</Link>
+            </>
+          ) : null}
+        </div>
+      ) : null}
 
       <ConfirmDialog
         open={Boolean(pendingConfirm)}
-        title={pendingConfirm?.confirm?.title || 'Confirm action'}
-        text={pendingConfirm?.confirm?.text || 'Are you sure?'}
+        title={pendingConfirm?.confirm?.title || t('documents.shell.confirmTitle')}
+        text={pendingConfirm?.confirm?.text || t('documents.shell.confirmText')}
         onOk={handleConfirm}
         onCancel={() => setPendingConfirm(null)}
-        okText={pendingConfirm?.confirm?.okText || 'Confirm'}
-        cancelText={pendingConfirm?.confirm?.cancelText || 'Cancel'}
+        okText={pendingConfirm?.confirm?.okText || t('documents.shell.confirmOk')}
+        cancelText={pendingConfirm?.confirm?.cancelText || t('common.cancel')}
       />
     </>
   );

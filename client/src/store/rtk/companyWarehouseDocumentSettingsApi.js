@@ -121,6 +121,7 @@ const normalizeResponse = (response = {}) => {
 
   return {
     ...DEFAULT_SETTINGS,
+    defaultWarehouseId: response?.defaultWarehouseId || null,
     warehouseDefaultDocumentType,
     warehouseDocumentTypes,
   };

@@ -1,8 +1,13 @@
+'use strict';
 
-// adjustment.commands.router.js (generated)
-const r = require('express').Router();
-const c = require('../../controllers/wms/adjustment.controller');
+const router = require('express').Router();
+const controller = require('../../controllers/wms/adjustment.controller');
 
-r.post('/', c.create);
+router.get('/', controller.list);
+router.get('/:id/stock-moves', controller.listStockMoves);
+router.get('/:id/print', controller.getPrint);
+router.get('/:id', controller.getById);
+router.post('/', controller.create);
+router.post('/:id/post', controller.post);
 
-module.exports = r;
+module.exports = router;

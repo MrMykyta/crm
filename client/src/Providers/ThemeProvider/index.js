@@ -27,6 +27,16 @@ const TEXT_SIZE_MULTIPLIERS = {
 
 const DENSITY_VALUES = new Set(["compact", "comfortable", "spacious"]);
 
+const SKIN_VALUES = new Set(["v1", "v2", "v3"]);
+const DEFAULT_SKIN = "v1";
+
+// normalizeSkin: приводит appearance.skin к допустимому v1|v2|v3 (default v1).
+// Неизвестное/пустое значение => v1, чтобы текущий UI всегда оставался рабочим.
+function normalizeSkin(value) {
+  const skin = String(value || "").trim().toLowerCase();
+  return SKIN_VALUES.has(skin) ? skin : DEFAULT_SKIN;
+}
+
 // ThemeProvider: вспомогательная логика модуля.
 export default function ThemeProvider({ children }) {
   // ждём авторизацию из redux
@@ -92,6 +102,12 @@ const onChange = (e) => setSystem(e.matches ? "dark" : "light");
     const normalized = DENSITY_VALUES.has(density) ? density : "comfortable";
     document.documentElement.setAttribute("data-density", normalized);
   }, [appearance?.density]);
+
+  // Skin (V1/V2/V3) — независимая ось от data-theme (light/dark) и data-density.
+  // Меняет только значения --ui-* токенов через :root[data-skin="…"] в theme.css.
+  useEffect(() => {
+    document.documentElement.setAttribute("data-skin", normalizeSkin(appearance?.skin));
+  }, [appearance?.skin]);
 
   const companyId = companyIdRedux;
 

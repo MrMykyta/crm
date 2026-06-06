@@ -44,6 +44,12 @@
     "createNew": "Create new"
   },
   "common": {
+    "comingSoon": {
+      "title": "Coming soon",
+      "badge": "Coming soon",
+      "description": "This module is planned but has not been delivered yet.",
+      "backToDashboard": "Back to dashboard"
+    },
     "email": "Email",
     "password": "Password",
     "required": "Required",
@@ -61,16 +67,96 @@
     "error": "Error",
     "success": "Success",
     "loading": "Loading…",
+    "noPermission": "No permission",
     "sending": "Sending…",
     "save": "Save",
     "edit": "Edit",
     "reset": "Reset",
     "none": "—",
     "cancel": "Cancel",
+    "new": "New",
     "delete": "Delete",
     "primary": "Primary",
     "saved": "Saved",
-    "unsaved": "Unsaved changes"
+    "unsaved": "Unsaved changes",
+    "yes": "Yes",
+    "no": "No",
+    "all": "All",
+    "clear": "Clear",
+    "refresh": "Refresh"
+  },
+  "documents": {
+    "types": {
+      "offer": "Offer",
+      "order": "Order",
+      "invoice": "Invoice"
+    },
+    "shell": {
+      "unknownNumber": "No number",
+      "breadcrumbsAria": "Breadcrumb",
+      "tabsAria": "Document sections",
+      "confirmTitle": "Confirm action",
+      "confirmText": "Are you sure?",
+      "confirmOk": "Confirm"
+    },
+    "relations": {
+      "document": "Document",
+      "empty": "No related documents"
+    },
+    "timeline": {
+      "empty": "No history events",
+      "systemActor": "System",
+      "created": "Created",
+      "updated": "Updated",
+      "confirmed": "Confirmed",
+      "issued": "Issued"
+    },
+    "editor": {
+      "header": "Header",
+      "summaryTitle": "Totals preview",
+      "selectCounterparty": "Select counterparty",
+      "noContact": "No contact",
+      "noOwner": "No owner",
+      "selectCurrency": "Select currency",
+      "fieldTitle": "Title",
+      "fieldSubject": "Subject",
+      "loadingHint": "Preparing editor.",
+      "noPermission": "No permission",
+      "noPermissionHint": "You do not have enough permissions to access this editor.",
+      "loadFailed": "Failed to load document",
+      "notFound": "Document not found",
+      "notFoundHint": "No data available in current company scope.",
+      "saveFailed": "Failed to save document",
+      "validation": {
+        "counterpartyRequired": "Counterparty is required",
+        "itemNameRequired": "Item name is required",
+        "qtyPositive": "Qty must be greater than 0",
+        "priceNonNegative": "Price must be non-negative"
+      }
+    },
+    "lines": {
+      "title": "Items",
+      "addCustom": "Add custom line",
+      "addProduct": "Add product",
+      "name": "Name",
+      "type": "Type",
+      "qty": "Qty",
+      "priceNet": "Price net",
+      "taxRate": "Tax rate %",
+      "discountType": "Discount type",
+      "discountValue": "Discount value",
+      "remove": "Remove",
+      "affectsStock": "Affects stock",
+      "available": "Available",
+      "productNamePlaceholder": "Product name",
+      "customNamePlaceholder": "Custom line name",
+      "dragToReorder": "Drag to reorder",
+      "productPickerTitle": "Add product"
+    },
+    "locked": {
+      "label": "Locked",
+      "text": "This document is locked. Further changes require a correction or a follow-up document."
+    }
   },
   "countries": {
     "PL": "PL — Poland",
@@ -115,9 +201,20 @@
     "services": "Services",
     "wms": "WMS",
     "warehouse": "Warehouse",
+    "stockBalances": "Stock balances",
+    "wmsDocuments": "Warehouse documents",
     "wmsDocs": "Warehouse docs",
+    "wmsReceipts": "PZ receipts",
+    "transfers": "Transfers",
+    "wmsShipments": "WZ shipments",
+    "wmsAdjustments": "RW/PW adjustments",
+    "wmsCycleCounts": "Inventory counts",
     "settings": "Settings",
-    "userSettings": "User settings"
+    "userSettings": "User settings",
+    "stockValuation": "Stock value",
+    "stockTurnover": "Stock turnover",
+    "stockAsOf": "Stock as of date",
+    "inventoryLedger": "Inventory ledger"
   },
   "oms": {
     "stub": "This page is planned for the next stage.",
@@ -145,6 +242,511 @@
       "counterparty": "Counterparty",
       "contact": "Contact",
       "empty": "No related entities"
+    },
+    "actions": {
+      "print": "Print",
+      "downloadPdf": "Download PDF"
+    },
+    "actionLabels": {
+      "send": "Send",
+      "accept": "Accept",
+      "reject": "Reject",
+      "cancel": "Cancel",
+      "expire": "Expire",
+      "duplicate": "Duplicate",
+      "confirm": "Confirm",
+      "ship": "Ship",
+      "complete": "Complete",
+      "return": "Return",
+      "convertToOrder": "Convert to order",
+      "convertToInvoice": "Convert to invoice",
+      "openSettings": "Open settings",
+      "issueInvoice": "Issue invoice"
+    },
+    "confirm": {
+      "offerRejectTitle": "Reject offer",
+      "offerRejectText": "Reject this offer?",
+      "offerRejectOk": "Reject",
+      "offerCancelTitle": "Cancel offer",
+      "offerCancelText": "Cancel this offer?",
+      "offerCancelOk": "Cancel offer",
+      "orderCancelTitle": "Cancel order",
+      "orderCancelText": "Cancel this order?",
+      "orderCancelOk": "Cancel order",
+      "orderReturnTitle": "Return order",
+      "orderReturnText": "Mark this order as returned?",
+      "orderReturnOk": "Return order"
+    },
+    "tabs": {
+      "items": "Items",
+      "summary": "Summary",
+      "relations": "Relations",
+      "history": "History",
+      "actions": "Actions"
+    },
+    "detailSections": {
+      "counterparty": "Counterparty",
+      "dates": "Dates",
+      "termsNotes": "Terms & notes"
+    },
+    "detailLabels": {
+      "number": "Number",
+      "status": "Status",
+      "paymentStatus": "Payment status",
+      "fulfillmentStatus": "Fulfillment status",
+      "counterparty": "Counterparty",
+      "contact": "Contact",
+      "owner": "Owner",
+      "deal": "Deal",
+      "placedAt": "Placed at",
+      "confirmedAt": "Confirmed at",
+      "createdAt": "Created at",
+      "updatedAt": "Updated at",
+      "paymentTerms": "Payment terms",
+      "deliveryTerms": "Delivery terms",
+      "leadTime": "Lead time",
+      "notes": "Notes",
+      "issueDate": "Issue date",
+      "validUntil": "Valid until",
+      "dueDate": "Due date"
+    },
+    "itemsTable": {
+      "name": "Name",
+      "qty": "Qty",
+      "priceNet": "Price net",
+      "vat": "VAT %",
+      "lineGross": "Line gross",
+      "empty": "No items",
+      "lineType": "Type"
+    },
+    "summaryLabels": {
+      "net": "Net",
+      "vat": "VAT",
+      "gross": "Gross",
+      "currency": "Currency"
+    },
+    "errors": {
+      "actionFailed": "Failed to run action",
+      "orderLoadFailed": "Failed to load order",
+      "offerLoadFailed": "Failed to load offer",
+      "orderNotFound": "Order not found",
+      "offerNotFound": "Offer not found",
+      "costingNotInitialized": "FIFO costing is not initialized for this company. Go to Company Settings → Warehouse/WMS → Wycena.",
+      "invoiceLoadFailed": "Failed to load invoice",
+      "invoiceNotFound": "Invoice not found"
+    },
+    "print": {
+      "loading": "Preparing printable version",
+      "notFound": "Entity not found",
+      "backToDetail": "Back to details"
+    },
+    "invoices": {
+      "title": "Invoices",
+      "search": "Search by number or counterparty...",
+      "open": "Open invoice",
+      "columns": {
+        "number": "Number",
+        "counterparty": "Counterparty",
+        "status": "Status",
+        "issueDate": "Issue date",
+        "dueDate": "Due date",
+        "totalNet": "Total net",
+        "totalGross": "Total gross"
+      }
+    },
+    "lineTypes": {
+      "product": "Product",
+      "service": "Service",
+      "custom": "Custom"
+    }
+  },
+  "wms": {
+    "backToList": "Back to list",
+    "relations": {
+      "originalDocument": "Original document",
+      "correctionDocument": "Correction document"
+    },
+    "print": {
+      "print": "Print",
+      "loading": "Preparing print view...",
+      "notFound": "Document not found",
+      "backToDetail": "Back to detail",
+      "date": "Date",
+      "status": "Status",
+      "warehouse": "Warehouse",
+      "document": "Document",
+      "location": "Location",
+      "lotSerial": "Lot / serial",
+      "plannedQty": "Planned",
+      "processedQty": "Processed",
+      "issuedBy": "Issued by",
+      "receivedBy": "Received by"
+    },
+    "tabs": {
+      "items": "Items",
+      "history": "History",
+      "summary": "Summary"
+    },
+    "items": {
+      "empty": "No items"
+    },
+    "summary": {
+      "items": "Items",
+      "qtyTotal": "Total qty",
+      "qtyProcessed": "Processed qty",
+      "order": "Order"
+    },
+    "columns": {
+      "product": "Product",
+      "variant": "Variant",
+      "qty": "Qty",
+      "progress": "Processed"
+    },
+    "history": {
+      "empty": "No stock moves",
+      "columns": {
+        "date": "Date",
+        "type": "Type",
+        "product": "Product",
+        "qty": "Qty",
+        "from": "From",
+        "to": "To",
+        "refItem": "Ref item"
+      }
+    },
+    "receipts": {
+      "title": "PZ receipts",
+      "detailTitle": "Receipt details",
+      "search": "Search by number...",
+      "empty": "No receipts",
+      "columns": {
+        "number": "Number",
+        "status": "Status",
+        "warehouse": "Warehouse",
+        "createdAt": "Created"
+      }
+    },
+    "transfers": {
+      "title": "MM transfers",
+      "detailTitle": "Transfer details",
+      "search": "Search by number...",
+      "empty": "No transfer documents",
+      "columns": {
+        "number": "Number",
+        "status": "Status",
+        "fromWarehouse": "From warehouse",
+        "toWarehouse": "To warehouse",
+        "createdAt": "Created"
+      }
+    },
+    "shipments": {
+      "title": "WZ shipments",
+      "detailTitle": "Shipment details",
+      "search": "Search by number...",
+      "empty": "No shipment documents",
+      "columns": {
+        "number": "Number",
+        "status": "Status",
+        "warehouse": "Warehouse",
+        "order": "Order",
+        "createdAt": "Created"
+      }
+    },
+    "adjustments": {
+      "title": "RW/PW adjustments",
+      "detailTitle": "Adjustment details",
+      "search": "Search by number...",
+      "empty": "No adjustment documents",
+      "actions": {
+        "post": "Post"
+      },
+      "filters": {
+        "documentType": "Type"
+      },
+      "types": {
+        "PW": "PW",
+        "RW": "RW"
+      },
+      "columns": {
+        "number": "Number",
+        "documentType": "Type",
+        "status": "Status",
+        "warehouse": "Warehouse",
+        "date": "Date",
+        "itemsCount": "Items",
+        "createdAt": "Created",
+        "postedAt": "Posted"
+      }
+    },
+    "stockBalances": {
+      "title": "Stock balances",
+      "search": "Search by product name or SKU...",
+      "onlyPositive": "Only positive",
+      "empty": "No stock balances",
+      "openProduct": "Open product",
+      "columns": {
+        "warehouse": "Warehouse",
+        "product": "Product",
+        "sku": "SKU",
+        "variant": "Variant",
+        "onHand": "On hand",
+        "reserved": "Reserved",
+        "available": "Available"
+      }
+    },
+    "cycleCounts": {
+      "title": "Inventory counts",
+      "createTitle": "New inventory count sheet",
+      "createSubtle": "Create sheet first, then add counted lines in detail view",
+      "detailTitle": "Inventory count sheet",
+      "detailSubtle": "Warehouse",
+      "empty": "No inventory count sheets",
+      "emptyDifferences": "No counted lines yet",
+      "selectWarehouse": "Select warehouse",
+      "selectLocation": "Select location",
+      "selectProduct": "Select product",
+      "noProduct": "No product selected",
+      "reconciledNoNew": "Sheet is already reconciled. No new adjustments created in this session.",
+      "notReconciledYet": "Reconcile has not been run yet.",
+      "actions": {
+        "new": "New count sheet",
+        "create": "Create",
+        "addLine": "Add line",
+        "addItems": "Add counted items",
+        "reconcile": "Reconcile",
+        "openAdjustment": "Open adjustment",
+        "selectProduct": "Select product",
+        "changeProduct": "Change product"
+      },
+      "sections": {
+        "header": "Header",
+        "differenceSummary": "Difference summary",
+        "addItems": "Add counted items",
+        "reconcileResult": "Reconcile result"
+      },
+      "fields": {
+        "warehouse": "Warehouse"
+      },
+      "columns": {
+        "sheet": "Sheet",
+        "status": "Status",
+        "warehouse": "Warehouse",
+        "itemsCount": "Counted lines",
+        "createdAt": "Created",
+        "location": "Location",
+        "product": "Product",
+        "variant": "Variant",
+        "lot": "Lot",
+        "serial": "Serial",
+        "counted": "Counted",
+        "system": "System",
+        "diff": "Difference",
+        "movement": "Planned movement"
+      },
+      "summary": {
+        "pw": "PW total",
+        "rw": "RW total",
+        "equal": "Equal lines"
+      },
+      "placeholders": {
+        "variant": "Variant ID",
+        "lot": "Lot ID",
+        "serial": "Serial ID"
+      },
+      "validation": {
+        "warehouseRequired": "Warehouse is required",
+        "locationRequired": "Location is required",
+        "productRequired": "Product is required",
+        "qtyNonNegative": "Qty counted must be >= 0"
+      },
+      "errors": {
+        "create": "Failed to create cycle count",
+        "addItems": "Failed to add counted items",
+        "reconcile": "Failed to reconcile sheet"
+      }
+    },
+    "stockValuation": {
+      "title": "Stock value",
+      "subtitle": "FIFO valuation from remaining cost layers.",
+      "empty": "No valuation rows.",
+      "error": "Failed to load stock valuation report.",
+      "asOfComingSoon": "Coming soon",
+      "filters": {
+        "warehouse": "Warehouse",
+        "productSearch": "Product search",
+        "productSearchPlaceholder": "Search product name or SKU...",
+        "product": "Product",
+        "currency": "Currency",
+        "groupBy": "Group by",
+        "asOf": "As of date"
+      },
+      "groupBy": {
+        "product": "Product",
+        "warehouse": "Warehouse",
+        "productWarehouse": "Product + warehouse"
+      },
+      "totals": {
+        "qtyRemaining": "Qty remaining",
+        "stockValue": "Stock value",
+        "currency": "Currency"
+      },
+      "columns": {
+        "warehouse": "Warehouse",
+        "product": "Product",
+        "sku": "SKU",
+        "variant": "Variant",
+        "qtyRemaining": "Qty remaining",
+        "stockValue": "Stock value",
+        "currency": "Currency"
+      }
+    },
+    "stockTurnover": {
+      "title": "Stock turnover",
+      "subtitle": "Stock movement turnover from FIFO-costed stock moves.",
+      "empty": "No turnover rows for this period.",
+      "error": "Failed to load stock turnover report.",
+      "validation": {
+        "dateRangeRequired": "Date from and date to are required."
+      },
+      "filters": {
+        "dateFrom": "Date from",
+        "dateTo": "Date to",
+        "warehouse": "Warehouse",
+        "productSearch": "Product search",
+        "productSearchPlaceholder": "Search product name or SKU...",
+        "product": "Product",
+        "currency": "Currency",
+        "groupBy": "Group by"
+      },
+      "groupBy": {
+        "product": "Product",
+        "warehouse": "Warehouse",
+        "productWarehouse": "Product + warehouse",
+        "documentType": "Document type"
+      },
+      "totals": {
+        "qtyIn": "Qty in",
+        "qtyOut": "Qty out",
+        "valueIn": "Value in",
+        "valueOut": "Value out",
+        "netQty": "Net qty",
+        "netValue": "Net value",
+        "currency": "Currency"
+      },
+      "columns": {
+        "warehouse": "Warehouse",
+        "product": "Product",
+        "sku": "SKU",
+        "variant": "Variant",
+        "documentType": "Document type",
+        "qtyIn": "Qty in",
+        "qtyOut": "Qty out",
+        "valueIn": "Value in",
+        "valueOut": "Value out",
+        "netQty": "Net qty",
+        "netValue": "Net value",
+        "currency": "Currency"
+      }
+    },
+    "stockAsOf": {
+      "title": "Stock as of date",
+      "subtitle": "Historical stock quantity and FIFO value reconstructed from stock moves.",
+      "empty": "No stock rows for selected date.",
+      "error": "Failed to load stock as-of report.",
+      "validation": {
+        "asOfRequired": "As-of date is required."
+      },
+      "filters": {
+        "asOf": "As of",
+        "warehouse": "Warehouse",
+        "productSearch": "Product search",
+        "productSearchPlaceholder": "Search product name or SKU...",
+        "product": "Product",
+        "currency": "Currency",
+        "groupBy": "Group by"
+      },
+      "groupBy": {
+        "product": "Product",
+        "warehouse": "Warehouse",
+        "productWarehouse": "Product + warehouse"
+      },
+      "totals": {
+        "qty": "Qty",
+        "stockValue": "Stock value",
+        "currency": "Currency"
+      },
+      "columns": {
+        "warehouse": "Warehouse",
+        "product": "Product",
+        "sku": "SKU",
+        "variant": "Variant",
+        "qty": "Qty",
+        "stockValue": "Stock value",
+        "currency": "Currency"
+      }
+    },
+    "inventoryLedger": {
+      "title": "Inventory ledger",
+      "subtitle": "Product inventory ledger with running quantity and value balance.",
+      "empty": "No ledger rows for selected filters.",
+      "error": "Failed to load inventory ledger.",
+      "validation": {
+        "productRequired": "Product is required.",
+        "dateRangeRequired": "Date from and date to are required."
+      },
+      "filters": {
+        "productSearch": "Product search",
+        "productSearchPlaceholder": "Search product name or SKU...",
+        "product": "Product",
+        "selectProduct": "Select product",
+        "variant": "Variant",
+        "dateFrom": "Date from",
+        "dateTo": "Date to",
+        "warehouse": "Warehouse",
+        "currency": "Currency"
+      },
+      "totals": {
+        "qtyIn": "Qty in",
+        "qtyOut": "Qty out",
+        "valueIn": "Value in",
+        "valueOut": "Value out",
+        "balanceAfter": "Balance",
+        "valueBalance": "Value balance",
+        "currency": "Currency"
+      },
+      "columns": {
+        "date": "Date",
+        "documentType": "Document type",
+        "documentNumber": "Document number",
+        "warehouse": "Warehouse",
+        "location": "Location",
+        "qtyIn": "Qty in",
+        "qtyOut": "Qty out",
+        "balanceAfter": "Balance",
+        "unitCost": "Unit cost",
+        "valueIn": "Value in",
+        "valueOut": "Value out",
+        "valueBalance": "Value balance",
+        "currency": "Currency"
+      }
+    },
+    "corrections": {
+      "create": "Create correction",
+      "title": "Create correction",
+      "submit": "Create correction",
+      "fullLineHint": "MVP supports full-line correction only. Quantity is read-only and equals the original processed quantity.",
+      "reason": "Reason",
+      "reasonPlaceholder": "Optional reason",
+      "noLines": "No lines available for correction",
+      "select": "Select",
+      "selectLine": "Select line",
+      "errors": {
+        "LAYER_PARTIALLY_CONSUMED": "This receipt layer was already consumed. Reverse downstream movements first.",
+        "DOCUMENT_ALREADY_CORRECTED": "This document already has a correction.",
+        "CORRECTION_OF_CORRECTION_NOT_ALLOWED": "Correction of a correction document is not allowed.",
+        "PARTIAL_PZ_CORRECTION_NOT_SUPPORTED": "Partial PZ correction is not supported in MVP.",
+        "PARTIAL_WZ_CORRECTION_NOT_SUPPORTED": "Partial WZ correction is not supported in MVP."
+      }
     }
   },
   "statuses": {
@@ -160,7 +762,16 @@
     "viewed": "Viewed",
     "accepted": "Accepted",
     "rejected": "Rejected",
-    "expired": "Expired"
+    "expired": "Expired",
+    "received": "Received",
+    "putaway": "Put away",
+    "in_transit": "In transit",
+    "packing": "Packing",
+    "posted": "Posted",
+    "planned": "Planned",
+    "counting": "Counting",
+    "reconciled": "Reconciled",
+    "issued": "Issued"
   },
   "widgets": {
     "kpi": "KPI",
@@ -242,7 +853,11 @@
       "textSizeLarge": "Large",
       "densityCompact": "Compact",
       "densityComfortable": "Comfortable",
-      "densitySpacious": "Spacious"
+      "densitySpacious": "Spacious",
+      "skin": "Interface style",
+      "skinV1": "Sunset Classic (V1)",
+      "skinV2": "Sunset Modern (V2)",
+      "skinV3": "Sunset Enterprise (V3)"
     },
     "preferences": {
       "language": "Language",
@@ -1115,6 +1730,81 @@
           "saveFailed": "Failed to save warehouse document settings."
         }
       }
+    },
+    "module": {
+      "crm": "CRM",
+      "oms": "OMS",
+      "pim": "PIM",
+      "automation": "Automation",
+      "integrations": "Integrations",
+      "catalog": "Products / Services",
+      "warehouse": "Warehouse",
+      "other": "Other"
+    },
+    "wms": {
+      "title": "Warehouse / WMS",
+      "subtitle": "Configure warehouses, locations and default WMS behavior.",
+      "defaultWarehouse": "Default warehouse",
+      "tabs": {
+        "overview": "Overview",
+        "warehouses": "Warehouses",
+        "locations": "Locations",
+        "settings": "Settings"
+      },
+      "overview": {
+        "title": "Warehouse / WMS",
+        "description": "Warehouse setup for operational WMS documents, stock balances and inventory counts."
+      },
+      "counters": {
+        "warehouses": "Warehouses",
+        "locations": "Locations",
+        "activeWarehouses": "Active warehouses"
+      },
+      "actions": {
+        "configure": "Configure",
+        "addWarehouse": "Add warehouse",
+        "editWarehouse": "Edit warehouse",
+        "setDefault": "Set default",
+        "activate": "Activate",
+        "deactivate": "Deactivate",
+        "addLocation": "Add location",
+        "editLocation": "Edit location"
+      },
+      "fields": {
+        "code": "Code",
+        "name": "Name",
+        "isActive": "Active",
+        "isDefault": "Default",
+        "warehouse": "Warehouse",
+        "type": "Type"
+      },
+      "placeholders": {
+        "selectWarehouse": "Select warehouse"
+      },
+      "settings": {
+        "negativeStock": "Negative stock policy",
+        "hardMode": "Hard mode",
+        "costMethod": "Cost method",
+        "costComingSoon": "FIFO/AVCO coming soon",
+        "numberingLink": "PZ/WZ/MM/RW/PW numbering settings"
+      },
+      "empty": {
+        "warehouses": "No warehouses.",
+        "locations": "No locations."
+      },
+      "messages": {
+        "saved": "Saved.",
+        "defaultSaved": "Default warehouse updated."
+      },
+      "errors": {
+        "saveWarehouse": "Failed to save warehouse.",
+        "saveLocation": "Failed to save location.",
+        "defaultWarehouse": "Failed to update default warehouse."
+      },
+      "validation": {
+        "warehouseRequired": "Code and name are required.",
+        "locationRequired": "Warehouse, code and type are required."
+      }
     }
   },
   "htmlEditor": {
@@ -1142,6 +1832,94 @@
       "clearTextColor": "Clear text color",
       "highlightColor": "Highlight color",
       "clearHighlight": "Clear highlight color"
+    }
+  },
+  "wmsDocsList": {
+    "subtitle": "Unified view across PZ / WZ / MM / RW / PW. Filter by document type from the Workspace Views popover.",
+    "searchPlaceholder": "Search by number…",
+    "empty": "No documents in this view",
+    "paginationCount": "{{from}}–{{to}} of {{total}}",
+    "relation": {
+      "correction": "Correction"
+    },
+    "cols": {
+      "type": "Type",
+      "number": "Number",
+      "date": "Date",
+      "status": "Status",
+      "warehouse": "Warehouse",
+      "itemsCount": "Lines",
+      "totalQty": "Qty"
+    }
+  },
+  "wmsViews": {
+    "popoverTitle": "Warehouse documents",
+    "placeholderDescription": "This view is part of Workspace Views. The unified document list will appear once the cross-type backend endpoint is wired.",
+    "all": "All documents",
+    "pz": "PZ — Receipts",
+    "wz": "WZ — Shipments",
+    "mm": "MM — Transfers",
+    "rw": "RW — Issues",
+    "pw": "PW — Internal receipts",
+    "pzk": "PZK — Receipt corrections",
+    "wzk": "WZK — Shipment corrections",
+    "inventory": "Inventory counts",
+    "returns": "Returns"
+  },
+  "workspaceViews": {
+    "manage": "Manage views",
+    "manageComingSoon": "Manage views — coming soon",
+    "create": "Create view",
+    "createNewView": "Create new view",
+    "saveAsView": "Save as view",
+    "comingSoon": "Coming soon",
+    "editor": {
+      "title": "Create view",
+      "name": "View name",
+      "namePlaceholder": "e.g. WZ Łódź posted",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional notes for yourself",
+      "filterPreview": "Filter preview",
+      "noFilters": "No filters — saves an unfiltered list view.",
+      "cancel": "Cancel",
+      "create": "Create",
+      "createdToast": "Personal view created",
+      "errorLimitExceeded": "You have reached the personal-view limit (50). Delete or hide an existing view first.",
+      "type": "Type",
+      "status": "Status",
+      "warehouse": "Warehouse",
+      "search": "Search",
+      "dateFrom": "Date from",
+      "dateTo": "Date to"
+    },
+    "searchPlaceholder": "Search views…",
+    "noMatch": "No views match",
+    "noViews": "No views",
+    "allViews": "All views",
+    "empty": "No views available",
+    "moreCount": "+{{count}} more",
+    "system": "System",
+    "personal": "Personal",
+    "default": "Default",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "hide": "Hide",
+    "show": "Show",
+    "rename": "Rename",
+    "delete": "Delete",
+    "confirmDelete": "Delete this view? This cannot be undone.",
+    "wms": {
+      "documents": {
+        "all": "All documents",
+        "pz": "PZ — Receipts",
+        "wz": "WZ — Shipments",
+        "pzk": "PZK — Receipt corrections",
+        "wzk": "WZK — Shipment corrections",
+        "mm": "MM — Transfers",
+        "rw": "RW — Issues",
+        "pw": "PW — Internal receipts",
+        "postedToday": "Posted today"
+      }
     }
   }
 }

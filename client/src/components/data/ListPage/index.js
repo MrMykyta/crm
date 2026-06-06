@@ -27,6 +27,15 @@ import { useListProductsQuery } from '../../../store/rtk/productsApi';
 import { useListDocumentsQuery } from '../../../store/rtk/documentsApi';
 import { useListOrdersQuery } from '../../../store/rtk/ordersApi';
 import { useListOffersQuery } from '../../../store/rtk/offersApi';
+import { useListInvoicesQuery } from '../../../store/rtk/invoicesApi';
+import { useGetStockBalancesQuery } from '../../../store/rtk/stockBalancesApi';
+import {
+  useListCycleCountsQuery,
+  useListAdjustmentsQuery,
+  useListReceiptsQuery,
+  useListShipmentsQuery,
+  useListTransfersQuery,
+} from '../../../store/rtk/wmsDocumentsApi';
 
 const REGISTRY = {
   counterparties: {
@@ -133,6 +142,97 @@ adapt: (data) => {
   },
   offers: {
     useQuery: useListOffersQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  invoices: {
+    useQuery: useListInvoicesQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  stockBalances: {
+    useQuery: useGetStockBalancesQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  wmsReceipts: {
+    useQuery: useListReceiptsQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  wmsTransfers: {
+    useQuery: useListTransfersQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  wmsShipments: {
+    useQuery: useListShipmentsQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  wmsAdjustments: {
+    useQuery: useListAdjustmentsQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  wmsCycleCounts: {
+    useQuery: useListCycleCountsQuery,
         // adapt: вспомогательная логика компонента.
 adapt: (data) => {
       const items = Array.isArray(data) ? data : (data?.items || []);

@@ -1,6 +1,7 @@
 
 // inventory.controller.js (generated)
 const svc = require('../../services/wms/inventoryService');
+const stockBalanceService = require('../../services/wms/stockBalanceService');
 
 // Возвращает фактический доступный остаток по складу/товару.
 module.exports.onHand = async (req, res, next) => {
@@ -36,3 +37,13 @@ module.exports.release = async (req, res, next) => {
   }
 };
 
+// Возвращает агрегированные остатки по складу/товару/варианту.
+module.exports.stockBalances = async (req, res, next) => {
+  try {
+    const companyId = req.companyId || req.user?.companyId;
+    const data = await stockBalanceService.listStockBalances(companyId, req.query);
+    res.status(200).send({ data });
+  } catch (e) {
+    next(e);
+  }
+};

@@ -11,10 +11,9 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
-      Adjustment.hasMany(models.AdjustmentItem,{ 
-        foreignKey:'adjustment_id', 
-        as:'items' 
+      Adjustment.hasMany(models.AdjustmentItem, {
+        foreignKey: { name: 'adjustmentId', field: 'adjustment_id' },
+        as: 'items',
       });
     }
   }
@@ -35,8 +34,27 @@ module.exports = (sequelize, DataTypes) => {
       allowNull:false,  // This field is required
       field:'warehouse_id' 
     },
+    number: {
+      type: DataTypes.STRING(64),
+      allowNull: false,
+    },
+    documentType: {
+      type: DataTypes.ENUM('RW', 'PW'),
+      allowNull: false,
+      field: 'document_type',
+    },
     reason:{ 
       type:DataTypes.STRING(160) 
+    },
+    status: {
+      type: DataTypes.ENUM('draft', 'posted'),
+      allowNull: false,
+      defaultValue: 'draft',
+    },
+    postedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'posted_at',
     },
   }, {
     sequelize,

@@ -17,6 +17,8 @@ export function bootstrapThemeFromLocalStorage() {
     if (ap) {
       if (ap.density) root.setAttribute('data-density', ap.density);
       if (ap.textSize) root.setAttribute('data-text-size', ap.textSize);
+      const skin = String(ap.skin || '').trim().toLowerCase();
+      root.setAttribute('data-skin', ['v1', 'v2', 'v3'].includes(skin) ? skin : 'v1');
       if (ap.radius != null) {
         root.style.setProperty('--radius-md', `${ap.radius}px`);
         root.style.setProperty('--radius-lg', `${(ap.radius ?? 12)+4}px`);

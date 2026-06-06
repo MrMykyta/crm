@@ -30,6 +30,7 @@ rootRouter.use("/notes", auth, companyIdGuard, require("./crm/noteRouter"));
 rootRouter.use("/documents", auth, companyIdGuard, require("./crm/documentRouter"));
 rootRouter.use("/offers", auth, companyIdGuard, require("./oms/offerRouter"));
 rootRouter.use("/orders", auth, companyIdGuard, require("./oms/orderRouter"));
+rootRouter.use("/invoices", auth, companyIdGuard, require("./oms/invoiceRouter"));
 rootRouter.use(
   "/document-numbering-settings",
   auth,
@@ -235,5 +236,35 @@ rootRouter.use(
   companyIdGuard,
   require("./wms/adjustment.commands.router")
 ); // +/- adjust
+rootRouter.use(
+  "/wms/cycle-counts",
+  auth,
+  companyIdGuard,
+  require("./wms/cycleCount.router")
+); // inventory count + reconcile
+rootRouter.use(
+  "/wms/costing",
+  auth,
+  companyIdGuard,
+  require("./wms/costing.router")
+); // FIFO opening-balance initialization
+rootRouter.use(
+  "/wms/reports",
+  auth,
+  companyIdGuard,
+  require("./wms/reports.router")
+); // WMS reporting endpoints
+rootRouter.use(
+  "/wms/documents",
+  auth,
+  companyIdGuard,
+  require("./wms/warehouseDocuments.router")
+); // unified PZ/WZ/MM/RW/PW list (WMS-DOCS-2)
+rootRouter.use(
+  "/workspace-views",
+  auth,
+  companyIdGuard,
+  require("./workspaceViews.router")
+); // Workspace Views — system + personal saved views (Phase 1)
 
 module.exports = rootRouter;

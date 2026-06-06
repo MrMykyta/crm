@@ -21,6 +21,9 @@ const {
   Invoice,
   Payment,
   Shipment,
+  ShipmentItem,
+  InventoryItem,
+  StockMove,
 } = require('../../models');
 const eventService = require('../system/eventService');
 const invoiceService = require('./invoiceService');
@@ -33,6 +36,12 @@ const {
   resolveOrderAnnotation,
   shouldReserveProducts,
 } = require('../crm/companyOrderSettingsService');
+const reservationService = require('../wms/reservationService');
+const shipmentService = require('../wms/shipmentService');
+const {
+  normalizeLineItemInput,
+  isInventoryLine,
+} = require('./lineItemNormalizer');
 
 const ORDER_STATUSES = Object.freeze([
   'draft',
@@ -323,6 +332,11 @@ function mapOrderItemDto(item) {
     lineVat: asNumber(item.lineVat, 0),
     lineTotalGross: asNumber(item.lineTotalGross, 0),
     isCustomLine: Boolean(item.isCustomLine),
+    lineType: item.lineType || null,
+    affectsInventory: Boolean(item.affectsInventory),
+    isStockTrackedSnapshot: Boolean(item.isStockTrackedSnapshot),
+    taxCategoryId: item.taxCategoryId || null,
+    parentLineItemId: item.parentLineItemId || null,
     notes: item.notes || null,
     product: item.product
       ? {
@@ -641,14 +655,15 @@ function calculateOrderTotals(items = []) {
   };
 }
 
-function normalizeOrderItemInput({ input, index, sourceProduct }) {
-  const snapshots = buildOrderItemSnapshots({ input, sourceProduct });
-  const productId = asOptionalText(input.productId);
-  const isCustomLine = input.isCustomLine !== undefined
-    ? Boolean(input.isCustomLine)
-    : !productId;
+async function normalizeOrderItemInput({ input, index, companyId, transaction }) {
+  const normalized = await normalizeLineItemInput(input, {
+    companyId,
+    transaction,
+    mode: 'order',
+  });
+  const productId = normalized.productId;
 
-  if (!productId && !snapshots.nameSnapshot) {
+  if (!productId && !normalized.nameSnapshot) {
     throw new AppError(400, `items[${index}].nameSnapshot is required for custom line`, {
       code: 'VALIDATION_ERROR',
     });
@@ -661,7 +676,7 @@ function normalizeOrderItemInput({ input, index, sourceProduct }) {
   const calculated = calculateOrderItemTotals({
     quantity,
     unitPriceNet,
-    taxRate: snapshots.vatRateSnapshot,
+    taxRate: normalized.vatRateSnapshot,
     discountType,
     discountValue,
   });
@@ -672,11 +687,22 @@ function normalizeOrderItemInput({ input, index, sourceProduct }) {
   return {
     sortOrder: sortOrder < 0 ? index : sortOrder,
     productId: productId || null,
-    variantId: asOptionalText(input.variantId) || null,
-    unitId: asOptionalText(input.unitId || input.uomId) || sourceProduct?.uom?.id || null,
-    ...snapshots,
+    variantId: normalized.variantId || null,
+    unitId: normalized.unitId || null,
+    skuSnapshot: normalized.skuSnapshot,
+    nameSnapshot: normalized.nameSnapshot,
+    descriptionSnapshot: normalized.descriptionSnapshot,
+    unitSnapshot: normalized.unitSnapshot,
+    vatRateSnapshot: normalized.vatRateSnapshot,
+    productTypeSnapshot: normalized.productTypeSnapshot,
+    metadataSnapshot: normalized.metadataSnapshot,
+    lineType: normalized.lineType,
+    affectsInventory: normalized.affectsInventory,
+    isStockTrackedSnapshot: normalized.isStockTrackedSnapshot,
+    taxCategoryId: normalized.taxCategoryId,
+    parentLineItemId: normalized.parentLineItemId,
     ...calculated,
-    isCustomLine,
+    isCustomLine: normalized.isCustomLine,
     notes: asOptionalText(input.notes),
   };
 }
@@ -686,25 +712,17 @@ async function buildNormalizedItems({ itemsPayload, companyId, transaction }) {
     throw new AppError(400, 'items must be an array', { code: 'VALIDATION_ERROR' });
   }
 
-  const productIds = [...new Set(itemsPayload.map((item) => asOptionalText(item?.productId)).filter(Boolean))];
-  const productsMap = await loadProductsMap({
-    companyId,
-    productIds,
-    transaction,
-  });
-
-  const items = itemsPayload.map((item, index) => {
+  const items = await Promise.all(itemsPayload.map((item, index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) {
       throw new AppError(400, `items[${index}] must be an object`, { code: 'VALIDATION_ERROR' });
     }
-    const productId = asOptionalText(item.productId);
-    const sourceProduct = productId ? productsMap.get(productId) : null;
     return normalizeOrderItemInput({
       input: item,
       index,
-      sourceProduct,
+      companyId,
+      transaction,
     });
-  });
+  }));
 
   return items.sort((a, b) => a.sortOrder - b.sortOrder);
 }
@@ -757,6 +775,11 @@ async function saveOrderItemsInternal({
         lineVat: item.lineVat,
         lineTotalGross: item.lineTotalGross,
         isCustomLine: item.isCustomLine,
+        lineType: item.lineType,
+        affectsInventory: item.affectsInventory,
+        isStockTrackedSnapshot: item.isStockTrackedSnapshot,
+        taxCategoryId: item.taxCategoryId,
+        parentLineItemId: item.parentLineItemId,
         notes: item.notes,
       })),
       { transaction }
@@ -926,6 +949,265 @@ async function logOrderEvent({ companyId, type, orderId, userId, payload = {} })
   }
 }
 
+async function loadReservableOrderItems({ orderId, companyId, transaction }) {
+  const items = await OrderItem.findAll({
+    where: { orderId, companyId },
+    attributes: [
+      'id',
+      'orderId',
+      'productId',
+      'variantId',
+      'qty',
+      'nameSnapshot',
+      'skuSnapshot',
+      'sortOrder',
+      'affectsInventory',
+      'lineType',
+      'isStockTrackedSnapshot',
+    ],
+    order: [['sortOrder', 'ASC'], ['createdAt', 'ASC']],
+    transaction,
+    lock: transaction?.LOCK?.UPDATE,
+  });
+
+  return items.filter(isInventoryLine);
+}
+
+async function getShipmentMovedQtyByItem({ companyId, shipmentId, transaction }) {
+  const rows = await StockMove.findAll({
+    where: {
+      companyId,
+      refType: 'WZ',
+      refId: shipmentId,
+      type: 'ship',
+    },
+    attributes: ['refItemId', [fn('SUM', col('qty')), 'movedQty']],
+    group: ['refItemId'],
+    transaction,
+  });
+
+  const movedByItemId = new Map();
+  rows.forEach((row) => {
+    const key = asOptionalText(row.refItemId);
+    if (!key) return;
+    movedByItemId.set(key, asNumber(row.get('movedQty'), 0));
+  });
+  return movedByItemId;
+}
+
+async function autoAllocateShipmentItemSources({ companyId, shipment, shipmentItem, remainingQty, transaction }) {
+  let left = asNumber(remainingQty, 0);
+  if (left <= 0) return;
+
+  const sourceRows = await InventoryItem.findAll({
+    where: {
+      companyId,
+      warehouseId: shipment.warehouseId,
+      productId: shipmentItem.productId,
+      variantId: shipmentItem.variantId || null,
+      qtyOnHand: { [Op.gt]: 0 },
+    },
+    attributes: ['id', 'locationId', 'lotId', 'serialId', 'qtyOnHand'],
+    order: [['qtyOnHand', 'DESC'], ['createdAt', 'ASC']],
+    transaction,
+    lock: transaction?.LOCK?.UPDATE,
+  });
+
+  for (const source of sourceRows) {
+    if (left <= 0) break;
+    const sourceQty = asNumber(source.qtyOnHand, 0);
+    if (sourceQty <= 0) continue;
+
+    const qtyToShip = Math.min(left, sourceQty);
+    // eslint-disable-next-line no-await-in-loop
+    await shipmentService.shipItem(
+      companyId,
+      shipmentItem.id,
+      {
+        qty: qtyToShip,
+        fromLocationId: source.locationId,
+        lotId: source.lotId || null,
+        serialId: source.serialId || null,
+      },
+      transaction
+    );
+    left = round(left - qtyToShip, 4);
+  }
+
+  if (left > 0) {
+    throw new AppError(409, 'Insufficient stock to ship order item', {
+      code: 'INSUFFICIENT_STOCK',
+      details: {
+        shipmentId: shipment.id,
+        shipmentItemId: shipmentItem.id,
+        productId: shipmentItem.productId,
+        variantId: shipmentItem.variantId || null,
+        shortageQty: left,
+      },
+    });
+  }
+}
+
+async function ensureOrderShipmentPosted({ orderId, companyId, payload = {}, transaction }) {
+  const reservableItems = await loadReservableOrderItems({ orderId, companyId, transaction });
+  if (!reservableItems.length) {
+    return null;
+  }
+
+  let shipment = await Shipment.findOne({
+    where: { companyId, orderId },
+    order: [['createdAt', 'ASC']],
+    transaction,
+    lock: transaction?.LOCK?.UPDATE,
+  });
+
+  if (!shipment) {
+    shipment = await shipmentService.create(
+      companyId,
+      {
+        orderId,
+        warehouseId: asOptionalText(payload.warehouseId) || undefined,
+      items: reservableItems.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId || null,
+          qty: asNumber(item.qty, 0),
+        })),
+      },
+      transaction
+    );
+  } else {
+    shipment = await shipmentService.getById(companyId, shipment.id, { transaction });
+  }
+
+  if (!shipment || !Array.isArray(shipment.items) || !shipment.items.length) {
+    return shipment;
+  }
+
+  const movedByItemId = await getShipmentMovedQtyByItem({
+    companyId,
+    shipmentId: shipment.id,
+    transaction,
+  });
+
+  for (const shipmentItem of shipment.items) {
+    const plannedQty = asNumber(shipmentItem.qty, 0);
+    const movedQty = asNumber(movedByItemId.get(String(shipmentItem.id)), 0);
+    const remainingQty = round(plannedQty - movedQty, 4);
+    if (remainingQty <= 0) continue;
+
+    if (payload?.fromLocationId) {
+      // explicit source location override for entire shipment action.
+      // eslint-disable-next-line no-await-in-loop
+      await shipmentService.shipItem(
+        companyId,
+        shipmentItem.id,
+        {
+          qty: remainingQty,
+          fromLocationId: payload.fromLocationId,
+          lotId: payload.lotId || null,
+          serialId: payload.serialId || null,
+        },
+        transaction
+      );
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+
+    // eslint-disable-next-line no-await-in-loop
+    await autoAllocateShipmentItemSources({
+      companyId,
+      shipment,
+      shipmentItem,
+      remainingQty,
+      transaction,
+    });
+  }
+
+  return shipmentService.getById(companyId, shipment.id, { transaction });
+}
+
+async function createOrderReturnCorrections({
+  companyId,
+  orderId,
+  previousStatus,
+  transaction,
+}) {
+  const status = assertStatus(previousStatus);
+  if (status !== 'shipped' && status !== 'completed') {
+    return { createdCorrectionIds: [], skippedCorrectedShipmentIds: [] };
+  }
+
+  const shipments = await Shipment.findAll({
+    where: {
+      companyId,
+      orderId,
+      parentDocumentId: null,
+    },
+    attributes: ['id', 'companyId', 'warehouseId', 'orderId', 'status', 'correctedById'],
+    order: [['createdAt', 'ASC']],
+    transaction,
+    lock: transaction?.LOCK?.UPDATE,
+  });
+
+  const shippedShipments = shipments.filter((shipment) => shipment.status === 'shipped');
+  const correctedShipments = shipments.filter((shipment) => Boolean(shipment.correctedById));
+
+  if (!shippedShipments.length && correctedShipments.length) {
+    return {
+      createdCorrectionIds: [],
+      skippedCorrectedShipmentIds: correctedShipments.map((shipment) => shipment.id),
+    };
+  }
+
+  if (!shippedShipments.length) {
+    throw new AppError(409, 'Cannot return shipped/completed order without a shipped WZ document', {
+      code: 'ORDER_RETURN_SHIPMENT_NOT_FOUND',
+      details: {
+        orderId,
+        shipmentIds: shipments.map((shipment) => shipment.id),
+      },
+    });
+  }
+
+  const createdCorrectionIds = [];
+  const skippedCorrectedShipmentIds = correctedShipments.map((shipment) => shipment.id);
+
+  for (const shipment of shippedShipments) {
+    if (shipment.correctedById) {
+      skippedCorrectedShipmentIds.push(shipment.id);
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+
+    // eslint-disable-next-line no-await-in-loop
+    const items = await ShipmentItem.findAll({
+      where: { shipmentId: shipment.id },
+      attributes: ['id', 'qty'],
+      order: [['createdAt', 'ASC']],
+      transaction,
+      lock: transaction?.LOCK?.UPDATE,
+    });
+
+    // eslint-disable-next-line no-await-in-loop
+    const correction = await shipmentService.createShipmentCorrection(
+      companyId,
+      shipment.id,
+      {
+        items: items.map((item) => ({
+          originalItemId: item.id,
+          qty: asNumber(item.qty, 0),
+        })),
+      },
+      { transaction }
+    );
+    if (correction?.id) {
+      createdCorrectionIds.push(correction.id);
+    }
+  }
+
+  return { createdCorrectionIds, skippedCorrectedShipmentIds };
+}
+
 async function listOrders(query = {}, userContext = {}) {
   const companyId = assertCompanyContext(userContext);
   const { page, limit, offset } = parsePagination(query);
@@ -982,7 +1264,7 @@ async function getOrderById(id, userContext = {}) {
   return mapOrderToDetailDto(order, links, { invoices });
 }
 
-async function createOrder(payload = {}, userContext = {}) {
+async function createOrder(payload = {}, userContext = {}, options = {}) {
   const companyId = assertCompanyContext(userContext);
   const sourceDocumentAnnotation = asOptionalText(payload.__sourceDocumentAnnotation) || null;
   let createdOrderId = null;
@@ -1013,7 +1295,9 @@ async function createOrder(payload = {}, userContext = {}) {
     });
   }
 
-  const tx = await sequelize.transaction();
+  const externalTx = options?.transaction || userContext?.transaction || null;
+  const tx = externalTx || await sequelize.transaction();
+  const ownTransaction = !externalTx;
   try {
     await assertCounterpartyInCompany(customerId, companyId, tx);
     await assertContactInCompany(contactId, companyId, tx);
@@ -1127,10 +1411,40 @@ async function createOrder(payload = {}, userContext = {}) {
     });
 
     createdOrderId = order.id;
-    await tx.commit();
+    if (ownTransaction) {
+      await tx.commit();
+    }
   } catch (error) {
-    await tx.rollback();
+    if (ownTransaction) {
+      await tx.rollback();
+    }
     throw error;
+  }
+
+  if (externalTx) {
+    const [createdOrder, invoiceRows, paymentCount, shipmentCount] = await Promise.all([
+      getOrderEntity({
+        id: createdOrderId,
+        companyId,
+        includeItems: true,
+        transaction: tx,
+      }),
+      Invoice.findAll({ where: { companyId, orderId: createdOrderId }, order: [['createdAt', 'ASC']], transaction: tx }),
+      Payment.count({ where: { companyId, orderId: createdOrderId }, transaction: tx }),
+      Shipment.count({ where: { companyId, orderId: createdOrderId }, transaction: tx }),
+    ]);
+    if (!createdOrder) {
+      throw new AppError(404, 'Order not found', { code: 'NOT_FOUND' });
+    }
+    return mapOrderToDetailDto(
+      createdOrder,
+      {
+        hasInvoices: invoiceRows.length > 0,
+        hasPayments: paymentCount > 0,
+        hasShipments: shipmentCount > 0,
+      },
+      { invoices: invoiceRows.map((invoice) => mapInvoiceSummary(invoice, createdOrder.currencyCode || null)) }
+    );
   }
 
   return getOrderById(createdOrderId, userContext);
@@ -1330,10 +1644,12 @@ async function saveOrderItems(id, items = [], userContext = {}) {
   return getOrderById(order.id, userContext);
 }
 
-async function changeOrderStatus(id, targetStatus, payload = {}, userContext = {}) {
+async function changeOrderStatus(id, targetStatus, payload = {}, userContext = {}, options = {}) {
   const companyId = assertCompanyContext(userContext);
   const nextStatus = assertStatus(targetStatus);
-  const tx = await sequelize.transaction();
+  const externalTx = options?.transaction || userContext?.transaction || null;
+  const tx = externalTx || await sequelize.transaction();
+  const ownTransaction = !externalTx;
   let order = null;
   try {
     order = await Order.findOne({
@@ -1357,21 +1673,67 @@ async function changeOrderStatus(id, targetStatus, payload = {}, userContext = {
       updates.placedAt = now;
     }
     if (nextStatus === 'confirmed') {
+      await reservationService.reserveOrder(order.id, {
+        companyId,
+        transaction: tx,
+      });
       updates.confirmedAt = now;
     }
     if (nextStatus === 'paid') {
       updates.paymentStatus = 'paid';
     }
     if (nextStatus === 'shipped') {
+      await reservationService.fulfillOrderReservations(order.id, {
+        companyId,
+        transaction: tx,
+      });
+      await ensureOrderShipmentPosted({
+        orderId: order.id,
+        companyId,
+        payload,
+        transaction: tx,
+      });
       updates.shippedAt = now;
       updates.fulfillmentStatus = 'fulfilled';
     }
     if (nextStatus === 'completed') {
+      await reservationService.fulfillOrderReservations(order.id, {
+        companyId,
+        transaction: tx,
+      });
+      await ensureOrderShipmentPosted({
+        orderId: order.id,
+        companyId,
+        payload,
+        transaction: tx,
+      });
+      if (!order.shippedAt) {
+        updates.shippedAt = now;
+      }
       updates.completedAt = now;
       updates.fulfillmentStatus = 'fulfilled';
     }
     if (nextStatus === 'cancelled') {
+      await reservationService.releaseOrderReservations(order.id, {
+        companyId,
+        transaction: tx,
+      });
       updates.cancelledAt = now;
+    }
+    if (nextStatus === 'returned') {
+      await reservationService.releaseOrderReservations(order.id, {
+        companyId,
+        transaction: tx,
+      });
+      const corrections = await createOrderReturnCorrections({
+        companyId,
+        orderId: order.id,
+        previousStatus: currentStatus,
+        transaction: tx,
+      });
+      if (corrections.createdCorrectionIds.length || corrections.skippedCorrectedShipmentIds.length) {
+        updates.__returnCorrections = corrections;
+      }
     }
 
     const appendText = asOptionalText(payload.internalNotesAppend);
@@ -1379,6 +1741,9 @@ async function changeOrderStatus(id, targetStatus, payload = {}, userContext = {
       const currentNotes = asOptionalText(order.notes);
       updates.notes = currentNotes ? `${currentNotes}\n${appendText}` : appendText;
     }
+
+    const returnCorrections = updates.__returnCorrections || null;
+    delete updates.__returnCorrections;
 
     await order.update(updates, { transaction: tx });
     await logOrderEvent({
@@ -1389,13 +1754,44 @@ async function changeOrderStatus(id, targetStatus, payload = {}, userContext = {
       payload: {
         fromStatus: currentStatus,
         toStatus: nextStatus,
+        ...(returnCorrections ? { returnCorrections } : {}),
       },
     });
 
-    await tx.commit();
+    if (ownTransaction) {
+      await tx.commit();
+    }
   } catch (error) {
-    await tx.rollback();
+    if (ownTransaction) {
+      await tx.rollback();
+    }
     throw error;
+  }
+
+  if (externalTx) {
+    const [updatedOrder, invoiceRows, paymentCount, shipmentCount] = await Promise.all([
+      getOrderEntity({
+        id: order.id,
+        companyId,
+        includeItems: true,
+        transaction: tx,
+      }),
+      Invoice.findAll({ where: { companyId, orderId: order.id }, order: [['createdAt', 'ASC']], transaction: tx }),
+      Payment.count({ where: { companyId, orderId: order.id }, transaction: tx }),
+      Shipment.count({ where: { companyId, orderId: order.id }, transaction: tx }),
+    ]);
+    if (!updatedOrder) {
+      throw new AppError(404, 'Order not found', { code: 'NOT_FOUND' });
+    }
+    return mapOrderToDetailDto(
+      updatedOrder,
+      {
+        hasInvoices: invoiceRows.length > 0,
+        hasPayments: paymentCount > 0,
+        hasShipments: shipmentCount > 0,
+      },
+      { invoices: invoiceRows.map((invoice) => mapInvoiceSummary(invoice, updatedOrder.currencyCode || null)) }
+    );
   }
 
   return getOrderById(order.id, userContext);
@@ -1541,6 +1937,12 @@ async function createOrderFromOffer(offerId, payload = {}, userContext = {}) {
       discountType: item.discountType || 'none',
       discountValue: asNumber(item.discountValue, 0),
       isCustomLine: Boolean(item.isCustomLine),
+      lineType: item.lineType || undefined,
+      affectsInventory: item.affectsInventory,
+      isStockTrackedSnapshot: item.isStockTrackedSnapshot,
+      taxCategoryId: item.taxCategoryId || null,
+      parentLineItemId: null,
+      __preserveLineSemantics: true,
       notes: item.notes || null,
     }));
 

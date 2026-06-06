@@ -50,7 +50,9 @@
   --card-bg: color-mix(in srgb, var(--surface-2) 92%, transparent);
   --card-brd: var(--border-2);
   --input-bg: color-mix(in srgb, var(--surface-2) 88%, transparent);
-  --shadow: var(--shadow-1);
+  /* UI-2 quick win: legacy --shadow now follows the skin-aware --ui-shadow-md
+     so components on var(--shadow) react to V2/V3 shadow overrides. */
+  --shadow: var(--ui-shadow-md);
 
   /* вспомогательные */
   --shadow-clr: #000;           /* для color-mix в модулях */
@@ -205,7 +207,7 @@
   --elev-3: 0 32px 90px rgba(0,0,0,.5);
 
   /* ========= SIZES / LAYOUT ========= */
-  --sidebar-w: 15.5rem;           /* 248px */
+  --sidebar-w: 18.75rem;          /* 300px */
   --sidebar-w-collapsed: 4.75rem; /* 76px */
   --topbar-h: 5rem;               /* 64px */
   --icon-box: 40px;
@@ -237,6 +239,12 @@
   --danger:         #ff665a;
   --danger-weak:    color-mix(in srgb, var(--danger) 18%, transparent);
 
+  --warning:        #ffb74d;
+  --warning-weak:   color-mix(in srgb, var(--warning) 18%, transparent);
+
+  --info:           #5b9dff;
+  --info-weak:      color-mix(in srgb, var(--info) 18%, transparent);
+
   --switch-track:   color-mix(in srgb, var(--card-bg) 80%, #0000);
   --switch-knob:    #ffffff;
 
@@ -263,11 +271,12 @@
   --cal-now-badge-brd: rgba(122, 91, 255, .5);
 
 
-  --editor-bg:    var(--card-bg);
-  --editor-text:  var(--text);
+  /* UI-2 quick win: editor tokens follow the skin-aware --ui-* layer */
+  --editor-bg:    var(--ui-surface-1);
+  --editor-text:  var(--ui-text-1);
   --editor-link:  color-mix(in srgb, var(--primary-start) 85%, var(--primary-end) 15%);
-  --editor-border: var(--card-brd);
-  --editor-surface: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  --editor-border: var(--ui-border-soft);
+  --editor-surface: var(--ui-surface-2);
 }
 
 /* LIGHT */
@@ -285,7 +294,7 @@
   --card-brd: rgba(30, 30, 40, .08);
   --input-bg: rgba(255, 255, 255, .95);
 
-  --shadow: 0 16px 40px rgba(180, 150, 120, .15);
+  --shadow: var(--ui-shadow-md);
 
   --primary-start: #ff8c5c;
   --primary-end:   #a77bff;
@@ -363,6 +372,12 @@
   --danger:         #ff4d4f;
   --danger-weak:    color-mix(in srgb, var(--danger) 18%, transparent);
 
+  --warning:        #e6952b;
+  --warning-weak:   color-mix(in srgb, var(--warning) 16%, #fff 84%);
+
+  --info:           #3b82f6;
+  --info-weak:      color-mix(in srgb, var(--info) 14%, #fff 86%);
+
   --switch-track:   color-mix(in srgb, #000 6%, #fff);
   --switch-knob:    #ffffff;
 
@@ -383,11 +398,11 @@
   --cal-now-badge-bg: #fff;
   --cal-now-badge-brd: rgba(255, 140, 92, .4);
 
-  --editor-bg:    var(--card-bg);
-  --editor-text:  var(--text);
+  --editor-bg:    var(--ui-surface-1);
+  --editor-text:  var(--ui-text-1);
   --editor-link:  color-mix(in srgb, var(--primary-start) 85%, var(--primary-end) 15%);
-  --editor-border: var(--card-brd);
-  --editor-surface: color-mix(in srgb, var(--card-bg) 92%, #fff 0%);
+  --editor-border: var(--ui-border-soft);
+  --editor-surface: var(--ui-surface-2);
 
 }
 
@@ -590,4 +605,78 @@ th {
 
 :root[data-theme="light"] label {
   color: #7a5b55;
+}
+
+/* =========================================================================
+   SKIN LAYER (data-skin) — UI-1 Token Foundation
+   -------------------------------------------------------------------------
+   Третья независимая ось темизации (см. Section 14 / Appendix A спеки).
+     data-theme  → light / dark        (цветовая база)
+     data-density→ compact / …         (размеры)
+     data-skin   → v1 / v2 / v3        (визуальный характер)
+
+   Правила безопасности:
+   - Переопределяем ТОЛЬКО CSS-переменные, не трогаем компоненты/layout.
+   - Цветовые токены выводим из существующих theme-переменных
+     (var(--primary), var(--border-1) …), чтобы light/dark продолжали
+     работать. Абсолютно задаём только структурные токены (radius/shadow/blur).
+   - data-skin="v1" — no-op: текущий UI остаётся без изменений.
+   - Это foundation, НЕ полный редизайн. Оверрайды намеренно консервативны.
+   ========================================================================= */
+
+/* ---- V1 · Sunset Classic (current / no-op) ---- */
+:root[data-skin="v1"] {
+  /* intentionally empty — наследует базовые токены as-is */
+}
+
+/* ---- V2 · Sunset Modern (lighter, flatter, modern SaaS) ---- */
+:root[data-skin="v2"] {
+  /* меньше скругления */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+
+  /* меньше «стекла» */
+  --glass-blur: 14px;
+
+  /* более плоское primary-действие (без градиента), цвет берём из темы */
+  --ui-action-primary-bg: var(--primary);
+  --ui-action-primary-border: color-mix(in srgb, var(--primary) 58%, transparent);
+
+  /* легче тени */
+  --ui-shadow-sm: 0 4px 12px rgba(0,0,0,.10);
+  --ui-shadow-md: 0 8px 20px rgba(0,0,0,.12);
+  --ui-shadow-lg: 0 14px 32px rgba(0,0,0,.16);
+  --elev-1: var(--ui-shadow-sm);
+  --elev-2: var(--ui-shadow-md);
+  --elev-3: var(--ui-shadow-lg);
+}
+
+/* ---- V3 · Sunset Enterprise (dense, neutral, border-clear, table-friendly) ---- */
+:root[data-skin="v3"] {
+  /* минимальные скругления */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+
+  /* почти без «стекла» — чёткость для плотных таблиц/документов */
+  --glass-blur: 6px;
+
+  /* плоское primary-действие */
+  --ui-action-primary-bg: var(--primary);
+  --ui-action-primary-border: color-mix(in srgb, var(--primary) 52%, transparent);
+
+  /* больше border clarity — используем «сильный» бордер текущей темы */
+  --ui-border-soft: var(--ui-border-strong);
+  --ui-field-border: var(--ui-border-strong);
+
+  /* минимальные тени */
+  --ui-shadow-sm: 0 1px 2px rgba(0,0,0,.12);
+  --ui-shadow-md: 0 2px 6px rgba(0,0,0,.14);
+  --ui-shadow-lg: 0 6px 16px rgba(0,0,0,.18);
+  --elev-1: var(--ui-shadow-sm);
+  --elev-2: var(--ui-shadow-md);
+  --elev-3: var(--ui-shadow-lg);
 }

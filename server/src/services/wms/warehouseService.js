@@ -1,5 +1,6 @@
 
 // warehouseService.js (generated)
+const crypto = require('crypto');
 const { Op } = require('sequelize');
 const { Warehouse } = require('../../models');
 
@@ -42,7 +43,13 @@ module.exports.getById = async (id) => id ? Warehouse.findByPk(id, {  }) : null;
 // create: создаёт новую запись и возвращает результат.
 module.exports.create  = async (payload = {}) => {
   if (!payload.companyId) throw new Error('companyId is required');
-  return Warehouse.create(payload);
+  const normalizedPayload = {
+    ...payload,
+    id: crypto.randomUUID(),
+  };
+  delete normalizedPayload.createdAt;
+  delete normalizedPayload.updatedAt;
+  return Warehouse.create(normalizedPayload);
 };
 // update: обновляет запись и возвращает актуальные данные.
 module.exports.update  = async (id, payload = {}) => {
@@ -54,4 +61,3 @@ module.exports.update  = async (id, payload = {}) => {
 };
 // remove: удаляет запись с учётом бизнес-ограничений.
 module.exports.remove  = async (id) => id ? Warehouse.destroy({ where:{ id } }) : 0;
-

@@ -11,7 +11,10 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      AdjustmentItem.belongsTo(models.Adjustment, {
+        as: 'adjustment',
+        foreignKey: { name: 'adjustmentId', field: 'adjustment_id' },
+      });
     }
   }
   AdjustmentItem.init({
@@ -52,6 +55,17 @@ module.exports = (sequelize, DataTypes) => {
       type:DataTypes.DECIMAL(14,4),
       allowNull:false,
       field:'qty_delta' 
+    },
+    unitCost:{
+      type:DataTypes.DECIMAL(14,4),
+      field:'unit_cost'
+    },
+    totalCost:{
+      type:DataTypes.DECIMAL(14,4),
+      field:'total_cost'
+    },
+    currency:{
+      type:DataTypes.STRING(3)
     },
   }, {
     sequelize,

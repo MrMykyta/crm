@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 const { Op, fn, col, where: sqlWhere } = require('sequelize');
 const AppError = require('../../errors/AppError');
 const {
@@ -34,6 +35,7 @@ const {
   getCompanyOfferSettingsForUsage,
   resolveOfferAnnotation,
 } = require('../crm/companyOfferSettingsService');
+const { normalizeLineItemInput } = require('./lineItemNormalizer');
 
 const OFFER_STATUSES = Object.freeze([
   'draft',
@@ -315,6 +317,7 @@ function mapOfferItemDto(item) {
     offerId: item.offerId,
     sortOrder: item.sortOrder,
     productId: item.productId || null,
+    variantId: item.variantId || null,
     unitId: item.uomId || null,
     nameSnapshot: item.nameSnapshot || null,
     skuSnapshot: item.skuSnapshot || item.sku || null,
@@ -333,6 +336,11 @@ function mapOfferItemDto(item) {
     lineVat: asNumber(item.lineVat, 0),
     lineTotalGross: asNumber(item.lineTotalGross, 0),
     isCustomLine: Boolean(item.isCustomLine),
+    lineType: item.lineType || null,
+    affectsInventory: Boolean(item.affectsInventory),
+    isStockTrackedSnapshot: Boolean(item.isStockTrackedSnapshot),
+    taxCategoryId: item.taxCategoryId || null,
+    parentLineItemId: item.parentLineItemId || null,
     notes: item.notes || null,
     product: item.product
       ? {
@@ -667,14 +675,15 @@ function buildOfferItemSnapshots({ input, sourceProduct }) {
   };
 }
 
-function normalizeOfferItemInput({ input, index, sourceProduct }) {
-  const snapshots = buildOfferItemSnapshots({ input, sourceProduct });
-  const productId = asOptionalText(input.productId);
-  const isCustomLine = input.isCustomLine !== undefined
-    ? Boolean(input.isCustomLine)
-    : !productId;
+async function normalizeOfferItemInput({ input, index, companyId, transaction }) {
+  const normalized = await normalizeLineItemInput(input, {
+    companyId,
+    transaction,
+    mode: 'offer',
+  });
+  const productId = normalized.productId;
 
-  if (!productId && !snapshots.nameSnapshot) {
+  if (!productId && !normalized.nameSnapshot) {
     throw new AppError(400, `items[${index}].nameSnapshot is required for custom line`, {
       code: 'VALIDATION_ERROR',
     });
@@ -684,7 +693,7 @@ function normalizeOfferItemInput({ input, index, sourceProduct }) {
   const unitPriceNet = input.unitPriceNet ?? input.priceNet;
   const discountType = asText(input.discountType || 'none').toLowerCase() || 'none';
   const discountValue = input.discountValue ?? 0;
-  const vatRateSnapshot = snapshots.vatRateSnapshot;
+  const vatRateSnapshot = normalized.vatRateSnapshot;
   const calculated = calculateOfferItemTotals({
     quantity,
     unitPriceNet,
@@ -699,11 +708,22 @@ function normalizeOfferItemInput({ input, index, sourceProduct }) {
   return {
     sortOrder: sortOrder < 0 ? index : sortOrder,
     productId: productId || null,
-    variantId: asOptionalText(input.variantId) || null,
-    unitId: asOptionalText(input.unitId || input.uomId) || sourceProduct?.uom?.id || null,
-    ...snapshots,
+    variantId: normalized.variantId || null,
+    unitId: normalized.unitId || null,
+    skuSnapshot: normalized.skuSnapshot,
+    nameSnapshot: normalized.nameSnapshot,
+    descriptionSnapshot: normalized.descriptionSnapshot,
+    unitSnapshot: normalized.unitSnapshot,
+    vatRateSnapshot: normalized.vatRateSnapshot,
+    productTypeSnapshot: normalized.productTypeSnapshot,
+    metadataSnapshot: normalized.metadataSnapshot,
+    lineType: normalized.lineType,
+    affectsInventory: normalized.affectsInventory,
+    isStockTrackedSnapshot: normalized.isStockTrackedSnapshot,
+    taxCategoryId: normalized.taxCategoryId,
+    parentLineItemId: normalized.parentLineItemId,
     ...calculated,
-    isCustomLine,
+    isCustomLine: normalized.isCustomLine,
     notes: asOptionalText(input.notes),
   };
 }
@@ -713,25 +733,17 @@ async function buildNormalizedItems({ itemsPayload, companyId, transaction }) {
     throw new AppError(400, 'items must be an array', { code: 'VALIDATION_ERROR' });
   }
 
-  const productIds = [...new Set(itemsPayload.map((item) => asOptionalText(item?.productId)).filter(Boolean))];
-  const productsMap = await loadProductsMap({
-    companyId,
-    productIds,
-    transaction,
-  });
-
-  const items = itemsPayload.map((item, index) => {
+  const items = await Promise.all(itemsPayload.map((item, index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) {
       throw new AppError(400, `items[${index}] must be an object`, { code: 'VALIDATION_ERROR' });
     }
-    const productId = asOptionalText(item.productId);
-    const sourceProduct = productId ? productsMap.get(productId) : null;
     return normalizeOfferItemInput({
       input: item,
       index,
-      sourceProduct,
+      companyId,
+      transaction,
     });
-  });
+  }));
 
   return items.sort((a, b) => a.sortOrder - b.sortOrder);
 }
@@ -784,6 +796,11 @@ async function saveOfferItems({
         lineVat: item.lineVat,
         lineTotalGross: item.lineTotalGross,
         isCustomLine: item.isCustomLine,
+        lineType: item.lineType,
+        affectsInventory: item.affectsInventory,
+        isStockTrackedSnapshot: item.isStockTrackedSnapshot,
+        taxCategoryId: item.taxCategoryId,
+        parentLineItemId: item.parentLineItemId,
         notes: item.notes,
       })),
       { transaction }
@@ -1004,7 +1021,7 @@ async function getOfferById(id, userContext = {}) {
   });
 }
 
-async function createOffer(payload = {}, userContext = {}) {
+async function createOffer(payload = {}, userContext = {}, options = {}) {
   const companyId = userContext?.companyId;
   if (!companyId) throw new AppError(403, 'Company context required');
 
@@ -1019,7 +1036,10 @@ async function createOffer(payload = {}, userContext = {}) {
   const ownerId = asOptionalText(payload.ownerId);
   const dealId = asOptionalText(payload.dealId);
 
-  const tx = await sequelize.transaction();
+  const externalTx = options?.transaction || userContext?.transaction || null;
+  const tx = externalTx || await sequelize.transaction();
+  const ownTransaction = !externalTx;
+  let createdOfferId = null;
   try {
     await assertCounterpartyInCompany(counterpartyId, companyId, tx);
     await assertContactInCompany(contactId, companyId, tx);
@@ -1111,7 +1131,10 @@ async function createOffer(payload = {}, userContext = {}) {
       });
     }
 
-    await tx.commit();
+    createdOfferId = offer.id;
+    if (ownTransaction) {
+      await tx.commit();
+    }
     await logOfferEvent({
       companyId,
       type: 'offer.created',
@@ -1119,9 +1142,20 @@ async function createOffer(payload = {}, userContext = {}) {
       userId: createdBy,
       payload: { status: offer.status },
     });
+    if (!ownTransaction) {
+      const createdOffer = await getOfferEntity({
+        id: createdOfferId,
+        companyId,
+        includeItems: true,
+        transaction: tx,
+      });
+      return mapOfferToDetailDto(createdOffer);
+    }
     return getOfferById(offer.id, userContext);
   } catch (error) {
-    await tx.rollback();
+    if (ownTransaction) {
+      await tx.rollback();
+    }
     throw error;
   }
 }
@@ -1526,6 +1560,12 @@ async function duplicateOffer(id, payload = {}, userContext = {}) {
           discountType: item.discountType,
           discountValue: item.discountValue,
           isCustomLine: item.isCustomLine,
+          lineType: item.lineType,
+          affectsInventory: item.affectsInventory,
+          isStockTrackedSnapshot: item.isStockTrackedSnapshot,
+          taxCategoryId: item.taxCategoryId,
+          parentLineItemId: null,
+          __preserveLineSemantics: true,
           notes: item.notes,
         })),
         userContext,
@@ -1549,11 +1589,13 @@ async function duplicateOffer(id, payload = {}, userContext = {}) {
   }
 }
 
-async function convertOfferToOrder(id, payload = {}, userContext = {}) {
+async function convertOfferToOrder(id, payload = {}, userContext = {}, options = {}) {
   const companyId = userContext?.companyId;
   if (!companyId) throw new AppError(403, 'Company context required');
 
-  const tx = await sequelize.transaction();
+  const externalTx = options?.transaction || userContext?.transaction || null;
+  const tx = externalTx || await sequelize.transaction();
+  const ownTransaction = !externalTx;
   try {
     const offer = await Offer.findOne({
       where: { id, companyId },
@@ -1642,35 +1684,48 @@ async function convertOfferToOrder(id, payload = {}, userContext = {}) {
 
     const items = Array.isArray(sourceItems) ? sourceItems : [];
     if (items.length) {
+      const orderItemIdsByOfferItemId = new Map(items.map((item) => [item.id, crypto.randomUUID()]));
       await OrderItem.bulkCreate(
-        items.map((item) => ({
-          companyId,
-          orderId: order.id,
-          productId: item.productId || null,
-          variantId: item.variantId || null,
-          uomId: item.uomId || null,
-          sortOrder: item.sortOrder || 0,
-          sku: item.sku || null,
-          skuSnapshot: item.skuSnapshot || item.sku || null,
-          nameSnapshot: item.nameSnapshot || null,
-          descriptionSnapshot: item.descriptionSnapshot || null,
-          unitSnapshot: item.unitSnapshot || null,
-          vatRateSnapshot: item.vatRateSnapshot ?? item.taxRate ?? 0,
-          productTypeSnapshot: item.productTypeSnapshot || null,
-          metadataSnapshot: item.metadataSnapshot || null,
-          qty: item.qty,
-          priceNet: item.priceNet,
-          priceGross: item.priceGross,
-          taxRate: item.taxRate ?? 0,
-          discountType: item.discountType || 'none',
-          discountValue: item.discountValue || 0,
-          discountAmount: item.discountAmount || 0,
-          lineSubtotalNet: item.lineSubtotalNet || 0,
-          lineVat: item.lineVat || 0,
-          lineTotalGross: item.lineTotalGross || 0,
-          isCustomLine: Boolean(item.isCustomLine),
-          notes: item.notes || null,
-        })),
+        items.map((item) => {
+          const parentOfferItemId = item.parentLineItemId || null;
+          const mappedParentLineItemId = parentOfferItemId
+            ? orderItemIdsByOfferItemId.get(parentOfferItemId) || null
+            : null;
+          return {
+            id: orderItemIdsByOfferItemId.get(item.id),
+            companyId,
+            orderId: order.id,
+            productId: item.productId || null,
+            variantId: item.variantId || null,
+            uomId: item.uomId || null,
+            sortOrder: item.sortOrder || 0,
+            sku: item.sku || null,
+            skuSnapshot: item.skuSnapshot || item.sku || null,
+            nameSnapshot: item.nameSnapshot || null,
+            descriptionSnapshot: item.descriptionSnapshot || null,
+            unitSnapshot: item.unitSnapshot || null,
+            vatRateSnapshot: item.vatRateSnapshot ?? item.taxRate ?? 0,
+            productTypeSnapshot: item.productTypeSnapshot || null,
+            metadataSnapshot: item.metadataSnapshot || null,
+            qty: item.qty,
+            priceNet: item.priceNet,
+            priceGross: item.priceGross,
+            taxRate: item.taxRate ?? 0,
+            discountType: item.discountType || 'none',
+            discountValue: item.discountValue || 0,
+            discountAmount: item.discountAmount || 0,
+            lineSubtotalNet: item.lineSubtotalNet || 0,
+            lineVat: item.lineVat || 0,
+            lineTotalGross: item.lineTotalGross || 0,
+            isCustomLine: Boolean(item.isCustomLine),
+            lineType: item.lineType || 'custom',
+            affectsInventory: Boolean(item.affectsInventory),
+            isStockTrackedSnapshot: Boolean(item.isStockTrackedSnapshot),
+            taxCategoryId: item.taxCategoryId || null,
+            parentLineItemId: mappedParentLineItemId,
+            notes: item.notes || null,
+          };
+        }),
         { transaction: tx }
       );
     }
@@ -1686,7 +1741,9 @@ async function convertOfferToOrder(id, payload = {}, userContext = {}) {
       updatedBy: userContext?.id || null,
     }, { transaction: tx });
 
-    await tx.commit();
+    if (ownTransaction) {
+      await tx.commit();
+    }
 
     await logOfferEvent({
       companyId,
@@ -1696,12 +1753,27 @@ async function convertOfferToOrder(id, payload = {}, userContext = {}) {
       payload: { orderId: order.id },
     });
 
+    if (!ownTransaction) {
+      const convertedOffer = await getOfferEntity({
+        id: offer.id,
+        companyId,
+        transaction: tx,
+        includeItems: true,
+      });
+      return {
+        order: mapOrderSummary(order),
+        offer: mapOfferToDetailDto(convertedOffer),
+      };
+    }
+
     return {
       order: mapOrderSummary(order),
       offer: await getOfferById(offer.id, userContext),
     };
   } catch (error) {
-    await tx.rollback();
+    if (ownTransaction) {
+      await tx.rollback();
+    }
     throw error;
   }
 }

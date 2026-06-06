@@ -12,13 +12,26 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Shipment.hasMany(models.ShipmentItem,{ 
-        foreignKey:'shipment_id', 
-        as:'items' 
-      }); 
-      Shipment.hasMany(models.Parcel,{ 
-        foreignKey:'shipment_id', 
-        as:'parcels' 
+      Shipment.hasMany(models.ShipmentItem,{
+        foreignKey:'shipment_id',
+        as:'items'
+      });
+      Shipment.hasMany(models.Parcel,{
+        foreignKey:'shipment_id',
+        as:'parcels'
+      });
+      // K1: self-references for correction documents (WZ_KOREKTA).
+      Shipment.belongsTo(models.Shipment, {
+        as: 'parentDocument',
+        foreignKey: { name: 'parentDocumentId', field: 'parent_document_id' },
+      });
+      Shipment.belongsTo(models.Shipment, {
+        as: 'correctedBy',
+        foreignKey: { name: 'correctedById', field: 'corrected_by_id' },
+      });
+      Shipment.hasMany(models.Shipment, {
+        as: 'corrections',
+        foreignKey: { name: 'parentDocumentId', field: 'parent_document_id' },
       });
     }
   }
@@ -43,10 +56,28 @@ module.exports = (sequelize, DataTypes) => {
       type:DataTypes.UUID, 
       field:'order_id',
     },
-    status:{ 
-      type:DataTypes.ENUM('packing','shipped','cancelled'), 
-      allowNull:false, 
-      defaultValue:'packing' 
+    number:{
+      type:DataTypes.STRING(100),
+      allowNull:true,
+    },
+    status:{
+      // K1: 'cancelled' is reserved for packing→cancelled (before posting).
+      // After 'shipped', the only way to revert is via WZ_KOREKTA, which sets status to 'corrected'.
+      type:DataTypes.ENUM('packing','shipped','cancelled','corrected'),
+      allowNull:false,
+      defaultValue:'packing'
+    },
+    parentDocumentId: {
+      // K1: link from a correction document (WZ_KOREKTA) back to the original WZ it corrects.
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'parent_document_id',
+    },
+    correctedById: {
+      // K1: forward-link on a WZ to the correction (WZ_KOREKTA) that supersedes it.
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'corrected_by_id',
     },
   }, {
     sequelize,

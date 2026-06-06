@@ -1,0 +1,69 @@
+.page {
+  min-height: 100vh;
+  background: var(--ui-bg, #0f172a);
+  padding: 24px;
+}
+
+.toolbar {
+  width: min(100%, 940px);
+  margin: 0 auto 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.button,
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.button {
+  border: 1px solid var(--ui-border-soft, #334155);
+  background: var(--ui-surface-1, #111827);
+  color: var(--ui-text-2, #e5e7eb);
+}
+
+.primaryButton {
+  border: 1px solid color-mix(in srgb, var(--accent, #2563eb) 60%, transparent);
+  background: color-mix(in srgb, var(--accent, #2563eb) 84%, #0f172a);
+  color: #fff;
+}
+
+.primaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.state,
+.stateError {
+  width: min(100%, 940px);
+  margin: 0 auto;
+  border: 1px solid var(--ui-border-soft, #334155);
+  background: var(--ui-surface-1, #111827);
+  border-radius: 10px;
+  padding: 18px;
+  color: var(--ui-text-2, #e5e7eb);
+}
+
+.stateError {
+  color: var(--danger, #fca5a5);
+}
+
+@media print {
+  .page {
+    background: #fff;
+    padding: 0;
+  }
+
+  .toolbar,
+  .state,
+  .stateError {
+    display: none !important;
+  }
+}

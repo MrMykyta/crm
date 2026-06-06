@@ -1,45 +1,79 @@
+'use strict';
 
-// CycleCount.controller.js (generated)
-const cycleCountService = require('../../services/wms/cycleCountService');
+const inventoryCountService = require('../../services/wms/inventoryCountService');
+const printSvc = require('../../services/wms/warehousePrintService');
 
-// Возвращает список сущностей с учётом фильтров и пагинации.
-module.exports.list = async (req, res) => {
+function resolveCompanyId(req) {
+  return req.companyId || req.user?.companyId || null;
+}
+
+module.exports.list = async (req, res, next) => {
   try {
-    const { rows, count, page, limit } = await cycleCountService.list({ query: req.query, user: req.user });
-    res.status(200).send({ data: rows, meta: { count, page, limit }});
-  } catch (e) { console.error('[CycleCountController.list]', e); res.status(400).send({ error: e.message }); }
-};
-// Возвращает одну сущность по её идентификатору.
-module.exports.getById = async (req, res) => {
-  try {
-    const item = await cycleCountService.getById(req.params.id);
-    if (!item) return res.sendStatus(404);
-    res.status(200).send(item);
-  } catch (e) { console.error('[CycleCountController.getById]', e); res.status(400).send({ error: e.message }); }
-};
-// Создаёт новую сущность и возвращает результат создания.
-module.exports.create = async (req, res) => {
-  try {
-    const payload = { ...req.body };
-    if (req.user?.companyId && !payload.companyId) payload.companyId = req.user.companyId;
-    const created = await cycleCountService.create(payload);
-    res.status(201).send(created);
-  } catch (e) { console.error('[CycleCountController.create]', e); res.status(400).send({ error: e.message }); }
-};
-// Обновляет существующую сущность по идентификатору.
-module.exports.update = async (req, res) => {
-  try {
-    const updated = await cycleCountService.update(req.params.id, req.body);
-    if (!updated) return res.sendStatus(404);
-    res.status(200).send(updated);
-  } catch (e) { console.error('[CycleCountController.update]', e); res.status(400).send({ error: e.message }); }
-};
-// Удаляет сущность по идентификатору.
-module.exports.remove = async (req, res) => {
-  try {
-    const n = await cycleCountService.remove(req.params.id);
-    if (!n) return res.sendStatus(404);
-    res.status(200).send({ deleted: n });
-  } catch (e) { console.error('[CycleCountController.remove]', e); res.status(400).send({ error: e.message }); }
+    const companyId = resolveCompanyId(req);
+    const { rows, count, page, limit } = await inventoryCountService.listCycleCounts(
+      companyId,
+      req.query || {}
+    );
+    res.status(200).send({ data: rows, meta: { count, page, limit } });
+  } catch (error) {
+    next(error);
+  }
 };
 
+module.exports.getById = async (req, res, next) => {
+  try {
+    const companyId = resolveCompanyId(req);
+    const row = await inventoryCountService.getCycleCountById(companyId, req.params.id);
+    if (!row) return res.sendStatus(404);
+    res.status(200).send(row);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.getPrint = async (req, res, next) => {
+  try {
+    const companyId = resolveCompanyId(req);
+    const row = await printSvc.getPrintDocument(companyId, 'cycleCount', req.params.id);
+    if (!row) return res.sendStatus(404);
+    res.status(200).send(row);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.create = async (req, res, next) => {
+  try {
+    const companyId = resolveCompanyId(req);
+    const row = await inventoryCountService.createCycleCount(companyId, req.body || {});
+    res.status(201).send(row);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.addItems = async (req, res, next) => {
+  try {
+    const companyId = resolveCompanyId(req);
+    const row = await inventoryCountService.addCountItems(
+      req.params.id,
+      req.body?.items || req.body,
+      { companyId }
+    );
+    if (!row) return res.sendStatus(404);
+    res.status(200).send(row);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.reconcile = async (req, res, next) => {
+  try {
+    const companyId = resolveCompanyId(req);
+    const result = await inventoryCountService.reconcileCycleCount(req.params.id, { companyId });
+    if (!result) return res.sendStatus(404);
+    res.status(200).send(result);
+  } catch (error) {
+    next(error);
+  }
+};

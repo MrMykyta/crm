@@ -1,5 +1,6 @@
 
 // locationService.js (generated)
+const crypto = require('crypto');
 const { Op } = require('sequelize');
 const { Location, Warehouse } = require('../../models');
 
@@ -43,7 +44,13 @@ module.exports.getById = async (id) => id ? Location.findByPk(id, { include: [{ 
 // create: создаёт новую запись и возвращает результат.
 module.exports.create  = async (payload = {}) => {
   if (!payload.companyId) throw new Error('companyId is required');
-  return Location.create(payload);
+  const normalizedPayload = {
+    ...payload,
+    id: crypto.randomUUID(),
+  };
+  delete normalizedPayload.createdAt;
+  delete normalizedPayload.updatedAt;
+  return Location.create(normalizedPayload);
 };
 // update: обновляет запись и возвращает актуальные данные.
 module.exports.update  = async (id, payload = {}) => {
@@ -55,4 +62,3 @@ module.exports.update  = async (id, payload = {}) => {
 };
 // remove: удаляет запись с учётом бизнес-ограничений.
 module.exports.remove  = async (id) => id ? Location.destroy({ where:{ id } }) : 0;
-

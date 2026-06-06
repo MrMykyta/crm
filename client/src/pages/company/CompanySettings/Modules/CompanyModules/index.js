@@ -1,5 +1,6 @@
 // src/pages/company/CompanySettings/CompanyModules/index.jsx
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useGetCompanyQuery } from "../../../../../store/rtk/companyApi";
 import { useTranslation } from "react-i18next";
@@ -139,6 +140,11 @@ const persist = async (next) => {
                 ))}
               </ul>
             )}
+            {m.key === "warehouse" ? (
+              <Link className={s.configLink} to="/main/company-settings/warehouse">
+                {t("companySettings.wms.actions.configure", "Configure")}
+              </Link>
+            ) : null}
           </section>
         );
       })}

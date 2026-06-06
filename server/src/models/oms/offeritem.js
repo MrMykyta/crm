@@ -29,6 +29,17 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'ownerId',
         scope: { ownerType: 'offerItem' },
       });
+      // A2: line item foundation associations.
+      if (models.TaxCategory) {
+        OfferItem.belongsTo(models.TaxCategory, {
+          as: 'taxCategory',
+          foreignKey: 'taxCategoryId',
+        });
+      }
+      OfferItem.belongsTo(models.OfferItem, {
+        as: 'parentLineItem',
+        foreignKey: 'parentLineItemId',
+      });
     }
   }
 
@@ -171,6 +182,36 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: false,
       field: 'is_custom_line',
+    },
+    // A2: shared product_service_line_type ENUM ('product','service','custom','fee','discount').
+    // Reuses the PG ENUM type, not a per-table Sequelize-generated one.
+    lineType: {
+      type: DataTypes.ENUM('product', 'service', 'custom', 'fee', 'discount'),
+      allowNull: false,
+      defaultValue: 'product',
+      field: 'line_type',
+    },
+    affectsInventory: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'affects_inventory',
+    },
+    isStockTrackedSnapshot: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'is_stock_tracked_snapshot',
+    },
+    taxCategoryId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'tax_category_id',
+    },
+    parentLineItemId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'parent_line_item_id',
     },
     notes: {
       type: DataTypes.TEXT,

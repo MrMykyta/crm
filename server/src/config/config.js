@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('./loadEnv');
 
 // Базовые настройки Sequelize, общие для всех окружений.
 const base = {

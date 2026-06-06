@@ -6,6 +6,7 @@ import authReducer, { setAuth, logout } from './slices/authSlice';
 import chatReducer from './slices/chatSlice';
 import bootstrapReducer from './slices/bootstrapSlice';
 import lookupsReducer from './slices/lookupsSlice';
+import workspaceViewsDrawerReducer from './slices/workspaceViewsDrawerSlice';
 import { crmApi } from './rtk/crmApi';
 import { initRealtime } from './rtk/realtime';
 
@@ -15,6 +16,7 @@ const appReducer = combineReducers({
   bootstrap: bootstrapReducer,
   lookups: lookupsReducer,
   chat: chatReducer,
+  workspaceViewsDrawer: workspaceViewsDrawerReducer,
   [crmApi.reducerPath]: crmApi.reducer,
 });
 

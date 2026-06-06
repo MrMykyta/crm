@@ -21,11 +21,19 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'orderId' 
       });
 
-      Invoice.hasMany(models.CreditNote, { 
-        as: 'creditNotes', 
-        foreignKey: 'invoiceId', 
-        onDelete: 'CASCADE' 
+      Invoice.hasMany(models.CreditNote, {
+        as: 'creditNotes',
+        foreignKey: 'invoiceId',
+        onDelete: 'CASCADE'
       });
+      // A2: line-item foundation. Population deferred to A3.
+      if (models.InvoiceItem) {
+        Invoice.hasMany(models.InvoiceItem, {
+          as: 'items',
+          foreignKey: 'invoiceId',
+          onDelete: 'CASCADE',
+        });
+      }
     }
   }
   Invoice.init({

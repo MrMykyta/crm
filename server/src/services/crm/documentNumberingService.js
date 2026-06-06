@@ -7,6 +7,8 @@ const {
   DocumentNumberingSetting,
   Invoice,
   Receipt,
+  Adjustment,
+  Shipment,
   TransferOrder,
 } = require('../../models');
 const AppError = require('../../errors/AppError');
@@ -596,6 +598,41 @@ async function collectHistoricalNumbers({ companyId, documentType, transaction }
     });
   }
 
+  if (normalizedType === 'WZ') {
+    const rows = await Shipment.findAll({
+      where: {
+        companyId,
+        number: { [Op.ne]: null },
+      },
+      attributes: ['number', 'createdAt'],
+      transaction,
+    });
+    rows.forEach((row) => {
+      result.push({
+        number: row.number,
+        date: row.createdAt || null,
+      });
+    });
+  }
+
+  if (normalizedType === 'RW' || normalizedType === 'PW') {
+    const rows = await Adjustment.findAll({
+      where: {
+        companyId,
+        documentType: normalizedType,
+        number: { [Op.ne]: null },
+      },
+      attributes: ['number', 'createdAt'],
+      transaction,
+    });
+    rows.forEach((row) => {
+      result.push({
+        number: row.number,
+        date: row.createdAt || null,
+      });
+    });
+  }
+
   return result;
 }
 
@@ -645,6 +682,31 @@ async function isNumberUsed({ companyId, documentType, number, transaction }) {
     const found = await TransferOrder.findOne({
       where: {
         companyId,
+        number: normalizedNumber,
+      },
+      attributes: ['id'],
+      transaction,
+    });
+    if (found) return true;
+  }
+
+  if (normalizedType === 'WZ') {
+    const found = await Shipment.findOne({
+      where: {
+        companyId,
+        number: normalizedNumber,
+      },
+      attributes: ['id'],
+      transaction,
+    });
+    if (found) return true;
+  }
+
+  if (normalizedType === 'RW' || normalizedType === 'PW') {
+    const found = await Adjustment.findOne({
+      where: {
+        companyId,
+        documentType: normalizedType,
         number: normalizedNumber,
       },
       attributes: ['id'],

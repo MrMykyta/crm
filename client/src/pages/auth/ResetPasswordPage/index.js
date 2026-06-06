@@ -56,7 +56,7 @@ const onSubmit = async (values, { setSubmitting, setStatus }) => {
 
   return (
     <div className={s.form} style={{ maxWidth: 520, margin:'24px auto' }}>
-      <h2 style={{ textAlign:'center', color:'#e9edff' }}>{t('auth.setNewPassword', 'Set a new password')}</h2>
+      <h2 style={{ textAlign:'center', color:'var(--ui-text-1)' }}>{t('auth.setNewPassword', 'Set a new password')}</h2>
       <Formik initialValues={{ password:'', confirm:'' }} validationSchema={schema} onSubmit={onSubmit}>
         {({ isSubmitting, status }) => (
           <Form className={s.form}>
@@ -64,7 +64,7 @@ const onSubmit = async (values, { setSubmitting, setStatus }) => {
             <InputField name="confirm"  label={t('auth.confirmPassword', 'Confirm password')} type="password" autoComplete="new-password" />
 
             {status?.ok === false && <div className={s.err}>{status.msg}</div>}
-            {status?.ok === true && <div style={{ color:'#79ffa9' }}>{t('auth.passwordUpdated', 'Password updated')}</div>}
+            {status?.ok === true && <div style={{ color:'var(--success)' }}>{t('auth.passwordUpdated', 'Password updated')}</div>}
 
             <button className={s.btn} type="submit" disabled={isSubmitting}>
               {isSubmitting ? t('common.saving', 'Saving…') : t('auth.updatePassword', 'Update password')}

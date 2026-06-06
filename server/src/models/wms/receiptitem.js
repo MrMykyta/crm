@@ -57,6 +57,17 @@ module.exports = (sequelize, DataTypes) => {
       field:'qty_received', 
       defaultValue:0
     },
+    unitCost:{
+      type:DataTypes.DECIMAL(14,4),
+      field:'unit_cost'
+    },
+    totalCost:{
+      type:DataTypes.DECIMAL(14,4),
+      field:'total_cost'
+    },
+    currency:{
+      type:DataTypes.STRING(3)
+    },
   }, {
     sequelize,
     modelName: 'ReceiptItem',

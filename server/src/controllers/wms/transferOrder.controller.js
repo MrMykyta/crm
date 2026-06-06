@@ -1,6 +1,7 @@
 
 // TransferOrder.controller.js (generated)
 const transferOrderService = require('../../services/wms/transferOrderService');
+const printSvc = require('../../services/wms/warehousePrintService');
 
 // Возвращает список сущностей с учётом фильтров и пагинации.
 module.exports.list = async (req, res) => {
@@ -16,6 +17,14 @@ module.exports.getById = async (req, res) => {
     if (!item) return res.sendStatus(404);
     res.status(200).send(item);
   } catch (e) { console.error('[TransferOrderController.getById]', e); res.status(400).send({ error: e.message }); }
+};
+
+module.exports.getPrint = async (req, res) => {
+  try {
+    const item = await printSvc.getPrintDocument(req.user?.companyId || null, 'transfer', req.params.id);
+    if (!item) return res.sendStatus(404);
+    res.status(200).send(item);
+  } catch (e) { console.error('[TransferOrderController.getPrint]', e); res.status(400).send({ error: e.message }); }
 };
 // Создаёт новую сущность и возвращает результат создания.
 module.exports.create = async (req, res) => {
@@ -41,4 +50,30 @@ module.exports.remove = async (req, res) => {
     if (!n) return res.sendStatus(404);
     res.status(200).send({ deleted: n });
   } catch (e) { console.error('[TransferOrderController.remove]', e); res.status(400).send({ error: e.message }); }
+};
+
+// Возвращает историю stock_moves по MM-документу.
+module.exports.listStockMoves = async (req, res) => {
+  try {
+    const result = await transferOrderService.listStockMovesByTransfer(
+      req.params.id,
+      req.user?.companyId || null,
+      req.query
+    );
+    if (!result) return res.sendStatus(404);
+    res.status(200).send({ data: result.rows, meta: { count: result.count, page: result.page, limit: result.limit } });
+  } catch (e) { console.error('[TransferOrderController.listStockMoves]', e); res.status(400).send({ error: e.message }); }
+};
+
+// Возвращает историю stock_moves по строке MM (refItemId).
+module.exports.listItemStockMoves = async (req, res) => {
+  try {
+    const result = await transferOrderService.listStockMovesByTransferItem(
+      req.params.itemId,
+      req.user?.companyId || null,
+      req.query
+    );
+    if (!result) return res.sendStatus(404);
+    res.status(200).send({ data: result.rows, meta: { count: result.count, page: result.page, limit: result.limit } });
+  } catch (e) { console.error('[TransferOrderController.listItemStockMoves]', e); res.status(400).send({ error: e.message }); }
 };

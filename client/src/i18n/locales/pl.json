@@ -44,6 +44,12 @@
     "createNew": "Utwórz nową"
   },
   "common": {
+    "comingSoon": {
+      "title": "Wkrótce dostępne",
+      "badge": "W przygotowaniu",
+      "description": "Ten moduł jest już zaplanowany, ale nie został jeszcze wdrożony.",
+      "backToDashboard": "Wróć do dashboardu"
+    },
     "email": "Email",
     "password": "Hasło",
     "required": "Wymagane",
@@ -61,16 +67,96 @@
     "error": "Błąd",
     "success": "Sukces",
     "loading": "Ładowanie…",
+    "noPermission": "Brak uprawnień",
     "sending": "Wysyłanie…",
     "save": "Zapisz",
     "edit": "Edytuj",
     "reset": "Resetuj",
     "none": "—",
     "cancel": "Anuluj",
+    "new": "Nowy",
     "delete": "Usuń",
     "primary": "Główny",
     "saved": "Zapisano",
-    "unsaved": "Niezapisane zmiany"
+    "unsaved": "Niezapisane zmiany",
+    "yes": "Tak",
+    "no": "Nie",
+    "all": "Wszystkie",
+    "clear": "Wyczyść",
+    "refresh": "Odśwież"
+  },
+  "documents": {
+    "types": {
+      "offer": "Oferta",
+      "order": "Zamówienie",
+      "invoice": "Faktura"
+    },
+    "shell": {
+      "unknownNumber": "Brak numeru",
+      "breadcrumbsAria": "Ścieżka nawigacji",
+      "tabsAria": "Sekcje dokumentu",
+      "confirmTitle": "Potwierdź akcję",
+      "confirmText": "Czy na pewno?",
+      "confirmOk": "Potwierdź"
+    },
+    "relations": {
+      "document": "Dokument",
+      "empty": "Brak powiązanych dokumentów"
+    },
+    "timeline": {
+      "empty": "Brak zdarzeń historii",
+      "systemActor": "System",
+      "created": "Utworzono",
+      "updated": "Zaktualizowano",
+      "confirmed": "Potwierdzono",
+      "issued": "Wystawiono"
+    },
+    "editor": {
+      "header": "Nagłówek",
+      "summaryTitle": "Podgląd sum",
+      "selectCounterparty": "Wybierz kontrahenta",
+      "noContact": "Bez kontaktu",
+      "noOwner": "Bez właściciela",
+      "selectCurrency": "Wybierz walutę",
+      "fieldTitle": "Tytuł",
+      "fieldSubject": "Temat",
+      "loadingHint": "Przygotowywanie edytora.",
+      "noPermission": "Brak uprawnień",
+      "noPermissionHint": "Nie masz wystarczających uprawnień do tego edytora.",
+      "loadFailed": "Nie udało się załadować dokumentu",
+      "notFound": "Nie znaleziono dokumentu",
+      "notFoundHint": "Brak danych w bieżącej firmie.",
+      "saveFailed": "Nie udało się zapisać dokumentu",
+      "validation": {
+        "counterpartyRequired": "Kontrahent jest wymagany",
+        "itemNameRequired": "Nazwa pozycji jest wymagana",
+        "qtyPositive": "Ilość musi być większa od 0",
+        "priceNonNegative": "Cena nie może być ujemna"
+      }
+    },
+    "lines": {
+      "title": "Pozycje",
+      "addCustom": "Dodaj pozycję własną",
+      "addProduct": "Dodaj produkt",
+      "name": "Nazwa",
+      "type": "Typ",
+      "qty": "Ilość",
+      "priceNet": "Cena netto",
+      "taxRate": "Stawka VAT %",
+      "discountType": "Typ rabatu",
+      "discountValue": "Wartość rabatu",
+      "remove": "Usuń",
+      "affectsStock": "Wpływa na stan",
+      "available": "Dostępne",
+      "productNamePlaceholder": "Nazwa produktu",
+      "customNamePlaceholder": "Nazwa pozycji własnej",
+      "dragToReorder": "Przeciągnij, aby zmienić kolejność",
+      "productPickerTitle": "Dodaj produkt"
+    },
+    "locked": {
+      "label": "Zablokowany",
+      "text": "Dokument jest zablokowany. Dalsze zmiany wymagają korekty lub dokumentu następczego."
+    }
   },
   "countries": {
     "PL": "PL — Polska",
@@ -115,9 +201,20 @@
     "services": "Usługi",
     "wms": "WMS",
     "warehouse": "Magazyn",
+    "stockBalances": "Stany magazynowe",
+    "wmsDocuments": "Dokumenty magazynowe",
     "wmsDocs": "Dokumenty magazynowe",
+    "wmsReceipts": "Przyjęcia PZ",
+    "transfers": "Przesunięcia",
+    "wmsShipments": "Wydania WZ",
+    "wmsAdjustments": "Korekty RW/PW",
+    "wmsCycleCounts": "Arkusze inwentaryzacji",
     "settings": "Ustawienia",
-    "userSettings": "Ustawienia użytkownika"
+    "userSettings": "Ustawienia użytkownika",
+    "stockValuation": "Wartość magazynu",
+    "stockTurnover": "Obroty magazynowe",
+    "stockAsOf": "Stan na dzień",
+    "inventoryLedger": "Karta magazynowa"
   },
   "oms": {
     "stub": "Ta strona jest zaplanowana na kolejny etap.",
@@ -145,6 +242,511 @@
       "counterparty": "Kontrahent",
       "contact": "Kontakt",
       "empty": "Brak powiązanych encji"
+    },
+    "actions": {
+      "print": "Drukuj",
+      "downloadPdf": "Pobierz PDF"
+    },
+    "actionLabels": {
+      "send": "Wyślij",
+      "accept": "Akceptuj",
+      "reject": "Odrzuć",
+      "cancel": "Anuluj",
+      "expire": "Oznacz jako wygasłą",
+      "duplicate": "Duplikuj",
+      "confirm": "Potwierdź",
+      "ship": "Wyślij",
+      "complete": "Zakończ",
+      "return": "Zwróć",
+      "convertToOrder": "Konwertuj na zamówienie",
+      "convertToInvoice": "Konwertuj na fakturę",
+      "openSettings": "Otwórz ustawienia",
+      "issueInvoice": "Wystaw fakturę"
+    },
+    "confirm": {
+      "offerRejectTitle": "Odrzuć ofertę",
+      "offerRejectText": "Odrzucić tę ofertę?",
+      "offerRejectOk": "Odrzuć",
+      "offerCancelTitle": "Anuluj ofertę",
+      "offerCancelText": "Anulować tę ofertę?",
+      "offerCancelOk": "Anuluj ofertę",
+      "orderCancelTitle": "Anuluj zamówienie",
+      "orderCancelText": "Anulować to zamówienie?",
+      "orderCancelOk": "Anuluj zamówienie",
+      "orderReturnTitle": "Zwróć zamówienie",
+      "orderReturnText": "Oznaczyć zamówienie jako zwrócone?",
+      "orderReturnOk": "Zwróć zamówienie"
+    },
+    "tabs": {
+      "items": "Pozycje",
+      "summary": "Podsumowanie",
+      "relations": "Powiązania",
+      "history": "Historia",
+      "actions": "Akcje"
+    },
+    "detailSections": {
+      "counterparty": "Kontrahent",
+      "dates": "Daty",
+      "termsNotes": "Warunki i notatki"
+    },
+    "detailLabels": {
+      "number": "Numer",
+      "status": "Status",
+      "paymentStatus": "Status płatności",
+      "fulfillmentStatus": "Status realizacji",
+      "counterparty": "Kontrahent",
+      "contact": "Kontakt",
+      "owner": "Właściciel",
+      "deal": "Szansa",
+      "placedAt": "Złożono",
+      "confirmedAt": "Potwierdzono",
+      "createdAt": "Utworzono",
+      "updatedAt": "Zaktualizowano",
+      "paymentTerms": "Warunki płatności",
+      "deliveryTerms": "Warunki dostawy",
+      "leadTime": "Czas realizacji",
+      "notes": "Notatki",
+      "issueDate": "Data wystawienia",
+      "validUntil": "Ważna do",
+      "dueDate": "Termin płatności"
+    },
+    "itemsTable": {
+      "name": "Nazwa",
+      "qty": "Ilość",
+      "priceNet": "Cena netto",
+      "vat": "VAT %",
+      "lineGross": "Wartość brutto",
+      "empty": "Brak pozycji",
+      "lineType": "Typ"
+    },
+    "summaryLabels": {
+      "net": "Netto",
+      "vat": "VAT",
+      "gross": "Brutto",
+      "currency": "Waluta"
+    },
+    "errors": {
+      "actionFailed": "Nie udało się wykonać akcji",
+      "orderLoadFailed": "Nie udało się załadować zamówienia",
+      "offerLoadFailed": "Nie udało się załadować oferty",
+      "orderNotFound": "Nie znaleziono zamówienia",
+      "offerNotFound": "Nie znaleziono oferty",
+      "costingNotInitialized": "Wycena FIFO nie jest zainicjalizowana dla tej firmy. Przejdź do Ustawienia firmy → Magazyn/WMS → Wycena.",
+      "invoiceLoadFailed": "Nie udało się wczytać faktury",
+      "invoiceNotFound": "Nie znaleziono faktury"
+    },
+    "print": {
+      "loading": "Przygotowywanie wersji do druku",
+      "notFound": "Nie znaleziono encji",
+      "backToDetail": "Wróć do szczegółów"
+    },
+    "invoices": {
+      "title": "Faktury",
+      "search": "Szukaj po numerze lub kontrahencie...",
+      "open": "Otwórz fakturę",
+      "columns": {
+        "number": "Numer",
+        "counterparty": "Kontrahent",
+        "status": "Status",
+        "issueDate": "Data wystawienia",
+        "dueDate": "Termin płatności",
+        "totalNet": "Netto razem",
+        "totalGross": "Brutto razem"
+      }
+    },
+    "lineTypes": {
+      "product": "Produkt",
+      "service": "Usługa",
+      "custom": "Własna"
+    }
+  },
+  "wms": {
+    "backToList": "Powrót do listy",
+    "relations": {
+      "originalDocument": "Dokument źródłowy",
+      "correctionDocument": "Dokument korekty"
+    },
+    "print": {
+      "print": "Drukuj",
+      "loading": "Przygotowywanie widoku do druku...",
+      "notFound": "Nie znaleziono dokumentu",
+      "backToDetail": "Wróć do szczegółów",
+      "date": "Data",
+      "status": "Status",
+      "warehouse": "Magazyn",
+      "document": "Dokument",
+      "location": "Lokalizacja",
+      "lotSerial": "Partia / numer seryjny",
+      "plannedQty": "Plan",
+      "processedQty": "Wykonano",
+      "issuedBy": "Wystawił",
+      "receivedBy": "Odebrał"
+    },
+    "tabs": {
+      "items": "Pozycje",
+      "history": "Historia",
+      "summary": "Podsumowanie"
+    },
+    "items": {
+      "empty": "Brak pozycji"
+    },
+    "summary": {
+      "items": "Pozycje",
+      "qtyTotal": "Ilość łącznie",
+      "qtyProcessed": "Ilość przetworzona",
+      "order": "Zamówienie"
+    },
+    "columns": {
+      "product": "Produkt",
+      "variant": "Wariant",
+      "qty": "Ilość",
+      "progress": "Przetworzono"
+    },
+    "history": {
+      "empty": "Brak ruchów magazynowych",
+      "columns": {
+        "date": "Data",
+        "type": "Typ",
+        "product": "Produkt",
+        "qty": "Ilość",
+        "from": "Skąd",
+        "to": "Dokąd",
+        "refItem": "Ref. pozycji"
+      }
+    },
+    "receipts": {
+      "title": "Przyjęcia PZ",
+      "detailTitle": "Szczegóły przyjęcia",
+      "search": "Szukaj po numerze...",
+      "empty": "Brak dokumentów PZ",
+      "columns": {
+        "number": "Numer",
+        "status": "Status",
+        "warehouse": "Magazyn",
+        "createdAt": "Utworzono"
+      }
+    },
+    "transfers": {
+      "title": "Przesunięcia MM",
+      "detailTitle": "Szczegóły przesunięcia",
+      "search": "Szukaj po numerze...",
+      "empty": "Brak dokumentów MM",
+      "columns": {
+        "number": "Numer",
+        "status": "Status",
+        "fromWarehouse": "Z magazynu",
+        "toWarehouse": "Do magazynu",
+        "createdAt": "Utworzono"
+      }
+    },
+    "shipments": {
+      "title": "Wydania WZ",
+      "detailTitle": "Szczegóły wydania",
+      "search": "Szukaj po numerze...",
+      "empty": "Brak dokumentów WZ",
+      "columns": {
+        "number": "Numer",
+        "status": "Status",
+        "warehouse": "Magazyn",
+        "order": "Zamówienie",
+        "createdAt": "Utworzono"
+      }
+    },
+    "adjustments": {
+      "title": "Korekty RW/PW",
+      "detailTitle": "Szczegóły korekty",
+      "search": "Szukaj po numerze...",
+      "empty": "Brak dokumentów RW/PW",
+      "actions": {
+        "post": "Zaksięguj"
+      },
+      "filters": {
+        "documentType": "Typ"
+      },
+      "types": {
+        "PW": "PW",
+        "RW": "RW"
+      },
+      "columns": {
+        "number": "Numer",
+        "documentType": "Typ",
+        "status": "Status",
+        "warehouse": "Magazyn",
+        "date": "Data",
+        "itemsCount": "Pozycje",
+        "createdAt": "Utworzono",
+        "postedAt": "Zaksięgowano"
+      }
+    },
+    "stockBalances": {
+      "title": "Stany magazynowe",
+      "search": "Szukaj po nazwie lub SKU...",
+      "onlyPositive": "Tylko dodatnie",
+      "empty": "Brak stanów magazynowych",
+      "openProduct": "Otwórz produkt",
+      "columns": {
+        "warehouse": "Magazyn",
+        "product": "Produkt",
+        "sku": "SKU",
+        "variant": "Wariant",
+        "onHand": "Stan",
+        "reserved": "Rezerwacje",
+        "available": "Dostępne"
+      }
+    },
+    "cycleCounts": {
+      "title": "Arkusze inwentaryzacji",
+      "createTitle": "Nowy arkusz inwentaryzacji",
+      "createSubtle": "Najpierw utwórz arkusz, potem dodaj pozycje policzone w widoku szczegółów",
+      "detailTitle": "Arkusz inwentaryzacji",
+      "detailSubtle": "Magazyn",
+      "empty": "Brak arkuszy inwentaryzacji",
+      "emptyDifferences": "Brak policzonych pozycji",
+      "selectWarehouse": "Wybierz magazyn",
+      "selectLocation": "Wybierz lokalizację",
+      "selectProduct": "Wybierz produkt",
+      "noProduct": "Nie wybrano produktu",
+      "reconciledNoNew": "Arkusz został już uzgodniony. W tej sesji nie utworzono nowych korekt.",
+      "notReconciledYet": "Uzgodnienie nie zostało jeszcze uruchomione.",
+      "actions": {
+        "new": "Nowy arkusz",
+        "create": "Utwórz",
+        "addLine": "Dodaj pozycję",
+        "addItems": "Dodaj pozycje policzone",
+        "reconcile": "Uzgodnij",
+        "openAdjustment": "Otwórz korektę",
+        "selectProduct": "Wybierz produkt",
+        "changeProduct": "Zmień produkt"
+      },
+      "sections": {
+        "header": "Nagłówek",
+        "differenceSummary": "Podsumowanie różnic",
+        "addItems": "Dodaj pozycje policzone",
+        "reconcileResult": "Wynik uzgodnienia"
+      },
+      "fields": {
+        "warehouse": "Magazyn"
+      },
+      "columns": {
+        "sheet": "Arkusz",
+        "status": "Status",
+        "warehouse": "Magazyn",
+        "itemsCount": "Policzone pozycje",
+        "createdAt": "Utworzono",
+        "location": "Lokalizacja",
+        "product": "Produkt",
+        "variant": "Wariant",
+        "lot": "Partia",
+        "serial": "Numer seryjny",
+        "counted": "Policzone",
+        "system": "System",
+        "diff": "Różnica",
+        "movement": "Planowany ruch"
+      },
+      "summary": {
+        "pw": "Suma PW",
+        "rw": "Suma RW",
+        "equal": "Pozycje bez różnic"
+      },
+      "placeholders": {
+        "variant": "ID wariantu",
+        "lot": "ID partii",
+        "serial": "ID numeru seryjnego"
+      },
+      "validation": {
+        "warehouseRequired": "Magazyn jest wymagany",
+        "locationRequired": "Lokalizacja jest wymagana",
+        "productRequired": "Produkt jest wymagany",
+        "qtyNonNegative": "Ilość policzona musi być >= 0"
+      },
+      "errors": {
+        "create": "Nie udało się utworzyć arkusza",
+        "addItems": "Nie udało się dodać pozycji policzonych",
+        "reconcile": "Nie udało się uzgodnić arkusza"
+      }
+    },
+    "stockValuation": {
+      "title": "Wartość magazynu",
+      "subtitle": "Wycena FIFO na podstawie pozostałych warstw kosztowych.",
+      "empty": "Brak pozycji wyceny.",
+      "error": "Nie udało się pobrać raportu wartości magazynu.",
+      "asOfComingSoon": "Wkrótce",
+      "filters": {
+        "warehouse": "Magazyn",
+        "productSearch": "Szukaj produktu",
+        "productSearchPlaceholder": "Szukaj po nazwie lub SKU...",
+        "product": "Produkt",
+        "currency": "Waluta",
+        "groupBy": "Grupuj według",
+        "asOf": "Stan na dzień"
+      },
+      "groupBy": {
+        "product": "Produkt",
+        "warehouse": "Magazyn",
+        "productWarehouse": "Produkt + magazyn"
+      },
+      "totals": {
+        "qtyRemaining": "Ilość pozostała",
+        "stockValue": "Wartość magazynu",
+        "currency": "Waluta"
+      },
+      "columns": {
+        "warehouse": "Magazyn",
+        "product": "Produkt",
+        "sku": "SKU",
+        "variant": "Wariant",
+        "qtyRemaining": "Ilość pozostała",
+        "stockValue": "Wartość",
+        "currency": "Waluta"
+      }
+    },
+    "stockTurnover": {
+      "title": "Obroty magazynowe",
+      "subtitle": "Obroty ruchów magazynowych na podstawie zakosztowanych ruchów FIFO.",
+      "empty": "Brak obrotów dla wybranego okresu.",
+      "error": "Nie udało się pobrać raportu obrotów magazynowych.",
+      "validation": {
+        "dateRangeRequired": "Data od i data do są wymagane."
+      },
+      "filters": {
+        "dateFrom": "Data od",
+        "dateTo": "Data do",
+        "warehouse": "Magazyn",
+        "productSearch": "Szukaj produktu",
+        "productSearchPlaceholder": "Szukaj po nazwie lub SKU...",
+        "product": "Produkt",
+        "currency": "Waluta",
+        "groupBy": "Grupuj według"
+      },
+      "groupBy": {
+        "product": "Produkt",
+        "warehouse": "Magazyn",
+        "productWarehouse": "Produkt + magazyn",
+        "documentType": "Typ dokumentu"
+      },
+      "totals": {
+        "qtyIn": "Ilość przyjęta",
+        "qtyOut": "Ilość wydana",
+        "valueIn": "Wartość przyjęć",
+        "valueOut": "Wartość wydań",
+        "netQty": "Ilość netto",
+        "netValue": "Wartość netto",
+        "currency": "Waluta"
+      },
+      "columns": {
+        "warehouse": "Magazyn",
+        "product": "Produkt",
+        "sku": "SKU",
+        "variant": "Wariant",
+        "documentType": "Typ dokumentu",
+        "qtyIn": "Ilość przyjęta",
+        "qtyOut": "Ilość wydana",
+        "valueIn": "Wartość przyjęć",
+        "valueOut": "Wartość wydań",
+        "netQty": "Ilość netto",
+        "netValue": "Wartość netto",
+        "currency": "Waluta"
+      }
+    },
+    "stockAsOf": {
+      "title": "Stan magazynu na dzień",
+      "subtitle": "Historyczny stan ilościowy i wartość FIFO odtworzone z ruchów magazynowych.",
+      "empty": "Brak stanów dla wybranej daty.",
+      "error": "Nie udało się pobrać raportu stanu na dzień.",
+      "validation": {
+        "asOfRequired": "Data stanu jest wymagana."
+      },
+      "filters": {
+        "asOf": "Stan na dzień",
+        "warehouse": "Magazyn",
+        "productSearch": "Szukaj produktu",
+        "productSearchPlaceholder": "Szukaj po nazwie lub SKU...",
+        "product": "Produkt",
+        "currency": "Waluta",
+        "groupBy": "Grupuj według"
+      },
+      "groupBy": {
+        "product": "Produkt",
+        "warehouse": "Magazyn",
+        "productWarehouse": "Produkt + magazyn"
+      },
+      "totals": {
+        "qty": "Ilość",
+        "stockValue": "Wartość magazynu",
+        "currency": "Waluta"
+      },
+      "columns": {
+        "warehouse": "Magazyn",
+        "product": "Produkt",
+        "sku": "SKU",
+        "variant": "Wariant",
+        "qty": "Ilość",
+        "stockValue": "Wartość",
+        "currency": "Waluta"
+      }
+    },
+    "inventoryLedger": {
+      "title": "Karta magazynowa",
+      "subtitle": "Ruchy produktu z narastającym saldem ilościowym i wartościowym.",
+      "empty": "Brak pozycji karty dla wybranych filtrów.",
+      "error": "Nie udało się pobrać karty magazynowej.",
+      "validation": {
+        "productRequired": "Produkt jest wymagany.",
+        "dateRangeRequired": "Data od i data do są wymagane."
+      },
+      "filters": {
+        "productSearch": "Szukaj produktu",
+        "productSearchPlaceholder": "Szukaj po nazwie lub SKU...",
+        "product": "Produkt",
+        "selectProduct": "Wybierz produkt",
+        "variant": "Wariant",
+        "dateFrom": "Data od",
+        "dateTo": "Data do",
+        "warehouse": "Magazyn",
+        "currency": "Waluta"
+      },
+      "totals": {
+        "qtyIn": "Ilość przyjęta",
+        "qtyOut": "Ilość wydana",
+        "valueIn": "Wartość przyjęć",
+        "valueOut": "Wartość wydań",
+        "balanceAfter": "Saldo",
+        "valueBalance": "Saldo wartości",
+        "currency": "Waluta"
+      },
+      "columns": {
+        "date": "Data",
+        "documentType": "Typ dokumentu",
+        "documentNumber": "Numer dokumentu",
+        "warehouse": "Magazyn",
+        "location": "Lokalizacja",
+        "qtyIn": "Ilość przyjęta",
+        "qtyOut": "Ilość wydana",
+        "balanceAfter": "Saldo",
+        "unitCost": "Koszt jedn.",
+        "valueIn": "Wartość przyjęć",
+        "valueOut": "Wartość wydań",
+        "valueBalance": "Saldo wartości",
+        "currency": "Waluta"
+      }
+    },
+    "corrections": {
+      "create": "Utwórz korektę",
+      "title": "Utwórz korektę",
+      "submit": "Utwórz korektę",
+      "fullLineHint": "MVP obsługuje tylko korektę całych pozycji. Ilość jest tylko do odczytu i odpowiada pierwotnie przetworzonej ilości.",
+      "reason": "Powód",
+      "reasonPlaceholder": "Opcjonalny powód",
+      "noLines": "Brak pozycji dostępnych do korekty",
+      "select": "Wybierz",
+      "selectLine": "Wybierz pozycję",
+      "errors": {
+        "LAYER_PARTIALLY_CONSUMED": "Ta warstwa przyjęcia została już zużyta. Najpierw odwróć późniejsze ruchy.",
+        "DOCUMENT_ALREADY_CORRECTED": "Ten dokument ma już korektę.",
+        "CORRECTION_OF_CORRECTION_NOT_ALLOWED": "Korekta dokumentu korekty nie jest dozwolona.",
+        "PARTIAL_PZ_CORRECTION_NOT_SUPPORTED": "Częściowa korekta PZ nie jest obsługiwana w MVP.",
+        "PARTIAL_WZ_CORRECTION_NOT_SUPPORTED": "Częściowa korekta WZ nie jest obsługiwana w MVP."
+      }
     }
   },
   "statuses": {
@@ -160,7 +762,16 @@
     "viewed": "Wyświetlona",
     "accepted": "Zaakceptowana",
     "rejected": "Odrzucona",
-    "expired": "Wygasła"
+    "expired": "Wygasła",
+    "received": "Przyjęto",
+    "putaway": "Odłożono",
+    "in_transit": "W tranzycie",
+    "packing": "Pakowanie",
+    "posted": "Zaksięgowano",
+    "planned": "Zaplanowano",
+    "counting": "Liczenie",
+    "reconciled": "Uzgodniono",
+    "issued": "Wystawiona"
   },
   "widgets": {
     "kpi": "KPI",
@@ -242,7 +853,11 @@
       "textSizeLarge": "Duży",
       "densityCompact": "Kompaktowo",
       "densityComfortable": "Wygodnie",
-      "densitySpacious": "Przestronnie"
+      "densitySpacious": "Przestronnie",
+      "skin": "Styl interfejsu",
+      "skinV1": "Sunset Classic (V1)",
+      "skinV2": "Sunset Modern (V2)",
+      "skinV3": "Sunset Enterprise (V3)"
     },
     "preferences": {
       "language": "Język",
@@ -788,6 +1403,71 @@
           "saveFailed": "Nie udało się zapisać ustawień dokumentów magazynowych."
         }
       }
+    },
+    "wms": {
+      "title": "Warehouse / WMS",
+      "subtitle": "Konfiguracja magazynów, lokalizacji i domyślnego zachowania WMS.",
+      "defaultWarehouse": "Domyślny magazyn",
+      "tabs": {
+        "overview": "Overview",
+        "warehouses": "Magazyny",
+        "locations": "Lokalizacje",
+        "settings": "Ustawienia"
+      },
+      "overview": {
+        "title": "Warehouse / WMS",
+        "description": "Ustawienia magazynu dla dokumentów WMS, stanów magazynowych i inwentaryzacji."
+      },
+      "counters": {
+        "warehouses": "Magazyny",
+        "locations": "Lokalizacje",
+        "activeWarehouses": "Aktywne magazyny"
+      },
+      "actions": {
+        "configure": "Konfiguruj",
+        "addWarehouse": "Dodaj magazyn",
+        "editWarehouse": "Edytuj magazyn",
+        "setDefault": "Ustaw jako domyślny",
+        "activate": "Aktywuj",
+        "deactivate": "Dezaktywuj",
+        "addLocation": "Dodaj lokalizację",
+        "editLocation": "Edytuj lokalizację"
+      },
+      "fields": {
+        "code": "Kod",
+        "name": "Nazwa",
+        "isActive": "Aktywny",
+        "isDefault": "Domyślny",
+        "warehouse": "Magazyn",
+        "type": "Typ"
+      },
+      "placeholders": {
+        "selectWarehouse": "Wybierz magazyn"
+      },
+      "settings": {
+        "negativeStock": "Polityka ujemnego stanu",
+        "hardMode": "Tryb blokady",
+        "costMethod": "Metoda kosztu",
+        "costComingSoon": "FIFO/AVCO wkrótce",
+        "numberingLink": "Ustawienia numeracji PZ/WZ/MM/RW/PW"
+      },
+      "empty": {
+        "warehouses": "Brak magazynów.",
+        "locations": "Brak lokalizacji."
+      },
+      "messages": {
+        "saved": "Zapisano.",
+        "defaultSaved": "Domyślny magazyn zaktualizowany."
+      },
+      "errors": {
+        "saveWarehouse": "Nie udało się zapisać magazynu.",
+        "saveLocation": "Nie udało się zapisać lokalizacji.",
+        "defaultWarehouse": "Nie udało się zaktualizować domyślnego magazynu."
+      },
+      "validation": {
+        "warehouseRequired": "Kod i nazwa są wymagane.",
+        "locationRequired": "Magazyn, kod i typ są wymagane."
+      }
     }
   },
   "companyMenu": {
@@ -1133,6 +1813,94 @@
       "clearTextColor": "Wyczyść kolor tekstu",
       "highlightColor": "Kolor tła",
       "clearHighlight": "Wyczyść kolor tła"
+    }
+  },
+  "wmsDocsList": {
+    "subtitle": "Ujednolicony widok PZ / WZ / MM / RW / PW. Filtruj po typie z menu Workspace Views.",
+    "searchPlaceholder": "Szukaj po numerze…",
+    "empty": "Brak dokumentów w tym widoku",
+    "paginationCount": "{{from}}–{{to}} z {{total}}",
+    "relation": {
+      "correction": "Korekta"
+    },
+    "cols": {
+      "type": "Typ",
+      "number": "Numer",
+      "date": "Data",
+      "status": "Status",
+      "warehouse": "Magazyn",
+      "itemsCount": "Pozycje",
+      "totalQty": "Ilość"
+    }
+  },
+  "wmsViews": {
+    "popoverTitle": "Dokumenty magazynowe",
+    "placeholderDescription": "Ten widok jest częścią Workspace Views. Pełna lista zostanie udostępniona po podłączeniu wspólnego źródła dokumentów.",
+    "all": "Wszystkie dokumenty",
+    "pz": "PZ — Przyjęcia",
+    "wz": "WZ — Wydania",
+    "mm": "MM — Przesunięcia",
+    "rw": "RW — Rozchody",
+    "pw": "PW — Przyjęcia wew.",
+    "pzk": "PZK — Korekty PZ",
+    "wzk": "WZK — Korekty WZ",
+    "inventory": "Inwentaryzacja",
+    "returns": "Zwroty"
+  },
+  "workspaceViews": {
+    "manage": "Zarządzaj widokami",
+    "manageComingSoon": "Zarządzaj widokami — wkrótce",
+    "create": "Nowy widok",
+    "createNewView": "Utwórz nowy widok",
+    "saveAsView": "Zapisz jako widok",
+    "comingSoon": "Wkrótce",
+    "editor": {
+      "title": "Utwórz widok",
+      "name": "Nazwa widoku",
+      "namePlaceholder": "np. WZ Łódź zaksięgowane",
+      "description": "Opis",
+      "descriptionPlaceholder": "Opcjonalne notatki",
+      "filterPreview": "Podgląd filtrów",
+      "noFilters": "Brak filtrów — zapisany widok pokaże pełną listę.",
+      "cancel": "Anuluj",
+      "create": "Utwórz",
+      "createdToast": "Widok osobisty utworzony",
+      "errorLimitExceeded": "Osiągnięto limit widoków osobistych (50). Usuń lub ukryj istniejący, zanim spróbujesz ponownie.",
+      "type": "Typ",
+      "status": "Status",
+      "warehouse": "Magazyn",
+      "search": "Szukaj",
+      "dateFrom": "Data od",
+      "dateTo": "Data do"
+    },
+    "searchPlaceholder": "Szukaj widoków…",
+    "noMatch": "Brak pasujących widoków",
+    "noViews": "Brak widoków",
+    "allViews": "Wszystkie widoki",
+    "empty": "Brak dostępnych widoków",
+    "moreCount": "+{{count}} więcej",
+    "system": "Systemowy",
+    "personal": "Osobisty",
+    "default": "Domyślny",
+    "pin": "Przypnij",
+    "unpin": "Odepnij",
+    "hide": "Ukryj",
+    "show": "Pokaż",
+    "rename": "Zmień nazwę",
+    "delete": "Usuń",
+    "confirmDelete": "Usunąć ten widok? Operacja jest nieodwracalna.",
+    "wms": {
+      "documents": {
+        "all": "Wszystkie dokumenty",
+        "pz": "PZ — Przyjęcia",
+        "wz": "WZ — Wydania",
+        "pzk": "PZK — Korekty PZ",
+        "wzk": "WZK — Korekty WZ",
+        "mm": "MM — Przesunięcia",
+        "rw": "RW — Rozchody",
+        "pw": "PW — Przyjęcia wew.",
+        "postedToday": "Wystawione dzisiaj"
+      }
     }
   }
 }

@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import Modal from '../Modal';
 import { useListProductsQuery } from '../../store/rtk/productsApi';
+import {
+  getAvailabilitySnapshot,
+  getProductInventoryKind,
+  getProductInventoryLabel,
+} from './lineItemSemantics';
 import s from './OmsProductPicker.module.css';
 
 function asText(value) {
@@ -91,6 +96,8 @@ export default function OmsProductPicker({
               <tr>
                 <th>Name</th>
                 <th>SKU</th>
+                <th>Type</th>
+                <th>Available</th>
                 <th>Net price</th>
                 <th>VAT %</th>
                 <th>Unit</th>
@@ -107,13 +114,27 @@ export default function OmsProductPicker({
                   || product?.uom?.name
                   || product?.unit
                 );
+                const inventoryKind = getProductInventoryKind(product);
+                const inventoryLabel = getProductInventoryLabel(product);
+                const availability = getAvailabilitySnapshot(product);
 
                 return (
                   <tr key={product.id}>
                     <td>
                       <div className={s.name}>{product.name || '—'}</div>
+                      <div className={s.nameMeta}>
+                        {inventoryKind === 'stock' ? 'Tracked inventory product' : inventoryLabel}
+                      </div>
                     </td>
                     <td>{product.sku || '—'}</td>
+                    <td>
+                      <span className={`${s.badge} ${s[`badge${inventoryKind}`] || ''}`}>
+                        {inventoryLabel}
+                      </span>
+                    </td>
+                    <td>
+                      {inventoryKind === 'stock' ? formatNumber(availability.availableQuantity) : '—'}
+                    </td>
                     <td>{formatNumber(netPrice)}</td>
                     <td>{formatNumber(vatRate)}</td>
                     <td>{unit || '—'}</td>

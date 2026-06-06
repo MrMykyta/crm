@@ -11,7 +11,23 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      StockMove.hasMany(models.StockMoveCostAllocation, {
+        as: 'costAllocations',
+        foreignKey: { name: 'stockMoveId', field: 'stock_move_id' },
+      });
+      StockMove.hasOne(models.CostLayer, {
+        as: 'costLayer',
+        foreignKey: { name: 'sourceMoveId', field: 'source_move_id' },
+      });
+      // K1: direct audit pointer for reversal moves emitted by correction postings.
+      StockMove.belongsTo(models.StockMove, {
+        as: 'reversesMove',
+        foreignKey: { name: 'reversesMoveId', field: 'reverses_move_id' },
+      });
+      StockMove.hasOne(models.StockMove, {
+        as: 'reversedByMove',
+        foreignKey: { name: 'reversesMoveId', field: 'reverses_move_id' },
+      });
     }
   }
   StockMove.init({
@@ -71,6 +87,32 @@ module.exports = (sequelize, DataTypes) => {
     refId:{ 
       type:DataTypes.UUID, 
       field:'ref_id' 
+    },
+    refItemId:{
+      type:DataTypes.UUID,
+      field:'ref_item_id'
+    },
+    unitCost:{
+      type:DataTypes.DECIMAL(14,4),
+      field:'unit_cost'
+    },
+    totalCost:{
+      type:DataTypes.DECIMAL(14,4),
+      field:'total_cost'
+    },
+    currency:{
+      type:DataTypes.STRING(3)
+    },
+    costMethod:{
+      type:DataTypes.STRING(16),
+      field:'cost_method'
+    },
+    reversesMoveId: {
+      // K1: optional direct pointer "this move compensates move X". Set by correction posting.
+      // Redundant with allocation-level reversedByStockMoveId, but cheaper for ledger audit.
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'reverses_move_id',
     },
   }, {
     sequelize,

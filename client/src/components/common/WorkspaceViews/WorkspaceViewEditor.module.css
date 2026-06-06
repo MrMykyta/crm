@@ -1,0 +1,222 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+.modal {
+  position: relative;
+  width: 460px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 64px);
+  background: var(--card-bg, #0f172a);
+  border: 1px solid var(--card-brd, rgba(255, 255, 255, 0.12));
+  border-radius: 14px;
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--card-brd, rgba(255, 255, 255, 0.1));
+}
+
+.headerTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text, #f3f4f6);
+}
+
+.closeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text, #f3f4f6);
+  cursor: pointer;
+}
+
+.closeBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.closeBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.body {
+  padding: 16px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--textSecondary, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.required {
+  margin-left: 4px;
+  color: #f87171;
+}
+
+.input {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text, #f3f4f6);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  font-family: inherit;
+}
+
+.input:focus {
+  border-color: var(--accent, #6366f1);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 56px;
+  max-height: 160px;
+  line-height: 1.4;
+}
+
+.charCounter {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  font-size: 10.5px;
+  color: var(--textSecondary, #94a3b8);
+  pointer-events: none;
+}
+
+.emptyFilter {
+  font-size: 12.5px;
+  color: var(--textSecondary, #94a3b8);
+  padding: 8px 12px;
+  border: 1px dashed var(--card-brd, rgba(255, 255, 255, 0.14));
+  border-radius: 9px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.16);
+  border: 1px solid rgba(99, 102, 241, 0.32);
+  font-size: 12px;
+  color: #c7d2fe;
+}
+
+.chipLabel {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10.5px;
+}
+
+.chipValue {
+  font-weight: 500;
+  color: var(--text, #f3f4f6);
+}
+
+.errorBox {
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(239, 68, 68, 0.32);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.cancelBtn,
+.submitBtn {
+  padding: 9px 16px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cancelBtn {
+  background: transparent;
+  border-color: var(--border, rgba(255, 255, 255, 0.12));
+  color: var(--text, #f3f4f6);
+}
+
+.cancelBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.submitBtn {
+  background: var(--accent, #6366f1);
+  color: white;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: var(--accentHover, #4f46e5);
+}
+
+.submitBtn:disabled,
+.cancelBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

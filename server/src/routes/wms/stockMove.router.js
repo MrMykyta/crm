@@ -3,6 +3,8 @@
 const stockMoveRouter = require('express').Router();
 const controller = require('../../controllers/wms/stockMove.controller');
 
+stockMoveRouter.get('/history/document', controller.historyByDocument);
+stockMoveRouter.get('/history/product', controller.historyByProduct);
 stockMoveRouter.get('/', controller.list);
 stockMoveRouter.get('/:id', controller.getById);
 stockMoveRouter.post('/', controller.create);

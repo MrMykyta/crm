@@ -19,6 +19,7 @@ import {
   Wrench,
   Warehouse,
   File,
+  ArrowRightLeft,
 } from "lucide-react";
 
 export const MENU = [
@@ -53,8 +54,19 @@ export const MENU = [
   { key: "services", icon: Wrench, labelKey: "menu.services", route: "/main/pim/services", type: "item" },
 
   { key: "wms", icon: Warehouse, labelKey: "menu.wms", type: "section" },
-  { key: "warehouse", icon: Warehouse, labelKey: "menu.warehouse", route: "/main/wms/warehouse", type: "item" },
-  { key: "docs", icon: File, labelKey: "menu.wmsDocs", route: "/main/wms/docs", type: "item" },
+  { key: "stockBalances", icon: Package, labelKey: "menu.stockBalances", route: "/main/wms/stock-balances", type: "item" },
+  // Workspace Views Phase 2: pinned views render under this item via
+  // <WorkspaceViewsSidebarSection module="wms.documents" />. The per-type list pages
+  // (receipts/transfers/shipments/adjustments/cycle-counts) and reports are still
+  // reachable by URL — they no longer take a sidebar slot each.
+  {
+    key: "wmsDocuments",
+    icon: FileText,
+    labelKey: "menu.wmsDocuments",
+    route: "/main/wms/documents",
+    type: "item",
+    workspaceViewsModule: "wms.documents",
+  },
 
   { key: "users", icon: Users, labelKey: "menu.users", route: "/main/company-users", type: "item" },
 ];

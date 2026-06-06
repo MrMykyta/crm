@@ -1,9 +1,20 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import EntityDetailPage from '../../../_scaffold/EntityDetailPage';
-import OmsStatusActionsMenu from '../../../../components/oms/OmsStatusActionsMenu';
+import DocumentVisualEditor from '../../../../components/documents/DocumentVisualEditor';
+import { mapOrderToVisualModel } from '../../../../components/documents/DocumentVisualEditor/omsDocumentModel';
+import LineItemsEditor from '../../../../components/documents/LineItemsEditor';
+import {
+  asNumber,
+  asText,
+  calculateTotals,
+  mapLinesToPayload,
+  toEditorItem,
+} from '../../../../components/documents/LineItemsEditor/lineModel';
+import { normalizeItemSortOrder, sortItemsBySortOrder } from '../../../../components/oms/useReorderItems';
+import { isOrderEditable } from '../../../../components/oms/documentEditability';
+import { DocumentRelations, DocumentTimeline } from '../../../../components/documents/DocumentShell';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import {
   useCancelOrderMutation,
@@ -12,61 +23,17 @@ import {
   useConvertOrderToInvoiceMutation,
   useGetOrderByIdQuery,
   useReturnOrderMutation,
+  useSaveOrderItemsMutation,
   useShipOrderMutation,
+  useUpdateOrderMutation,
 } from '../../../../store/rtk/ordersApi';
 import s from '../../OmsReadOnlyDetail.module.css';
 
-function buildTabs(t) {
-  return [
-    { key: 'items', label: 'Items' },
-    { key: 'summary', label: 'Summary' },
-    { key: 'relations', label: t('oms.relations.title', 'Relations') },
-    { key: 'actions', label: 'Actions' },
-  ];
-}
-
-function asText(value) {
-  if (value === undefined || value === null) return '';
-  return String(value).trim();
-}
-
-function asNumber(value) {
-  if (value === undefined || value === null || value === '') return null;
-  const num = Number(value);
-  return Number.isFinite(num) ? num : null;
-}
-
-function formatDate(value, locale = 'en') {
-  const text = asText(value);
-  if (!text) return '—';
-  const parsed = new Date(text);
-  if (Number.isNaN(parsed.getTime())) return text;
-  return new Intl.DateTimeFormat(locale, {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(parsed);
-}
-
-function formatMoney(value, currency = 'PLN', locale = 'en') {
-  const amount = asNumber(value);
-  if (amount === null) return '—';
-  return `${new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)} ${asText(currency) || 'PLN'}`;
-}
-
-function formatQty(value, locale = 'en') {
-  const qty = asNumber(value);
-  if (qty === null) return '—';
-  return new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 4,
-  }).format(qty);
-}
+const DISCOUNT_TYPE_OPTIONS = [
+  { value: 'none', label: 'none' },
+  { value: 'fixed', label: 'fixed' },
+  { value: 'percent', label: 'percent' },
+];
 
 function statusLabel(status, t) {
   const normalized = asText(status).toLowerCase();
@@ -74,248 +41,72 @@ function statusLabel(status, t) {
   return t(`statuses.${normalized}`, normalized);
 }
 
-function itemName(item) {
-  return item?.nameSnapshot || item?.name || item?.product?.name || item?.skuSnapshot || '—';
-}
-
-function getErrorText(error, fallback = 'Action failed') {
+function getErrorText(error, fallback, t) {
+  if (error?.data?.code === 'COSTING_NOT_INITIALIZED') return t('oms.errors.costingNotInitialized');
   return error?.data?.message || error?.data?.error || error?.error || error?.message || fallback;
-}
-
-function toFormOrder(order, t, locale) {
-  const counterparty = order?.counterparty || order?.customer;
-  return {
-    number: order?.number || '',
-    status: statusLabel(order?.status, t),
-    paymentStatus: statusLabel(order?.paymentStatus, t),
-    fulfillmentStatus: statusLabel(order?.fulfillmentStatus, t),
-    currencyCode: order?.currencyCode || '',
-    totalNet: formatMoney(order?.totalNet, order?.currencyCode || 'PLN', locale),
-    totalTax: formatMoney(order?.totalTax, order?.currencyCode || 'PLN', locale),
-    totalGross: formatMoney(order?.totalGross, order?.currencyCode || 'PLN', locale),
-    counterpartyName: counterparty?.name || counterparty?.shortName || counterparty?.fullName || '',
-    contactName: order?.contact?.name || order?.contact?.email || '',
-    ownerName: order?.owner?.name || order?.owner?.email || '',
-    sourceOffer: order?.sourceOffer?.number || order?.sourceOfferId || '',
-    placedAt: formatDate(order?.placedAt, locale),
-    confirmedAt: formatDate(order?.statusMetadata?.confirmedAt, locale),
-    createdAt: formatDate(order?.createdAt, locale),
-    updatedAt: formatDate(order?.updatedAt, locale),
-    paymentTerms: order?.paymentTerms || '',
-    deliveryTerms: order?.deliveryTerms || '',
-    leadTime: order?.leadTime || '',
-    notes: order?.notes || '',
-  };
-}
-
-function buildSchema() {
-  return [
-    { kind: 'section', title: 'Order' },
-    { name: 'number', label: 'Number', type: 'text', cols: 2, disabled: true },
-    { name: 'status', label: 'Status', type: 'text', cols: 2, disabled: true },
-    { name: 'paymentStatus', label: 'Payment status', type: 'text', cols: 2, disabled: true },
-    { name: 'fulfillmentStatus', label: 'Fulfillment status', type: 'text', cols: 2, disabled: true },
-
-    { kind: 'section', title: 'Counterparty' },
-    { name: 'counterpartyName', label: 'Counterparty', type: 'text', cols: 2, disabled: true },
-    { name: 'contactName', label: 'Contact', type: 'text', cols: 2, disabled: true },
-    { name: 'ownerName', label: 'Owner', type: 'text', cols: 2, disabled: true },
-    { name: 'sourceOffer', label: 'Source offer', type: 'text', cols: 2, disabled: true },
-
-    { kind: 'section', title: 'Dates' },
-    { name: 'placedAt', label: 'Placed at', type: 'text', cols: 2, disabled: true },
-    { name: 'confirmedAt', label: 'Confirmed at', type: 'text', cols: 2, disabled: true },
-    { name: 'createdAt', label: 'Created at', type: 'text', cols: 2, disabled: true },
-    { name: 'updatedAt', label: 'Updated at', type: 'text', cols: 2, disabled: true },
-
-    { kind: 'section', title: 'Terms & notes' },
-    { name: 'paymentTerms', label: 'Payment terms', type: 'text', cols: 2, disabled: true },
-    { name: 'deliveryTerms', label: 'Delivery terms', type: 'text', cols: 2, disabled: true },
-    { name: 'leadTime', label: 'Lead time', type: 'text', cols: 2, disabled: true },
-    { name: 'currencyCode', label: 'Currency', type: 'text', cols: 2, disabled: true },
-    { name: 'notes', label: 'Notes', type: 'textarea', cols: 4, rows: 4, disabled: true },
-  ];
 }
 
 function renderInvoiceLinks(data) {
   const list = [];
-  if (Array.isArray(data?.invoices)) {
-    list.push(...data.invoices.filter(Boolean));
-  }
-  if (data?.invoice) {
-    list.push(data.invoice);
-  }
-  if (data?.convertedInvoice) {
-    list.push(data.convertedInvoice);
-  }
+  if (Array.isArray(data?.invoices)) list.push(...data.invoices.filter(Boolean));
+  if (data?.invoice) list.push(data.invoice);
+  if (data?.convertedInvoice) list.push(data.convertedInvoice);
   const map = new Map();
-  list.forEach((item) => {
-    if (item?.id && !map.has(item.id)) map.set(item.id, item);
-  });
+  list.forEach((item) => { if (item?.id && !map.has(item.id)) map.set(item.id, item); });
   return [...map.values()];
 }
 
-function OrderRightTabs({ tab, data, locale, actions, loadingKey, actionError, onAction, t }) {
-  const items = Array.isArray(data?.items) ? data.items : [];
-  const currency = data?.currencyCode || 'PLN';
-
-  if (tab === 'items') {
-    return (
-      <section className={s.section}>
-        <h3 className={s.sectionTitle}>Items</h3>
-        {!items.length ? (
-          <p className={s.empty}>No items in this order.</p>
-        ) : (
-          <div className={s.tableWrap}>
-            <table className={s.table}>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th className={s.textRight}>Qty</th>
-                  <th className={s.textRight}>Price net</th>
-                  <th className={s.textRight}>VAT %</th>
-                  <th className={s.textRight}>Line gross</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => {
-                  const taxRate = asNumber(item?.vatRateSnapshot ?? item?.vatRate ?? item?.taxRate) ?? 0;
-                  return (
-                    <tr key={item.id || `${itemName(item)}-${item.sortOrder || 0}`}>
-                      <td>{itemName(item)}</td>
-                      <td className={s.textRight}>{formatQty(item?.qty ?? item?.quantity, locale)}</td>
-                      <td className={s.textRight}>{formatMoney(item?.priceNet ?? item?.unitPriceNet, currency, locale)}</td>
-                      <td className={s.textRight}>{formatQty(taxRate, locale)}</td>
-                      <td className={s.textRight}>{formatMoney(item?.lineTotalGross, currency, locale)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-    );
+function buildDocumentRelations(data, t) {
+  const relations = [];
+  if (data?.sourceOffer?.id) {
+    relations.push({
+      type: t('documents.types.offer'),
+      number: data.sourceOffer.number || data.sourceOffer.id,
+      status: data.sourceOffer.status,
+      statusLabel: data.sourceOffer.status ? statusLabel(data.sourceOffer.status, t) : undefined,
+      to: `/main/oms/offers/${data.sourceOffer.id}`,
+    });
   }
+  renderInvoiceLinks(data).forEach((invoice) => {
+    relations.push({
+      type: t('documents.types.invoice'),
+      number: invoice.number || invoice.id,
+      status: invoice.status,
+      statusLabel: invoice.status ? statusLabel(invoice.status, t) : undefined,
+      to: `/main/documents/${invoice.id}`,
+    });
+  });
+  return relations;
+}
 
-  if (tab === 'summary') {
-    return (
-      <section className={s.section}>
-        <h3 className={s.sectionTitle}>Summary</h3>
-        <div className={s.kvList}>
-          <div className={s.kvRow}><span className={s.kvLabel}>Net</span><span className={s.kvValue}>{formatMoney(data?.totalNet, currency, locale)}</span></div>
-          <div className={s.kvRow}><span className={s.kvLabel}>VAT</span><span className={s.kvValue}>{formatMoney(data?.totalTax, currency, locale)}</span></div>
-          <div className={s.kvRow}><span className={s.kvLabel}>Gross</span><span className={s.kvValue}>{formatMoney(data?.totalGross, currency, locale)}</span></div>
-          <div className={s.kvRow}><span className={s.kvLabel}>Currency</span><span className={s.kvValue}>{currency}</span></div>
-        </div>
-      </section>
-    );
-  }
-
-  if (tab === 'relations') {
-    const counterparty = data?.counterparty || data?.customer || null;
-    const contact = data?.contact || null;
-    const sourceOffer = data?.sourceOffer || null;
-    const invoiceLinks = renderInvoiceLinks(data);
-    const hasAny = Boolean(counterparty || contact || sourceOffer || invoiceLinks.length);
-
-    return (
-      <section className={s.section}>
-        <h3 className={s.sectionTitle}>{t('oms.relations.title', 'Relations')}</h3>
-
-        {!hasAny ? (
-          <p className={s.empty}>{t('oms.relations.empty', 'No related entities')}</p>
-        ) : (
-          <div className={s.kvList}>
-            <div className={s.kvRow}>
-              <span className={s.kvLabel}>{t('oms.relations.sourceOffer', 'Source offer')}</span>
-              <span className={`${s.kvValue} ${s.kvValueLeft}`}>
-                {sourceOffer?.id ? (
-                  <Link className={s.entityLink} to={`/main/oms/offers/${sourceOffer.id}`}>
-                    {sourceOffer.number || sourceOffer.id}
-                  </Link>
-                ) : (
-                  '—'
-                )}
-              </span>
-            </div>
-
-            <div className={s.kvRow}>
-              <span className={s.kvLabel}>{t('oms.relations.invoices', 'Invoices')}</span>
-              <span className={`${s.kvValue} ${s.kvValueLeft}`}>
-                {invoiceLinks.length ? (
-                  <span className={s.inlineLinks}>
-                    {invoiceLinks.map((invoice) => (
-                      <Link key={invoice.id} className={s.entityLink} to={`/main/documents/${invoice.id}`}>
-                        {invoice.number || invoice.id}
-                      </Link>
-                    ))}
-                  </span>
-                ) : (
-                  '—'
-                )}
-              </span>
-            </div>
-
-            <div className={s.kvRow}>
-              <span className={s.kvLabel}>{t('oms.relations.counterparty', 'Counterparty')}</span>
-              <span className={`${s.kvValue} ${s.kvValueLeft}`}>
-                {counterparty?.id ? (
-                  <Link className={s.entityLink} to={`/main/counterparties/${counterparty.id}`}>
-                    {counterparty.name || counterparty.shortName || counterparty.fullName || counterparty.id}
-                  </Link>
-                ) : (
-                  '—'
-                )}
-              </span>
-            </div>
-
-            <div className={s.kvRow}>
-              <span className={s.kvLabel}>{t('oms.relations.contact', 'Contact')}</span>
-              <span className={`${s.kvValue} ${s.kvValueLeft}`}>
-                {contact?.id ? (
-                  <Link className={s.entityLink} to={`/main/contacts/${contact.id}`}>
-                    {contact.name || contact.email || contact.id}
-                  </Link>
-                ) : (
-                  contact?.name || contact?.email || '—'
-                )}
-              </span>
-            </div>
-          </div>
-        )}
-      </section>
-    );
-  }
-
-  if (tab === 'actions') {
-    return (
-      <section className={s.section}>
-        <h3 className={s.sectionTitle}>Actions</h3>
-        <OmsStatusActionsMenu
-          actions={actions}
-          loadingKey={loadingKey}
-          error={actionError}
-          onAction={onAction}
-        />
-      </section>
-    );
-  }
-
-  return null;
+function buildTimelineEvents(data, t) {
+  const actorName = data?.owner?.name || data?.owner?.email || '';
+  return [
+    data?.createdAt ? { id: 'created', actorName, action: t('documents.timeline.created'), timestamp: data.createdAt } : null,
+    data?.statusMetadata?.confirmedAt ? { id: 'confirmed', actorName, action: t('documents.timeline.confirmed'), timestamp: data.statusMetadata.confirmedAt } : null,
+    data?.updatedAt ? { id: 'updated', actorName, action: t('documents.timeline.updated'), timestamp: data.updatedAt } : null,
+  ].filter(Boolean);
 }
 
 export default function OrderDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const locale = i18n.language;
   const { can } = useAclPermissions();
   const canReadOrder = can('order:read');
   const canUpdateOrder = can('order:update');
   const canConvertOrder = can('order:convert');
-  const tabs = useMemo(() => buildTabs(t), [t]);
+
   const [actionLoadingKey, setActionLoadingKey] = useState('');
   const [actionError, setActionError] = useState('');
+
+  // Inline-edit state
+  const [viewMode, setViewMode] = useState('preview');
+  const [form, setForm] = useState(null);
+  const [items, setItems] = useState([]);
+  const [dirty, setDirty] = useState(false);
+  const initRef = useRef(null);
 
   const { data: base, isLoading, isFetching, isError, error, refetch } = useGetOrderByIdQuery(id, {
     skip: !id,
@@ -328,6 +119,48 @@ export default function OrderDetailPage() {
   const [cancelOrder] = useCancelOrderMutation();
   const [returnOrder] = useReturnOrderMutation();
   const [convertOrderToInvoice] = useConvertOrderToInvoiceMutation();
+  const [updateOrder, { isLoading: isUpdating }] = useUpdateOrderMutation();
+  const [saveOrderItems, { isLoading: isSavingItems }] = useSaveOrderItemsMutation();
+  const isSaving = isUpdating || isSavingItems;
+
+  const editable = isOrderEditable(base);
+
+  // Initialise editable state once per loaded document.
+  useEffect(() => {
+    if (!base?.id || initRef.current === base.id) return;
+    initRef.current = base.id;
+    setForm({
+      currencyCode: base.currencyCode || base.currency || 'PLN',
+      placedAt: asText(base.placedAt).slice(0, 10),
+      notes: base.notes || '',
+      paymentTerms: base.paymentTerms || '',
+      deliveryTerms: base.deliveryTerms || '',
+      leadTime: base.leadTime || '',
+    });
+    const mapped = Array.isArray(base.items) && base.items.length
+      ? normalizeItemSortOrder(sortItemsBySortOrder(base.items).map(toEditorItem))
+      : [];
+    setItems(mapped);
+    setDirty(false);
+    setViewMode(isOrderEditable(base) ? 'edit' : 'preview');
+  }, [base]);
+
+  const setField = useCallback((key, value) => {
+    setForm((prev) => ({ ...(prev || {}), [key]: value }));
+    setDirty(true);
+  }, []);
+
+  const onItemsChange = useCallback((next) => {
+    setItems(next);
+    setDirty(true);
+  }, []);
+
+  const currencyOptions = useMemo(() => {
+    const list = ['PLN', 'EUR', 'USD'];
+    const cur = asText(form?.currencyCode).toUpperCase();
+    if (cur && !list.includes(cur)) list.unshift(cur);
+    return list.map((c) => ({ value: c, label: c }));
+  }, [form?.currencyCode]);
 
   const runAction = useCallback(async (key, runner, options = {}) => {
     if (!id) return;
@@ -336,184 +169,206 @@ export default function OrderDetailPage() {
     try {
       const result = await runner().unwrap();
       const redirect = typeof options.redirect === 'function' ? options.redirect(result) : null;
-      if (redirect) {
-        navigate(redirect);
-        return result;
-      }
+      if (redirect) { navigate(redirect); return result; }
       await refetch();
       return result;
     } catch (err) {
-      const message = getErrorText(err, 'Failed to run action');
+      const message = getErrorText(err, t('oms.errors.actionFailed'), t);
       setActionError(message);
-      if (typeof window !== 'undefined' && typeof window.alert === 'function') {
-        window.alert(message);
-      }
+      if (typeof window !== 'undefined' && typeof window.alert === 'function') window.alert(message);
     } finally {
       setActionLoadingKey('');
     }
-  }, [id, navigate, refetch]);
+  }, [id, navigate, refetch, t]);
 
-  const actions = useMemo(() => {
-    const available = base?.availableActions || {};
-    return [
-      {
-        key: 'confirm',
-        label: 'Confirm',
-        enabled: canUpdateOrder && Boolean(available.canConfirm),
-      },
-      {
-        key: 'ship',
-        label: 'Ship',
-        enabled: canUpdateOrder && Boolean(available.canShip),
-      },
-      {
-        key: 'complete',
-        label: 'Complete',
-        enabled: canUpdateOrder && Boolean(available.canComplete),
-      },
-      {
-        key: 'cancel',
-        label: 'Cancel',
-        enabled: canUpdateOrder && Boolean(available.canCancel),
-        destructive: true,
-        confirm: {
-          title: 'Cancel order',
-          text: 'Cancel this order?',
-          okText: 'Cancel order',
-        },
-      },
-      {
-        key: 'return',
-        label: 'Return',
-        enabled: canUpdateOrder && Boolean(available.canReturn),
-        destructive: true,
-        confirm: {
-          title: 'Return order',
-          text: 'Mark this order as returned?',
-          okText: 'Return order',
-        },
-      },
-      {
-        key: 'convert-to-invoice',
-        label: 'Convert to Invoice',
-        enabled: canConvertOrder && Boolean(available.canConvertToInvoice),
-      },
-    ];
-  }, [base?.availableActions, canConvertOrder, canUpdateOrder]);
+  const onSave = useCallback(async () => {
+    setActionError('');
+    const invalid = !items.length || items.some((it) => (
+      !asText(it.name) || asNumber(it.qty, 0) <= 0 || asNumber(it.priceNet, -1) < 0
+    ));
+    if (invalid) { setActionError(t('documents.editor.validation.itemNameRequired')); return; }
+    try {
+      const header = {
+        counterpartyId: base?.counterpartyId || base?.counterparty?.id || base?.customerId,
+        contactId: base?.contactId || base?.contact?.id || null,
+        ownerId: base?.ownerId || base?.owner?.id || null,
+        currencyCode: asText(form?.currencyCode).toUpperCase() || 'PLN',
+        placedAt: form?.placedAt || null,
+        notes: form?.notes || '',
+        paymentTerms: form?.paymentTerms || '',
+        deliveryTerms: form?.deliveryTerms || '',
+        leadTime: form?.leadTime || '',
+      };
+      await updateOrder({ id, payload: header }).unwrap();
+      await saveOrderItems({ id, items: mapLinesToPayload(items) }).unwrap();
+      await refetch();
+      setDirty(false);
+    } catch (err) {
+      setActionError(getErrorText(err, t('documents.editor.saveFailed'), t));
+    }
+  }, [base, form, items, id, updateOrder, saveOrderItems, refetch, t]);
 
   const handleAction = useCallback((action) => {
     if (!action?.key) return;
-    if (action.key === 'confirm') {
-      runAction('confirm', () => confirmOrder({ id, payload: {} }));
-      return;
-    }
-    if (action.key === 'ship') {
-      runAction('ship', () => shipOrder({ id, payload: {} }));
-      return;
-    }
-    if (action.key === 'complete') {
-      runAction('complete', () => completeOrder({ id, payload: {} }));
-      return;
-    }
-    if (action.key === 'cancel') {
-      runAction('cancel', () => cancelOrder({ id, payload: {} }));
-      return;
-    }
-    if (action.key === 'return') {
-      runAction('return', () => returnOrder({ id, payload: {} }));
-      return;
-    }
+    if (action.key === 'confirm') return void runAction('confirm', () => confirmOrder({ id, payload: {} }));
+    if (action.key === 'ship') return void runAction('ship', () => shipOrder({ id, payload: {} }));
+    if (action.key === 'complete') return void runAction('complete', () => completeOrder({ id, payload: {} }));
+    if (action.key === 'cancel') return void runAction('cancel', () => cancelOrder({ id, payload: {} }));
+    if (action.key === 'return') return void runAction('return', () => returnOrder({ id, payload: {} }));
     if (action.key === 'convert-to-invoice') {
-      runAction(
-        'convert-to-invoice',
-        () => convertOrderToInvoice({ id, payload: {} }),
-        {
-          redirect: (result) => {
-            const invoiceId = result?.invoice?.id || result?.data?.invoice?.id;
-            return invoiceId ? `/main/documents/${invoiceId}` : null;
-          },
-        }
-      );
+      return void runAction('convert-to-invoice', () => convertOrderToInvoice({ id, payload: {} }), {
+        redirect: (result) => {
+          const invoiceId = result?.invoice?.id || result?.data?.invoice?.id;
+          return invoiceId ? `/main/documents/${invoiceId}` : null;
+        },
+      });
     }
-  }, [
-    id,
-    runAction,
-    confirmOrder,
-    shipOrder,
-    completeOrder,
-    cancelOrder,
-    returnOrder,
-    convertOrderToInvoice,
-  ]);
+  }, [id, runAction, confirmOrder, shipOrder, completeOrder, cancelOrder, returnOrder, convertOrderToInvoice]);
 
-  const schemaBuilder = useCallback(() => buildSchema(), []);
-  const toForm = useCallback((entity) => toFormOrder(entity, t, i18n.language), [t, i18n.language]);
-  const load = useCallback(async () => base, [base]);
-  const save = useCallback(async (_id, payload) => payload, []);
-
-  const rightTabs = useCallback(
-    ({ tab, data }) => (
-      <OrderRightTabs
-        tab={tab}
-        data={data}
-        locale={i18n.language}
-        actions={actions}
-        loadingKey={actionLoadingKey}
-        actionError={actionError}
-        onAction={handleAction}
-        t={t}
-      />
-    ),
-    [i18n.language, actions, actionLoadingKey, actionError, handleAction, t]
-  );
-
-  const totalText = useMemo(
-    () => formatMoney(base?.totalGross, base?.currencyCode || 'PLN', i18n.language),
-    [base?.totalGross, base?.currencyCode, i18n.language]
-  );
+  const headerActions = useMemo(() => {
+    const available = base?.availableActions || {};
+    const defs = [
+      { key: 'confirm', label: t('oms.actionLabels.confirm'), enabled: canUpdateOrder && Boolean(available.canConfirm) },
+      { key: 'ship', label: t('oms.actionLabels.ship'), enabled: canUpdateOrder && Boolean(available.canShip) },
+      { key: 'complete', label: t('oms.actionLabels.complete'), enabled: canUpdateOrder && Boolean(available.canComplete) },
+      {
+        key: 'cancel', label: t('oms.actionLabels.cancel'), enabled: canUpdateOrder && Boolean(available.canCancel), destructive: true,
+        confirm: { title: t('oms.confirm.orderCancelTitle'), text: t('oms.confirm.orderCancelText'), okText: t('oms.confirm.orderCancelOk') },
+      },
+      {
+        key: 'return', label: t('oms.actionLabels.return'), enabled: canUpdateOrder && Boolean(available.canReturn), destructive: true,
+        confirm: { title: t('oms.confirm.orderReturnTitle'), text: t('oms.confirm.orderReturnText'), okText: t('oms.confirm.orderReturnOk') },
+      },
+      { key: 'convert-to-invoice', label: t('oms.actionLabels.convertToInvoice'), enabled: canConvertOrder && Boolean(available.canConvertToInvoice), variant: 'primary' },
+    ];
+    return defs
+      .filter((a) => a.enabled)
+      .map((a) => ({ ...a, loadingLabel: t('common.loading'), onClick: handleAction }));
+  }, [base?.availableActions, canConvertOrder, canUpdateOrder, handleAction, t]);
 
   if (!canReadOrder) {
-    return <div style={{ padding: 16, color: 'var(--ui-text-2)' }}>{t('common.noPermission', 'No permission')}</div>;
+    return <DocumentVisualEditor.State title={t('common.noPermission')} text={t('documents.editor.noPermissionHint')} />;
   }
-
-  if (isLoading || isFetching) {
-    return <div style={{ padding: 16, color: 'var(--ui-text-2)' }}>{t('common.loading', 'Loading...')}</div>;
+  if (isLoading || (isFetching && !base)) {
+    return <DocumentVisualEditor.State title={t('common.loading')} text={t('documents.editor.loadingHint')} />;
   }
-
   if (isError) {
-    const message = error?.data?.message || error?.data?.error || error?.message || 'Failed to load order';
-    return <div style={{ padding: 16, color: 'var(--danger)' }}>{message}</div>;
+    const message = error?.data?.message || error?.data?.error || error?.message || t('oms.errors.orderLoadFailed');
+    return <DocumentVisualEditor.State title={t('oms.errors.orderLoadFailed')} text={message} />;
+  }
+  if (!base) {
+    return <DocumentVisualEditor.State title={t('oms.errors.orderNotFound')} text={t('documents.editor.notFoundHint')} />;
   }
 
-  if (!base) {
-    return <div style={{ padding: 16, color: 'var(--ui-text-2)' }}>Order not found</div>;
-  }
+  const isEdit = viewMode === 'edit' && editable;
+  const model = mapOrderToVisualModel(base, { t, locale });
+  const documentRelations = buildDocumentRelations(base, t);
+  const timelineEvents = buildTimelineEvents(base, t);
+  const counterparty = base?.counterparty || base?.customer;
+  const counterpartyName = counterparty?.name || counterparty?.shortName || counterparty?.fullName || '';
+  const invoiceLinks = renderInvoiceLinks(base);
+
+  const relationsContent = (
+    <>
+      {documentRelations.length ? <DocumentRelations relations={documentRelations} /> : null}
+      <div className={s.kvList}>
+        <div className={s.kvRow}>
+          <span className={s.kvLabel}>{t('oms.relations.counterparty')}</span>
+          <span className={`${s.kvValue} ${s.kvValueLeft}`}>
+            {counterparty?.id ? (
+              <Link className={s.entityLink} to={`/main/counterparties/${counterparty.id}`}>{counterpartyName || counterparty.id}</Link>
+            ) : '—'}
+          </span>
+        </div>
+        <div className={s.kvRow}>
+          <span className={s.kvLabel}>{t('oms.relations.contact')}</span>
+          <span className={`${s.kvValue} ${s.kvValueLeft}`}>
+            {base?.contact?.id ? (
+              <Link className={s.entityLink} to={`/main/contacts/${base.contact.id}`}>{base.contact.name || base.contact.email || base.contact.id}</Link>
+            ) : (base?.contact?.name || base?.contact?.email || '—')}
+          </span>
+        </div>
+        {invoiceLinks.length ? (
+          <div className={s.kvRow}>
+            <span className={s.kvLabel}>{t('oms.relations.invoices')}</span>
+            <span className={`${s.kvValue} ${s.kvValueLeft}`}>
+              <span className={s.inlineLinks}>
+                {invoiceLinks.map((invoice) => (
+                  <Link key={invoice.id} className={s.entityLink} to={`/main/documents/${invoice.id}`}>{invoice.number || invoice.id}</Link>
+                ))}
+              </span>
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </>
+  );
+
+  // Edit-mode overrides (editable fields + LineItemsEditor + live totals)
+  const editOverrides = isEdit && form ? {
+    primaryFields: [
+      { label: t('oms.detailLabels.counterparty'), value: counterpartyName },
+      { label: t('oms.detailLabels.contact'), value: base?.contact?.name || base?.contact?.email || '' },
+      { label: t('oms.detailLabels.owner'), value: base?.owner?.name || base?.owner?.email || '' },
+      { label: t('oms.detailLabels.notes'), type: 'textarea', value: form.notes, onChange: (v) => setField('notes', v) },
+    ],
+    secondaryFields: [
+      { label: t('oms.detailLabels.placedAt'), type: 'date', value: form.placedAt, onChange: (v) => setField('placedAt', v) },
+      { label: t('oms.summaryLabels.currency'), type: 'select', value: form.currencyCode, onChange: (v) => setField('currencyCode', v), options: currencyOptions },
+      { label: t('oms.detailLabels.paymentStatus'), value: statusLabel(base?.paymentStatus, t) },
+      { label: t('oms.detailLabels.fulfillmentStatus'), value: statusLabel(base?.fulfillmentStatus, t) },
+      { label: t('oms.detailLabels.paymentTerms'), type: 'text', value: form.paymentTerms, onChange: (v) => setField('paymentTerms', v) },
+      { label: t('oms.detailLabels.deliveryTerms'), type: 'text', value: form.deliveryTerms, onChange: (v) => setField('deliveryTerms', v) },
+      { label: t('oms.detailLabels.leadTime'), type: 'text', value: form.leadTime, onChange: (v) => setField('leadTime', v) },
+    ],
+    itemsSlot: (
+      <LineItemsEditor
+        lines={items}
+        onChange={onItemsChange}
+        discountTypeOptions={DISCOUNT_TYPE_OPTIONS}
+        productPickerTitle={t('documents.lines.productPickerTitle')}
+      />
+    ),
+    totals: {
+      netLabel: t('oms.summaryLabels.net'),
+      vatLabel: t('oms.summaryLabels.vat'),
+      grossLabel: t('oms.summaryLabels.gross'),
+      ...calculateTotals(items),
+    },
+  } : {};
 
   return (
-    <EntityDetailPage
-      id={id}
-      tabs={tabs}
-      tabsNamespace="oms.order.detail"
-      schemaBuilder={schemaBuilder}
-      toForm={toForm}
-      toApi={(vals) => vals}
-      load={load}
-      save={save}
-      storageKeyPrefix="order-readonly"
-      autosave={{ debounceMs: 1000 }}
-      saveOnExit={false}
-      clearDraftOnUnmount
-      leftTop={(
-        <div className={s.headerCard}>
-          <div className={s.eyebrow}>Order</div>
-          <div className={s.titleRow}>
-            <h1 className={s.title}>{base.number || `#${String(base.id || '').slice(0, 8)}`}</h1>
-            <span className={s.statusBadge}>{statusLabel(base.status, t)}</span>
-          </div>
-          <div className={s.total}>{totalText}</div>
-        </div>
-      )}
-      RightTabsComponent={rightTabs}
+    <DocumentVisualEditor
+      {...model}
+      mode={isEdit ? 'edit' : 'preview'}
+      back={{ label: t('oms.orders.title'), onClick: () => navigate('/main/oms/orders') }}
+      breadcrumb={`${t('oms.orders.title')} / ${model.number}`}
+      showViewModeToggle
+      viewMode={viewMode}
+      viewModeDisabledModes={editable ? ['split'] : ['edit', 'split']}
+      onViewModeChange={(mode) => {
+        if (mode === 'split') return;
+        if (mode === 'edit' && !editable) return;
+        setViewMode(mode);
+      }}
+      showPrintButton
+      onPrint={() => { if (typeof window !== 'undefined') window.print(); }}
+      showSaveButton={isEdit}
+      onSave={onSave}
+      saveDisabled={!dirty || isSaving}
+      saveLoading={isSaving}
+      actions={headerActions}
+      actionLoadingKey={actionLoadingKey}
+      actionError={actionError}
+      itemsTitle={t('documents.lines.title')}
+      emptyItemsLabel={t('oms.itemsTable.empty')}
+      summaryTitle={t('documents.editor.summaryTitle')}
+      lockedNote={!editable ? { label: t('documents.locked.label'), text: t('documents.locked.text') } : undefined}
+      sections={[
+        { key: 'relations', title: t('oms.relations.title'), content: relationsContent },
+        { key: 'history', title: t('oms.tabs.history'), content: <DocumentTimeline events={timelineEvents} /> },
+      ]}
+      {...editOverrides}
     />
   );
 }

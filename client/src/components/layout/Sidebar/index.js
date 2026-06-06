@@ -4,6 +4,8 @@ import { useSelector } from "react-redux";
 import { MENU } from "../../../config/menu";
 import SidebarTooltip from "../SidebarTooltip";
 import CompanyMenu from "../../company/CompanyMenu";
+import WorkspaceViewsSidebarSection from "../../common/WorkspaceViews/WorkspaceViewsSidebarSection";
+import WorkspaceViewsFlyout from "../../common/WorkspaceViews/WorkspaceViewsFlyout";
 import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import styles from "./Sidebar.module.css";
 
@@ -183,6 +185,22 @@ const hideTip = () => setTip((s) => ({ ...s, visible: false }));
                   {sec.children.map((it) => {
                     const Icon = it.icon;
                     const label = tr(it.labelKey);
+                    const hasWorkspaceViews = typeof it.workspaceViewsModule === 'string';
+                    if (hasWorkspaceViews) {
+                      return (
+                        <WorkspaceMenuItem
+                          key={it.key}
+                          item={it}
+                          Icon={Icon}
+                          label={label}
+                          collapsed={collapsed}
+                          showTip={showTip}
+                          hideTip={hideTip}
+                          onNavigate={onNavigate}
+                          styles={styles}
+                        />
+                      );
+                    }
                     return (
                       <NavLink
                         key={it.key}
@@ -213,6 +231,88 @@ const hideTip = () => setTip((s) => ({ ...s, visible: false }));
       {/* плавающий тултип */}
       <SidebarTooltip visible={tip.visible} text={tip.text} x={tip.x} y={tip.y} />
     </>
+  );
+}
+
+// WorkspaceMenuItem — sidebar entry with a hover/focus flyout for Workspace Views.
+// The flyout is portal-rendered so the sidebar's `overflow: hidden` can't clip it.
+// Hover-bridge timers prevent the panel from collapsing as the cursor travels from the
+// menu row into the panel itself.
+function WorkspaceMenuItem({ item, Icon, label, collapsed, showTip, hideTip, onNavigate, styles }) {
+  const anchorRef = useRef(null);
+  const closeTimerRef = useRef(null);
+  const [open, setOpen] = useState(false);
+
+  const openNow = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    setOpen(true);
+  };
+
+  const scheduleClose = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(() => {
+      setOpen(false);
+      closeTimerRef.current = null;
+    }, 180);
+  };
+
+  useEffect(() => () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+  }, []);
+
+  return (
+    <div
+      ref={anchorRef}
+      onMouseEnter={openNow}
+      onMouseLeave={scheduleClose}
+      style={{ position: 'relative' }}
+    >
+      <NavLink
+        to={item.route || "#"}
+        className={({ isActive }) =>
+          `${styles.item} ${isActive ? styles.active : ""}`
+        }
+        onMouseEnter={(e) => showTip(label, e.currentTarget)}
+        onMouseLeave={hideTip}
+        onFocus={openNow}
+        onBlur={scheduleClose}
+        onClick={() => {
+          if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+          setOpen(false);
+          onNavigate?.(item.route);
+        }}
+      >
+        {Icon ? (
+          <Icon className={styles.icon} size={18} />
+        ) : (
+          <span className={styles.bullet} />
+        )}
+        {!collapsed && <span className={styles.label}>{label}</span>}
+      </NavLink>
+      {!collapsed ? (
+        <WorkspaceViewsSidebarSection
+          module={item.workspaceViewsModule}
+          routeBase={item.route}
+          collapsed={collapsed}
+          styles={styles}
+        />
+      ) : null}
+      <WorkspaceViewsFlyout
+        open={open}
+        anchorEl={anchorRef.current}
+        module={item.workspaceViewsModule}
+        routeBase={item.route}
+        titleKey={item.labelKey}
+        collapsedSidebar={collapsed}
+        onMouseEnter={openNow}
+        onMouseLeave={scheduleClose}
+        onSelect={() => setOpen(false)}
+        onClose={() => setOpen(false)}
+      />
+    </div>
   );
 }
 

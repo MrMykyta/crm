@@ -1,7 +1,7 @@
 
 // transferOrderService.js (generated)
 const { Op } = require('sequelize');
-const { TransferOrder } = require('../../models');
+const { TransferOrder, TransferItem, StockMove } = require('../../models');
 const { assertDocumentTypeEnabled, generateNextDocumentNumber } = require('../crm/documentNumberingService');
 
 function asText(value) {
@@ -36,19 +36,25 @@ const buildWhere = (query = {}, user = {}) => {
 };
 
 // list: возвращает список записей с фильтрами, сортировкой и пагинацией.
-module.exports.list = async ({ query = {}, user = {} } = {}) => {
+module.exports.list = async ({ query = {}, user = {}, transaction = null } = {}) => {
   const { page, limit, offset } = parsePaging(query);
   const where = buildWhere(query, user);
   const order = buildOrder(query);
-  const { rows, count } = await TransferOrder.findAndCountAll({ where,  order, limit, offset });
+  const { rows, count } = await TransferOrder.findAndCountAll({ where,  order, limit, offset, transaction });
   return { rows, count, page, limit };
 };
 
 // getById: возвращает данные по входным параметрам сервиса.
-module.exports.getById = async (id, companyId = null) => {
+module.exports.getById = async (id, companyId = null, options = {}) => {
+  const transaction = options.transaction || null;
   if (!id) return null;
   const where = companyId ? { id, companyId } : { id };
-  return TransferOrder.findOne({ where });
+  return TransferOrder.findOne({
+    where,
+    include: [{ model: TransferItem, as: 'items' }],
+    order: [[{ model: TransferItem, as: 'items' }, 'createdAt', 'ASC']],
+    transaction,
+  });
 };
 // create: создаёт новую запись и возвращает результат.
 module.exports.create  = async (payload = {}) => {
@@ -98,4 +104,91 @@ module.exports.remove  = async (id, companyId = null) => {
   if (!id) return 0;
   const where = companyId ? { id, companyId } : { id };
   return TransferOrder.destroy({ where });
+};
+
+// listStockMovesByTransfer: возвращает историю stock_moves по MM-документу.
+module.exports.listStockMovesByTransfer = async (transferId, companyId, query = {}, options = {}) => {
+  const transaction = options.transaction || null;
+  if (!transferId) return { rows: [], count: 0, page: 1, limit: 20 };
+  const transfer = await TransferOrder.findOne({ where: { id: transferId, companyId }, attributes: ['id'], transaction });
+  if (!transfer) return null;
+
+  const page = Math.max(parseInt(query.page || '1', 10), 1);
+  const limit = Math.min(Math.max(parseInt(query.limit || '20', 10), 1), 200);
+  const offset = (page - 1) * limit;
+
+  const where = {
+    companyId,
+    refType: 'MM',
+    refId: transferId,
+  };
+  if (query.refItemId) where.refItemId = query.refItemId;
+
+  const { rows, count } = await StockMove.findAndCountAll({
+    where,
+    order: [['createdAt', 'ASC']],
+    limit,
+    offset,
+    transaction,
+  });
+
+  return { rows, count, page, limit };
+};
+
+// listStockMovesByTransferItem: возвращает историю stock_moves по строке MM (refItemId).
+module.exports.listStockMovesByTransferItem = async (transferItemId, companyId, query = {}, options = {}) => {
+  const transaction = options.transaction || null;
+  if (!transferItemId) return { rows: [], count: 0, page: 1, limit: 20 };
+  const item = await TransferItem.findOne({
+    where: { id: transferItemId },
+    include: [{ model: TransferOrder, as: 'transfer', attributes: ['id', 'companyId'] }],
+    transaction,
+  });
+  if (!item || !item.transfer || item.transfer.companyId !== companyId) return null;
+
+  const page = Math.max(parseInt(query.page || '1', 10), 1);
+  const limit = Math.min(Math.max(parseInt(query.limit || '20', 10), 1), 200);
+  const offset = (page - 1) * limit;
+
+  const rows = await StockMove.findAll({
+    where: {
+      companyId,
+      refType: 'MM',
+      refId: item.transferId,
+      refItemId: item.id,
+    },
+    order: [['createdAt', 'ASC']],
+    limit,
+    offset,
+    transaction,
+  });
+
+  // legacy fallback for historical rows without ref_item_id
+  let mergedRows = rows;
+  if (!rows.length) {
+    const legacyRows = await StockMove.findAll({
+      where: {
+        companyId,
+        refType: 'MM',
+        refId: item.transferId,
+        refItemId: null,
+        productId: item.productId,
+        variantId: item.variantId ?? null,
+        lotId: item.lotId ?? null,
+        type: 'transfer',
+      },
+      order: [['createdAt', 'ASC']],
+      limit,
+      offset,
+      transaction,
+    });
+    mergedRows = legacyRows;
+  }
+
+  return {
+    rows: mergedRows,
+    count: mergedRows.length,
+    page,
+    limit,
+  };
 };

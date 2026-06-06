@@ -3,7 +3,7 @@ const service = require('../../services/oms/invoiceService');
 // Возвращает список сущностей с учётом фильтров и пагинации.
 module.exports.list = async (req,res,next) => { 
     try{ 
-        res.json(await service.list(req.query)); 
+        res.json(await service.list(req.query, req.user)); 
     } catch(e){ 
         next(e);
     } 
@@ -11,7 +11,7 @@ module.exports.list = async (req,res,next) => {
 // Возвращает одну сущность по её идентификатору.
 module.exports.get = async (req,res,next) => { 
     try{ 
-        const r=await service.get(req.params.id); 
+        const r=await service.get(req.params.id, req.user); 
         if(!r) return res.status(404).json({message:'Invoice not found'}); 
         res.json(r);
     } catch(e){ 
@@ -30,7 +30,7 @@ module.exports.issue = async (req,res,next) => {
 // Отменяет ранее выставленный счёт.
 module.exports.cancel = async (req,res,next) => { 
     try{ 
-        res.json(await service.cancel(req.params.id, req.body)); 
+        res.json(await service.cancel(req.params.id, req.body, req.user)); 
     } catch(e){ 
         next(e);
     } 

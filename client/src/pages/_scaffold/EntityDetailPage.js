@@ -4,7 +4,7 @@ import FieldRenderer from "../../components/forms/SmartForm";
 import TabBar from "../../components/layout/TabBar";
 import DetailTabs from "../../components/data/DetailTabs";
 import { useTranslation } from "react-i18next";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import useTabsPrefs from "../../hooks/useTabsPrefs";
 
 /**
@@ -31,6 +31,9 @@ export default function EntityDetailPage({
   panelClassName = "",
   formClassName = "",
   formVariant = "",
+  activeTab,
+  onActiveTabChange,
+  hideTabs = false,
 
   /** 👇 уникальный namespace для prefs табов (по странице) */
   tabsNamespace = "entity.detail",
@@ -60,11 +63,17 @@ export default function EntityDetailPage({
 
 
   // активный таб — из текущего упорядоченного набора
-  const [active, setActive] = useState(tabsOrdered?.[0]?.key ?? (tabs?.[0]?.key ?? "overview"));
+  const [internalActive, setInternalActive] = useState(tabsOrdered?.[0]?.key ?? (tabs?.[0]?.key ?? "overview"));
+  const active = activeTab ?? internalActive;
+  const setActive = useCallback((next) => {
+    setInternalActive(next);
+    onActiveTabChange?.(next);
+  }, [onActiveTabChange]);
+
   useEffect(() => {
     const exists = tabsOrdered.some(t => t.key === active);
     if (!exists && tabsOrdered[0]?.key) setActive(tabsOrdered[0].key);
-  }, [tabsOrdered, active]);
+  }, [tabsOrdered, active, setActive]);
 
   const debTimer = useRef(null);
   const inFlight = useRef(false);
@@ -267,19 +276,21 @@ const onVisibilityChange = () => {
       </div>
 
       <div className={`${styles.right} ${rightPaneClassName}`}>
-        <div className={`${styles.tabsSticky} ${tabsClassName}`}>
-          <TabBar
-            items={tabsOrdered}
-            activeKey={active}
-            onChange={setActive}
-            onReorder={(next) => setOrderKeys(next.map(i => i.key))}
-            expanded={expanded}
-            onExpandedChange={setExpanded}
-            collapsedHeight={40}
-            reserveButtonWidth={44}
-            animationMs={260}
-          />
-        </div>
+        {!hideTabs ? (
+          <div className={`${styles.tabsSticky} ${tabsClassName}`}>
+            <TabBar
+              items={tabsOrdered}
+              activeKey={active}
+              onChange={setActive}
+              onReorder={(next) => setOrderKeys(next.map(i => i.key))}
+              expanded={expanded}
+              onExpandedChange={setExpanded}
+              collapsedHeight={40}
+              reserveButtonWidth={44}
+              animationMs={260}
+            />
+          </div>
+        ) : null}
         <div className={`${styles.panel} ${panelClassName}`}>
           <RightTabsComponent tab={active} data={data} values={values} onChange={onChange} />
         </div>
@@ -287,4 +298,3 @@ const onVisibilityChange = () => {
     </div>
   );
 }
-

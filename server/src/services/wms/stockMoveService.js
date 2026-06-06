@@ -28,6 +28,7 @@ const buildWhere = (query = {}, user = {}) => {
   if (query.productId) where.productId = query.productId;
   if (query.refType) where.refType = query.refType;
   if (query.refId) where.refId = query.refId;
+  if (query.refItemId) where.refItemId = query.refItemId;
   // no free-text search
   return where;
 };
@@ -59,3 +60,37 @@ module.exports.update  = async (id, payload = {}) => {
 // remove: удаляет запись с учётом бизнес-ограничений.
 module.exports.remove  = async (id) => id ? StockMove.destroy({ where:{ id } }) : 0;
 
+// listHistoryByDocument: история движений по документу (refType/refId).
+module.exports.listHistoryByDocument = async ({ companyId, refType, refId, refItemId, page, limit, transaction = null } = {}) => {
+  if (!companyId || !refType || !refId) return { rows: [], count: 0, page: 1, limit: 20 };
+  const { page: p, limit: l, offset } = parsePaging({ page, limit });
+  const where = { companyId, refType, refId };
+  if (refItemId) where.refItemId = refItemId;
+
+  const { rows, count } = await StockMove.findAndCountAll({
+    where,
+    order: [['createdAt', 'ASC']],
+    limit: l,
+    offset,
+    transaction,
+  });
+  return { rows, count, page: p, limit: l };
+};
+
+// listHistoryByProduct: история движений по товару (productId + optional variantId).
+module.exports.listHistoryByProduct = async ({ companyId, productId, variantId, refItemId, page, limit, transaction = null } = {}) => {
+  if (!companyId || !productId) return { rows: [], count: 0, page: 1, limit: 20 };
+  const { page: p, limit: l, offset } = parsePaging({ page, limit });
+  const where = { companyId, productId };
+  if (variantId) where.variantId = variantId;
+  if (refItemId) where.refItemId = refItemId;
+
+  const { rows, count } = await StockMove.findAndCountAll({
+    where,
+    order: [['createdAt', 'ASC']],
+    limit: l,
+    offset,
+    transaction,
+  });
+  return { rows, count, page: p, limit: l };
+};

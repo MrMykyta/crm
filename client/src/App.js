@@ -20,6 +20,7 @@ import CompanyModules from "./pages/company/CompanySettings/Modules/CompanyModul
 import CompanyDeals from "./pages/company/CompanySettings/Modules/CompanyDeals";
 import InvoicesSettings from "./pages/company/CompanySettings/Modules/InvoicesSettings";
 import WarehouseDocumentSettings from "./pages/company/CompanySettings/Modules/WarehouseDocumentSettings";
+import WarehouseWmsSettings from "./pages/company/CompanySettings/Modules/WarehouseWmsSettings";
 import DocumentTemplatesPage from "./pages/company/CompanySettings/Modules/DocumentTemplatesPage";
 import DocumentTemplateEditorPage from "./pages/company/CompanySettings/Modules/DocumentTemplateEditorPage";
 import CompanyInfoPage from "./pages/company/CompanyInfoPage";
@@ -51,13 +52,37 @@ import ProductDetailPage from "./pages/PIM/Product/ProductDetailPage";
 import DocumentCreatePage from "./pages/documents/DocumentCreatePage";
 import DocumentDetailsPage from "./pages/documents/DocumentDetailsPage";
 import DocumentsListPage from "./pages/documents/DocumentsListPage";
+import ComingSoonPage from "./components/common/ComingSoonPage/ComingSoonPage";
 
 const OrdersListPage = lazy(() => import('./pages/oms/Orders/OrdersListPage'));
 const OffersListPage = lazy(() => import('./pages/oms/Offers/OffersListPage'));
+const InvoicesListPage = lazy(() => import('./pages/oms/Invoices/InvoicesListPage'));
 const OrderDetailPage = lazy(() => import('./pages/oms/Orders/OrderDetailPage'));
+const InvoiceDetailPage = lazy(() => import('./pages/oms/Invoices/InvoiceDetailPage'));
 const OrderEditorPage = lazy(() => import('./pages/oms/Orders/OrderEditorPage'));
 const OfferDetailPage = lazy(() => import('./pages/oms/Offers/OfferDetailPage'));
 const OfferEditorPage = lazy(() => import('./pages/oms/Offers/OfferEditorPage'));
+const StockBalancesPage = lazy(() => import('./pages/wms/StockBalancesPage'));
+const StockValuationReportPage = lazy(() => import('./pages/wms/StockValuationReportPage'));
+const StockTurnoverReportPage = lazy(() => import('./pages/wms/StockTurnoverReportPage'));
+const StockAsOfReportPage = lazy(() => import('./pages/wms/StockAsOfReportPage'));
+const InventoryLedgerReportPage = lazy(() => import('./pages/wms/InventoryLedgerReportPage'));
+const ReceiptsListPage = lazy(() => import('./pages/wms/ReceiptsListPage'));
+const TransfersListPage = lazy(() => import('./pages/wms/TransfersListPage'));
+const ShipmentsListPage = lazy(() => import('./pages/wms/ShipmentsListPage'));
+const ReceiptDetailPage = lazy(() => import('./pages/wms/ReceiptDetailPage'));
+const TransferDetailPage = lazy(() => import('./pages/wms/TransferDetailPage'));
+const ShipmentDetailPage = lazy(() => import('./pages/wms/ShipmentDetailPage'));
+const AdjustmentsListPage = lazy(() => import('./pages/wms/AdjustmentsListPage'));
+const AdjustmentDetailPage = lazy(() => import('./pages/wms/AdjustmentDetailPage'));
+const ReceiptCreatePage = lazy(() => import('./pages/wms/ReceiptCreatePage'));
+const AdjustmentCreatePage = lazy(() => import('./pages/wms/AdjustmentCreatePage'));
+const TransferCreatePage = lazy(() => import('./pages/wms/TransferCreatePage'));
+const CycleCountsListPage = lazy(() => import('./pages/wms/CycleCountsListPage'));
+const CycleCountCreatePage = lazy(() => import('./pages/wms/CycleCountCreatePage'));
+const CycleCountDetailPage = lazy(() => import('./pages/wms/CycleCountDetailPage'));
+const WarehousePrintPage = lazy(() => import('./pages/wms/WarehousePrintPage'));
+const WmsDocumentsPage = lazy(() => import('./pages/wms/WmsDocumentsPage'));
 
 const LazyPage = ({ children }) => (
   <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
@@ -149,12 +174,26 @@ function AppShell() {
           <Route path="company-settings" element={<CompanySettings />}>
             <Route index element={<Navigate to="modules" replace />} />
             <Route path="modules" element={<CompanyModules />} />
+            <Route path="warehouse" element={<WarehouseWmsSettings />} />
+            {/* Backwards-compat: warehouse settings were previously nested under /modules. */}
+            <Route
+              path="modules/warehouse"
+              element={<Navigate to="/main/company-settings/warehouse" replace />}
+            />
             <Route path="deals" element={<CompanyDeals />} />
             <Route path="invoices" element={<InvoicesSettings />} />
             <Route path="warehouse-docs" element={<WarehouseDocumentSettings />} />
             <Route path="document-templates" element={<DocumentTemplatesPage />} />
             <Route path="document-templates/new" element={<DocumentTemplatesPage />} />
             <Route path="document-templates/:templateId/editor" element={<DocumentTemplateEditorPage />} />
+            {/* UI-PLACEHOLDER-1: tabs already in the sidebar but pages not yet implemented. */}
+            <Route path="lists" element={<ComingSoonPage titleKey="companySettings.lists" fallbackTitle="Lists" moduleName="company-settings.lists" />} />
+            <Route path="offers" element={<ComingSoonPage titleKey="companySettings.offers" fallbackTitle="Offers" moduleName="company-settings.offers" />} />
+            <Route path="orders" element={<ComingSoonPage titleKey="companySettings.orders" fallbackTitle="Orders" moduleName="company-settings.orders" />} />
+            <Route path="automation" element={<ComingSoonPage titleKey="companySettings.automation" fallbackTitle="Automation" moduleName="company-settings.automation" />} />
+            <Route path="integrations" element={<ComingSoonPage titleKey="companySettings.integrations" fallbackTitle="Integrations" moduleName="company-settings.integrations" />} />
+            <Route path="catalog" element={<ComingSoonPage titleKey="companySettings.catalog" fallbackTitle="Catalog" moduleName="company-settings.catalog" />} />
+            <Route path="other" element={<ComingSoonPage titleKey="companySettings.other" fallbackTitle="Other" moduleName="company-settings.other" />} />
           </Route>
 
           <Route path="counterparties" element={<CounterpartiesPage />} />
@@ -190,6 +229,43 @@ function AppShell() {
           <Route path="oms/offers/new" element={<LazyPage><OfferEditorPage /></LazyPage>} />
           <Route path="oms/offers/:id" element={<LazyPage><OfferDetailPage /></LazyPage>} />
           <Route path="oms/offers/:id/edit" element={<LazyPage><OfferEditorPage /></LazyPage>} />
+
+          <Route path="oms/invoices" element={<LazyPage><InvoicesListPage /></LazyPage>} />
+          <Route path="oms/invoices/:id" element={<LazyPage><InvoiceDetailPage /></LazyPage>} />
+
+          {/* UI-PLACEHOLDER-1: sidebar items present, pages planned but not yet implemented. */}
+          <Route path="oms/receipts" element={<ComingSoonPage titleKey="menu.receipts" fallbackTitle="Receipts" moduleName="oms.receipts" />} />
+          <Route path="oms/promotions" element={<ComingSoonPage titleKey="menu.promotions" fallbackTitle="Promotions" moduleName="oms.promotions" />} />
+          <Route path="oms/coupons" element={<ComingSoonPage titleKey="menu.coupons" fallbackTitle="Coupons" moduleName="oms.coupons" />} />
+          <Route path="oms/shipments" element={<ComingSoonPage titleKey="menu.shipments" fallbackTitle="Shipments" moduleName="oms.shipments" />} />
+          <Route path="pim/services" element={<ComingSoonPage titleKey="menu.services" fallbackTitle="Services" moduleName="pim.services" />} />
+
+          {/* Workspace Views entry point — same page for all ?view= values. */}
+          <Route path="wms/documents" element={<LazyPage><WmsDocumentsPage /></LazyPage>} />
+          <Route path="wms/stock-balances" element={<LazyPage><StockBalancesPage /></LazyPage>} />
+          <Route path="wms/reports/stock-valuation" element={<LazyPage><StockValuationReportPage /></LazyPage>} />
+          <Route path="wms/reports/stock-turnover" element={<LazyPage><StockTurnoverReportPage /></LazyPage>} />
+          <Route path="wms/reports/stock-as-of" element={<LazyPage><StockAsOfReportPage /></LazyPage>} />
+          <Route path="wms/reports/inventory-ledger" element={<LazyPage><InventoryLedgerReportPage /></LazyPage>} />
+          <Route path="wms/receipts" element={<LazyPage><ReceiptsListPage /></LazyPage>} />
+          <Route path="wms/receipts/new" element={<LazyPage><ReceiptCreatePage /></LazyPage>} />
+          <Route path="wms/receipts/:id/print" element={<LazyPage><WarehousePrintPage kind="receipt" /></LazyPage>} />
+          <Route path="wms/receipts/:id" element={<LazyPage><ReceiptDetailPage /></LazyPage>} />
+          <Route path="wms/transfers" element={<LazyPage><TransfersListPage /></LazyPage>} />
+          <Route path="wms/transfers/new" element={<LazyPage><TransferCreatePage /></LazyPage>} />
+          <Route path="wms/transfers/:id/print" element={<LazyPage><WarehousePrintPage kind="transfer" /></LazyPage>} />
+          <Route path="wms/transfers/:id" element={<LazyPage><TransferDetailPage /></LazyPage>} />
+          <Route path="wms/shipments" element={<LazyPage><ShipmentsListPage /></LazyPage>} />
+          <Route path="wms/shipments/:id/print" element={<LazyPage><WarehousePrintPage kind="shipment" /></LazyPage>} />
+          <Route path="wms/shipments/:id" element={<LazyPage><ShipmentDetailPage /></LazyPage>} />
+          <Route path="wms/adjustments" element={<LazyPage><AdjustmentsListPage /></LazyPage>} />
+          <Route path="wms/adjustments/new" element={<LazyPage><AdjustmentCreatePage /></LazyPage>} />
+          <Route path="wms/adjustments/:id/print" element={<LazyPage><WarehousePrintPage kind="adjustment" /></LazyPage>} />
+          <Route path="wms/adjustments/:id" element={<LazyPage><AdjustmentDetailPage /></LazyPage>} />
+          <Route path="wms/cycle-counts" element={<LazyPage><CycleCountsListPage /></LazyPage>} />
+          <Route path="wms/cycle-counts/new" element={<LazyPage><CycleCountCreatePage /></LazyPage>} />
+          <Route path="wms/cycle-counts/:id/print" element={<LazyPage><WarehousePrintPage kind="cycleCount" /></LazyPage>} />
+          <Route path="wms/cycle-counts/:id" element={<LazyPage><CycleCountDetailPage /></LazyPage>} />
 
           <Route path="company-users" element={<CompanyUsers />} />
           <Route path="users/:userId" element={<UserEntityPage />} />

@@ -78,6 +78,12 @@
     }
   },
   "common": {
+    "comingSoon": {
+      "title": "Скоро",
+      "badge": "В разработке",
+      "description": "Этот модуль уже запланирован, но ещё не реализован.",
+      "backToDashboard": "Вернуться на дашборд"
+    },
     "email": "Email",
     "password": "Пароль",
     "required": "Обязательное поле",
@@ -95,12 +101,14 @@
     "error": "Ошибка",
     "success": "Успех",
     "loading": "Загрузка…",
+    "noPermission": "Нет доступа",
     "sending": "Отправка…",
     "save": "Сохранить",
     "edit": "Редактировать",
     "reset": "Сбросить",
     "none": "—",
     "cancel": "Отмена",
+    "new": "Новый",
     "delete": "Удалить",
     "primary": "Основной",
     "saved": "Сохранено",
@@ -108,7 +116,84 @@
     "noneSelected": "Не выбрано",
     "selectAll": "Выбрать всех",
     "clear": "Очистить",
-    "select": "Выбрать"
+    "select": "Выбрать",
+    "yes": "Да",
+    "no": "Нет",
+    "all": "Все",
+    "refresh": "Обновить"
+  },
+  "documents": {
+    "types": {
+      "offer": "Оферта",
+      "order": "Заказ",
+      "invoice": "Счёт"
+    },
+    "shell": {
+      "unknownNumber": "Без номера",
+      "breadcrumbsAria": "Навигационная цепочка",
+      "tabsAria": "Разделы документа",
+      "confirmTitle": "Подтвердите действие",
+      "confirmText": "Вы уверены?",
+      "confirmOk": "Подтвердить"
+    },
+    "relations": {
+      "document": "Документ",
+      "empty": "Нет связанных документов"
+    },
+    "timeline": {
+      "empty": "Нет событий истории",
+      "systemActor": "Система",
+      "created": "Создано",
+      "updated": "Обновлено",
+      "confirmed": "Подтверждено",
+      "issued": "Выставлено"
+    },
+    "editor": {
+      "header": "Заголовок",
+      "summaryTitle": "Предпросмотр итогов",
+      "selectCounterparty": "Выберите контрагента",
+      "noContact": "Без контакта",
+      "noOwner": "Без ответственного",
+      "selectCurrency": "Выберите валюту",
+      "fieldTitle": "Заголовок",
+      "fieldSubject": "Тема",
+      "loadingHint": "Подготовка редактора.",
+      "noPermission": "Нет доступа",
+      "noPermissionHint": "У вас недостаточно прав для доступа к редактору.",
+      "loadFailed": "Не удалось загрузить документ",
+      "notFound": "Документ не найден",
+      "notFoundHint": "Нет данных в текущей компании.",
+      "saveFailed": "Не удалось сохранить документ",
+      "validation": {
+        "counterpartyRequired": "Контрагент обязателен",
+        "itemNameRequired": "Укажите наименование позиции",
+        "qtyPositive": "Количество должно быть больше 0",
+        "priceNonNegative": "Цена не может быть отрицательной"
+      }
+    },
+    "lines": {
+      "title": "Позиции",
+      "addCustom": "Добавить произвольную позицию",
+      "addProduct": "Добавить товар",
+      "name": "Наименование",
+      "type": "Тип",
+      "qty": "Кол-во",
+      "priceNet": "Цена нетто",
+      "taxRate": "Ставка НДС %",
+      "discountType": "Тип скидки",
+      "discountValue": "Значение скидки",
+      "remove": "Удалить",
+      "affectsStock": "Влияет на склад",
+      "available": "Доступно",
+      "productNamePlaceholder": "Название товара",
+      "customNamePlaceholder": "Название позиции",
+      "dragToReorder": "Перетащите для сортировки",
+      "productPickerTitle": "Добавить товар"
+    },
+    "locked": {
+      "label": "Закрыт",
+      "text": "Документ закрыт. Дальнейшие изменения — через корректировку или следующий документ."
+    }
   },
   "countries": {
     "PL": "PL — Польша",
@@ -154,9 +239,20 @@
     "services": "Услуги",
     "wms": "WMS",
     "warehouse": "Склад",
+    "stockBalances": "Складские остатки",
+    "wmsDocuments": "Складские документы",
     "wmsDocs": "Складские документы",
+    "wmsReceipts": "Приёмки PZ",
+    "transfers": "Перемещения",
+    "wmsShipments": "Отгрузки WZ",
+    "wmsAdjustments": "Корректировки RW/PW",
+    "wmsCycleCounts": "Листы инвентаризации",
     "users": "Пользователи",
-    "userSettings": "Настройки пользователя"
+    "userSettings": "Настройки пользователя",
+    "stockValuation": "Стоимость склада",
+    "stockTurnover": "Обороты склада",
+    "stockAsOf": "Остатки на дату",
+    "inventoryLedger": "Карточка склада"
   },
   "oms": {
     "stub": "Эта страница запланирована на следующий этап.",
@@ -184,6 +280,511 @@
       "counterparty": "Контрагент",
       "contact": "Контакт",
       "empty": "Нет связанных сущностей"
+    },
+    "actions": {
+      "print": "Печать",
+      "downloadPdf": "Скачать PDF"
+    },
+    "actionLabels": {
+      "send": "Отправить",
+      "accept": "Принять",
+      "reject": "Отклонить",
+      "cancel": "Отменить",
+      "expire": "Пометить истёкшей",
+      "duplicate": "Дублировать",
+      "confirm": "Подтвердить",
+      "ship": "Отгрузить",
+      "complete": "Завершить",
+      "return": "Вернуть",
+      "convertToOrder": "Конвертировать в заказ",
+      "convertToInvoice": "Конвертировать в счёт",
+      "openSettings": "Открыть настройки",
+      "issueInvoice": "Выставить счёт"
+    },
+    "confirm": {
+      "offerRejectTitle": "Отклонить оферту",
+      "offerRejectText": "Отклонить эту оферту?",
+      "offerRejectOk": "Отклонить",
+      "offerCancelTitle": "Отменить оферту",
+      "offerCancelText": "Отменить эту оферту?",
+      "offerCancelOk": "Отменить оферту",
+      "orderCancelTitle": "Отменить заказ",
+      "orderCancelText": "Отменить этот заказ?",
+      "orderCancelOk": "Отменить заказ",
+      "orderReturnTitle": "Вернуть заказ",
+      "orderReturnText": "Пометить заказ как возвращённый?",
+      "orderReturnOk": "Вернуть заказ"
+    },
+    "tabs": {
+      "items": "Позиции",
+      "summary": "Итоги",
+      "relations": "Связи",
+      "history": "История",
+      "actions": "Действия"
+    },
+    "detailSections": {
+      "counterparty": "Контрагент",
+      "dates": "Даты",
+      "termsNotes": "Условия и заметки"
+    },
+    "detailLabels": {
+      "number": "Номер",
+      "status": "Статус",
+      "paymentStatus": "Статус оплаты",
+      "fulfillmentStatus": "Статус выполнения",
+      "counterparty": "Контрагент",
+      "contact": "Контакт",
+      "owner": "Ответственный",
+      "deal": "Сделка",
+      "placedAt": "Размещено",
+      "confirmedAt": "Подтверждено",
+      "createdAt": "Создано",
+      "updatedAt": "Обновлено",
+      "paymentTerms": "Условия оплаты",
+      "deliveryTerms": "Условия доставки",
+      "leadTime": "Срок выполнения",
+      "notes": "Заметки",
+      "issueDate": "Дата выставления",
+      "validUntil": "Действует до",
+      "dueDate": "Срок оплаты"
+    },
+    "itemsTable": {
+      "name": "Наименование",
+      "qty": "Кол-во",
+      "priceNet": "Цена нетто",
+      "vat": "НДС %",
+      "lineGross": "Сумма брутто",
+      "empty": "Нет позиций",
+      "lineType": "Тип"
+    },
+    "summaryLabels": {
+      "net": "Нетто",
+      "vat": "НДС",
+      "gross": "Брутто",
+      "currency": "Валюта"
+    },
+    "errors": {
+      "actionFailed": "Не удалось выполнить действие",
+      "orderLoadFailed": "Не удалось загрузить заказ",
+      "offerLoadFailed": "Не удалось загрузить оферту",
+      "orderNotFound": "Заказ не найден",
+      "offerNotFound": "Оферта не найдена",
+      "costingNotInitialized": "FIFO-оценка не инициализирована для этой компании. Перейдите в Настройки компании → Склад/WMS → Оценка.",
+      "invoiceLoadFailed": "Не удалось загрузить счёт",
+      "invoiceNotFound": "Счёт не найден"
+    },
+    "print": {
+      "loading": "Подготовка версии для печати",
+      "notFound": "Сущность не найдена",
+      "backToDetail": "Назад к деталям"
+    },
+    "invoices": {
+      "title": "Счета",
+      "search": "Поиск по номеру или контрагенту...",
+      "open": "Открыть счёт",
+      "columns": {
+        "number": "Номер",
+        "counterparty": "Контрагент",
+        "status": "Статус",
+        "issueDate": "Дата выставления",
+        "dueDate": "Срок оплаты",
+        "totalNet": "Нетто",
+        "totalGross": "Брутто"
+      }
+    },
+    "lineTypes": {
+      "product": "Товар",
+      "service": "Услуга",
+      "custom": "Произвольная"
+    }
+  },
+  "wms": {
+    "backToList": "Назад к списку",
+    "relations": {
+      "originalDocument": "Исходный документ",
+      "correctionDocument": "Документ коррекции"
+    },
+    "print": {
+      "print": "Печать",
+      "loading": "Подготовка печатной формы...",
+      "notFound": "Документ не найден",
+      "backToDetail": "Назад к деталям",
+      "date": "Дата",
+      "status": "Статус",
+      "warehouse": "Склад",
+      "document": "Документ",
+      "location": "Локация",
+      "lotSerial": "Партия / серийный номер",
+      "plannedQty": "План",
+      "processedQty": "Выполнено",
+      "issuedBy": "Выдал",
+      "receivedBy": "Принял"
+    },
+    "tabs": {
+      "items": "Позиции",
+      "history": "История",
+      "summary": "Сводка"
+    },
+    "items": {
+      "empty": "Нет позиций"
+    },
+    "summary": {
+      "items": "Позиций",
+      "qtyTotal": "Количество всего",
+      "qtyProcessed": "Количество обработано",
+      "order": "Заказ"
+    },
+    "columns": {
+      "product": "Товар",
+      "variant": "Вариант",
+      "qty": "Кол-во",
+      "progress": "Обработано"
+    },
+    "history": {
+      "empty": "Нет складских движений",
+      "columns": {
+        "date": "Дата",
+        "type": "Тип",
+        "product": "Товар",
+        "qty": "Кол-во",
+        "from": "Откуда",
+        "to": "Куда",
+        "refItem": "Ref позиции"
+      }
+    },
+    "receipts": {
+      "title": "Приёмки PZ",
+      "detailTitle": "Детали приёмки",
+      "search": "Поиск по номеру...",
+      "empty": "Нет документов PZ",
+      "columns": {
+        "number": "Номер",
+        "status": "Статус",
+        "warehouse": "Склад",
+        "createdAt": "Создан"
+      }
+    },
+    "transfers": {
+      "title": "Перемещения MM",
+      "detailTitle": "Детали перемещения",
+      "search": "Поиск по номеру...",
+      "empty": "Нет документов MM",
+      "columns": {
+        "number": "Номер",
+        "status": "Статус",
+        "fromWarehouse": "Со склада",
+        "toWarehouse": "На склад",
+        "createdAt": "Создан"
+      }
+    },
+    "shipments": {
+      "title": "Отгрузки WZ",
+      "detailTitle": "Детали отгрузки",
+      "search": "Поиск по номеру...",
+      "empty": "Нет документов WZ",
+      "columns": {
+        "number": "Номер",
+        "status": "Статус",
+        "warehouse": "Склад",
+        "order": "Заказ",
+        "createdAt": "Создан"
+      }
+    },
+    "adjustments": {
+      "title": "Корректировки RW/PW",
+      "detailTitle": "Детали корректировки",
+      "search": "Поиск по номеру...",
+      "empty": "Нет документов RW/PW",
+      "actions": {
+        "post": "Провести"
+      },
+      "filters": {
+        "documentType": "Тип"
+      },
+      "types": {
+        "PW": "PW",
+        "RW": "RW"
+      },
+      "columns": {
+        "number": "Номер",
+        "documentType": "Тип",
+        "status": "Статус",
+        "warehouse": "Склад",
+        "date": "Дата",
+        "itemsCount": "Позиций",
+        "createdAt": "Создан",
+        "postedAt": "Проведён"
+      }
+    },
+    "stockBalances": {
+      "title": "Складские остатки",
+      "search": "Поиск по названию или SKU...",
+      "onlyPositive": "Только положительные",
+      "empty": "Нет складских остатков",
+      "openProduct": "Открыть товар",
+      "columns": {
+        "warehouse": "Склад",
+        "product": "Товар",
+        "sku": "SKU",
+        "variant": "Вариант",
+        "onHand": "Остаток",
+        "reserved": "В резерве",
+        "available": "Доступно"
+      }
+    },
+    "cycleCounts": {
+      "title": "Листы инвентаризации",
+      "createTitle": "Новый лист инвентаризации",
+      "createSubtle": "Сначала создайте лист, затем добавьте подсчитанные позиции в деталях",
+      "detailTitle": "Лист инвентаризации",
+      "detailSubtle": "Склад",
+      "empty": "Нет листов инвентаризации",
+      "emptyDifferences": "Подсчитанных позиций пока нет",
+      "selectWarehouse": "Выберите склад",
+      "selectLocation": "Выберите локацию",
+      "selectProduct": "Выберите товар",
+      "noProduct": "Товар не выбран",
+      "reconciledNoNew": "Лист уже сверен. В этой сессии новые корректировки не создавались.",
+      "notReconciledYet": "Сверка ещё не запускалась.",
+      "actions": {
+        "new": "Новый лист",
+        "create": "Создать",
+        "addLine": "Добавить строку",
+        "addItems": "Добавить подсчитанные позиции",
+        "reconcile": "Сверить",
+        "openAdjustment": "Открыть корректировку",
+        "selectProduct": "Выбрать товар",
+        "changeProduct": "Изменить товар"
+      },
+      "sections": {
+        "header": "Шапка",
+        "differenceSummary": "Сводка расхождений",
+        "addItems": "Добавить подсчитанные позиции",
+        "reconcileResult": "Результат сверки"
+      },
+      "fields": {
+        "warehouse": "Склад"
+      },
+      "columns": {
+        "sheet": "Лист",
+        "status": "Статус",
+        "warehouse": "Склад",
+        "itemsCount": "Подсчитанные позиции",
+        "createdAt": "Создан",
+        "location": "Локация",
+        "product": "Товар",
+        "variant": "Вариант",
+        "lot": "Партия",
+        "serial": "Серийный номер",
+        "counted": "Подсчитано",
+        "system": "Система",
+        "diff": "Разница",
+        "movement": "Планируемое движение"
+      },
+      "summary": {
+        "pw": "Сумма PW",
+        "rw": "Сумма RW",
+        "equal": "Строк без расхождений"
+      },
+      "placeholders": {
+        "variant": "ID варианта",
+        "lot": "ID партии",
+        "serial": "ID серийного номера"
+      },
+      "validation": {
+        "warehouseRequired": "Склад обязателен",
+        "locationRequired": "Локация обязательна",
+        "productRequired": "Товар обязателен",
+        "qtyNonNegative": "Подсчитанное количество должно быть >= 0"
+      },
+      "errors": {
+        "create": "Не удалось создать лист инвентаризации",
+        "addItems": "Не удалось добавить подсчитанные позиции",
+        "reconcile": "Не удалось выполнить сверку"
+      }
+    },
+    "stockValuation": {
+      "title": "Стоимость склада",
+      "subtitle": "FIFO-оценка по оставшимся cost layers.",
+      "empty": "Нет строк оценки.",
+      "error": "Не удалось загрузить отчёт стоимости склада.",
+      "asOfComingSoon": "Скоро",
+      "filters": {
+        "warehouse": "Склад",
+        "productSearch": "Поиск товара",
+        "productSearchPlaceholder": "Поиск по названию или SKU...",
+        "product": "Товар",
+        "currency": "Валюта",
+        "groupBy": "Группировать по",
+        "asOf": "На дату"
+      },
+      "groupBy": {
+        "product": "Товар",
+        "warehouse": "Склад",
+        "productWarehouse": "Товар + склад"
+      },
+      "totals": {
+        "qtyRemaining": "Осталось",
+        "stockValue": "Стоимость склада",
+        "currency": "Валюта"
+      },
+      "columns": {
+        "warehouse": "Склад",
+        "product": "Товар",
+        "sku": "SKU",
+        "variant": "Вариант",
+        "qtyRemaining": "Осталось",
+        "stockValue": "Стоимость",
+        "currency": "Валюта"
+      }
+    },
+    "stockTurnover": {
+      "title": "Обороты склада",
+      "subtitle": "Обороты складских движений на основе FIFO-себестоимости.",
+      "empty": "Нет оборотов за выбранный период.",
+      "error": "Не удалось загрузить отчёт оборотов склада.",
+      "validation": {
+        "dateRangeRequired": "Дата начала и дата окончания обязательны."
+      },
+      "filters": {
+        "dateFrom": "Дата с",
+        "dateTo": "Дата по",
+        "warehouse": "Склад",
+        "productSearch": "Поиск товара",
+        "productSearchPlaceholder": "Искать по названию или SKU...",
+        "product": "Товар",
+        "currency": "Валюта",
+        "groupBy": "Группировать по"
+      },
+      "groupBy": {
+        "product": "Товар",
+        "warehouse": "Склад",
+        "productWarehouse": "Товар + склад",
+        "documentType": "Тип документа"
+      },
+      "totals": {
+        "qtyIn": "Приход, кол-во",
+        "qtyOut": "Расход, кол-во",
+        "valueIn": "Приход, сумма",
+        "valueOut": "Расход, сумма",
+        "netQty": "Нетто кол-во",
+        "netValue": "Нетто сумма",
+        "currency": "Валюта"
+      },
+      "columns": {
+        "warehouse": "Склад",
+        "product": "Товар",
+        "sku": "SKU",
+        "variant": "Вариант",
+        "documentType": "Тип документа",
+        "qtyIn": "Приход, кол-во",
+        "qtyOut": "Расход, кол-во",
+        "valueIn": "Приход, сумма",
+        "valueOut": "Расход, сумма",
+        "netQty": "Нетто кол-во",
+        "netValue": "Нетто сумма",
+        "currency": "Валюта"
+      }
+    },
+    "stockAsOf": {
+      "title": "Остатки склада на дату",
+      "subtitle": "Исторический остаток и FIFO-стоимость, восстановленные из складских движений.",
+      "empty": "Нет остатков на выбранную дату.",
+      "error": "Не удалось загрузить отчёт остатков на дату.",
+      "validation": {
+        "asOfRequired": "Дата отчёта обязательна."
+      },
+      "filters": {
+        "asOf": "На дату",
+        "warehouse": "Склад",
+        "productSearch": "Поиск товара",
+        "productSearchPlaceholder": "Искать по названию или SKU...",
+        "product": "Товар",
+        "currency": "Валюта",
+        "groupBy": "Группировать по"
+      },
+      "groupBy": {
+        "product": "Товар",
+        "warehouse": "Склад",
+        "productWarehouse": "Товар + склад"
+      },
+      "totals": {
+        "qty": "Количество",
+        "stockValue": "Стоимость склада",
+        "currency": "Валюта"
+      },
+      "columns": {
+        "warehouse": "Склад",
+        "product": "Товар",
+        "sku": "SKU",
+        "variant": "Вариант",
+        "qty": "Количество",
+        "stockValue": "Стоимость",
+        "currency": "Валюта"
+      }
+    },
+    "inventoryLedger": {
+      "title": "Карточка склада",
+      "subtitle": "Движения товара с накопительным количеством и стоимостью.",
+      "empty": "Нет строк карточки по выбранным фильтрам.",
+      "error": "Не удалось загрузить карточку склада.",
+      "validation": {
+        "productRequired": "Товар обязателен.",
+        "dateRangeRequired": "Дата начала и дата окончания обязательны."
+      },
+      "filters": {
+        "productSearch": "Поиск товара",
+        "productSearchPlaceholder": "Искать по названию или SKU...",
+        "product": "Товар",
+        "selectProduct": "Выберите товар",
+        "variant": "Вариант",
+        "dateFrom": "Дата с",
+        "dateTo": "Дата по",
+        "warehouse": "Склад",
+        "currency": "Валюта"
+      },
+      "totals": {
+        "qtyIn": "Приход, кол-во",
+        "qtyOut": "Расход, кол-во",
+        "valueIn": "Приход, сумма",
+        "valueOut": "Расход, сумма",
+        "balanceAfter": "Остаток",
+        "valueBalance": "Остаток, сумма",
+        "currency": "Валюта"
+      },
+      "columns": {
+        "date": "Дата",
+        "documentType": "Тип документа",
+        "documentNumber": "Номер документа",
+        "warehouse": "Склад",
+        "location": "Локация",
+        "qtyIn": "Приход, кол-во",
+        "qtyOut": "Расход, кол-во",
+        "balanceAfter": "Остаток",
+        "unitCost": "Себестоимость ед.",
+        "valueIn": "Приход, сумма",
+        "valueOut": "Расход, сумма",
+        "valueBalance": "Остаток, сумма",
+        "currency": "Валюта"
+      }
+    },
+    "corrections": {
+      "create": "Создать коррекцию",
+      "title": "Создать коррекцию",
+      "submit": "Создать коррекцию",
+      "fullLineHint": "MVP поддерживает только коррекцию строк целиком. Количество доступно только для чтения и равно исходно проведённому количеству.",
+      "reason": "Причина",
+      "reasonPlaceholder": "Причина опционально",
+      "noLines": "Нет строк, доступных для коррекции",
+      "select": "Выбрать",
+      "selectLine": "Выбрать строку",
+      "errors": {
+        "LAYER_PARTIALLY_CONSUMED": "Этот слой поступления уже был списан. Сначала разверните последующие движения.",
+        "DOCUMENT_ALREADY_CORRECTED": "У этого документа уже есть коррекция.",
+        "CORRECTION_OF_CORRECTION_NOT_ALLOWED": "Коррекция документа коррекции запрещена.",
+        "PARTIAL_PZ_CORRECTION_NOT_SUPPORTED": "Частичная коррекция PZ не поддерживается в MVP.",
+        "PARTIAL_WZ_CORRECTION_NOT_SUPPORTED": "Частичная коррекция WZ не поддерживается в MVP."
+      }
     }
   },
   "statuses": {
@@ -199,7 +800,16 @@
     "viewed": "Просмотрена",
     "accepted": "Принята",
     "rejected": "Отклонена",
-    "expired": "Истекла"
+    "expired": "Истекла",
+    "received": "Принято",
+    "putaway": "Размещено",
+    "in_transit": "В пути",
+    "packing": "Комплектация",
+    "posted": "Проведён",
+    "planned": "Запланирован",
+    "counting": "Подсчёт",
+    "reconciled": "Сверен",
+    "issued": "Выставлен"
   },
   "widgets": {
     "kpi": "KPI",
@@ -284,7 +894,11 @@
       "textSizeLarge": "Большой",
       "densityCompact": "Компактно",
       "densityComfortable": "Комфортно",
-      "densitySpacious": "Просторно"
+      "densitySpacious": "Просторно",
+      "skin": "Стиль интерфейса",
+      "skinV1": "Sunset Classic (V1)",
+      "skinV2": "Sunset Modern (V2)",
+      "skinV3": "Sunset Enterprise (V3)"
     },
     "preferences": {
       "language": "Язык",
@@ -913,6 +1527,71 @@
           "saveFailed": "Не удалось сохранить настройки складских документов."
         }
       }
+    },
+    "wms": {
+      "title": "Warehouse / WMS",
+      "subtitle": "Настройка складов, локаций и поведения WMS по умолчанию.",
+      "defaultWarehouse": "Склад по умолчанию",
+      "tabs": {
+        "overview": "Обзор",
+        "warehouses": "Склады",
+        "locations": "Локации",
+        "settings": "Настройки"
+      },
+      "overview": {
+        "title": "Warehouse / WMS",
+        "description": "Настройки склада для WMS-документов, остатков и инвентаризации."
+      },
+      "counters": {
+        "warehouses": "Склады",
+        "locations": "Локации",
+        "activeWarehouses": "Активные склады"
+      },
+      "actions": {
+        "configure": "Настроить",
+        "addWarehouse": "Добавить склад",
+        "editWarehouse": "Редактировать склад",
+        "setDefault": "Сделать по умолчанию",
+        "activate": "Активировать",
+        "deactivate": "Деактивировать",
+        "addLocation": "Добавить локацию",
+        "editLocation": "Редактировать локацию"
+      },
+      "fields": {
+        "code": "Код",
+        "name": "Название",
+        "isActive": "Активен",
+        "isDefault": "По умолчанию",
+        "warehouse": "Склад",
+        "type": "Тип"
+      },
+      "placeholders": {
+        "selectWarehouse": "Выберите склад"
+      },
+      "settings": {
+        "negativeStock": "Политика отрицательного остатка",
+        "hardMode": "Жёсткая блокировка",
+        "costMethod": "Метод себестоимости",
+        "costComingSoon": "FIFO/AVCO скоро",
+        "numberingLink": "Настройки нумерации PZ/WZ/MM/RW/PW"
+      },
+      "empty": {
+        "warehouses": "Складов нет.",
+        "locations": "Локаций нет."
+      },
+      "messages": {
+        "saved": "Сохранено.",
+        "defaultSaved": "Склад по умолчанию обновлён."
+      },
+      "errors": {
+        "saveWarehouse": "Не удалось сохранить склад.",
+        "saveLocation": "Не удалось сохранить локацию.",
+        "defaultWarehouse": "Не удалось обновить склад по умолчанию."
+      },
+      "validation": {
+        "warehouseRequired": "Код и название обязательны.",
+        "locationRequired": "Склад, код и тип обязательны."
+      }
     }
   },
   "companyMenu": {
@@ -1312,6 +1991,94 @@
       "clearTextColor": "Сбросить цвет текста",
       "highlightColor": "Цвет выделения",
       "clearHighlight": "Сбросить выделение фона"
+    }
+  },
+  "wmsDocsList": {
+    "subtitle": "Единое представление PZ / WZ / MM / RW / PW. Фильтр по типу — через попап Workspace Views.",
+    "searchPlaceholder": "Поиск по номеру…",
+    "empty": "В этом представлении нет документов",
+    "paginationCount": "{{from}}–{{to}} из {{total}}",
+    "relation": {
+      "correction": "Коррекция"
+    },
+    "cols": {
+      "type": "Тип",
+      "number": "Номер",
+      "date": "Дата",
+      "status": "Статус",
+      "warehouse": "Склад",
+      "itemsCount": "Строк",
+      "totalQty": "Кол-во"
+    }
+  },
+  "wmsViews": {
+    "popoverTitle": "Складские документы",
+    "placeholderDescription": "Это представление — часть Workspace Views. Единый список документов появится, когда подключим сквозной backend-эндпоинт.",
+    "all": "Все документы",
+    "pz": "PZ — Приёмки",
+    "wz": "WZ — Отгрузки",
+    "mm": "MM — Перемещения",
+    "rw": "RW — Списания",
+    "pw": "PW — Внутренние приёмки",
+    "pzk": "PZK — Корректировки PZ",
+    "wzk": "WZK — Корректировки WZ",
+    "inventory": "Инвентаризация",
+    "returns": "Возвраты"
+  },
+  "workspaceViews": {
+    "manage": "Управление видами",
+    "manageComingSoon": "Управление видами — скоро",
+    "create": "Создать вид",
+    "createNewView": "Создать новый вид",
+    "saveAsView": "Сохранить как вид",
+    "comingSoon": "Скоро",
+    "editor": {
+      "title": "Создать вид",
+      "name": "Название вида",
+      "namePlaceholder": "напр. WZ Łódź проведённые",
+      "description": "Описание",
+      "descriptionPlaceholder": "Необязательные заметки",
+      "filterPreview": "Превью фильтров",
+      "noFilters": "Фильтры отсутствуют — будет сохранён полный список.",
+      "cancel": "Отмена",
+      "create": "Создать",
+      "createdToast": "Личный вид создан",
+      "errorLimitExceeded": "Достигнут лимит личных видов (50). Удалите или скройте существующий и повторите.",
+      "type": "Тип",
+      "status": "Статус",
+      "warehouse": "Склад",
+      "search": "Поиск",
+      "dateFrom": "Дата с",
+      "dateTo": "Дата по"
+    },
+    "searchPlaceholder": "Поиск видов…",
+    "noMatch": "Нет совпадений",
+    "noViews": "Нет видов",
+    "allViews": "Все виды",
+    "empty": "Виды недоступны",
+    "moreCount": "+ ещё {{count}}",
+    "system": "Системный",
+    "personal": "Личный",
+    "default": "По умолчанию",
+    "pin": "Закрепить",
+    "unpin": "Открепить",
+    "hide": "Скрыть",
+    "show": "Показать",
+    "rename": "Переименовать",
+    "delete": "Удалить",
+    "confirmDelete": "Удалить этот вид? Действие необратимо.",
+    "wms": {
+      "documents": {
+        "all": "Все документы",
+        "pz": "PZ — Приёмки",
+        "wz": "WZ — Отгрузки",
+        "pzk": "PZK — Корректировки PZ",
+        "wzk": "WZK — Корректировки WZ",
+        "mm": "MM — Перемещения",
+        "rw": "RW — Списания",
+        "pw": "PW — Внутренние приёмки",
+        "postedToday": "Проведено сегодня"
+      }
     }
   }
 }
