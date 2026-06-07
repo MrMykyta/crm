@@ -234,6 +234,9 @@
       "detailTitle": "Offer details",
       "editTitle": "Edit offer"
     },
+    "invoices": {
+      "detailTitle": "Invoice details"
+    },
     "relations": {
       "title": "Relations",
       "sourceOffer": "Source offer",
@@ -366,6 +369,61 @@
       "originalDocument": "Original document",
       "correctionDocument": "Correction document"
     },
+    "fields": {
+      "fromWarehouse": "From warehouse",
+      "toWarehouse": "To warehouse",
+      "reason": "Reason",
+      "postedAt": "Posted at",
+      "inboundLocation": "Inbound location",
+      "supplier": "Supplier",
+      "location": "Location",
+      "fromLocation": "From location",
+      "toLocation": "To location",
+      "date": "Date",
+      "documentType": "Document type"
+    },
+    "create": {
+      "subtitleReceipt": "Create receipt and optionally receive lines",
+      "subtitleAdjustment": "Create RW/PW adjustment and optionally post",
+      "subtitleTransfer": "Create transfer and optionally execute lines",
+      "addLine": "Add line",
+      "variantOptional": "Variant (optional)",
+      "lot": "Lot (optional)",
+      "qtyExpected": "Qty expected",
+      "qtyDelta": "Qty delta",
+      "receiveLine": "Receive line",
+      "receive": "Receive",
+      "selectProduct": "Select product",
+      "changeProduct": "Change product",
+      "noProduct": "No product selected",
+      "selectWarehouse": "Select warehouse",
+      "selectLocation": "Select location",
+      "selectFromLocation": "Select from location",
+      "selectToLocation": "Select to location",
+      "noSupplier": "No supplier",
+      "saveDraft": "Save draft",
+      "create": "Create",
+      "receiveSelected": "Receive selected",
+      "receiveAll": "Receive all",
+      "post": "Post",
+      "execute": "Execute"
+    },
+    "validation": {
+      "warehouseRequired": "Warehouse is required",
+      "inboundLocationRequired": "Inbound location is required",
+      "selectLineForReceive": "Select at least one line for receive",
+      "locationRequired": "Location is required",
+      "typeRequired": "Type is required",
+      "fromWarehouseRequired": "From warehouse is required",
+      "toWarehouseRequired": "To warehouse is required",
+      "fromLocationRequired": "From location is required",
+      "toLocationRequired": "To location is required",
+      "productRequired": "Product is required",
+      "qtyExpectedPositive": "Qty expected must be > 0",
+      "qtyDeltaPositive": "Qty delta must be > 0",
+      "qtyPositive": "Qty must be > 0",
+      "itemRequired": "At least one item is required"
+    },
     "print": {
       "print": "Print",
       "loading": "Preparing print view...",
@@ -394,6 +452,7 @@
       "items": "Items",
       "qtyTotal": "Total qty",
       "qtyProcessed": "Processed qty",
+      "qtyRemaining": "Remaining qty",
       "order": "Order"
     },
     "columns": {

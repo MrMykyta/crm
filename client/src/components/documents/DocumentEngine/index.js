@@ -4,3 +4,10 @@ export {
   mapOfferToDocumentModel,
   mapInvoiceToDocumentModel,
 } from './documentModel';
+export {
+  mapReceiptToDocumentModel,
+  mapShipmentToDocumentModel,
+  mapTransferToDocumentModel,
+  mapAdjustmentToDocumentModel,
+  WMS_DOCUMENT_ADAPTERS,
+} from './wmsDocumentModel';

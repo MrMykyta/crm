@@ -63,6 +63,7 @@ function EngineView({
   summaryStatusLabel,
   number,
   totals = {},          // { netLabel, vatLabel, grossLabel, net, vat, gross }
+  summaryRows = [],     // generic right-panel rows [{ label, value, strong }] — overrides money totals
   sections = [],        // [{ key, title, hint, content }]
 }) {
   const { t } = useTranslation();
@@ -115,8 +116,11 @@ function EngineView({
     if (editable) {
       return (
         <label key={field.label} className={formStyles.sideField}>
-          <span className={formStyles.sideFieldLabel}>{field.label}</span>
+          <span className={formStyles.sideFieldLabel}>{field.label}{field.required ? ' *' : ''}</span>
           {renderControl(field)}
+          {field.error ? (
+            <span style={{ color: 'var(--danger)', fontSize: 'var(--font-size-12)' }}>{field.error}</span>
+          ) : null}
         </label>
       );
     }
@@ -325,18 +329,32 @@ function EngineView({
                 ) : null}
 
                 <div className={formStyles.summaryRows}>
-                  <div className={formStyles.summaryRow}>
-                    <span className={formStyles.totalLabel}>{totals.netLabel}</span>
-                    <strong className={formStyles.totalValue}>{formatAmount(totals.net)}</strong>
-                  </div>
-                  <div className={formStyles.summaryRow}>
-                    <span className={formStyles.totalLabel}>{totals.vatLabel}</span>
-                    <strong className={formStyles.totalValue}>{formatAmount(totals.vat)}</strong>
-                  </div>
-                  <div className={`${formStyles.summaryRow} ${formStyles.summaryRowAccent}`}>
-                    <span className={formStyles.totalLabel}>{totals.grossLabel}</span>
-                    <strong className={formStyles.totalValueLarge}>{formatAmount(totals.gross)}</strong>
-                  </div>
+                  {summaryRows.length ? (
+                    summaryRows.map((row) => (
+                      <div
+                        key={row.label}
+                        className={`${formStyles.summaryRow} ${row.strong ? formStyles.summaryRowAccent : ''}`.trim()}
+                      >
+                        <span className={formStyles.totalLabel}>{row.label}</span>
+                        <strong className={row.strong ? formStyles.totalValueLarge : formStyles.totalValue}>{row.value}</strong>
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      <div className={formStyles.summaryRow}>
+                        <span className={formStyles.totalLabel}>{totals.netLabel}</span>
+                        <strong className={formStyles.totalValue}>{formatAmount(totals.net)}</strong>
+                      </div>
+                      <div className={formStyles.summaryRow}>
+                        <span className={formStyles.totalLabel}>{totals.vatLabel}</span>
+                        <strong className={formStyles.totalValue}>{formatAmount(totals.vat)}</strong>
+                      </div>
+                      <div className={`${formStyles.summaryRow} ${formStyles.summaryRowAccent}`}>
+                        <span className={formStyles.totalLabel}>{totals.grossLabel}</span>
+                        <strong className={formStyles.totalValueLarge}>{formatAmount(totals.gross)}</strong>
+                      </div>
+                    </>
+                  )}
                 </div>
               </section>
             </div>

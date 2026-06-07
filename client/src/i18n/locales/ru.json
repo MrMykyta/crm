@@ -272,6 +272,9 @@
       "detailTitle": "Детали оферты",
       "editTitle": "Редактирование оферты"
     },
+    "invoices": {
+      "detailTitle": "Детали счёта"
+    },
     "relations": {
       "title": "Связи",
       "sourceOffer": "Исходное предложение",
@@ -404,6 +407,61 @@
       "originalDocument": "Исходный документ",
       "correctionDocument": "Документ коррекции"
     },
+    "fields": {
+      "fromWarehouse": "Со склада",
+      "toWarehouse": "На склад",
+      "reason": "Причина",
+      "postedAt": "Проведено",
+      "inboundLocation": "Локация приёмки",
+      "supplier": "Поставщик",
+      "location": "Локация",
+      "fromLocation": "Локация-источник",
+      "toLocation": "Локация-получатель",
+      "date": "Дата",
+      "documentType": "Тип документа"
+    },
+    "create": {
+      "subtitleReceipt": "Создайте приёмку и при необходимости примите позиции",
+      "subtitleAdjustment": "Создайте RW/PW и при необходимости проведите",
+      "subtitleTransfer": "Создайте перемещение и при необходимости выполните позиции",
+      "addLine": "Добавить строку",
+      "variantOptional": "Вариант (опц.)",
+      "lot": "Партия (опц.)",
+      "qtyExpected": "Ожидаемое кол-во",
+      "qtyDelta": "Изменение кол-ва",
+      "receiveLine": "Принять строку",
+      "receive": "Принять",
+      "selectProduct": "Выбрать товар",
+      "changeProduct": "Изменить товар",
+      "noProduct": "Товар не выбран",
+      "selectWarehouse": "Выберите склад",
+      "selectLocation": "Выберите локацию",
+      "selectFromLocation": "Выберите локацию-источник",
+      "selectToLocation": "Выберите локацию-получатель",
+      "noSupplier": "Без поставщика",
+      "saveDraft": "Сохранить черновик",
+      "create": "Создать",
+      "receiveSelected": "Принять выбранные",
+      "receiveAll": "Принять всё",
+      "post": "Провести",
+      "execute": "Выполнить"
+    },
+    "validation": {
+      "warehouseRequired": "Склад обязателен",
+      "inboundLocationRequired": "Локация приёмки обязательна",
+      "selectLineForReceive": "Выберите хотя бы одну строку для приёмки",
+      "locationRequired": "Локация обязательна",
+      "typeRequired": "Тип обязателен",
+      "fromWarehouseRequired": "Склад-источник обязателен",
+      "toWarehouseRequired": "Склад-получатель обязателен",
+      "fromLocationRequired": "Локация-источник обязательна",
+      "toLocationRequired": "Локация-получатель обязательна",
+      "productRequired": "Товар обязателен",
+      "qtyExpectedPositive": "Ожидаемое кол-во должно быть > 0",
+      "qtyDeltaPositive": "Изменение кол-ва должно быть > 0",
+      "qtyPositive": "Кол-во должно быть > 0",
+      "itemRequired": "Нужна хотя бы одна позиция"
+    },
     "print": {
       "print": "Печать",
       "loading": "Подготовка печатной формы...",
@@ -432,6 +490,7 @@
       "items": "Позиций",
       "qtyTotal": "Количество всего",
       "qtyProcessed": "Количество обработано",
+      "qtyRemaining": "Остаток",
       "order": "Заказ"
     },
     "columns": {

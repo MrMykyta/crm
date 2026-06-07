@@ -135,7 +135,7 @@ export function mapInvoiceToDocumentModel(invoice, { t, locale }) {
   return {
     typeLabel: t('documents.types.invoice'),
     title: invoice?.number || `#${String(invoice?.id || '').slice(0, 8)}`,
-    subtitle: t('oms.invoices.detailTitle', 'Invoice details'),
+    subtitle: t('oms.invoices.detailTitle'),
     statusLabel: statusText(invoice?.status, t),
     summaryStatusLabel: statusText(invoice?.status, t),
     number: invoice?.number || `#${String(invoice?.id || '').slice(0, 8)}`,

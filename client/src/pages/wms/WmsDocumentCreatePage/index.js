@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import ThemedSelect from '../../../components/inputs/RadixSelect';
-import DateTimePicker from '../../../components/inputs/DateTimePicker';
+import DocumentEnginePage from '../../../components/documents/DocumentEngine';
 import OmsProductPicker from '../../../components/oms/OmsProductPicker';
 import {
   useCreateAdjustmentMutation,
@@ -47,46 +46,23 @@ function isCostingNotInitializedError(error) {
   return error?.data?.code === 'COSTING_NOT_INITIALIZED';
 }
 
-function getWmsActionErrorText(error, fallback) {
+function getWmsActionErrorText(error, t, fallback) {
   if (isCostingNotInitializedError(error)) {
-    return 'FIFO costing is not initialized for this company. Go to Company Settings → Warehouse/WMS → Wycena.';
+    return t('wms.costing.errors.notInitialized', 'FIFO costing is not initialized for this company. Go to Company Settings → Warehouse/WMS → Wycena.');
   }
   return getErrorText(error, fallback);
 }
 
 function createReceiptItem() {
-  return {
-    localId: uid(),
-    productId: '',
-    productName: '',
-    sku: '',
-    variantId: '',
-    lotNumber: '',
-    qtyExpected: '1',
-    receiveNow: false,
-  };
+  return { localId: uid(), productId: '', productName: '', sku: '', variantId: '', lotNumber: '', qtyExpected: '1', receiveNow: false };
 }
 
 function createAdjustmentItem() {
-  return {
-    localId: uid(),
-    productId: '',
-    productName: '',
-    sku: '',
-    variantId: '',
-    qtyDelta: '1',
-  };
+  return { localId: uid(), productId: '', productName: '', sku: '', variantId: '', qtyDelta: '1' };
 }
 
 function createTransferItem() {
-  return {
-    localId: uid(),
-    productId: '',
-    productName: '',
-    sku: '',
-    variantId: '',
-    qty: '1',
-  };
+  return { localId: uid(), productId: '', productName: '', sku: '', variantId: '', qty: '1' };
 }
 
 function applyProductToItem(item, product) {
@@ -97,12 +73,6 @@ function applyProductToItem(item, product) {
     sku: asText(product?.sku),
     variantId: asText(product?.defaultVariantId || product?.variantId || product?.defaultVariant?.id),
   };
-}
-
-function titleByKind(kind) {
-  if (kind === 'receipt') return 'New PZ receipt';
-  if (kind === 'adjustment') return 'New RW/PW adjustment';
-  return 'New MM transfer';
 }
 
 function listRouteByKind(kind) {
@@ -117,32 +87,119 @@ function detailRouteByKind(kind, id) {
   return `/main/wms/transfers/${id}`;
 }
 
+// WMS-specific create items editor (rendered inside DocumentEngine itemsSlot).
+// Preserves the existing per-kind columns, product picker, qty/lot/receive fields.
+function WmsCreateItemsTable({ items, kind, errors, t, onAddItem, onRemoveItem, onItemField, onOpenPicker }) {
+  const isReceipt = kind === 'receipt';
+  const isAdjustment = kind === 'adjustment';
+  const isTransfer = kind === 'transfer';
+  return (
+    <>
+      <div className={s.itemsHeader}>
+        <h2 className={s.sectionTitle}>{t('documents.lines.title', 'Items')}</h2>
+        <button type="button" className={s.addRowButton} onClick={onAddItem}>
+          {t('wms.create.addLine', 'Add line')}
+        </button>
+      </div>
+      <div className={s.tableWrap}>
+        <table className={s.table}>
+          <thead>
+            <tr>
+              <th>{t('wms.columns.product', 'Product')} *</th>
+              <th>{t('wms.create.variantOptional', 'Variant (optional)')}</th>
+              {isReceipt ? <th>{t('wms.create.lot', 'Lot (optional)')}</th> : null}
+              {isReceipt ? <th>{t('wms.create.qtyExpected', 'Qty expected')}</th> : null}
+              {isReceipt ? <th>{t('wms.create.receiveLine', 'Receive line')}</th> : null}
+              {isAdjustment ? <th>{t('wms.create.qtyDelta', 'Qty delta')}</th> : null}
+              {isTransfer ? <th>{t('wms.columns.qty', 'Qty')}</th> : null}
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.localId}>
+                <td>
+                  <div className={s.productCell}>
+                    <button type="button" className={s.pickButton} onClick={() => onOpenPicker(item.localId)}>
+                      {item.productId ? t('wms.create.changeProduct', 'Change product') : t('wms.create.selectProduct', 'Select product')}
+                    </button>
+                    <div className={s.productText}>
+                      {item.productName || t('wms.create.noProduct', 'No product selected')}
+                      {item.sku ? <span className={s.productSub}>SKU: {item.sku}</span> : null}
+                    </div>
+                  </div>
+                  {errors[`item:${item.localId}:productId`] ? <div className={s.fieldError}>{errors[`item:${item.localId}:productId`]}</div> : null}
+                </td>
+                <td>
+                  <input
+                    className={s.input}
+                    value={item.variantId}
+                    onChange={(event) => onItemField(item.localId, 'variantId', event.target.value)}
+                    placeholder={t('wms.columns.variant', 'Variant')}
+                  />
+                </td>
+                {isReceipt ? (
+                  <td>
+                    <input className={s.input} value={item.lotNumber} onChange={(event) => onItemField(item.localId, 'lotNumber', event.target.value)} placeholder={t('wms.create.lot', 'Lot')} />
+                  </td>
+                ) : null}
+                {isReceipt ? (
+                  <td>
+                    <input className={s.input} type="number" min="0" step="0.0001" value={item.qtyExpected} onChange={(event) => onItemField(item.localId, 'qtyExpected', event.target.value)} />
+                    {errors[`item:${item.localId}:qtyExpected`] ? <div className={s.fieldError}>{errors[`item:${item.localId}:qtyExpected`]}</div> : null}
+                  </td>
+                ) : null}
+                {isReceipt ? (
+                  <td>
+                    <label className={s.checkboxRow}>
+                      <input type="checkbox" checked={Boolean(item.receiveNow)} onChange={(event) => onItemField(item.localId, 'receiveNow', event.target.checked)} />
+                      <span>{t('wms.create.receive', 'Receive')}</span>
+                    </label>
+                  </td>
+                ) : null}
+                {isAdjustment ? (
+                  <td>
+                    <input className={s.input} type="number" min="0" step="0.0001" value={item.qtyDelta} onChange={(event) => onItemField(item.localId, 'qtyDelta', event.target.value)} />
+                    {errors[`item:${item.localId}:qtyDelta`] ? <div className={s.fieldError}>{errors[`item:${item.localId}:qtyDelta`]}</div> : null}
+                  </td>
+                ) : null}
+                {isTransfer ? (
+                  <td>
+                    <input className={s.input} type="number" min="0" step="0.0001" value={item.qty} onChange={(event) => onItemField(item.localId, 'qty', event.target.value)} />
+                    {errors[`item:${item.localId}:qty`] ? <div className={s.fieldError}>{errors[`item:${item.localId}:qty`]}</div> : null}
+                  </td>
+                ) : null}
+                <td>
+                  <button type="button" className={s.removeButton} onClick={() => onRemoveItem(item.localId)}>
+                    {t('documents.lines.remove', 'Remove')}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {errors.items ? <div className={s.fieldError} style={{ marginTop: 8 }}>{errors.items}</div> : null}
+    </>
+  );
+}
+
 export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
   const navigate = useNavigate();
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
   const [isPickerOpen, setPickerOpen] = useState(false);
   const [pickerTargetId, setPickerTargetId] = useState('');
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const [actionError, setActionError] = useState('');
-  const [actionErrorCode, setActionErrorCode] = useState('');
 
   const isReceipt = kind === 'receipt';
   const isAdjustment = kind === 'adjustment';
   const isTransfer = kind === 'transfer';
 
   const [header, setHeader] = useState({
-    warehouseId: '',
-    inboundLocationId: '',
-    counterpartyId: '',
-    issueDate: '',
-    documentType: 'PW',
-    locationId: '',
-    reason: '',
-    fromWarehouseId: '',
-    toWarehouseId: '',
-    fromLocationId: '',
-    toLocationId: '',
+    warehouseId: '', inboundLocationId: '', counterpartyId: '', issueDate: '', documentType: 'PW',
+    locationId: '', reason: '', fromWarehouseId: '', toWarehouseId: '', fromLocationId: '', toLocationId: '',
   });
 
   const [items, setItems] = useState(() => {
@@ -151,18 +208,9 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     return [createTransferItem()];
   });
 
-  const { data: warehousesData } = useListWarehousesQuery({
-    limit: 200,
-    sort: 'name',
-    dir: 'ASC',
-  });
+  const { data: warehousesData } = useListWarehousesQuery({ limit: 200, sort: 'name', dir: 'ASC' });
   const { data: locationsData } = useListLocationsQuery(
-    {
-      limit: 200,
-      sort: 'code',
-      dir: 'ASC',
-      warehouseId: isTransfer ? undefined : header.warehouseId || undefined,
-    },
+    { limit: 200, sort: 'code', dir: 'ASC', warehouseId: isTransfer ? undefined : header.warehouseId || undefined },
     { refetchOnMountOrArgChange: false }
   );
   const { data: counterpartiesData } = useListCounterpartiesQuery(
@@ -170,96 +218,64 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     { skip: !isReceipt }
   );
   const { data: fromLocationsData } = useListLocationsQuery(
-    {
-      limit: 200,
-      sort: 'code',
-      dir: 'ASC',
-      warehouseId: isTransfer ? header.fromWarehouseId || undefined : undefined,
-    },
+    { limit: 200, sort: 'code', dir: 'ASC', warehouseId: isTransfer ? header.fromWarehouseId || undefined : undefined },
     { skip: !isTransfer, refetchOnMountOrArgChange: false }
   );
   const { data: toLocationsData } = useListLocationsQuery(
-    {
-      limit: 200,
-      sort: 'code',
-      dir: 'ASC',
-      warehouseId: isTransfer ? header.toWarehouseId || undefined : undefined,
-    },
+    { limit: 200, sort: 'code', dir: 'ASC', warehouseId: isTransfer ? header.toWarehouseId || undefined : undefined },
     { skip: !isTransfer, refetchOnMountOrArgChange: false }
   );
 
   const [createReceipt, { isLoading: isCreatingReceipt }] = useCreateReceiptMutation();
   const [receiveReceiptLine, { isLoading: isReceivingLine }] = useReceiveReceiptLineMutation();
   const [fetchReceiptById] = useLazyGetReceiptByIdQuery();
-
   const [createAdjustment, { isLoading: isCreatingAdjustment }] = useCreateAdjustmentMutation();
   const [postAdjustment, { isLoading: isPostingAdjustment }] = usePostAdjustmentMutation();
-
   const [createTransfer, { isLoading: isCreatingTransfer }] = useCreateTransferMutation();
   const [executeTransferLine, { isLoading: isExecutingTransferLine }] = useExecuteTransferLineMutation();
   const [fetchTransferById] = useLazyGetTransferByIdQuery();
 
-  const isBusy = isCreatingReceipt
-    || isReceivingLine
-    || isCreatingAdjustment
-    || isPostingAdjustment
-    || isCreatingTransfer
-    || isExecutingTransferLine;
+  const isBusy = isCreatingReceipt || isReceivingLine || isCreatingAdjustment || isPostingAdjustment || isCreatingTransfer || isExecutingTransferLine;
 
   const warehouseOptions = useMemo(() => {
     const rows = Array.isArray(warehousesData?.items) ? warehousesData.items : [];
     return [
-      { value: '', label: 'Select warehouse' },
-      ...rows.map((row) => ({
-        value: row.id,
-        label: [asText(row.code), asText(row.name)].filter(Boolean).join(' · ') || row.id,
-      })),
+      { value: '', label: t('wms.create.selectWarehouse', 'Select warehouse') },
+      ...rows.map((row) => ({ value: row.id, label: [asText(row.code), asText(row.name)].filter(Boolean).join(' · ') || row.id })),
     ];
-  }, [warehousesData?.items]);
+  }, [warehousesData?.items, t]);
 
   const locationOptions = useMemo(() => {
     const rows = Array.isArray(locationsData?.items) ? locationsData.items : [];
     return [
-      { value: '', label: 'Select location' },
-      ...rows.map((row) => ({
-        value: row.id,
-        label: [asText(row.code), asText(row.type)].filter(Boolean).join(' · ') || row.id,
-      })),
+      { value: '', label: t('wms.create.selectLocation', 'Select location') },
+      ...rows.map((row) => ({ value: row.id, label: [asText(row.code), asText(row.type)].filter(Boolean).join(' · ') || row.id })),
     ];
-  }, [locationsData?.items]);
+  }, [locationsData?.items, t]);
 
   const fromLocationOptions = useMemo(() => {
     const rows = Array.isArray(fromLocationsData?.items) ? fromLocationsData.items : [];
     return [
-      { value: '', label: 'Select from location' },
-      ...rows.map((row) => ({
-        value: row.id,
-        label: [asText(row.code), asText(row.type)].filter(Boolean).join(' · ') || row.id,
-      })),
+      { value: '', label: t('wms.create.selectFromLocation', 'Select from location') },
+      ...rows.map((row) => ({ value: row.id, label: [asText(row.code), asText(row.type)].filter(Boolean).join(' · ') || row.id })),
     ];
-  }, [fromLocationsData?.items]);
+  }, [fromLocationsData?.items, t]);
 
   const toLocationOptions = useMemo(() => {
     const rows = Array.isArray(toLocationsData?.items) ? toLocationsData.items : [];
     return [
-      { value: '', label: 'Select to location' },
-      ...rows.map((row) => ({
-        value: row.id,
-        label: [asText(row.code), asText(row.type)].filter(Boolean).join(' · ') || row.id,
-      })),
+      { value: '', label: t('wms.create.selectToLocation', 'Select to location') },
+      ...rows.map((row) => ({ value: row.id, label: [asText(row.code), asText(row.type)].filter(Boolean).join(' · ') || row.id })),
     ];
-  }, [toLocationsData?.items]);
+  }, [toLocationsData?.items, t]);
 
   const counterpartyOptions = useMemo(() => {
     const rows = Array.isArray(counterpartiesData?.items) ? counterpartiesData.items : [];
     return [
-      { value: '', label: 'No supplier' },
-      ...rows.map((row) => ({
-        value: row.id,
-        label: row.shortName || row.fullName || row.name || row.id,
-      })),
+      { value: '', label: t('wms.create.noSupplier', 'No supplier') },
+      ...rows.map((row) => ({ value: row.id, label: row.shortName || row.fullName || row.name || row.id })),
     ];
-  }, [counterpartiesData?.items]);
+  }, [counterpartiesData?.items, t]);
 
   const setHeaderField = (field, value) => {
     setHeader((prev) => ({ ...prev, [field]: value }));
@@ -291,47 +307,41 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
 
   const onPickProduct = (product) => {
     if (!pickerTargetId) return;
-    setItems((prev) => prev.map((item) => (
-      item.localId === pickerTargetId ? applyProductToItem(item, product) : item
-    )));
+    setItems((prev) => prev.map((item) => (item.localId === pickerTargetId ? applyProductToItem(item, product) : item)));
     setPickerOpen(false);
     setPickerTargetId('');
   };
 
   const validate = ({ forPost = false, receiveMode = 'none', forExecute = false } = {}) => {
     const nextErrors = {};
-
     if (isReceipt) {
-      if (!header.warehouseId) nextErrors.warehouseId = 'Warehouse is required';
+      if (!header.warehouseId) nextErrors.warehouseId = t('wms.validation.warehouseRequired', 'Warehouse is required');
       const isReceiveAction = receiveMode === 'all' || receiveMode === 'selected';
-      if (isReceiveAction && !header.inboundLocationId) nextErrors.inboundLocationId = 'Inbound location is required';
+      if (isReceiveAction && !header.inboundLocationId) nextErrors.inboundLocationId = t('wms.validation.inboundLocationRequired', 'Inbound location is required');
       if (receiveMode === 'selected' && !items.some((item) => item.receiveNow)) {
-        nextErrors.items = 'Select at least one line for receive';
+        nextErrors.items = t('wms.validation.selectLineForReceive', 'Select at least one line for receive');
       }
     }
     if (isAdjustment) {
-      if (!header.warehouseId) nextErrors.warehouseId = 'Warehouse is required';
-      if (!header.locationId) nextErrors.locationId = 'Location is required';
-      if (!header.documentType) nextErrors.documentType = 'Type is required';
+      if (!header.warehouseId) nextErrors.warehouseId = t('wms.validation.warehouseRequired', 'Warehouse is required');
+      if (!header.locationId) nextErrors.locationId = t('wms.validation.locationRequired', 'Location is required');
+      if (!header.documentType) nextErrors.documentType = t('wms.validation.typeRequired', 'Type is required');
     }
     if (isTransfer) {
-      if (!header.fromWarehouseId) nextErrors.fromWarehouseId = 'From warehouse is required';
-      if (!header.toWarehouseId) nextErrors.toWarehouseId = 'To warehouse is required';
-      if (forExecute && !header.fromLocationId) nextErrors.fromLocationId = 'From location is required';
-      if (forExecute && !header.toLocationId) nextErrors.toLocationId = 'To location is required';
+      if (!header.fromWarehouseId) nextErrors.fromWarehouseId = t('wms.validation.fromWarehouseRequired', 'From warehouse is required');
+      if (!header.toWarehouseId) nextErrors.toWarehouseId = t('wms.validation.toWarehouseRequired', 'To warehouse is required');
+      if (forExecute && !header.fromLocationId) nextErrors.fromLocationId = t('wms.validation.fromLocationRequired', 'From location is required');
+      if (forExecute && !header.toLocationId) nextErrors.toLocationId = t('wms.validation.toLocationRequired', 'To location is required');
     }
-
     items.forEach((item) => {
-      if (!asText(item.productId)) nextErrors[`item:${item.localId}:productId`] = 'Product is required';
-      if (isReceipt && asNumber(item.qtyExpected, 0) <= 0) nextErrors[`item:${item.localId}:qtyExpected`] = 'Qty expected must be > 0';
-      if (isAdjustment && Math.abs(asNumber(item.qtyDelta, 0)) <= 0) nextErrors[`item:${item.localId}:qtyDelta`] = 'Qty delta must be > 0';
-      if (isTransfer && asNumber(item.qty, 0) <= 0) nextErrors[`item:${item.localId}:qty`] = 'Qty must be > 0';
+      if (!asText(item.productId)) nextErrors[`item:${item.localId}:productId`] = t('wms.validation.productRequired', 'Product is required');
+      if (isReceipt && asNumber(item.qtyExpected, 0) <= 0) nextErrors[`item:${item.localId}:qtyExpected`] = t('wms.validation.qtyExpectedPositive', 'Qty expected must be > 0');
+      if (isAdjustment && Math.abs(asNumber(item.qtyDelta, 0)) <= 0) nextErrors[`item:${item.localId}:qtyDelta`] = t('wms.validation.qtyDeltaPositive', 'Qty delta must be > 0');
+      if (isTransfer && asNumber(item.qty, 0) <= 0) nextErrors[`item:${item.localId}:qty`] = t('wms.validation.qtyPositive', 'Qty must be > 0');
     });
-
     if (forPost && isAdjustment && !items.length) {
-      nextErrors.items = 'At least one item is required';
+      nextErrors.items = t('wms.validation.itemRequired', 'At least one item is required');
     }
-
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -382,12 +392,10 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     if (!validate({ receiveMode })) return;
     setSaveError('');
     setActionError('');
-    setActionErrorCode('');
     try {
       const created = await createReceipt(buildReceiptPayload()).unwrap();
       const receiptId = created?.id;
       if (!receiptId) throw new Error('Receipt not created');
-
       if (receiveMode === 'all' || receiveMode === 'selected') {
         const detail = await fetchReceiptById(receiptId, true).unwrap();
         const detailItems = Array.isArray(detail?.items) ? detail.items : [];
@@ -402,23 +410,14 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
           const qty = round4(qtyExpected - qtyReceived);
           if (qty <= 0) continue;
           // eslint-disable-next-line no-await-in-loop
-          await receiveReceiptLine({
-            itemId: line.id,
-            payload: {
-              qty,
-              toLocationId: header.inboundLocationId,
-              lotId: null,
-            },
-          }).unwrap();
+          await receiveReceiptLine({ itemId: line.id, payload: { qty, toLocationId: header.inboundLocationId, lotId: null } }).unwrap();
         }
       }
-
       navigate(detailRouteByKind('receipt', receiptId));
     } catch (error) {
-      const message = getWmsActionErrorText(error, 'Failed to create receipt');
+      const message = getWmsActionErrorText(error, t, 'Failed to create receipt');
       if (receiveMode !== 'none') setActionError(message);
       else setSaveError(message);
-      setActionErrorCode(error?.data?.code || '');
     }
   };
 
@@ -426,22 +425,18 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     if (!validate({ forPost: post })) return;
     setSaveError('');
     setActionError('');
-    setActionErrorCode('');
     try {
       const created = await createAdjustment(buildAdjustmentPayload()).unwrap();
       const adjustmentId = created?.id;
       if (!adjustmentId) throw new Error('Adjustment not created');
-
       if (post) {
         await postAdjustment({ id: adjustmentId }).unwrap();
       }
-
       navigate(detailRouteByKind('adjustment', adjustmentId));
     } catch (error) {
-      const message = getWmsActionErrorText(error, 'Failed to create adjustment');
+      const message = getWmsActionErrorText(error, t, 'Failed to create adjustment');
       if (post) setActionError(message);
       else setSaveError(message);
-      setActionErrorCode(error?.data?.code || '');
     }
   };
 
@@ -449,12 +444,10 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     if (!validate({ forExecute: execute })) return;
     setSaveError('');
     setActionError('');
-    setActionErrorCode('');
     try {
       const created = await createTransfer(buildTransferPayload()).unwrap();
       const transferId = created?.id;
       if (!transferId) throw new Error('Transfer not created');
-
       if (execute) {
         const detail = await fetchTransferById(transferId, true).unwrap();
         const detailItems = Array.isArray(detail?.items) ? detail.items : [];
@@ -464,349 +457,129 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
           const qty = round4(plannedQty - movedQty);
           if (qty <= 0) continue;
           // eslint-disable-next-line no-await-in-loop
-          await executeTransferLine({
-            itemId: line.id,
-            payload: {
-              fromLocationId: header.fromLocationId,
-              toLocationId: header.toLocationId,
-              qty,
-            },
-          }).unwrap();
+          await executeTransferLine({ itemId: line.id, payload: { fromLocationId: header.fromLocationId, toLocationId: header.toLocationId, qty } }).unwrap();
         }
       }
-
       navigate(detailRouteByKind('transfer', transferId));
     } catch (error) {
-      const message = getWmsActionErrorText(error, 'Failed to create transfer');
+      const message = getWmsActionErrorText(error, t, 'Failed to create transfer');
       if (execute) setActionError(message);
       else setSaveError(message);
-      setActionErrorCode(error?.data?.code || '');
     }
   };
 
+  // ----- DocumentEngine model -----
+  const typeLabel = isReceipt ? 'PZ' : isTransfer ? 'MM' : asText(header.documentType || 'PW').toUpperCase();
+  const title = `${t('common.new', 'New')} ${typeLabel}`;
+  const subtitle = isReceipt
+    ? t('wms.create.subtitleReceipt', 'Create receipt and optionally receive lines')
+    : isAdjustment
+      ? t('wms.create.subtitleAdjustment', 'Create RW/PW adjustment and optionally post')
+      : t('wms.create.subtitleTransfer', 'Create transfer and optionally execute lines');
+
+  let primaryFields = [];
+  let secondaryFields = [];
+  if (isReceipt) {
+    primaryFields = [
+      { label: t('wms.print.warehouse', 'Warehouse'), type: 'select', required: true, value: header.warehouseId, onChange: (v) => setHeaderField('warehouseId', v), options: warehouseOptions, error: errors.warehouseId },
+      { label: t('wms.fields.inboundLocation', 'Inbound location'), type: 'select', value: header.inboundLocationId, onChange: (v) => setHeaderField('inboundLocationId', v), options: locationOptions, error: errors.inboundLocationId },
+    ];
+    secondaryFields = [
+      { label: t('wms.fields.supplier', 'Supplier'), type: 'select', value: header.counterpartyId, onChange: (v) => setHeaderField('counterpartyId', v), options: counterpartyOptions },
+      { label: t('wms.fields.date', 'Date'), type: 'date', value: header.issueDate, onChange: (v) => setHeaderField('issueDate', v) },
+    ];
+  } else if (isAdjustment) {
+    primaryFields = [
+      { label: t('wms.fields.documentType', 'Document type'), type: 'select', required: true, value: header.documentType, onChange: (v) => setHeaderField('documentType', v), options: [{ value: 'PW', label: 'PW' }, { value: 'RW', label: 'RW' }], error: errors.documentType },
+      { label: t('wms.print.warehouse', 'Warehouse'), type: 'select', required: true, value: header.warehouseId, onChange: (v) => setHeaderField('warehouseId', v), options: warehouseOptions, error: errors.warehouseId },
+      { label: t('wms.fields.location', 'Location'), type: 'select', required: true, value: header.locationId, onChange: (v) => setHeaderField('locationId', v), options: locationOptions, error: errors.locationId },
+    ];
+    secondaryFields = [
+      { label: t('wms.fields.date', 'Date'), type: 'date', value: header.issueDate, onChange: (v) => setHeaderField('issueDate', v) },
+      { label: t('wms.fields.reason', 'Reason'), type: 'text', value: header.reason, onChange: (v) => setHeaderField('reason', v) },
+    ];
+  } else {
+    primaryFields = [
+      { label: t('wms.fields.fromWarehouse', 'From warehouse'), type: 'select', required: true, value: header.fromWarehouseId, onChange: (v) => setHeaderField('fromWarehouseId', v), options: warehouseOptions, error: errors.fromWarehouseId },
+      { label: t('wms.fields.toWarehouse', 'To warehouse'), type: 'select', required: true, value: header.toWarehouseId, onChange: (v) => setHeaderField('toWarehouseId', v), options: warehouseOptions, error: errors.toWarehouseId },
+    ];
+    secondaryFields = [
+      { label: t('wms.fields.fromLocation', 'From location'), type: 'select', value: header.fromLocationId, onChange: (v) => setHeaderField('fromLocationId', v), options: fromLocationOptions, error: errors.fromLocationId },
+      { label: t('wms.fields.toLocation', 'To location'), type: 'select', value: header.toLocationId, onChange: (v) => setHeaderField('toLocationId', v), options: toLocationOptions, error: errors.toLocationId },
+      { label: t('wms.fields.date', 'Date'), type: 'date', value: header.issueDate, onChange: (v) => setHeaderField('issueDate', v) },
+    ];
+  }
+
+  const summaryRows = (() => {
+    const rows = [{ label: t('wms.summary.items', 'Items'), value: String(items.length) }];
+    if (isReceipt) {
+      const totalExpected = items.reduce((acc, it) => acc + asNumber(it.qtyExpected, 0), 0);
+      rows.push({ label: t('wms.summary.qtyTotal', 'Total qty'), value: round4(totalExpected), strong: true });
+    } else if (isAdjustment) {
+      const totalDelta = items.reduce((acc, it) => acc + Math.abs(asNumber(it.qtyDelta, 0)), 0);
+      rows.push({ label: t('wms.summary.qtyTotal', 'Total qty'), value: round4(totalDelta), strong: true });
+      rows.push({ label: t('wms.adjustments.filters.documentType', 'Type'), value: typeLabel });
+    } else {
+      const totalQty = items.reduce((acc, it) => acc + asNumber(it.qty, 0), 0);
+      rows.push({ label: t('wms.summary.qtyTotal', 'Total qty'), value: round4(totalQty), strong: true });
+    }
+    return rows.map((r) => ({ ...r, value: String(r.value) }));
+  })();
+
+  const actions = [];
+  if (isReceipt) {
+    actions.push({ key: 'save', label: t('wms.create.create', 'Create'), disabled: isBusy, onClick: () => handleReceiptSave({ receiveMode: 'none' }) });
+    actions.push({ key: 'receiveSelected', label: t('wms.create.receiveSelected', 'Receive selected'), disabled: isBusy, onClick: () => handleReceiptSave({ receiveMode: 'selected' }) });
+    actions.push({ key: 'receiveAll', label: t('wms.create.receiveAll', 'Receive all'), variant: 'primary', loading: isBusy, disabled: isBusy, onClick: () => handleReceiptSave({ receiveMode: 'all' }) });
+  } else if (isAdjustment) {
+    actions.push({ key: 'save', label: t('wms.create.saveDraft', 'Save draft'), disabled: isBusy, onClick: () => handleAdjustmentSave({ post: false }) });
+    actions.push({ key: 'post', label: t('wms.create.post', 'Post'), variant: 'primary', loading: isBusy, disabled: isBusy, onClick: () => handleAdjustmentSave({ post: true }) });
+  } else {
+    actions.push({ key: 'create', label: t('wms.create.create', 'Create'), disabled: isBusy, onClick: () => handleTransferSave({ execute: false }) });
+    actions.push({ key: 'execute', label: t('wms.create.execute', 'Execute'), variant: 'primary', loading: isBusy, disabled: isBusy, onClick: () => handleTransferSave({ execute: true }) });
+  }
+
   return (
-    <div className={s.page}>
-      <section className={s.mainCard}>
-        <div className={s.header}>
-          <div>
-            <h1 className={s.title}>{titleByKind(kind)}</h1>
-            <p className={s.subtle}>
-              {isReceipt
-                ? 'Create receipt and optionally receive all lines'
-                : isAdjustment
-                  ? 'Create RW/PW adjustment and optionally post'
-                  : 'Create transfer and optionally execute all lines'}
-            </p>
-          </div>
-          <div className={s.headerActions}>
-            <button
-              type="button"
-              className={s.button}
-              onClick={() => navigate(listRouteByKind(kind))}
-              disabled={isBusy}
-            >
-              {t('common.cancel', 'Cancel')}
-            </button>
-            {isReceipt ? (
-              <>
-                <button type="button" className={s.button} onClick={() => handleReceiptSave({ receiveMode: 'none' })} disabled={isBusy}>
-                  {isBusy ? t('common.saving', 'Saving...') : 'Save draft / Create'}
-                </button>
-                <button type="button" className={s.button} onClick={() => handleReceiptSave({ receiveMode: 'selected' })} disabled={isBusy}>
-                  {isBusy ? t('common.saving', 'Saving...') : 'Receive selected'}
-                </button>
-                <button type="button" className={s.primaryButton} onClick={() => handleReceiptSave({ receiveMode: 'all' })} disabled={isBusy}>
-                  {isBusy ? t('common.saving', 'Saving...') : 'Receive all'}
-                </button>
-              </>
-            ) : null}
-            {isAdjustment ? (
-              <>
-                <button type="button" className={s.button} onClick={() => handleAdjustmentSave({ post: false })} disabled={isBusy}>
-                  {isBusy ? t('common.saving', 'Saving...') : 'Save draft'}
-                </button>
-                <button type="button" className={s.primaryButton} onClick={() => handleAdjustmentSave({ post: true })} disabled={isBusy}>
-                  {isBusy ? t('common.saving', 'Saving...') : 'Post'}
-                </button>
-              </>
-            ) : null}
-            {isTransfer ? (
-              <>
-                <button type="button" className={s.button} onClick={() => handleTransferSave({ execute: false })} disabled={isBusy}>
-                  {isBusy ? t('common.saving', 'Saving...') : 'Create'}
-                </button>
-                <button type="button" className={s.primaryButton} onClick={() => handleTransferSave({ execute: true })} disabled={isBusy}>
-                  {isBusy ? t('common.saving', 'Saving...') : 'Execute'}
-                </button>
-              </>
-            ) : null}
-          </div>
-        </div>
-
-        {saveError ? <div className={s.errorBanner}>{saveError}</div> : null}
-        {actionError ? (
-          <div className={s.errorBanner}>
-            {actionError}
-            {actionErrorCode === 'COSTING_NOT_INITIALIZED' ? (
-              <>
-                {' '}
-                <Link to="/main/company-settings/warehouse">Open settings</Link>
-              </>
-            ) : null}
-          </div>
-        ) : null}
-
-        <div className={s.section}>
-          <h2 className={s.sectionTitle}>Header</h2>
-          <div className={s.grid}>
-            {isReceipt ? (
-              <>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>Warehouse *</label>
-                  <ThemedSelect value={header.warehouseId} onChange={(value) => setHeaderField('warehouseId', value)} options={warehouseOptions} placeholder="Select warehouse" />
-                  {errors.warehouseId ? <span className={s.fieldError}>{errors.warehouseId}</span> : null}
-                </div>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>Inbound location</label>
-                  <ThemedSelect value={header.inboundLocationId} onChange={(value) => setHeaderField('inboundLocationId', value)} options={locationOptions} placeholder="Select location" />
-                  {errors.inboundLocationId ? <span className={s.fieldError}>{errors.inboundLocationId}</span> : null}
-                </div>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>Supplier (optional)</label>
-                  <ThemedSelect value={header.counterpartyId} onChange={(value) => setHeaderField('counterpartyId', value)} options={counterpartyOptions} placeholder="No supplier" />
-                </div>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>Date</label>
-                  <DateTimePicker
-                    value={header.issueDate}
-                    onChange={(value) => setHeaderField('issueDate', value)}
-                    withTime={false}
-                    locale={i18n.language === 'pl' ? 'pl-PL' : 'en-US'}
-                  />
-                </div>
-              </>
-            ) : null}
-
-            {isAdjustment ? (
-              <>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>Document type *</label>
-                  <ThemedSelect
-                    value={header.documentType}
-                    onChange={(value) => setHeaderField('documentType', value)}
-                    options={[
-                      { value: 'PW', label: 'PW' },
-                      { value: 'RW', label: 'RW' },
-                    ]}
-                    placeholder="Select type"
-                  />
-                  {errors.documentType ? <span className={s.fieldError}>{errors.documentType}</span> : null}
-                </div>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>Warehouse *</label>
-                  <ThemedSelect value={header.warehouseId} onChange={(value) => setHeaderField('warehouseId', value)} options={warehouseOptions} placeholder="Select warehouse" />
-                  {errors.warehouseId ? <span className={s.fieldError}>{errors.warehouseId}</span> : null}
-                </div>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>Location *</label>
-                  <ThemedSelect value={header.locationId} onChange={(value) => setHeaderField('locationId', value)} options={locationOptions} placeholder="Select location" />
-                  {errors.locationId ? <span className={s.fieldError}>{errors.locationId}</span> : null}
-                </div>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>Date</label>
-                  <DateTimePicker
-                    value={header.issueDate}
-                    onChange={(value) => setHeaderField('issueDate', value)}
-                    withTime={false}
-                    locale={i18n.language === 'pl' ? 'pl-PL' : 'en-US'}
-                  />
-                </div>
-              </>
-            ) : null}
-
-            {isTransfer ? (
-              <>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>From warehouse *</label>
-                  <ThemedSelect value={header.fromWarehouseId} onChange={(value) => setHeaderField('fromWarehouseId', value)} options={warehouseOptions} placeholder="Select from warehouse" />
-                  {errors.fromWarehouseId ? <span className={s.fieldError}>{errors.fromWarehouseId}</span> : null}
-                </div>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>To warehouse *</label>
-                  <ThemedSelect value={header.toWarehouseId} onChange={(value) => setHeaderField('toWarehouseId', value)} options={warehouseOptions} placeholder="Select to warehouse" />
-                  {errors.toWarehouseId ? <span className={s.fieldError}>{errors.toWarehouseId}</span> : null}
-                </div>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>From location</label>
-                  <ThemedSelect value={header.fromLocationId} onChange={(value) => setHeaderField('fromLocationId', value)} options={fromLocationOptions} placeholder="Select from location" />
-                  {errors.fromLocationId ? <span className={s.fieldError}>{errors.fromLocationId}</span> : null}
-                </div>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>To location</label>
-                  <ThemedSelect value={header.toLocationId} onChange={(value) => setHeaderField('toLocationId', value)} options={toLocationOptions} placeholder="Select to location" />
-                  {errors.toLocationId ? <span className={s.fieldError}>{errors.toLocationId}</span> : null}
-                </div>
-                <div className={s.field}>
-                  <label className={s.fieldLabel}>Date</label>
-                  <DateTimePicker
-                    value={header.issueDate}
-                    onChange={(value) => setHeaderField('issueDate', value)}
-                    withTime={false}
-                    locale={i18n.language === 'pl' ? 'pl-PL' : 'en-US'}
-                  />
-                </div>
-              </>
-            ) : null}
-          </div>
-
-          {isAdjustment ? (
-            <div className={s.field} style={{ marginTop: 10 }}>
-              <label className={s.fieldLabel}>Reason</label>
-              <input
-                className={s.input}
-                value={header.reason}
-                onChange={(event) => setHeaderField('reason', event.target.value)}
-                placeholder="Reason"
-              />
-            </div>
-          ) : null}
-        </div>
-
-        <div className={s.section}>
-          <div className={s.itemsHeader}>
-            <h2 className={s.sectionTitle}>Items</h2>
-            <button type="button" className={s.addRowButton} onClick={addItem}>
-              Add line
-            </button>
-          </div>
-          <div className={s.tableWrap}>
-            <table className={s.table}>
-              <thead>
-                <tr>
-                  <th>Product *</th>
-                  <th>Variant (optional)</th>
-                  {isReceipt ? <th>Lot (optional)</th> : null}
-                  {isReceipt ? <th>Qty expected</th> : null}
-                  {isReceipt ? <th>Receive line</th> : null}
-                  {isAdjustment ? <th>Qty delta</th> : null}
-                  {isTransfer ? <th>Qty</th> : null}
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.localId}>
-                    <td>
-                      <div className={s.productCell}>
-                        <button
-                          type="button"
-                          className={s.pickButton}
-                          onClick={() => {
-                            setPickerTargetId(item.localId);
-                            setPickerOpen(true);
-                          }}
-                        >
-                          {item.productId ? 'Change product' : 'Select product'}
-                        </button>
-                        <div className={s.productText}>
-                          {item.productName || 'No product selected'}
-                          {item.sku ? <span className={s.productSub}>SKU: {item.sku}</span> : null}
-                        </div>
-                      </div>
-                      {errors[`item:${item.localId}:productId`] ? <div className={s.fieldError}>{errors[`item:${item.localId}:productId`]}</div> : null}
-                    </td>
-                    <td>
-                      <input
-                        className={s.input}
-                        value={item.variantId}
-                        onChange={(event) => setItemField(item.localId, 'variantId', event.target.value)}
-                        placeholder="Variant ID"
-                      />
-                    </td>
-                    {isReceipt ? (
-                      <td>
-                        <input
-                          className={s.input}
-                          value={item.lotNumber}
-                          onChange={(event) => setItemField(item.localId, 'lotNumber', event.target.value)}
-                          placeholder="Lot number"
-                        />
-                      </td>
-                    ) : null}
-                    {isReceipt ? (
-                      <td>
-                        <input
-                          className={s.input}
-                          type="number"
-                          min="0"
-                          step="0.0001"
-                          value={item.qtyExpected}
-                          onChange={(event) => setItemField(item.localId, 'qtyExpected', event.target.value)}
-                        />
-                        {errors[`item:${item.localId}:qtyExpected`] ? <div className={s.fieldError}>{errors[`item:${item.localId}:qtyExpected`]}</div> : null}
-                      </td>
-                    ) : null}
-                    {isReceipt ? (
-                      <td>
-                        <label className={s.checkboxRow}>
-                          <input
-                            type="checkbox"
-                            checked={Boolean(item.receiveNow)}
-                            onChange={(event) => setItemField(item.localId, 'receiveNow', event.target.checked)}
-                          />
-                          <span>Receive</span>
-                        </label>
-                      </td>
-                    ) : null}
-                    {isAdjustment ? (
-                      <td>
-                        <input
-                          className={s.input}
-                          type="number"
-                          min="0"
-                          step="0.0001"
-                          value={item.qtyDelta}
-                          onChange={(event) => setItemField(item.localId, 'qtyDelta', event.target.value)}
-                        />
-                        {errors[`item:${item.localId}:qtyDelta`] ? <div className={s.fieldError}>{errors[`item:${item.localId}:qtyDelta`]}</div> : null}
-                      </td>
-                    ) : null}
-                    {isTransfer ? (
-                      <td>
-                        <input
-                          className={s.input}
-                          type="number"
-                          min="0"
-                          step="0.0001"
-                          value={item.qty}
-                          onChange={(event) => setItemField(item.localId, 'qty', event.target.value)}
-                        />
-                        {errors[`item:${item.localId}:qty`] ? <div className={s.fieldError}>{errors[`item:${item.localId}:qty`]}</div> : null}
-                      </td>
-                    ) : null}
-                    <td>
-                      <button type="button" className={s.removeButton} onClick={() => removeItem(item.localId)}>
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {errors.items ? <div className={s.fieldError} style={{ marginTop: 8 }}>{errors.items}</div> : null}
-        </div>
-      </section>
-
+    <>
+      <DocumentEnginePage
+        mode="edit"
+        typeLabel={typeLabel}
+        title={title}
+        subtitle={subtitle}
+        statusLabel={t('statuses.draft', 'Draft')}
+        summaryStatusLabel={t('statuses.draft', 'Draft')}
+        back={{ label: t('common.cancel', 'Cancel'), onClick: () => navigate(listRouteByKind(kind)) }}
+        breadcrumb={`${typeLabel} / ${t('common.new', 'New')}`}
+        showViewModeToggle
+        viewMode="edit"
+        viewModeDisabledModes={['split', 'preview']}
+        onViewModeChange={() => {}}
+        paramsTitle={t('documents.editor.header', 'Header')}
+        primaryFields={primaryFields}
+        secondaryFields={secondaryFields}
+        summaryTitle={t('wms.tabs.summary', 'Summary')}
+        summaryRows={summaryRows}
+        actions={actions}
+        actionError={saveError || actionError}
+        itemsSlot={(
+          <WmsCreateItemsTable
+            items={items}
+            kind={kind}
+            errors={errors}
+            t={t}
+            onAddItem={addItem}
+            onRemoveItem={removeItem}
+            onItemField={setItemField}
+            onOpenPicker={(localId) => { setPickerTargetId(localId); setPickerOpen(true); }}
+          />
+        )}
+      />
       <OmsProductPicker
         open={isPickerOpen}
-        onClose={() => {
-          setPickerOpen(false);
-          setPickerTargetId('');
-        }}
+        onClose={() => { setPickerOpen(false); setPickerTargetId(''); }}
         onSelect={onPickProduct}
-        title="Select product"
+        title={t('wms.create.selectProduct', 'Select product')}
       />
-    </div>
+    </>
   );
 }

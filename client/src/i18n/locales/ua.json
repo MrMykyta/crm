@@ -233,6 +233,9 @@
       "detailTitle": "Деталі пропозиції",
       "editTitle": "Редагування пропозиції"
     },
+    "invoices": {
+      "detailTitle": "Деталі рахунку"
+    },
     "relations": {
       "title": "Зв'язки",
       "sourceOffer": "Джерельна пропозиція",
@@ -365,6 +368,61 @@
       "originalDocument": "Вихідний документ",
       "correctionDocument": "Документ коригування"
     },
+    "fields": {
+      "fromWarehouse": "Зі складу",
+      "toWarehouse": "На склад",
+      "reason": "Причина",
+      "postedAt": "Проведено",
+      "inboundLocation": "Локація приймання",
+      "supplier": "Постачальник",
+      "location": "Локація",
+      "fromLocation": "Локація-джерело",
+      "toLocation": "Локація-отримувач",
+      "date": "Дата",
+      "documentType": "Тип документа"
+    },
+    "create": {
+      "subtitleReceipt": "Створіть приймання та за потреби прийміть позиції",
+      "subtitleAdjustment": "Створіть RW/PW і за потреби проведіть",
+      "subtitleTransfer": "Створіть переміщення та за потреби виконайте позиції",
+      "addLine": "Додати рядок",
+      "variantOptional": "Варіант (опц.)",
+      "lot": "Партія (опц.)",
+      "qtyExpected": "Очікувана к-сть",
+      "qtyDelta": "Зміна к-сті",
+      "receiveLine": "Прийняти рядок",
+      "receive": "Прийняти",
+      "selectProduct": "Вибрати товар",
+      "changeProduct": "Змінити товар",
+      "noProduct": "Товар не вибрано",
+      "selectWarehouse": "Виберіть склад",
+      "selectLocation": "Виберіть локацію",
+      "selectFromLocation": "Виберіть локацію-джерело",
+      "selectToLocation": "Виберіть локацію-отримувач",
+      "noSupplier": "Без постачальника",
+      "saveDraft": "Зберегти чернетку",
+      "create": "Створити",
+      "receiveSelected": "Прийняти вибрані",
+      "receiveAll": "Прийняти все",
+      "post": "Провести",
+      "execute": "Виконати"
+    },
+    "validation": {
+      "warehouseRequired": "Склад обов'язковий",
+      "inboundLocationRequired": "Локація приймання обов'язкова",
+      "selectLineForReceive": "Виберіть хоча б один рядок для приймання",
+      "locationRequired": "Локація обов'язкова",
+      "typeRequired": "Тип обов'язковий",
+      "fromWarehouseRequired": "Склад-джерело обов'язковий",
+      "toWarehouseRequired": "Склад-отримувач обов'язковий",
+      "fromLocationRequired": "Локація-джерело обов'язкова",
+      "toLocationRequired": "Локація-отримувач обов'язкова",
+      "productRequired": "Товар обов'язковий",
+      "qtyExpectedPositive": "Очікувана к-сть має бути > 0",
+      "qtyDeltaPositive": "Зміна к-сті має бути > 0",
+      "qtyPositive": "К-сть має бути > 0",
+      "itemRequired": "Потрібна хоча б одна позиція"
+    },
     "print": {
       "print": "Друк",
       "loading": "Підготовка форми для друку...",
@@ -393,6 +451,7 @@
       "items": "Позицій",
       "qtyTotal": "Кількість всього",
       "qtyProcessed": "Кількість оброблено",
+      "qtyRemaining": "Залишок",
       "order": "Замовлення"
     },
     "columns": {

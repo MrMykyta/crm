@@ -234,6 +234,9 @@
       "detailTitle": "Szczegóły oferty",
       "editTitle": "Edycja oferty"
     },
+    "invoices": {
+      "detailTitle": "Szczegóły faktury"
+    },
     "relations": {
       "title": "Powiązania",
       "sourceOffer": "Oferta źródłowa",
@@ -366,6 +369,61 @@
       "originalDocument": "Dokument źródłowy",
       "correctionDocument": "Dokument korekty"
     },
+    "fields": {
+      "fromWarehouse": "Z magazynu",
+      "toWarehouse": "Do magazynu",
+      "reason": "Powód",
+      "postedAt": "Zaksięgowano",
+      "inboundLocation": "Lokalizacja przyjęcia",
+      "supplier": "Dostawca",
+      "location": "Lokalizacja",
+      "fromLocation": "Lokalizacja źródłowa",
+      "toLocation": "Lokalizacja docelowa",
+      "date": "Data",
+      "documentType": "Typ dokumentu"
+    },
+    "create": {
+      "subtitleReceipt": "Utwórz przyjęcie i opcjonalnie przyjmij pozycje",
+      "subtitleAdjustment": "Utwórz korektę RW/PW i opcjonalnie zaksięguj",
+      "subtitleTransfer": "Utwórz przesunięcie i opcjonalnie wykonaj pozycje",
+      "addLine": "Dodaj pozycję",
+      "variantOptional": "Wariant (opcjonalnie)",
+      "lot": "Partia (opcjonalnie)",
+      "qtyExpected": "Ilość oczekiwana",
+      "qtyDelta": "Zmiana ilości",
+      "receiveLine": "Przyjmij pozycję",
+      "receive": "Przyjmij",
+      "selectProduct": "Wybierz produkt",
+      "changeProduct": "Zmień produkt",
+      "noProduct": "Nie wybrano produktu",
+      "selectWarehouse": "Wybierz magazyn",
+      "selectLocation": "Wybierz lokalizację",
+      "selectFromLocation": "Wybierz lokalizację źródłową",
+      "selectToLocation": "Wybierz lokalizację docelową",
+      "noSupplier": "Brak dostawcy",
+      "saveDraft": "Zapisz szkic",
+      "create": "Utwórz",
+      "receiveSelected": "Przyjmij wybrane",
+      "receiveAll": "Przyjmij wszystko",
+      "post": "Zaksięguj",
+      "execute": "Wykonaj"
+    },
+    "validation": {
+      "warehouseRequired": "Magazyn jest wymagany",
+      "inboundLocationRequired": "Lokalizacja przyjęcia jest wymagana",
+      "selectLineForReceive": "Wybierz co najmniej jedną pozycję do przyjęcia",
+      "locationRequired": "Lokalizacja jest wymagana",
+      "typeRequired": "Typ jest wymagany",
+      "fromWarehouseRequired": "Magazyn źródłowy jest wymagany",
+      "toWarehouseRequired": "Magazyn docelowy jest wymagany",
+      "fromLocationRequired": "Lokalizacja źródłowa jest wymagana",
+      "toLocationRequired": "Lokalizacja docelowa jest wymagana",
+      "productRequired": "Produkt jest wymagany",
+      "qtyExpectedPositive": "Ilość oczekiwana musi być > 0",
+      "qtyDeltaPositive": "Zmiana ilości musi być > 0",
+      "qtyPositive": "Ilość musi być > 0",
+      "itemRequired": "Wymagana co najmniej jedna pozycja"
+    },
     "print": {
       "print": "Drukuj",
       "loading": "Przygotowywanie widoku do druku...",
@@ -394,6 +452,7 @@
       "items": "Pozycje",
       "qtyTotal": "Ilość łącznie",
       "qtyProcessed": "Ilość przetworzona",
+      "qtyRemaining": "Pozostała ilość",
       "order": "Zamówienie"
     },
     "columns": {
