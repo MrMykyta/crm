@@ -2,11 +2,12 @@
 // pickTaskRouter.js (generated)
 const pickTaskRouter = require('express').Router();
 const controller = require('../../controllers/wms/pickTask.controller');
+const acl = require('./acl');
 
-pickTaskRouter.get('/', controller.list);
-pickTaskRouter.get('/:id', controller.getById);
-pickTaskRouter.post('/', controller.create);
-pickTaskRouter.put('/:id', controller.update);
-pickTaskRouter.delete('/:id', controller.remove);
+pickTaskRouter.get('/', acl.pickingManage, controller.list);
+pickTaskRouter.get('/:id', acl.pickingManage, controller.getById);
+pickTaskRouter.post('/', acl.pickingManage, controller.create);
+pickTaskRouter.put('/:id', acl.pickingManage, controller.update);
+pickTaskRouter.delete('/:id', acl.pickingManage, controller.remove);
 
 module.exports = pickTaskRouter;

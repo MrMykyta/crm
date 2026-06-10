@@ -8,6 +8,13 @@ const {
   InventoryItem,
 } = require('../../models');
 const adjustmentService = require('./adjustmentService');
+const {
+  enrichCycleCountDto,
+  itemLocationInclude,
+  productInclude,
+  variantInclude,
+  warehouseInclude,
+} = require('./wmsDto');
 
 const CYCLE_STATUSES = new Set(['planned', 'counting', 'reconciled']);
 
@@ -116,12 +123,20 @@ async function getCycleCountById(companyId, cycleCountId, options = {}) {
   const transaction = options.transaction || null;
   if (!cycleCountId) return null;
 
-  return CycleCount.findOne({
+  const row = await CycleCount.findOne({
     where: { id: cycleCountId, companyId },
-    include: [{ model: CountItem, as: 'items' }],
+    include: [
+      warehouseInclude,
+      {
+        model: CountItem,
+        as: 'items',
+        include: [itemLocationInclude, productInclude, variantInclude],
+      },
+    ],
     order: [[{ model: CountItem, as: 'items' }, 'createdAt', 'ASC']],
     transaction,
   });
+  return enrichCycleCountDto(row);
 }
 
 async function listCycleCounts(companyId, query = {}, options = {}) {
@@ -136,7 +151,7 @@ async function listCycleCounts(companyId, query = {}, options = {}) {
     offset,
     transaction,
   });
-  return { rows, count, page, limit };
+  return { rows: rows.map(enrichCycleCountDto), count, page, limit };
 }
 
 async function createCycleCount(companyId, payload = {}, options = {}) {

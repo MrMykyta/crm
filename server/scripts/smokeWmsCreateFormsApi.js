@@ -16,7 +16,7 @@ process.env.SKIP_MONGO_CONNECT = '1';
 process.env.SKIP_CRON = '1';
 
 const app = require('../app');
-const { sequelize, User } = require('../src/models');
+const { sequelize, CompanyWarehouseDocumentSetting, User } = require('../src/models');
 
 function parseBody(raw, contentType) {
   if (!raw) return null;
@@ -144,7 +144,21 @@ async function run() {
     remember('POST', '/api/companies');
     expectStatus(companyRes, 201);
     const token = companyRes.payload?.tokens?.accessToken;
+    const companyId = companyRes.payload?.activeCompanyId;
     ensure(token, 'Company token missing');
+    ensure(companyId, 'Company id missing');
+    const [wmsSettings] = await CompanyWarehouseDocumentSetting.findOrCreate({
+      where: { companyId },
+      defaults: {
+        companyId,
+        inventoryCostMethod: 'FIFO',
+        costingInitializedAt: new Date(),
+      },
+    });
+    await wmsSettings.update({
+      inventoryCostMethod: 'FIFO',
+      costingInitializedAt: wmsSettings.costingInitializedAt || new Date(),
+    });
     logPass('Company created');
 
     // Warehouse + locations
@@ -239,8 +253,8 @@ async function run() {
         inboundLocationId: locationAId,
         issueDate: new Date().toISOString().slice(0, 10),
         items: [
-          { productId: productAId, variantId: null, lotNumber: null, qtyExpected: 10 },
-          { productId: productBId, variantId: null, lotNumber: null, qtyExpected: 6 },
+          { productId: productAId, variantId: null, lotNumber: null, qtyExpected: 10, unitCost: 20, currency: 'PLN' },
+          { productId: productBId, variantId: null, lotNumber: null, qtyExpected: 6, unitCost: 20, currency: 'PLN' },
         ],
       },
     });
@@ -402,7 +416,7 @@ async function run() {
         reason: `PW +3 ${prefix}`,
         issueDate: new Date().toISOString().slice(0, 10),
         items: [
-          { productId: productAId, variantId: null, locationId: locationAId, qtyDelta: 3 },
+          { productId: productAId, variantId: null, locationId: locationAId, qtyDelta: 3, unitCost: 20, currency: 'PLN' },
         ],
       },
     });
@@ -493,4 +507,3 @@ run().catch((error) => {
   }
   process.exit(1);
 });
-

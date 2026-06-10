@@ -32,9 +32,16 @@ import { useGetStockBalancesQuery } from '../../../store/rtk/stockBalancesApi';
 import {
   useListCycleCountsQuery,
   useListAdjustmentsQuery,
+  useListLocationsQuery,
   useListReceiptsQuery,
   useListShipmentsQuery,
+  useListStockMovesQuery,
   useListTransfersQuery,
+  useListWarehousesQuery,
+  useListReservationsQuery,
+  useListLotsQuery,
+  useListSerialsQuery,
+  useListParcelsQuery,
 } from '../../../store/rtk/wmsDocumentsApi';
 
 const REGISTRY = {
@@ -235,6 +242,93 @@ adapt: (data) => {
     useQuery: useListCycleCountsQuery,
         // adapt: вспомогательная логика компонента.
 adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  wmsWarehouses: {
+    useQuery: useListWarehousesQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  wmsLocations: {
+    useQuery: useListLocationsQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  wmsStockMoves: {
+    useQuery: useListStockMovesQuery,
+        // adapt: вспомогательная логика компонента.
+adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  wmsReservations: {
+    useQuery: useListReservationsQuery,
+    adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  wmsLots: {
+    useQuery: useListLotsQuery,
+    adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  wmsSerials: {
+    useQuery: useListSerialsQuery,
+    adapt: (data) => {
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      return {
+        items,
+        total: Number(data?.total ?? items.length ?? 0),
+        page: Number(data?.page ?? 1),
+        limit: Number(data?.limit ?? 25),
+      };
+    },
+  },
+  wmsParcels: {
+    useQuery: useListParcelsQuery,
+    adapt: (data) => {
       const items = Array.isArray(data) ? data : (data?.items || []);
       return {
         items,

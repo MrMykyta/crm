@@ -4,9 +4,13 @@ const router = Router();
 router.use('/inventory',   require('./inventory.commands.router'));
 router.use('/receipts',    require('./receipt.commands.router'));
 router.use('/pick',        require('./pick.commands.router'));
+router.use('/picks',       require('./pick.commands.router'));
 router.use('/shipments',   require('./shipment.commands.router'));
 router.use('/transfers',   require('./transfer.commands.router'));
 router.use('/adjustments', require('./adjustment.commands.router'));
+router.use('/costing',     require('./costing.router'));
+router.use('/reports',     require('./reports.router'));
+router.use('/documents',   require('./warehouseDocuments.router'));
 
 router.use('/warehouses', require('./warehouse.router'));
 router.use('/locations', require('./location.router'));

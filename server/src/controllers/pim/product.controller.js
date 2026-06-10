@@ -25,6 +25,22 @@ module.exports.list = async (req, res) => {
   }
 };
 
+// Возвращает лёгкий список product/variant rows для переиспользуемого picker-а.
+module.exports.picker = async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    const query = req.validatedQuery || req.query;
+    const { rows, meta } = await svc.listPicker({
+      query,
+      companyId,
+    });
+    res.status(200).send({ data: rows, meta });
+  } catch (e) {
+    console.error('[ProductController.picker]', e);
+    sendError(res, e, 'Failed to list product picker rows');
+  }
+};
+
 // Возвращает одну сущность по её идентификатору.
 module.exports.get = async (req, res) => {
   try {
@@ -296,5 +312,4 @@ module.exports.listMovements = async (req, res) => {
     sendError(res, e, 'Failed to list product movements');
   }
 };
-
 

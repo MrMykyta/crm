@@ -1,6 +1,6 @@
 'use strict';
 
-const { Op } = require('sequelize');
+const { Op, fn, col } = require('sequelize');
 const AppError = require('../../errors/AppError');
 const { withTx } = require('../../utils/tx');
 const {
@@ -17,9 +17,14 @@ const {
   ProductType,
   Counterparty,
   ProductSupplier,
+  ProductExternalRef,
+  ProductAttachment,
   PriceList,
   PriceListItem,
   Attribute,
+  File,
+  InventoryItem,
+  Reservation,
   StockMove,
   Warehouse,
 } = require('../../models');
@@ -252,6 +257,289 @@ const productInclude = [
   { model: Product, as: 'replacement', attributes: ['id', 'name', 'sku', 'slug'], required: false },
 ];
 
+const PICKER_PRODUCT_ATTRIBUTES = [
+  'id',
+  'name',
+  'sku',
+  'barcode',
+  'ean',
+  'status',
+  'currency',
+  'cost',
+  'brandId',
+  'primaryCategoryId',
+  'uomId',
+  'updatedAt',
+];
+const PICKER_VARIANT_ATTRIBUTES = [
+  'id',
+  'productId',
+  'name',
+  'sku',
+  'barcode',
+  'ean',
+  'currency',
+  'price',
+  'cost',
+  'uomId',
+  'isActive',
+  'updatedAt',
+];
+const PICKER_PRODUCT_SEARCH_FIELDS = [
+  'name',
+  'sku',
+  'barcode',
+  'ean',
+  'pkwiu',
+  'cn',
+  'hsCode',
+  'gtu',
+];
+
+// hasModelAttribute: проверяет наличие поля в Sequelize-модели без предположений о схеме.
+function hasModelAttribute(Model, field) {
+  return Boolean(Model?.rawAttributes?.[field]);
+}
+
+// normalizePickerLimit: нормализует лимит picker-ответа.
+function normalizePickerLimit(value) {
+  const parsed = Number.parseInt(value || 20, 10);
+  if (!Number.isFinite(parsed)) return 20;
+  return Math.max(1, Math.min(50, parsed));
+}
+
+// numberOrZero: приводит decimal-значения БД к числам для DTO.
+function numberOrZero(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+// roundQty: округляет складские количества для picker DTO.
+function roundQty(value) {
+  return Math.round((numberOrZero(value) + Number.EPSILON) * 1e4) / 1e4;
+}
+
+// idText: безопасно приводит UUID к строковому ключу.
+function idText(value) {
+  return value === undefined || value === null ? '' : String(value);
+}
+
+// pickerKey: строит ключ product/variant для batch maps.
+function pickerKey(productId, variantId = null) {
+  return `${idText(productId)}|${variantId ? idText(variantId) : '__null__'}`;
+}
+
+// uniqueTexts: возвращает уникальные непустые строки с сохранением порядка.
+function uniqueTexts(values = []) {
+  const out = [];
+  const seen = new Set();
+  values.forEach((value) => {
+    const text = asText(value);
+    if (!text || seen.has(text)) return;
+    seen.add(text);
+    out.push(text);
+  });
+  return out;
+}
+
+// compactEntity: отдаёт компактный DTO для справочников.
+function compactEntity(row, fields = ['id', 'name']) {
+  if (!row) return null;
+  const plain = row.get ? row.get({ plain: true }) : row;
+  const out = {};
+  fields.forEach((field) => {
+    if (plain[field] !== undefined && plain[field] !== null) out[field] = plain[field];
+  });
+  return Object.keys(out).length ? out : null;
+}
+
+// compactUom: отдаёт лёгкий UOM DTO.
+function compactUom(row) {
+  return compactEntity(row, ['id', 'code', 'name', 'symbol']);
+}
+
+// buildVariantLabel: формирует человекочитаемый label варианта из существующих данных.
+function buildVariantLabel(variant) {
+  if (!variant) return null;
+  const plain = variant.get ? variant.get({ plain: true }) : variant;
+  const explicitName = asText(plain.name) || asText(plain.label);
+  if (explicitName) return explicitName;
+
+  const options = Array.isArray(plain.options) ? [...plain.options] : [];
+  const label = options
+    .sort((a, b) => Number(a?.sortOrder || 0) - Number(b?.sortOrder || 0))
+    .map((option) => {
+      const name = asText(option?.name);
+      const value = asText(option?.value);
+      if (name && value) return `${name}: ${value}`;
+      return value || name;
+    })
+    .filter(Boolean)
+    .join(', ');
+
+  return label || asText(plain.sku) || null;
+}
+
+// buildStockMap: агрегирует остатки и резервы batch-ом по product/variant.
+async function buildStockMap({ companyId, productIds, warehouseId = null }) {
+  const safeProductIds = uniqueTexts(productIds);
+  const out = new Map();
+  safeProductIds.forEach((productId) => {
+    out.set(pickerKey(productId, null), { onHand: 0, reserved: 0, available: 0 });
+  });
+  if (!safeProductIds.length) return out;
+
+  const inventoryWhere = { companyId, productId: { [Op.in]: safeProductIds } };
+  const reservationWhere = {
+    companyId,
+    productId: { [Op.in]: safeProductIds },
+    status: 'active',
+  };
+  if (warehouseId) {
+    inventoryWhere.warehouseId = warehouseId;
+    reservationWhere.warehouseId = warehouseId;
+  }
+
+  const [inventoryRows, reservationRows] = await Promise.all([
+    InventoryItem.findAll({
+      where: inventoryWhere,
+      attributes: [
+        'productId',
+        'variantId',
+        [fn('SUM', col('qty_on_hand')), 'onHand'],
+      ],
+      group: ['product_id', 'variant_id'],
+      raw: true,
+    }),
+    Reservation.findAll({
+      where: reservationWhere,
+      attributes: [
+        'productId',
+        'variantId',
+        [fn('SUM', col('qty')), 'reserved'],
+      ],
+      group: ['product_id', 'variant_id'],
+      raw: true,
+    }),
+  ]);
+
+  inventoryRows.forEach((row) => {
+    const key = pickerKey(row.productId, row.variantId || null);
+    const current = out.get(key) || { onHand: 0, reserved: 0, available: 0 };
+    current.onHand = roundQty(row.onHand);
+    current.available = roundQty(current.onHand - current.reserved);
+    out.set(key, current);
+  });
+
+  reservationRows.forEach((row) => {
+    const key = pickerKey(row.productId, row.variantId || null);
+    const current = out.get(key) || { onHand: 0, reserved: 0, available: 0 };
+    current.reserved = roundQty(row.reserved);
+    current.available = roundQty(current.onHand - current.reserved);
+    out.set(key, current);
+  });
+
+  return out;
+}
+
+// buildExternalRefsMap: грузит внешние коды batch-ом.
+async function buildExternalRefsMap({ companyId, productIds, variantIds }) {
+  const safeProductIds = uniqueTexts(productIds);
+  const safeVariantIds = uniqueTexts(variantIds);
+  const out = new Map();
+  if (!safeProductIds.length && !safeVariantIds.length) return out;
+
+  const or = [];
+  if (safeProductIds.length) or.push({ productId: { [Op.in]: safeProductIds } });
+  if (safeVariantIds.length) or.push({ variantId: { [Op.in]: safeVariantIds } });
+
+  const rows = await ProductExternalRef.findAll({
+    where: { companyId, [Op.or]: or },
+    attributes: ['productId', 'variantId', 'externalId'],
+    order: [['createdAt', 'DESC']],
+    raw: true,
+  });
+
+  rows.forEach((row) => {
+    const key = pickerKey(row.productId, row.variantId || null);
+    const list = out.get(key) || [];
+    list.push(row.externalId);
+    out.set(key, uniqueTexts(list));
+  });
+
+  return out;
+}
+
+// buildPurchasePriceMap: выбирает лучший доступный purchase price из ProductSupplier batch-ом.
+async function buildPurchasePriceMap({ companyId, productIds, variantIds }) {
+  const safeProductIds = uniqueTexts(productIds);
+  const safeVariantIds = uniqueTexts(variantIds);
+  const out = new Map();
+  if (!safeProductIds.length) return out;
+
+  const where = { companyId, productId: { [Op.in]: safeProductIds } };
+  if (safeVariantIds.length) {
+    where[Op.or] = [
+      { variantId: { [Op.in]: safeVariantIds } },
+      { variantId: { [Op.is]: null } },
+    ];
+  }
+
+  const rows = await ProductSupplier.findAll({
+    where,
+    attributes: ['productId', 'variantId', 'price', 'currency', 'updatedAt', 'createdAt'],
+    order: [['updatedAt', 'DESC'], ['createdAt', 'DESC']],
+    raw: true,
+  });
+
+  rows.forEach((row) => {
+    const value = roundMoney(row.price);
+    if (value === null) return;
+    const key = pickerKey(row.productId, row.variantId || null);
+    if (out.has(key)) return;
+    out.set(key, {
+      value,
+      currency: row.currency || 'PLN',
+      source: row.variantId ? 'productSupplierVariant' : 'productSupplier',
+    });
+  });
+
+  return out;
+}
+
+// buildThumbnailMap: возвращает только уже публичные product image URLs без нового signed-file pipeline.
+async function buildThumbnailMap({ companyId, productIds }) {
+  const safeProductIds = uniqueTexts(productIds);
+  const out = new Map();
+  if (!safeProductIds.length) return out;
+
+  const rows = await ProductAttachment.findAll({
+    where: {
+      companyId,
+      productId: { [Op.in]: safeProductIds },
+      role: 'image',
+    },
+    attributes: ['productId', 'attachmentId', 'sortOrder'],
+    include: [{
+      model: File,
+      attributes: ['id', 'visibility', 'publicKey', 'purpose', 'mime'],
+      required: false,
+    }],
+    order: [['sortOrder', 'ASC'], ['createdAt', 'ASC']],
+  });
+
+  rows.forEach((row) => {
+    const productId = idText(row.productId);
+    if (!productId || out.has(productId)) return;
+    const file = row.File || row.file || row.attachment;
+    if (file?.visibility === 'public' && file?.publicKey) {
+      out.set(productId, `/api/public-files/${file.publicKey}`);
+    }
+  });
+
+  return out;
+}
+
 // buildWritePayload: собирает служебную структуру для выполнения запроса.
 async function buildWritePayload(companyId, payload = {}, existing = null) {
   const out = {};
@@ -331,7 +619,7 @@ async function buildWritePayload(companyId, payload = {}, existing = null) {
     out.shelfLifeDays = Math.max(0, Number.parseInt(payload.shelfLifeDays, 10) || 0);
   }
 
-  const boolFields = ['trackInventory', 'isSellable', 'isSerialized', 'isLotTracked'];
+  const boolFields = ['trackInventory', 'isSellable', 'isService', 'isSerialized', 'isLotTracked'];
   boolFields.forEach((field) => {
     if (payload[field] !== undefined) out[field] = Boolean(payload[field]);
   });
@@ -679,6 +967,264 @@ module.exports.list = async ({ query = {}, companyId }) => {
   rows.forEach((row) => applyEffectiveSellable(row));
 
   return { rows, count, page, limit };
+};
+
+// listPicker: возвращает лёгкие product/variant rows для переиспользуемого picker-а.
+module.exports.listPicker = async ({ query = {}, companyId }) => {
+  const limit = normalizePickerLimit(query.limit);
+  const q = asText(query.q);
+  const warehouseId = asText(query.warehouseId);
+  const includeInactive = parseBooleanQuery(query.includeInactive) === true;
+  const qLike = q ? `%${q}%` : null;
+
+  const productIds = [];
+  const matchedProductIds = new Set();
+  const matchedVariantIds = new Set();
+
+  const pushProductId = (id) => {
+    const text = idText(id);
+    if (!text || productIds.includes(text)) return;
+    productIds.push(text);
+  };
+
+  if (qLike) {
+    const productSearchFields = PICKER_PRODUCT_SEARCH_FIELDS.filter((field) => hasModelAttribute(Product, field));
+    const productOr = productSearchFields.map((field) => ({ [field]: { [Op.iLike]: qLike } }));
+    const productWhere = { companyId };
+    if (!includeInactive && hasModelAttribute(Product, 'status')) {
+      productWhere.status = { [Op.ne]: 'archived' };
+    }
+    if (productOr.length) productWhere[Op.or] = productOr;
+
+    const [productMatches, optionMatches, variantDirectMatches, externalMatches] = await Promise.all([
+      Product.findAll({
+        where: productWhere,
+        attributes: ['id'],
+        order: [['updatedAt', 'DESC']],
+        limit,
+        raw: true,
+      }),
+      VariantOption.findAll({
+        where: {
+          companyId,
+          [Op.or]: [
+            { name: { [Op.iLike]: qLike } },
+            { value: { [Op.iLike]: qLike } },
+          ],
+        },
+        attributes: ['variantId'],
+        limit: limit * 3,
+        raw: true,
+      }),
+      ProductVariant.findAll({
+        where: {
+          companyId,
+          ...(includeInactive ? {} : { isActive: true }),
+          [Op.or]: [
+            { name: { [Op.iLike]: qLike } },
+            { sku: { [Op.iLike]: qLike } },
+            { barcode: { [Op.iLike]: qLike } },
+            { ean: { [Op.iLike]: qLike } },
+          ],
+        },
+        attributes: ['id', 'productId'],
+        limit: limit * 3,
+        raw: true,
+      }),
+      ProductExternalRef.findAll({
+        where: {
+          companyId,
+          externalId: { [Op.iLike]: qLike },
+        },
+        attributes: ['productId', 'variantId'],
+        limit: limit * 3,
+        raw: true,
+      }),
+    ]);
+
+    productMatches.forEach((row) => {
+      pushProductId(row.id);
+      matchedProductIds.add(idText(row.id));
+    });
+
+    const optionVariantIds = uniqueTexts(optionMatches.map((row) => row.variantId));
+    optionVariantIds.forEach((id) => matchedVariantIds.add(id));
+
+    variantDirectMatches.forEach((row) => {
+      pushProductId(row.productId);
+      matchedVariantIds.add(idText(row.id));
+    });
+
+    externalMatches.forEach((row) => {
+      if (row.productId) {
+        pushProductId(row.productId);
+        if (!row.variantId) matchedProductIds.add(idText(row.productId));
+      }
+      if (row.variantId) matchedVariantIds.add(idText(row.variantId));
+    });
+
+    const missingVariantIds = [...matchedVariantIds].filter(Boolean);
+    if (missingVariantIds.length) {
+      const variantsByOptionOrExternal = await ProductVariant.findAll({
+        where: {
+          companyId,
+          id: { [Op.in]: missingVariantIds },
+          ...(includeInactive ? {} : { isActive: true }),
+        },
+        attributes: ['id', 'productId'],
+        raw: true,
+      });
+      variantsByOptionOrExternal.forEach((row) => {
+        pushProductId(row.productId);
+        matchedVariantIds.add(idText(row.id));
+      });
+    }
+  } else {
+    const productWhere = { companyId };
+    if (!includeInactive && hasModelAttribute(Product, 'status')) {
+      productWhere.status = { [Op.ne]: 'archived' };
+    }
+    const rows = await Product.findAll({
+      where: productWhere,
+      attributes: ['id'],
+      order: [['updatedAt', 'DESC']],
+      limit,
+      raw: true,
+    });
+    rows.forEach((row) => pushProductId(row.id));
+  }
+
+  if (!productIds.length) {
+    return {
+      rows: [],
+      meta: {
+        limit,
+        stockScope: warehouseId ? 'warehouse' : 'company',
+        thumbnailSource: 'publicProductAttachmentOnly',
+      },
+    };
+  }
+
+  const variantInclude = {
+    model: ProductVariant,
+    as: 'variants',
+    attributes: PICKER_VARIANT_ATTRIBUTES.filter((field) => hasModelAttribute(ProductVariant, field)),
+    required: false,
+    include: [
+      { model: Uom, as: 'uom', attributes: UOM_ATTRIBUTES, required: false },
+      {
+        model: VariantOption,
+        as: 'options',
+        attributes: ['id', 'name', 'value', 'sortOrder'],
+        required: false,
+      },
+    ],
+  };
+  if (!includeInactive) variantInclude.where = { isActive: true };
+
+  const products = await Product.findAll({
+    where: { companyId, id: { [Op.in]: productIds } },
+    attributes: PICKER_PRODUCT_ATTRIBUTES.filter((field) => hasModelAttribute(Product, field)),
+    include: [
+      { model: Brand, as: 'brand', attributes: ['id', 'name', 'slug'], required: false },
+      { model: Category, as: 'primaryCategory', attributes: ['id', 'name', 'slug', 'parentId'], required: false },
+      { model: Uom, as: 'uom', attributes: UOM_ATTRIBUTES, required: false },
+      variantInclude,
+    ],
+    order: [['updatedAt', 'DESC']],
+  });
+
+  const productOrder = new Map(productIds.map((id, index) => [String(id), index]));
+  products.sort((a, b) => (
+    (productOrder.get(String(a.id)) ?? 9999) - (productOrder.get(String(b.id)) ?? 9999)
+  ));
+
+  const allVariantIds = [];
+  products.forEach((product) => {
+    (product.variants || []).forEach((variant) => allVariantIds.push(variant.id));
+  });
+
+  const [stockMap, externalRefsMap, purchasePriceMap, thumbnailMap] = await Promise.all([
+    buildStockMap({ companyId, productIds, warehouseId }),
+    buildExternalRefsMap({ companyId, productIds, variantIds: allVariantIds }),
+    buildPurchasePriceMap({ companyId, productIds, variantIds: allVariantIds }),
+    buildThumbnailMap({ companyId, productIds }),
+  ]);
+
+  const rows = [];
+
+  const makeRow = (product, variant = null) => {
+    const productId = idText(product.id);
+    const variantId = variant ? idText(variant.id) : null;
+    const exactKey = pickerKey(productId, variantId);
+    const productKey = pickerKey(productId, null);
+    const emptyStock = { onHand: 0, reserved: 0, available: 0 };
+    const stock = variantId
+      ? stockMap.get(exactKey) || emptyStock
+      : stockMap.get(productKey) || emptyStock;
+    const variantExternalCodes = variantId ? externalRefsMap.get(exactKey) || [] : [];
+    const productExternalCodes = externalRefsMap.get(productKey) || [];
+    const variantCost = variantId ? roundMoney(variant?.cost) : null;
+    const purchasePrice = (
+      (variantId ? purchasePriceMap.get(exactKey) : null)
+      || purchasePriceMap.get(productKey)
+      || (variantCost !== null
+        ? { value: variantCost, currency: variant?.currency || product.currency || 'PLN', source: 'variantCost' }
+        : null)
+      || (roundMoney(product.cost) !== null
+        ? { value: roundMoney(product.cost), currency: product.currency || 'PLN', source: 'productCost' }
+        : null)
+    );
+    const uom = variant?.uom || product.uom || null;
+
+    return {
+      productId,
+      variantId,
+      productName: product.name || null,
+      variantLabel: variant ? buildVariantLabel(variant) : null,
+      sku: product.sku || null,
+      variantSku: variant?.sku || null,
+      barcode: variant?.barcode || product.barcode || null,
+      ean: variant?.ean || product.ean || null,
+      externalCodes: uniqueTexts([...productExternalCodes, ...variantExternalCodes]),
+      brand: compactEntity(product.brand, ['id', 'name', 'slug']),
+      category: compactEntity(product.primaryCategory, ['id', 'name', 'slug', 'parentId']),
+      uom: compactUom(uom),
+      stock: {
+        onHand: roundQty(stock.onHand),
+        reserved: roundQty(stock.reserved),
+        available: roundQty(stock.available),
+      },
+      purchasePrice,
+      thumbnailUrl: thumbnailMap.get(productId) || null,
+    };
+  };
+
+  products.forEach((product) => {
+    const variants = Array.isArray(product.variants) ? product.variants : [];
+    if (!variants.length) {
+      if (!qLike || matchedProductIds.has(idText(product.id))) {
+        rows.push(makeRow(product, null));
+      }
+      return;
+    }
+
+    const shouldIncludeAllVariants = !qLike || matchedProductIds.has(idText(product.id));
+    const selectedVariants = shouldIncludeAllVariants
+      ? variants
+      : variants.filter((variant) => matchedVariantIds.has(idText(variant.id)));
+
+    selectedVariants.forEach((variant) => rows.push(makeRow(product, variant)));
+  });
+
+  return {
+    rows: rows.slice(0, limit),
+    meta: {
+      limit,
+      stockScope: warehouseId ? 'warehouse' : 'company',
+      thumbnailSource: 'publicProductAttachmentOnly',
+    },
+  };
 };
 
 // getById: возвращает данные по входным параметрам сервиса.

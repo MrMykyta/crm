@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const {
   sequelize,
   Company,
+  CompanyWarehouseDocumentSetting,
   Warehouse,
   Location,
   Product,
@@ -36,6 +37,10 @@ function check(name, cond, extra = '') {
 
     const company = await Company.create({ name: 'A2A3 WMS History Smoke' }, { transaction: t });
     const companyId = company.id;
+    await CompanyWarehouseDocumentSetting.create(
+      { companyId, inventoryCostMethod: 'FIFO', costingInitializedAt: new Date() },
+      { transaction: t }
+    );
 
     const warehouse = await Warehouse.create(
       {
@@ -77,6 +82,8 @@ function check(name, cond, extra = '') {
         name: 'A2A3 Product',
         slug: `a2a3-product-${Date.now()}`,
         sku: 'A2A3-SKU',
+        cost: 20,
+        currency: 'PLN',
       },
       { transaction: t }
     );

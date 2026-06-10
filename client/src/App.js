@@ -63,6 +63,7 @@ const OrderEditorPage = lazy(() => import('./pages/oms/Orders/OrderEditorPage'))
 const OfferDetailPage = lazy(() => import('./pages/oms/Offers/OfferDetailPage'));
 const OfferEditorPage = lazy(() => import('./pages/oms/Offers/OfferEditorPage'));
 const StockBalancesPage = lazy(() => import('./pages/wms/StockBalancesPage'));
+const WmsOverviewPage = lazy(() => import('./pages/wms/WmsOverviewPage'));
 const StockValuationReportPage = lazy(() => import('./pages/wms/StockValuationReportPage'));
 const StockTurnoverReportPage = lazy(() => import('./pages/wms/StockTurnoverReportPage'));
 const StockAsOfReportPage = lazy(() => import('./pages/wms/StockAsOfReportPage'));
@@ -83,6 +84,15 @@ const CycleCountCreatePage = lazy(() => import('./pages/wms/CycleCountCreatePage
 const CycleCountDetailPage = lazy(() => import('./pages/wms/CycleCountDetailPage'));
 const WarehousePrintPage = lazy(() => import('./pages/wms/WarehousePrintPage'));
 const WmsDocumentsPage = lazy(() => import('./pages/wms/WmsDocumentsPage'));
+const WarehousesPage = lazy(() => import('./pages/wms/WarehousesPage'));
+const LocationsPage = lazy(() => import('./pages/wms/LocationsPage'));
+const StockMovesPage = lazy(() => import('./pages/wms/StockMovesPage'));
+const ReservationsPage = lazy(() => import('./pages/wms/ReservationsPage'));
+const LotsPage = lazy(() => import('./pages/wms/LotsPage'));
+const SerialsPage = lazy(() => import('./pages/wms/SerialsPage'));
+const ParcelsPage = lazy(() => import('./pages/wms/ParcelsPage'));
+const PicksPage = lazy(() => import('./pages/wms/PicksPage'));
+const ShipmentCreatePage = lazy(() => import('./pages/wms/ShipmentCreatePage'));
 
 const LazyPage = ({ children }) => (
   <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
@@ -241,8 +251,17 @@ function AppShell() {
           <Route path="pim/services" element={<ComingSoonPage titleKey="menu.services" fallbackTitle="Services" moduleName="pim.services" />} />
 
           {/* Workspace Views entry point — same page for all ?view= values. */}
+          <Route path="wms" element={<LazyPage><WmsOverviewPage /></LazyPage>} />
           <Route path="wms/documents" element={<LazyPage><WmsDocumentsPage /></LazyPage>} />
           <Route path="wms/stock-balances" element={<LazyPage><StockBalancesPage /></LazyPage>} />
+          <Route path="wms/stock-moves" element={<LazyPage><StockMovesPage /></LazyPage>} />
+          <Route path="wms/warehouses" element={<LazyPage><WarehousesPage /></LazyPage>} />
+          <Route path="wms/locations" element={<LazyPage><LocationsPage /></LazyPage>} />
+          <Route path="wms/reservations" element={<LazyPage><ReservationsPage /></LazyPage>} />
+          <Route path="wms/lots" element={<LazyPage><LotsPage /></LazyPage>} />
+          <Route path="wms/serials" element={<LazyPage><SerialsPage /></LazyPage>} />
+          <Route path="wms/parcels" element={<LazyPage><ParcelsPage /></LazyPage>} />
+          <Route path="wms/picks" element={<LazyPage><PicksPage /></LazyPage>} />
           <Route path="wms/reports/stock-valuation" element={<LazyPage><StockValuationReportPage /></LazyPage>} />
           <Route path="wms/reports/stock-turnover" element={<LazyPage><StockTurnoverReportPage /></LazyPage>} />
           <Route path="wms/reports/stock-as-of" element={<LazyPage><StockAsOfReportPage /></LazyPage>} />
@@ -256,6 +275,7 @@ function AppShell() {
           <Route path="wms/transfers/:id/print" element={<LazyPage><WarehousePrintPage kind="transfer" /></LazyPage>} />
           <Route path="wms/transfers/:id" element={<LazyPage><TransferDetailPage /></LazyPage>} />
           <Route path="wms/shipments" element={<LazyPage><ShipmentsListPage /></LazyPage>} />
+          <Route path="wms/shipments/new" element={<LazyPage><ShipmentCreatePage /></LazyPage>} />
           <Route path="wms/shipments/:id/print" element={<LazyPage><WarehousePrintPage kind="shipment" /></LazyPage>} />
           <Route path="wms/shipments/:id" element={<LazyPage><ShipmentDetailPage /></LazyPage>} />
           <Route path="wms/adjustments" element={<LazyPage><AdjustmentsListPage /></LazyPage>} />

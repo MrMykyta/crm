@@ -11,7 +11,13 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      // Reverse side of Shipment.hasMany(Parcel, { as: 'parcels' }).
+      // Company scoping for parcels is derived through this association:
+      // Parcel -> Shipment -> companyId (the parcels table has no company_id column).
+      Parcel.belongsTo(models.Shipment, {
+        foreignKey: 'shipment_id',
+        as: 'shipment',
+      });
     }
   }
   Parcel.init({
@@ -19,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
       type:DataTypes.UUID, 
       primaryKey:true,
       allowNull:false,
-      defaultValue: sequelize.UUIDV4 
+      defaultValue: DataTypes.UUIDV4
     },
     shipmentId:{ 
       type:DataTypes.UUID, 

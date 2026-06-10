@@ -46,6 +46,7 @@ const baseFields = {
   status: Joi.string().valid('draft', 'active', 'archived'),
   visibility: Joi.string().valid('public', 'private'),
   isSellable: Joi.boolean(),
+  isService: Joi.boolean(),
   trackInventory: Joi.boolean(),
 
   // Transitional inventory counters (derived by inventory module; keep for compatibility)
@@ -85,6 +86,13 @@ module.exports.listQuery = Joi.object({
     .valid('createdAt', 'updatedAt', 'name', 'sku', 'price', 'cost', 'stockQuantity')
     .default('createdAt'),
   dir: Joi.string().valid('ASC', 'DESC', 'asc', 'desc').default('DESC'),
+});
+
+module.exports.pickerQuery = Joi.object({
+  q: Joi.string().trim().max(200).allow('', null),
+  warehouseId: uuid.allow('', null),
+  limit: Joi.number().integer().min(1).max(50).default(20),
+  includeInactive: Joi.boolean().default(false),
 });
 
 module.exports.create = Joi.object({

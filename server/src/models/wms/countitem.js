@@ -12,6 +12,22 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      CountItem.belongsTo(models.CycleCount, {
+        as: 'cycleCount',
+        foreignKey: { name: 'countId', field: 'count_id' },
+      });
+      CountItem.belongsTo(models.Location, {
+        as: 'location',
+        foreignKey: { name: 'locationId', field: 'location_id' },
+      });
+      CountItem.belongsTo(models.Product, {
+        as: 'product',
+        foreignKey: { name: 'productId', field: 'product_id' },
+      });
+      CountItem.belongsTo(models.ProductVariant, {
+        as: 'variant',
+        foreignKey: { name: 'variantId', field: 'variant_id' },
+      });
     }
   }
   CountItem.init({

@@ -5,18 +5,31 @@ import Modal from '../../../../components/Modal';
 import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
 import ThemedSelect from '../../../../components/inputs/RadixSelect';
 import HtmlDescriptionSection from '../../../../components/data/HtmlDescriptionSection';
+import { ProductPickerDemo } from '../../../../components/pim';
 import {
+  useCreateProductVariantMutation,
   useCreateProductPriceMutation,
   useCreateProductSpecificationMutation,
+  useCreateVariantOptionMutation,
   useDeleteProductPriceMutation,
   useDeleteProductSpecificationMutation,
+  useDeleteProductSupplierMutation,
+  useDeleteVariantOptionMutation,
   useGetProductMovementsQuery,
   useGetProductPricesQuery,
   useGetProductSpecificationsQuery,
+  useListProductSuppliersQuery,
+  useListProductVariantsQuery,
+  useListVariantOptionsQuery,
   useListPriceListsLookupQuery,
+  useListUomsLookupQuery,
+  useCreateProductSupplierMutation,
+  useUpdateProductVariantMutation,
   useUpdateProductDescriptionMutation,
   useUpdateProductPriceMutation,
   useUpdateProductSpecificationMutation,
+  useUpdateProductSupplierMutation,
+  useUpdateVariantOptionMutation,
 } from '../../../../store/rtk/productsApi';
 import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
 import {
@@ -27,7 +40,7 @@ import {
   useListFilesByOwnerQuery,
   useUploadFileMutation,
 } from '../../../../store/rtk/filesApi';
-import { formatQuantity } from '../../../../utils/uom';
+import { formatQuantity, getUomLabel, getUomSymbol } from '../../../../utils/uom';
 import {
   convertLength,
   convertVolume,
@@ -372,6 +385,110 @@ function emptyPriceForm(product) {
     currency: product?.currency || 'PLN',
     minQty: '1',
   };
+}
+
+function emptyVariantForm(product) {
+  return {
+    name: '',
+    sku: '',
+    barcode: '',
+    ean: '',
+    price: '',
+    cost: '',
+    uomId: '',
+    isActive: true,
+  };
+}
+
+function variantFormFromRow(row, product) {
+  return {
+    name: row?.name || '',
+    sku: row?.sku || '',
+    barcode: row?.barcode || '',
+    ean: row?.ean || '',
+    price: row?.price != null ? String(row.price) : '',
+    cost: row?.cost != null ? String(row.cost) : '',
+    uomId: row?.uomId || '',
+    isActive: row?.isActive !== false,
+  };
+}
+
+function trimOrNull(value) {
+  const text = String(value ?? '').trim();
+  return text || null;
+}
+
+function numberOrNull(value) {
+  if (value === '' || value === null || value === undefined) return null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function sortVariantOptions(options) {
+  return [...(Array.isArray(options) ? options : [])].sort((a, b) => {
+    const order = Number(a?.sortOrder || 0) - Number(b?.sortOrder || 0);
+    if (order !== 0) return order;
+    return new Date(a?.createdAt || 0) - new Date(b?.createdAt || 0);
+  });
+}
+
+function buildVariantOptionPreview(options) {
+  return sortVariantOptions(options)
+    .map((option) => String(option?.value || option?.name || '').trim())
+    .filter(Boolean)
+    .join(' / ');
+}
+
+function emptyVariantOptionForm(nextSortOrder = 0) {
+  return {
+    name: '',
+    value: '',
+    sortOrder: String(nextSortOrder),
+  };
+}
+
+function emptyProductSupplierForm(product) {
+  return {
+    supplierId: product?.supplierId || product?.supplier?.id || '',
+    variantId: '',
+    supplierSku: '',
+    price: '',
+    currency: product?.currency || 'PLN',
+    moq: '1',
+    leadTimeDays: '0',
+    packSize: '1',
+    url: '',
+  };
+}
+
+function productSupplierFormFromRow(row, product) {
+  return {
+    supplierId: row?.supplierId || product?.supplierId || product?.supplier?.id || '',
+    variantId: row?.variantId || '',
+    supplierSku: row?.supplierSku || '',
+    price: row?.price != null ? String(row.price) : '',
+    currency: row?.currency || product?.currency || 'PLN',
+    moq: row?.moq != null ? String(row.moq) : '1',
+    leadTimeDays: row?.leadTimeDays != null ? String(row.leadTimeDays) : '0',
+    packSize: row?.packSize != null ? String(row.packSize) : '1',
+    url: row?.url || '',
+  };
+}
+
+function integerOrNull(value) {
+  if (value === '' || value === null || value === undefined) return null;
+  const num = Number.parseInt(value, 10);
+  return Number.isInteger(num) ? num : null;
+}
+
+function variantDisplayName(row) {
+  if (!row) return 'Уровень товара';
+  return row.name || row.sku || row.barcode || row.ean || row.id;
+}
+
+function counterpartyDisplayName(row) {
+  if (!row) return '—';
+  return row.shortName || row.fullName || row.name || row.displayName || row.id || '—';
 }
 
 // Компонент FilesTab: отвечает за отображение UI и обработку взаимодействий пользователя.
@@ -721,6 +838,969 @@ const onRemove = async (fileId) => {
           const targetId = fileToDelete?.id;
           setFileToDelete(null);
           await onRemove(targetId);
+        }}
+      />
+    </section>
+  );
+}
+
+function VariantOptionsPreview({ variantId }) {
+  const { data, isFetching } = useListVariantOptionsQuery(
+    { variantId, limit: 100 },
+    { skip: !variantId }
+  );
+  const preview = useMemo(() => buildVariantOptionPreview(data?.items), [data?.items]);
+  if (isFetching && !preview) return <span className={s.optionPreviewMuted}>...</span>;
+  if (!preview) return <span className={s.optionPreviewMuted}>Нет опций</span>;
+  return <span className={s.optionPreviewBadge}>{preview}</span>;
+}
+
+function MoneyCell({ value, currency }) {
+  const formatted = formatNumber(value, { digits: 2 });
+  if (formatted === '—') return <span className={s.mutedCell}>—</span>;
+  return (
+    <span className={s.moneyCell}>
+      <span>{formatted}</span>
+      {currency ? <small>{currency}</small> : null}
+    </span>
+  );
+}
+
+function StatusBadge({ active }) {
+  return (
+    <span className={active ? s.statusPillActive : s.statusPillInactive}>
+      {active ? 'Активен' : 'Неактивен'}
+    </span>
+  );
+}
+
+function InfoLine({ label, children }) {
+  return (
+    <div className={s.infoLine}>
+      <span className={s.infoLabel}>{label}</span>
+      <span className={s.infoValue}>{children}</span>
+    </div>
+  );
+}
+
+function InfoGroup({ title, children }) {
+  return (
+    <div className={s.infoGroup}>
+      <div className={s.infoGroupTitle}>{title}</div>
+      <div className={s.infoGroupBody}>{children}</div>
+    </div>
+  );
+}
+
+function VariantsTab({ productId, product }) {
+  const { data, isFetching } = useListProductVariantsQuery(
+    { productId, limit: 200, sort: 'createdAt', dir: 'DESC' },
+    { skip: !productId }
+  );
+  const { data: uomsData } = useListUomsLookupQuery({ limit: 100, sort: 'name', dir: 'ASC' });
+  const [createVariant] = useCreateProductVariantMutation();
+  const [updateVariant] = useUpdateProductVariantMutation();
+  const [createVariantOption] = useCreateVariantOptionMutation();
+  const [updateVariantOption] = useUpdateVariantOptionMutation();
+  const [deleteVariantOption] = useDeleteVariantOptionMutation();
+
+  const items = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data?.items]);
+  const activeCount = useMemo(() => items.filter((item) => item?.isActive !== false).length, [items]);
+  const inactiveCount = items.length - activeCount;
+
+  const uomById = useMemo(() => {
+    const map = new Map();
+    if (product?.uom?.id) map.set(product.uom.id, product.uom);
+    (uomsData?.items || []).forEach((item) => {
+      if (item?.id) map.set(item.id, item);
+    });
+    return map;
+  }, [product?.uom, uomsData?.items]);
+
+  const uomOptions = useMemo(() => {
+    const productUomLabel = getUomLabel(product?.uom, '');
+    const base = [
+      {
+        value: '',
+        label: productUomLabel ? `Наследовать (${productUomLabel})` : 'Наследовать от товара',
+      },
+    ];
+    const items = Array.isArray(uomsData?.items) ? uomsData.items : [];
+    return [
+      ...base,
+      ...items.map((item) => ({
+        value: item.id,
+        label: getUomLabel(item, item.name || item.code || item.id),
+      })),
+    ];
+  }, [product?.uom, uomsData?.items]);
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(() => emptyVariantForm(product));
+  const [busy, setBusy] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
+  const [error, setError] = useState('');
+  const [optionEditing, setOptionEditing] = useState(null);
+  const [optionForm, setOptionForm] = useState(() => emptyVariantOptionForm());
+  const [optionBusy, setOptionBusy] = useState(false);
+  const [optionError, setOptionError] = useState('');
+  const [optionToDelete, setOptionToDelete] = useState(null);
+  const { data: variantOptionsData, isFetching: isVariantOptionsFetching } = useListVariantOptionsQuery(
+    { variantId: editing?.id, limit: 100 },
+    { skip: !editing?.id }
+  );
+  const variantOptions = useMemo(() => sortVariantOptions(variantOptionsData?.items), [variantOptionsData?.items]);
+  const variantOptionPreview = useMemo(() => buildVariantOptionPreview(variantOptions), [variantOptions]);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyVariantForm(product));
+    setError('');
+    setOptionEditing(null);
+    setOptionForm(emptyVariantOptionForm());
+    setOptionError('');
+    setOpen(true);
+  };
+
+  const openEdit = (item) => {
+    setEditing(item);
+    setForm(variantFormFromRow(item, product));
+    setError('');
+    setOptionEditing(null);
+    setOptionForm(emptyVariantOptionForm());
+    setOptionError('');
+    setOpen(true);
+  };
+
+  const buildPayload = () => ({
+    productId,
+    name: trimOrNull(form.name),
+    sku: String(form.sku || '').trim(),
+    barcode: trimOrNull(form.barcode),
+    ean: trimOrNull(form.ean),
+    price: numberOrNull(form.price),
+    cost: numberOrNull(form.cost),
+    uomId: trimOrNull(form.uomId),
+    isActive: Boolean(form.isActive),
+  });
+
+  const submit = async (event) => {
+    event?.preventDefault();
+    setError('');
+
+    if (!String(form.sku || '').trim()) {
+      setError('Введите SKU варианта');
+      return;
+    }
+    if (form.price !== '' && numberOrNull(form.price) === null) {
+      setError('Введите корректную цену');
+      return;
+    }
+    if (form.cost !== '' && numberOrNull(form.cost) === null) {
+      setError('Введите корректную себестоимость');
+      return;
+    }
+
+    const payload = buildPayload();
+    setBusy(true);
+    try {
+      if (editing?.id) {
+        await updateVariant({ id: editing.id, payload }).unwrap();
+      } else {
+        await createVariant(payload).unwrap();
+      }
+      setOpen(false);
+      setEditing(null);
+      setForm(emptyVariantForm(product));
+    } catch (e) {
+      setError(e?.data?.error || e?.data?.message || e?.message || 'Не удалось сохранить вариант');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleActive = async (item) => {
+    if (!item?.id || togglingId) return;
+    setTogglingId(item.id);
+    try {
+      await updateVariant({
+        id: item.id,
+        payload: {
+          productId,
+          isActive: item.isActive === false,
+        },
+      }).unwrap();
+    } catch {
+      // ignore
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const resetOptionForm = () => {
+    const nextSortOrder = variantOptions.length
+      ? Math.max(...variantOptions.map((item) => Number(item?.sortOrder || 0))) + 10
+      : 0;
+    setOptionEditing(null);
+    setOptionForm(emptyVariantOptionForm(nextSortOrder));
+    setOptionError('');
+  };
+
+  const editOption = (item) => {
+    setOptionEditing(item);
+    setOptionForm({
+      name: item?.name || '',
+      value: item?.value || '',
+      sortOrder: item?.sortOrder != null ? String(item.sortOrder) : '0',
+    });
+    setOptionError('');
+  };
+
+  const submitOption = async () => {
+    setOptionError('');
+    const name = String(optionForm.name || '').trim();
+    const value = String(optionForm.value || '').trim();
+    if (!editing?.id) {
+      setOptionError('Сначала сохраните вариант');
+      return;
+    }
+    if (!name) {
+      setOptionError('Введите название опции');
+      return;
+    }
+    if (!value) {
+      setOptionError('Введите значение опции');
+      return;
+    }
+    const sortOrder = optionForm.sortOrder === '' ? 0 : Number(optionForm.sortOrder);
+    if (!Number.isFinite(sortOrder)) {
+      setOptionError('Введите корректный порядок');
+      return;
+    }
+
+    const payload = {
+      variantId: editing.id,
+      name,
+      value,
+      sortOrder,
+    };
+
+    setOptionBusy(true);
+    try {
+      if (optionEditing?.id) {
+        await updateVariantOption({ id: optionEditing.id, payload }).unwrap();
+      } else {
+        await createVariantOption(payload).unwrap();
+      }
+      resetOptionForm();
+    } catch (e) {
+      setOptionError(e?.data?.error || e?.data?.message || e?.message || 'Не удалось сохранить опцию');
+    } finally {
+      setOptionBusy(false);
+    }
+  };
+
+  const removeOption = async (item) => {
+    if (!item?.id) return;
+    setOptionBusy(true);
+    try {
+      await deleteVariantOption({ id: item.id, variantId: editing?.id }).unwrap();
+      if (optionEditing?.id === item.id) resetOptionForm();
+    } catch (e) {
+      setOptionError(e?.data?.error || e?.data?.message || e?.message || 'Не удалось удалить опцию');
+    } finally {
+      setOptionBusy(false);
+    }
+  };
+
+  return (
+    <section className={s.sectionCard}>
+      <div className={s.sectionHeader}>
+        <h3>Варианты</h3>
+        <div className={s.sectionLeadMeta}>
+          <span className={s.metaChip}>Всего: {items.length}</span>
+          <span className={s.metaChip}>Активных: {activeCount}</span>
+          <span className={s.metaChip}>Неактивных: {inactiveCount}</span>
+          <AddButton onClick={openCreate}>Добавить вариант</AddButton>
+        </div>
+      </div>
+      <div className={s.hint}>Варианты товара с собственным SKU, идентификаторами, ценой и единицей измерения.</div>
+
+      {items.length === 0 && !isFetching ? (
+        <div className={s.emptyStateCard}>
+          <div className={s.emptyStateIcon}>▦</div>
+          <div className={s.emptyStateTitle}>Варианты пока не созданы</div>
+          <div className={s.emptyStateText}>Создайте первый вариант, если товар имеет разные исполнения, размеры, упаковки или отдельные идентификаторы.</div>
+          <div className={s.emptyStateActions}>
+            <AddButton onClick={openCreate}>Добавить вариант</AddButton>
+          </div>
+        </div>
+      ) : null}
+
+      {isFetching && items.length === 0 ? (
+        <div className={s.emptyInline}>Загрузка вариантов...</div>
+      ) : null}
+
+      {items.length > 0 ? (
+        <div className={s.responsiveRows}>
+          {items.map((row) => {
+            const ownUom = row.uomId ? uomById.get(row.uomId) : null;
+            const uomLabel = ownUom
+              ? getUomSymbol(ownUom, getUomLabel(ownUom))
+              : getUomLabel(product?.uom, '—');
+            return (
+              <article className={s.responsiveRowCard} key={row.id || row.sku}>
+                <div className={s.responsiveRowHeader}>
+                  <div className={s.responsiveRowIdentity}>
+                    <div className={s.responsiveTitleLine}>
+                      <strong>{row.name || row.sku || '—'}</strong>
+                      <StatusBadge active={row.isActive !== false} />
+                    </div>
+                    <span>Карточка варианта</span>
+                  </div>
+                  <div className={s.responsiveRowActions}>
+                    <button type="button" className={s.actionBtn} onClick={() => openEdit(row)}>Редактировать</button>
+                    <button
+                      type="button"
+                      className={row.isActive === false ? s.actionBtn : `${s.actionBtn} ${s.actionDanger}`}
+                      disabled={togglingId === row.id}
+                      onClick={() => toggleActive(row)}
+                    >
+                      {row.isActive === false ? 'Активировать' : 'Деактивировать'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className={s.responsiveRowGrid}>
+                  <InfoGroup title="Идентификаторы">
+                    <InfoLine label="SKU"><span className={s.codeCell}>{row.sku || '—'}</span></InfoLine>
+                    <InfoLine label="Штрихкод"><span className={s.codeCell}>{row.barcode || '—'}</span></InfoLine>
+                    <InfoLine label="EAN"><span className={s.codeCell}>{row.ean || '—'}</span></InfoLine>
+                  </InfoGroup>
+                  <InfoGroup title="Цены">
+                    <InfoLine label="Цена"><MoneyCell value={row.price} currency={product?.currency || row.currency || ''} /></InfoLine>
+                    <InfoLine label="Себестоимость"><MoneyCell value={row.cost} currency={product?.currency || row.currency || ''} /></InfoLine>
+                    <InfoLine label="UOM">{uomLabel}</InfoLine>
+                  </InfoGroup>
+                  <InfoGroup title="Опции">
+                    <div className={s.optionPreviewLine}>
+                      <VariantOptionsPreview variantId={row.id} />
+                    </div>
+                  </InfoGroup>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : null}
+
+      <Modal
+        open={open}
+        onClose={() => !busy && setOpen(false)}
+        title={editing ? 'Редактирование варианта' : 'Новый вариант'}
+        size="md"
+        footer={(
+          <>
+            <Modal.Button onClick={() => setOpen(false)}>Отмена</Modal.Button>
+            <Modal.Button variant="primary" form="product-variant-form" disabled={busy}>
+              {busy ? 'Сохранение...' : 'Сохранить'}
+            </Modal.Button>
+          </>
+        )}
+      >
+        <form id="product-variant-form" className={s.modalForm} onSubmit={submit}>
+          <label className={s.field}>
+            <span className={s.label}>Название</span>
+            <input
+              className={s.input}
+              value={form.name}
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="Например: Black XL"
+              maxLength={255}
+            />
+          </label>
+
+          <div className={s.grid2}>
+            <label className={s.field}>
+              <span className={s.label}>SKU</span>
+              <input
+                className={s.input}
+                value={form.sku}
+                onChange={(e) => setForm((prev) => ({ ...prev, sku: e.target.value }))}
+                maxLength={100}
+              />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Ед. изм.</span>
+              <ThemedSelect
+                value={form.uomId || ''}
+                onChange={(value) => setForm((prev) => ({ ...prev, uomId: value || '' }))}
+                options={uomOptions}
+              />
+            </label>
+          </div>
+
+          <div className={s.grid2}>
+            <label className={s.field}>
+              <span className={s.label}>Штрихкод</span>
+              <input
+                className={s.input}
+                value={form.barcode}
+                onChange={(e) => setForm((prev) => ({ ...prev, barcode: e.target.value }))}
+                maxLength={100}
+              />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>EAN</span>
+              <input
+                className={s.input}
+                value={form.ean}
+                onChange={(e) => setForm((prev) => ({ ...prev, ean: e.target.value }))}
+                maxLength={32}
+              />
+            </label>
+          </div>
+
+          <div className={s.grid2}>
+            <label className={s.field}>
+              <span className={s.label}>Цена</span>
+              <input
+                className={s.input}
+                value={form.price}
+                onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
+                inputMode="decimal"
+              />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Себестоимость</span>
+              <input
+                className={s.input}
+                value={form.cost}
+                onChange={(e) => setForm((prev) => ({ ...prev, cost: e.target.value }))}
+                inputMode="decimal"
+              />
+            </label>
+          </div>
+
+          <label className={s.chkLine}>
+            <input
+              type="checkbox"
+              checked={Boolean(form.isActive)}
+              onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))}
+            />
+            <span>Активен</span>
+          </label>
+
+          <div className={s.subsection}>
+            <div className={s.sectionHeader}>
+              <h4>Опции варианта</h4>
+              <div className={s.sectionLeadMeta}>
+                <span className={variantOptionPreview ? s.optionPreviewBadge : s.optionPreviewMuted}>
+                  {variantOptionPreview || 'Нет опций'}
+                </span>
+                <span className={s.metaChip}>Опций: {variantOptions.length}</span>
+              </div>
+            </div>
+            {!editing?.id ? (
+              <div className={s.emptyInline}>Сохраните вариант, чтобы добавить цвет, размер, объем или другие опции.</div>
+            ) : null}
+            {editing?.id ? (
+              <>
+                {variantOptions.length > 0 ? (
+                  <DataTable
+                    columns={[
+                      { key: 'name', title: 'Название', width: 150, render: (row) => row.name || '—' },
+                      { key: 'value', title: 'Значение', width: 170, render: (row) => row.value || '—' },
+                      { key: 'sortOrder', title: 'Порядок', width: 80, render: (row) => row.sortOrder ?? 0 },
+                    ]}
+                    data={variantOptions}
+                    loading={isVariantOptionsFetching}
+                    rowActions={(row) => (
+                      <div className={s.rowActions}>
+                        <button type="button" className={s.actionBtn} onClick={() => editOption(row)}>Редактировать</button>
+                        <button
+                          type="button"
+                          className={`${s.actionBtn} ${s.actionDanger}`}
+                          onClick={() => setOptionToDelete(row)}
+                        >
+                          Удалить
+                        </button>
+                      </div>
+                    )}
+                  />
+                ) : (
+                <div className={s.emptyInline}>Опции пока не добавлены</div>
+                )}
+
+                <div className={s.grid3}>
+                  <label className={s.field}>
+                    <span className={s.label}>Название опции</span>
+                    <input
+                      className={s.input}
+                      value={optionForm.name}
+                      onChange={(e) => setOptionForm((prev) => ({ ...prev, name: e.target.value }))}
+                      placeholder="Color"
+                      maxLength={64}
+                    />
+                  </label>
+                  <label className={s.field}>
+                    <span className={s.label}>Значение опции</span>
+                    <input
+                      className={s.input}
+                      value={optionForm.value}
+                      onChange={(e) => setOptionForm((prev) => ({ ...prev, value: e.target.value }))}
+                      placeholder="Black"
+                      maxLength={160}
+                    />
+                  </label>
+                  <label className={s.field}>
+                    <span className={s.label}>Порядок</span>
+                    <input
+                      className={s.input}
+                      value={optionForm.sortOrder}
+                      onChange={(e) => setOptionForm((prev) => ({ ...prev, sortOrder: e.target.value }))}
+                      inputMode="numeric"
+                    />
+                  </label>
+                </div>
+                <div className={s.sectionLeadMeta}>
+                  <button type="button" className={s.actionBtn} disabled={optionBusy} onClick={submitOption}>
+                    {optionEditing ? 'Сохранить опцию' : 'Добавить опцию'}
+                  </button>
+                  {optionEditing ? (
+                    <button type="button" className={s.actionBtn} disabled={optionBusy} onClick={resetOptionForm}>
+                      Отмена
+                    </button>
+                  ) : null}
+                </div>
+                {optionError ? <div className={s.error}>{optionError}</div> : null}
+              </>
+            ) : null}
+          </div>
+
+          {error ? <div className={s.error}>{error}</div> : null}
+        </form>
+      </Modal>
+      <ConfirmDialog
+        open={Boolean(optionToDelete)}
+        title="Удаление опции"
+        text={`Удалить опцию «${optionToDelete?.name || ''}: ${optionToDelete?.value || ''}»?`}
+        okText="Удалить"
+        cancelText="Отмена"
+        onCancel={() => setOptionToDelete(null)}
+        onOk={async () => {
+          const target = optionToDelete;
+          setOptionToDelete(null);
+          if (target) await removeOption(target);
+        }}
+      />
+    </section>
+  );
+}
+
+function SuppliersPurchaseTab({ productId, product }) {
+  const { data, isFetching } = useListProductSuppliersQuery(
+    { productId, limit: 200 },
+    { skip: !productId }
+  );
+  const { data: variantsData, isFetching: isVariantsFetching } = useListProductVariantsQuery(
+    { productId, limit: 200, sort: 'createdAt', dir: 'DESC' },
+    { skip: !productId }
+  );
+  const { data: suppliersData } = useListCounterpartiesQuery({
+    limit: 100,
+    sort: 'shortName',
+    dir: 'ASC',
+    excludeLeadClient: true,
+  });
+
+  const [createProductSupplier] = useCreateProductSupplierMutation();
+  const [updateProductSupplier] = useUpdateProductSupplierMutation();
+  const [deleteProductSupplier] = useDeleteProductSupplierMutation();
+
+  const items = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data?.items]);
+  const variants = useMemo(() => (Array.isArray(variantsData?.items) ? variantsData.items : []), [variantsData?.items]);
+
+  const supplierById = useMemo(() => {
+    const map = new Map();
+    (Array.isArray(suppliersData?.items) ? suppliersData.items : []).forEach((item) => {
+      if (item?.id) map.set(item.id, item);
+    });
+    if (product?.supplier?.id && !map.has(product.supplier.id)) {
+      map.set(product.supplier.id, product.supplier);
+    }
+    return map;
+  }, [product?.supplier, suppliersData?.items]);
+
+  const variantById = useMemo(() => {
+    const map = new Map();
+    variants.forEach((item) => {
+      if (item?.id) map.set(item.id, item);
+    });
+    return map;
+  }, [variants]);
+
+  const supplierOptions = useMemo(() => {
+    const seen = new Set();
+    const rows = Array.isArray(suppliersData?.items) ? [...suppliersData.items] : [];
+    if (product?.supplier?.id && !rows.some((item) => item?.id === product.supplier.id)) {
+      rows.unshift(product.supplier);
+    }
+    return [
+      { value: '', label: 'Выберите поставщика' },
+      ...rows
+        .filter((item) => {
+          if (!item?.id || seen.has(item.id)) return false;
+          seen.add(item.id);
+          return true;
+        })
+        .map((item) => ({
+          value: item.id,
+          label: counterpartyDisplayName(item),
+        })),
+    ];
+  }, [product?.supplier, suppliersData?.items]);
+
+  const variantOptions = useMemo(() => [
+    { value: '', label: 'Уровень товара' },
+    ...variants.map((item) => ({
+      value: item.id,
+      label: variantDisplayName(item),
+    })),
+  ], [variants]);
+
+  const primarySupplierId = product?.supplierId || product?.supplier?.id || '';
+  const isPreferred = useCallback(
+    (row) => Boolean(primarySupplierId && row?.supplierId && String(row.supplierId) === String(primarySupplierId)),
+    [primarySupplierId]
+  );
+  const preferredCount = useMemo(() => items.filter(isPreferred).length, [isPreferred, items]);
+  const productLevelCount = useMemo(() => items.filter((item) => !item?.variantId).length, [items]);
+  const variantLevelCount = items.length - productLevelCount;
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [rowToDelete, setRowToDelete] = useState(null);
+  const [form, setForm] = useState(() => emptyProductSupplierForm(product));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyProductSupplierForm(product));
+    setError('');
+    setOpen(true);
+  };
+
+  const openEdit = (item) => {
+    setEditing(item);
+    setForm(productSupplierFormFromRow(item, product));
+    setError('');
+    setOpen(true);
+  };
+
+  const buildPayload = () => ({
+    productId,
+    supplierId: form.supplierId || null,
+    variantId: form.variantId || null,
+    supplierSku: trimOrNull(form.supplierSku),
+    price: Number(String(form.price).replace(',', '.')),
+    currency: String(form.currency || product?.currency || 'PLN').trim().toUpperCase(),
+    moq: integerOrNull(form.moq) ?? 1,
+    leadTimeDays: integerOrNull(form.leadTimeDays) ?? 0,
+    packSize: integerOrNull(form.packSize) ?? 1,
+    url: trimOrNull(form.url),
+  });
+
+  const submit = async (event) => {
+    event?.preventDefault();
+    setError('');
+
+    const price = Number(String(form.price).replace(',', '.'));
+    const moq = integerOrNull(form.moq);
+    const leadTimeDays = integerOrNull(form.leadTimeDays);
+    const packSize = integerOrNull(form.packSize);
+    const currency = String(form.currency || '').trim().toUpperCase();
+
+    if (!String(form.supplierId || '').trim()) {
+      setError('Выберите поставщика');
+      return;
+    }
+    if (!Number.isFinite(price) || price < 0) {
+      setError('Введите корректную закупочную цену');
+      return;
+    }
+    if (!currency || currency.length > 3) {
+      setError('Валюта должна быть указана кодом до 3 символов');
+      return;
+    }
+    if (form.moq !== '' && (moq === null || moq < 1)) {
+      setError('MOQ должен быть не меньше 1');
+      return;
+    }
+    if (form.leadTimeDays !== '' && (leadTimeDays === null || leadTimeDays < 0)) {
+      setError('Срок поставки должен быть не меньше 0');
+      return;
+    }
+    if (form.packSize !== '' && (packSize === null || packSize < 1)) {
+      setError('Размер упаковки должен быть не меньше 1');
+      return;
+    }
+
+    const payload = buildPayload();
+    setBusy(true);
+    try {
+      if (editing?.id) {
+        await updateProductSupplier({ id: editing.id, payload }).unwrap();
+      } else {
+        await createProductSupplier(payload).unwrap();
+      }
+      setOpen(false);
+      setEditing(null);
+      setForm(emptyProductSupplierForm(product));
+    } catch (e) {
+      setError(e?.data?.error || e?.data?.message || e?.message || 'Не удалось сохранить условия поставщика');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onDelete = async (item) => {
+    if (!item?.id) return;
+    try {
+      await deleteProductSupplier({ id: item.id, productId }).unwrap();
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <section className={s.sectionCard}>
+      <div className={s.sectionHeader}>
+        <h3>Поставщики / Закупка</h3>
+        <div className={s.sectionLeadMeta}>
+          <span className={s.metaChip}>Строк: {items.length}</span>
+          <span className={s.metaChip}>Товар: {productLevelCount}</span>
+          <span className={s.metaChip}>Варианты: {variantLevelCount}</span>
+          <span className={s.metaChip}>Предпочтительных: {preferredCount}</span>
+          <AddButton onClick={openCreate}>Добавить поставщика</AddButton>
+        </div>
+      </div>
+      <div className={s.hint}>
+        Основной поставщик товара задаёт предпочтительный источник закупки; строки ProductSupplier хранят закупочные условия товара и вариантов.
+      </div>
+      {!primarySupplierId ? (
+        <div className={s.emptyInline}>У товара не выбран основной поставщик, поэтому preferred badge не рассчитывается.</div>
+      ) : null}
+
+      {items.length === 0 && !isFetching && !isVariantsFetching ? (
+        <div className={s.emptyStateCard}>
+          <div className={s.emptyStateIcon}>₽</div>
+          <div className={s.emptyStateTitle}>Закупочные условия пока не созданы</div>
+          <div className={s.emptyStateText}>Добавьте строку для товара или варианта, чтобы зафиксировать закупочную цену, MOQ и сроки поставки.</div>
+          <div className={s.emptyStateActions}>
+            <AddButton onClick={openCreate}>Добавить поставщика</AddButton>
+          </div>
+        </div>
+      ) : null}
+
+      {(isFetching || isVariantsFetching) && items.length === 0 ? (
+        <div className={s.emptyInline}>Загрузка закупочных условий...</div>
+      ) : null}
+
+      {items.length > 0 ? (
+        <div className={s.responsiveRows}>
+          {items.map((row) => {
+            const supplier = supplierById.get(row.supplierId);
+            const supplierName = supplier ? counterpartyDisplayName(supplier) : row.supplierId || '—';
+            const variantName = row.variantId ? variantDisplayName(variantById.get(row.variantId)) : '';
+            const preferred = isPreferred(row);
+            return (
+              <article className={s.responsiveRowCard} key={row.id || `${row.supplierId}-${row.variantId || 'product'}`}>
+                <div className={s.responsiveRowHeader}>
+                  <div className={s.responsiveRowIdentity}>
+                    <div className={s.responsiveTitleLine}>
+                      <strong>{supplierName}</strong>
+                      {preferred ? <span className={s.preferredBadge}>Основной поставщик</span> : null}
+                    </div>
+                    <span>{preferred ? 'Предпочтительный источник закупки' : 'Источник закупки'}</span>
+                  </div>
+                  <div className={s.responsiveRowActions}>
+                    <button type="button" className={s.actionBtn} onClick={() => openEdit(row)}>Редактировать</button>
+                    <button
+                      type="button"
+                      className={`${s.actionBtn} ${s.actionDanger}`}
+                      onClick={() => setRowToDelete(row)}
+                    >
+                      Удалить
+                    </button>
+                  </div>
+                </div>
+
+                <div className={s.responsiveRowGrid}>
+                  <InfoGroup title="Поставка">
+                    <InfoLine label="Область">
+                      {row.variantId ? (
+                        <span className={s.scopePill}>{variantName}</span>
+                      ) : (
+                        <span className={s.scopePillMuted}>Уровень товара</span>
+                      )}
+                    </InfoLine>
+                    {row.variantId ? <InfoLine label="Вариант">{variantName || '—'}</InfoLine> : null}
+                    <InfoLine label="SKU поставщика"><span className={s.codeCell}>{row.supplierSku || '—'}</span></InfoLine>
+                  </InfoGroup>
+                  <InfoGroup title="Цена">
+                    <InfoLine label="Закупка"><MoneyCell value={row.price} currency={row.currency || product?.currency || 'PLN'} /></InfoLine>
+                    <InfoLine label="Источник">
+                      {preferred ? (
+                        <span className={s.preferredBadge}>{row.variantId ? 'Для варианта' : 'Для товара'}</span>
+                      ) : '—'}
+                    </InfoLine>
+                  </InfoGroup>
+                  <InfoGroup title="Условия">
+                    <InfoLine label="MOQ">{row.moq ?? 1}</InfoLine>
+                    <InfoLine label="Срок">{row.leadTimeDays ?? 0} дн.</InfoLine>
+                    <InfoLine label="Упаковка">{row.packSize ?? 1}</InfoLine>
+                    <InfoLine label="URL">
+                      {row.url ? (
+                        <a className={s.tableLink} href={row.url} target="_blank" rel="noreferrer">Открыть</a>
+                      ) : '—'}
+                    </InfoLine>
+                  </InfoGroup>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : null}
+
+      <Modal
+        open={open}
+        onClose={() => !busy && setOpen(false)}
+        title={editing ? 'Редактирование закупочных условий' : 'Новые закупочные условия'}
+        size="md"
+        footer={(
+          <>
+            <Modal.Button onClick={() => setOpen(false)}>Отмена</Modal.Button>
+            <Modal.Button variant="primary" form="product-supplier-form" disabled={busy}>
+              {busy ? 'Сохранение...' : 'Сохранить'}
+            </Modal.Button>
+          </>
+        )}
+      >
+        <form id="product-supplier-form" className={s.modalForm} onSubmit={submit}>
+          <div className={s.grid2}>
+            <label className={s.field}>
+              <span className={s.label}>Поставщик</span>
+              <ThemedSelect
+                value={form.supplierId}
+                onChange={(value) => setForm((prev) => ({ ...prev, supplierId: value }))}
+                options={supplierOptions}
+              />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Область / вариант</span>
+              <ThemedSelect
+                value={form.variantId}
+                onChange={(value) => setForm((prev) => ({ ...prev, variantId: value || '' }))}
+                options={variantOptions}
+              />
+            </label>
+          </div>
+
+          <label className={s.field}>
+            <span className={s.label}>SKU поставщика</span>
+            <input
+              className={s.input}
+              value={form.supplierSku}
+              onChange={(e) => setForm((prev) => ({ ...prev, supplierSku: e.target.value }))}
+              maxLength={128}
+            />
+          </label>
+
+          <div className={s.grid3}>
+            <label className={s.field}>
+              <span className={s.label}>Закупочная цена</span>
+              <input
+                className={s.input}
+                value={form.price}
+                onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
+                inputMode="decimal"
+              />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Валюта</span>
+              <input
+                className={s.input}
+                value={form.currency}
+                onChange={(e) => setForm((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))}
+                maxLength={3}
+              />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>MOQ</span>
+              <input
+                className={s.input}
+                value={form.moq}
+                onChange={(e) => setForm((prev) => ({ ...prev, moq: e.target.value }))}
+                inputMode="numeric"
+              />
+            </label>
+          </div>
+
+          <div className={s.grid2}>
+            <label className={s.field}>
+              <span className={s.label}>Срок поставки, дней</span>
+              <input
+                className={s.input}
+                value={form.leadTimeDays}
+                onChange={(e) => setForm((prev) => ({ ...prev, leadTimeDays: e.target.value }))}
+                inputMode="numeric"
+              />
+            </label>
+            <label className={s.field}>
+              <span className={s.label}>Размер упаковки</span>
+              <input
+                className={s.input}
+                value={form.packSize}
+                onChange={(e) => setForm((prev) => ({ ...prev, packSize: e.target.value }))}
+                inputMode="numeric"
+              />
+            </label>
+          </div>
+
+          <label className={s.field}>
+            <span className={s.label}>URL</span>
+            <input
+              className={s.input}
+              value={form.url}
+              onChange={(e) => setForm((prev) => ({ ...prev, url: e.target.value }))}
+              maxLength={512}
+            />
+          </label>
+
+          {form.supplierId && String(form.supplierId) === String(primarySupplierId) ? (
+            <div className={s.emptyInline}>
+              Эта строка будет предпочтительным источником для {form.variantId ? 'выбранного варианта' : 'закупочной цены товара'}.
+            </div>
+          ) : null}
+
+          {error ? <div className={s.error}>{error}</div> : null}
+        </form>
+      </Modal>
+
+      <ConfirmDialog
+        open={Boolean(rowToDelete)}
+        title="Удаление закупочных условий"
+        text="Удалить выбранную строку закупочных условий?"
+        okText="Удалить"
+        cancelText="Отмена"
+        onCancel={() => setRowToDelete(null)}
+        onOk={async () => {
+          const target = rowToDelete;
+          setRowToDelete(null);
+          if (target) await onDelete(target);
         }}
       />
     </section>
@@ -1781,6 +2861,18 @@ function WarehousePlaceholderTab({ trackInventory }) {
   );
 }
 
+function ProductPickerDemoTab() {
+  return (
+    <section className={s.sectionCard}>
+      <div className={s.sectionHeader}>
+        <h3>Подбор товара v2</h3>
+        <span className={s.metaChip}>Демо</span>
+      </div>
+      <ProductPickerDemo />
+    </section>
+  );
+}
+
 // Компонент ProductDetailTabs: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ProductDetailTabs({ tab, data, values, onChange }) {
   const productId = data?.id;
@@ -1810,6 +2902,9 @@ export default function ProductDetailTabs({ tab, data, values, onChange }) {
   }
 
   if (tab === 'files') return <FilesTab productId={productId} />;
+  if (tab === 'variants') return <VariantsTab productId={productId} product={data} />;
+  if (tab === 'suppliers-purchase') return <SuppliersPurchaseTab productId={productId} product={data} />;
+  if (tab === 'picker-demo') return <ProductPickerDemoTab />;
   if (tab === 'prices') return <PricesTab productId={productId} product={data} />;
   if (tab === 'warehouse') return <WarehousePlaceholderTab trackInventory={Boolean(values?.trackInventory)} />;
   if (tab === 'specifications') return <SpecificationsTab productId={productId} />;

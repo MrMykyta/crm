@@ -20,6 +20,14 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey:'shipment_id',
         as:'parcels'
       });
+      Shipment.belongsTo(models.Warehouse, {
+        as: 'warehouse',
+        foreignKey: { name: 'warehouseId', field: 'warehouse_id' },
+      });
+      Shipment.belongsTo(models.Order, {
+        as: 'order',
+        foreignKey: { name: 'orderId', field: 'order_id' },
+      });
       // K1: self-references for correction documents (WZ_KOREKTA).
       Shipment.belongsTo(models.Shipment, {
         as: 'parentDocument',

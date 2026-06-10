@@ -97,11 +97,11 @@
 }
 
 .gridProductDetail {
-  gap: 10px 12px;
+  gap: 9px 10px;
 }
 
 .gridProductDetail .field {
-  gap: 5px;
+  gap: 4px;
 }
 
 .sectionProductDetail {
@@ -113,12 +113,12 @@
 }
 
 .sectionToggleCompact {
-  min-height: 34px;
+  min-height: 32px;
   gap: 10px;
-  padding: 7px 12px;
-  border-radius: 10px;
+  padding: 6px 10px;
+  border-radius: 11px;
   border: 1px solid color-mix(in srgb, var(--ui-border-soft) 72%, transparent);
-  background: color-mix(in srgb, var(--ui-surface-2) 72%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-3) 78%, var(--ui-surface-2) 22%);
   box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
   transition: border-color .14s ease, background .14s ease, box-shadow .14s ease, transform .08s ease;
 }
@@ -127,8 +127,8 @@
 .sectionToggleCompact .sectionTitle {
   text-transform: none;
   font-size: var(--font-size-13);
-  font-weight: 700;
-  letter-spacing: .01em;
+  font-weight: 800;
+  letter-spacing: 0;
 }
 
 .sectionToggleCompact .sectionSub {
@@ -139,12 +139,12 @@
 
 .sectionToggleCompact.sectionTogglePrimary {
   border-color: color-mix(in srgb, var(--ui-border-soft) 84%, transparent);
-  background: color-mix(in srgb, var(--ui-surface-2) 84%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-3) 84%, var(--ui-surface-2) 16%);
 }
 
 .sectionToggleCompact.sectionToggleSecondary {
   border-color: color-mix(in srgb, var(--ui-border-soft) 66%, transparent);
-  background: color-mix(in srgb, var(--ui-surface-2) 68%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-3) 72%, var(--ui-surface-2) 28%);
 }
 
 .sectionToggleCompact:hover {
@@ -166,9 +166,9 @@
 
 .sectionToggleCompact.sectionToggleExpanded {
   border-color: color-mix(in srgb, var(--ui-border-focus) 58%, var(--ui-border-soft) 42%);
-  background: color-mix(in srgb, var(--ui-surface-hover) 62%, var(--ui-surface-2) 38%);
+  background: color-mix(in srgb, var(--ui-surface-hover) 42%, var(--ui-surface-3) 58%);
   box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent), 0 0 0 1px color-mix(in srgb, var(--ui-border-focus) 20%, transparent);
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .sectionToggleCompact.sectionToggleExpanded .sectionToggleIcon {

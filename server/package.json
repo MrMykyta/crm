@@ -9,6 +9,8 @@
     "dev": "nodemon index.js",
     "migrate": "npx sequelize-cli db:migrate",
     "migrate:status": "npx sequelize-cli db:migrate:status",
+    "acl:sync:wms": "node scripts/aclSyncWms.js",
+    "smoke:acl:wms": "node scripts/smokeWmsAclBackfill.js",
     "start:docker": "npm run migrate && node index.js"
   },
   "keywords": [],

@@ -8,6 +8,15 @@ const costingService = require('./costingService');
 const { resolveDefaultWarehouseId } = require('./warehouseResolver');
 const { Shipment, ShipmentItem, StockMove } = require('../../models');
 const { assertDocumentTypeEnabled, generateNextDocumentNumber } = require('../crm/documentNumberingService');
+const {
+  enrichShipmentDto,
+  enrichStockMoveRows,
+  orderInclude,
+  productInclude,
+  stockMoveIncludes,
+  variantInclude,
+  warehouseInclude,
+} = require('./wmsDto');
 
 function asText(value) {
   return String(value ?? '').trim();
@@ -145,11 +154,23 @@ module.exports.shipItem = async (
 
     const shipment = await Shipment.findOne({
       where: { id: item.shipmentId, companyId },
-      attributes: ['id', 'companyId', 'warehouseId', 'status'],
+      attributes: ['id', 'companyId', 'warehouseId', 'status', 'parentDocumentId'],
       transaction: t,
       lock: t.LOCK.UPDATE,
     });
     if (!shipment) return null;
+    if (shipment.parentDocumentId) {
+      throw new AppError(409, 'Correction shipment documents are immutable', {
+        code: 'CORRECTION_DOCUMENT_IMMUTABLE',
+        details: { shipmentId: shipment.id, parentDocumentId: shipment.parentDocumentId },
+      });
+    }
+    if (shipment.status !== 'packing') {
+      throw new AppError(409, 'Shipment must be packing to ship', {
+        code: 'SHIPMENT_NOT_PACKING',
+        details: { shipmentId: shipment.id, status: shipment.status },
+      });
+    }
 
     const plannedQty = round4(asNumber(item.qty, 0));
     const shippedQty = await getShippedQtyForItem({
@@ -474,10 +495,12 @@ module.exports.list = async (companyId, query = {}, options = {}) => {
 module.exports.getById = async (companyId, id, options = {}) => {
   const transaction = options.transaction || null;
   if (!id) return null;
-  return Shipment.findOne({
+  const row = await Shipment.findOne({
     where: { id, companyId },
     include: [
-      { model: ShipmentItem, as: 'items' },
+      warehouseInclude,
+      orderInclude,
+      { model: ShipmentItem, as: 'items', include: [productInclude, variantInclude] },
       {
         model: Shipment,
         as: 'parentDocument',
@@ -492,6 +515,7 @@ module.exports.getById = async (companyId, id, options = {}) => {
     order: [[{ model: ShipmentItem, as: 'items' }, 'createdAt', 'ASC']],
     transaction,
   });
+  return enrichShipmentDto(row);
 };
 
 // listStockMoves: возвращает историю движений по WZ-документу.
@@ -516,13 +540,14 @@ module.exports.listStockMoves = async (companyId, shipmentId, query = {}, option
 
   const { rows, count } = await StockMove.findAndCountAll({
     where,
+    include: stockMoveIncludes,
     order: [['createdAt', 'ASC']],
     limit,
     offset,
     transaction,
   });
 
-  return { rows, count, page, limit };
+  return { rows: enrichStockMoveRows(rows), count, page, limit };
 };
 
 // listItemStockMoves: возвращает историю движений по строке WZ через refItemId.
@@ -553,6 +578,7 @@ module.exports.listItemStockMoves = async (companyId, shipmentItemId, query = {}
       refId: item.shipmentId,
       refItemId: item.id,
     },
+    include: stockMoveIncludes,
     order: [['createdAt', 'ASC']],
     limit,
     offset,
@@ -572,6 +598,7 @@ module.exports.listItemStockMoves = async (companyId, shipmentItemId, query = {}
         variantId: item.variantId ?? null,
         type: 'ship',
       },
+      include: stockMoveIncludes,
       order: [['createdAt', 'ASC']],
       limit,
       offset,
@@ -581,7 +608,7 @@ module.exports.listItemStockMoves = async (companyId, shipmentItemId, query = {}
   }
 
   return {
-    rows: mergedRows,
+    rows: enrichStockMoveRows(mergedRows),
     count: mergedRows.length,
     page,
     limit,

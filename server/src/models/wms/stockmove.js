@@ -19,6 +19,26 @@ module.exports = (sequelize, DataTypes) => {
         as: 'costLayer',
         foreignKey: { name: 'sourceMoveId', field: 'source_move_id' },
       });
+      StockMove.belongsTo(models.Warehouse, {
+        as: 'warehouse',
+        foreignKey: { name: 'warehouseId', field: 'warehouse_id' },
+      });
+      StockMove.belongsTo(models.Location, {
+        as: 'fromLocation',
+        foreignKey: { name: 'fromLocationId', field: 'from_location_id' },
+      });
+      StockMove.belongsTo(models.Location, {
+        as: 'toLocation',
+        foreignKey: { name: 'toLocationId', field: 'to_location_id' },
+      });
+      StockMove.belongsTo(models.Product, {
+        as: 'product',
+        foreignKey: { name: 'productId', field: 'product_id' },
+      });
+      StockMove.belongsTo(models.ProductVariant, {
+        as: 'variant',
+        foreignKey: { name: 'variantId', field: 'variant_id' },
+      });
       // K1: direct audit pointer for reversal moves emitted by correction postings.
       StockMove.belongsTo(models.StockMove, {
         as: 'reversesMove',

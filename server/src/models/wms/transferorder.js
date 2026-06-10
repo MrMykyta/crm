@@ -16,6 +16,22 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey:{ name:'transferId', field:'transfer_id' }, 
         as:'items' 
       });
+      TransferOrder.belongsTo(models.Warehouse, {
+        as: 'sourceWarehouse',
+        foreignKey: { name: 'fromWarehouseId', field: 'from_warehouse_id' },
+      });
+      TransferOrder.belongsTo(models.Warehouse, {
+        as: 'targetWarehouse',
+        foreignKey: { name: 'toWarehouseId', field: 'to_warehouse_id' },
+      });
+      TransferOrder.belongsTo(models.Location, {
+        as: 'sourceLocation',
+        foreignKey: { name: 'sourceLocationId', field: 'source_location_id' },
+      });
+      TransferOrder.belongsTo(models.Location, {
+        as: 'targetLocation',
+        foreignKey: { name: 'targetLocationId', field: 'target_location_id' },
+      });
     }
   }
   TransferOrder.init({
@@ -39,12 +55,22 @@ module.exports = (sequelize, DataTypes) => {
       field:'from_warehouse_id',
       allowNull:false 
     },
-    toWarehouseId:{ 
-      type:DataTypes.UUID, 
+    toWarehouseId:{
+      type:DataTypes.UUID,
       field:'to_warehouse_id',
       allowNull:false
     },
-    status:{ 
+    sourceLocationId:{
+      type:DataTypes.UUID,
+      field:'source_location_id',
+      allowNull:true
+    },
+    targetLocationId:{
+      type:DataTypes.UUID,
+      field:'target_location_id',
+      allowNull:true
+    },
+    status:{
       type:DataTypes.ENUM('draft','in_transit','received'), 
       allowNull: false,  // required, default value is 'draft' 
       defaultValue:'draft' 

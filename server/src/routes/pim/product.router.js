@@ -24,6 +24,14 @@ productRouter.post(
   controller.create
 );
 
+productRouter.get(
+  '/picker',
+  requireMember,
+  authorize('product:read'),
+  validateQuery(productSchema.pickerQuery),
+  controller.picker
+);
+
 productRouter.get('/:id', requireMember, authorize('product:read'), controller.get);
 
 productRouter.put(

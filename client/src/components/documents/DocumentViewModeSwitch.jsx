@@ -6,12 +6,14 @@ export default function DocumentViewModeSwitch({
   onChange,
   disabled = false,
   disabledModes = [],
+  hiddenModes = [],
 }) {
   const blockedModes = new Set(disabledModes);
+  const hiddenModeSet = new Set(hiddenModes);
 
   return (
     <div className={styles.switcher} role="tablist" aria-label="View mode">
-      {DOCUMENT_VIEW_MODE_OPTIONS.map((option) => {
+      {DOCUMENT_VIEW_MODE_OPTIONS.filter((option) => !hiddenModeSet.has(option.value)).map((option) => {
         const isActive = value === option.value;
         const isDisabled = disabled || blockedModes.has(option.value);
         return (

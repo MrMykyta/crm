@@ -214,52 +214,8 @@ rootRouter.use("/cycle-counts", auth, companyIdGuard, require("./wms/cycleCount.
 rootRouter.use("/count-items", auth, companyIdGuard, require("./wms/countItem.router"));
 
 /* ============== WMS: commands ============== */
-// вынесенные доменные действия
-rootRouter.use("/wms/inventory", auth, companyIdGuard, require("./wms/inventory.router")); // reserve, release, applyMove, onHand
-rootRouter.use("/wms/receipts", auth, companyIdGuard, require("./wms/receipt.commands.router")); // receive line, close receipt
-rootRouter.use("/wms/picks", auth, companyIdGuard, require("./wms/pick.commands.router")); // create wave, complete task
-rootRouter.use(
-  "/wms/shipments",
-  auth,
-  companyIdGuard,
-  require("./wms/shipment.commands.router")
-); // ship item(s), close shipment
-rootRouter.use(
-  "/wms/transfers",
-  auth,
-  companyIdGuard,
-  require("./wms/transfer.commands.router")
-); // execute/complete transfer
-rootRouter.use(
-  "/wms/adjustments",
-  auth,
-  companyIdGuard,
-  require("./wms/adjustment.commands.router")
-); // +/- adjust
-rootRouter.use(
-  "/wms/cycle-counts",
-  auth,
-  companyIdGuard,
-  require("./wms/cycleCount.router")
-); // inventory count + reconcile
-rootRouter.use(
-  "/wms/costing",
-  auth,
-  companyIdGuard,
-  require("./wms/costing.router")
-); // FIFO opening-balance initialization
-rootRouter.use(
-  "/wms/reports",
-  auth,
-  companyIdGuard,
-  require("./wms/reports.router")
-); // WMS reporting endpoints
-rootRouter.use(
-  "/wms/documents",
-  auth,
-  companyIdGuard,
-  require("./wms/warehouseDocuments.router")
-); // unified PZ/WZ/MM/RW/PW list (WMS-DOCS-2)
+// единый namespace: commands, documents, reports and CRUD aliases.
+rootRouter.use("/wms", auth, companyIdGuard, require("./wms"));
 rootRouter.use(
   "/workspace-views",
   auth,

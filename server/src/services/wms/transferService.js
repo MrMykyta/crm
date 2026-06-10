@@ -5,7 +5,7 @@ const AppError = require('../../errors/AppError');
 const Inventory = require('./inventoryService');
 const costingService = require('./costingService');
 const { resolveDefaultWarehouseId } = require('./warehouseResolver');
-const { TransferOrder, TransferItem, StockMove } = require('../../models');
+const { TransferOrder, TransferItem, StockMove, Location } = require('../../models');
 const { assertDocumentTypeEnabled, generateNextDocumentNumber } = require('../crm/documentNumberingService');
 
 function asText(value) {
@@ -31,6 +31,29 @@ function toPositiveQty(value) {
   return parsed;
 }
 
+// Validate that a (nullable) location belongs to the company and, when the location
+// row carries a warehouseId, to the expected warehouse. NO-OP for null locationId.
+async function assertLocationBelongs(companyId, locationId, expectedWarehouseId, field, transaction) {
+  if (!locationId) return;
+  const location = await Location.findOne({
+    where: { id: locationId, companyId },
+    attributes: ['id', 'warehouseId'],
+    transaction,
+  });
+  if (!location) {
+    throw new AppError(400, 'Location not found in current company', {
+      code: 'TRANSFER_LOCATION_INVALID',
+      details: { field, locationId },
+    });
+  }
+  if (expectedWarehouseId && location.warehouseId && asText(location.warehouseId) !== asText(expectedWarehouseId)) {
+    throw new AppError(400, 'Location does not belong to the expected warehouse', {
+      code: 'TRANSFER_LOCATION_WAREHOUSE_MISMATCH',
+      details: { field, locationId, expectedWarehouseId },
+    });
+  }
+}
+
 // create: создаёт новую запись и возвращает результат.
 module.exports.create = async (companyId, data, outerTx = null) => {
   return withTx(async (t) => {
@@ -41,6 +64,13 @@ module.exports.create = async (companyId, data, outerTx = null) => {
       : null;
     const fromWarehouseId = core.fromWarehouseId || defaultWarehouseId;
     const toWarehouseId = core.toWarehouseId || defaultWarehouseId;
+
+    // Document-level default locations (MVP). Validate company + warehouse membership.
+    const sourceLocationId = asText(core.sourceLocationId) || null;
+    const targetLocationId = asText(core.targetLocationId) || null;
+    await assertLocationBelongs(companyId, sourceLocationId, fromWarehouseId, 'sourceLocationId', t);
+    await assertLocationBelongs(companyId, targetLocationId, toWarehouseId, 'targetLocationId', t);
+
     const manualNumber = asText(core.number);
     await assertDocumentTypeEnabled({
       companyId,
@@ -62,6 +92,8 @@ module.exports.create = async (companyId, data, outerTx = null) => {
         companyId,
         fromWarehouseId,
         toWarehouseId,
+        sourceLocationId,
+        targetLocationId,
         number: manualNumber || generatedNumber,
         status: core.status || 'draft',
       },
@@ -101,11 +133,31 @@ module.exports.executeLine = async (
 
     const transfer = await TransferOrder.findOne({
       where: { id: item.transferId, companyId },
-      attributes: ['id', 'companyId', 'fromWarehouseId', 'toWarehouseId'],
+      attributes: ['id', 'companyId', 'fromWarehouseId', 'toWarehouseId', 'sourceLocationId', 'targetLocationId', 'status'],
       transaction: t,
       lock: t.LOCK.UPDATE,
     });
     if (!transfer) return null;
+    if (!['draft', 'in_transit'].includes(transfer.status)) {
+      throw new AppError(409, 'Transfer must be draft or in_transit to execute', {
+        code: 'TRANSFER_NOT_EXECUTABLE',
+        details: { transferId: transfer.id, status: transfer.status },
+      });
+    }
+    // Use explicit payload locations when present; otherwise fall back to the document's
+    // default source/target locations.
+    const effectiveFromLocationId = asText(fromLocationId) || asText(transfer.sourceLocationId);
+    const effectiveToLocationId = asText(toLocationId) || asText(transfer.targetLocationId);
+    if (!effectiveFromLocationId || !effectiveToLocationId) {
+      throw new AppError(400, 'Execution requires source and target locations', {
+        code: 'TRANSFER_LOCATION_REQUIRED',
+        details: {
+          transferId: transfer.id,
+          fromLocationId: effectiveFromLocationId || null,
+          toLocationId: effectiveToLocationId || null,
+        },
+      });
+    }
 
     const plannedQty = asNumber(item.qty, 0);
     const movedQty = asNumber(item.movedQty, 0);
@@ -164,7 +216,7 @@ module.exports.executeLine = async (
         companyId,
         type: 'transfer',
         warehouseId: transfer.fromWarehouseId,
-        fromLocationId,
+        fromLocationId: effectiveFromLocationId,
         productId: item.productId,
         variantId: item.variantId,
         lotId: item.lotId,
@@ -180,7 +232,7 @@ module.exports.executeLine = async (
         companyId,
         type: 'transfer',
         warehouseId: transfer.toWarehouseId,
-        toLocationId,
+        toLocationId: effectiveToLocationId,
         productId: item.productId,
         variantId: item.variantId,
         lotId: item.lotId,
@@ -197,6 +249,19 @@ module.exports.executeLine = async (
     await costingService.transferFifoLayers(outMove, inMove, t);
 
     await item.update({ movedQty: nextMovedQty }, { transaction: t });
+    const allItems = await TransferItem.findAll({
+      where: { transferId: item.transferId },
+      attributes: ['id', 'qty', 'movedQty'],
+      transaction: t,
+    });
+    const allReceived = allItems.every((row) => {
+      const rowMovedQty = row.id === item.id ? nextMovedQty : asNumber(row.movedQty, 0);
+      return round4(rowMovedQty) >= round4(asNumber(row.qty, 0));
+    });
+    const nextStatus = allReceived ? 'received' : 'in_transit';
+    if (transfer.status !== nextStatus) {
+      await transfer.update({ status: nextStatus }, { transaction: t });
+    }
     return item.reload({ transaction: t });
   }, outerTx);
 };

@@ -16,7 +16,14 @@ import {
   usePostAdjustmentMutation,
   useReceiveReceiptLineMutation,
 } from '../../../store/rtk/wmsDocumentsApi';
+import { useListProductVariantsQuery } from '../../../store/rtk/productsApi';
 import { useListCounterpartiesQuery } from '../../../store/rtk/counterpartyApi';
+import {
+  formatLocationLabel,
+  formatProductLabel,
+  formatVariantLabel,
+  formatWarehouseLabel,
+} from '../../../components/documents/DocumentEngine/wmsDisplay';
 import s from './WmsDocumentCreatePage.module.css';
 
 function asText(value) {
@@ -54,24 +61,27 @@ function getWmsActionErrorText(error, t, fallback) {
 }
 
 function createReceiptItem() {
-  return { localId: uid(), productId: '', productName: '', sku: '', variantId: '', lotNumber: '', qtyExpected: '1', receiveNow: false };
+  return { localId: uid(), productId: '', productName: '', sku: '', variantId: '', variantSku: '', variantName: '', lotNumber: '', qtyExpected: '1', receiveNow: false };
 }
 
 function createAdjustmentItem() {
-  return { localId: uid(), productId: '', productName: '', sku: '', variantId: '', qtyDelta: '1' };
+  return { localId: uid(), productId: '', productName: '', sku: '', variantId: '', variantSku: '', variantName: '', qtyDelta: '1' };
 }
 
 function createTransferItem() {
-  return { localId: uid(), productId: '', productName: '', sku: '', variantId: '', qty: '1' };
+  return { localId: uid(), productId: '', productName: '', sku: '', variantId: '', variantSku: '', variantName: '', qty: '1' };
 }
 
 function applyProductToItem(item, product) {
+  const defaultVariant = product?.defaultVariant || product?.variant || null;
   return {
     ...item,
     productId: asText(product?.id),
     productName: asText(product?.name),
     sku: asText(product?.sku),
-    variantId: asText(product?.defaultVariantId || product?.variantId || product?.defaultVariant?.id),
+    variantId: asText(product?.defaultVariantId || product?.variantId || defaultVariant?.id),
+    variantSku: asText(product?.defaultVariantSku || product?.variantSku || defaultVariant?.sku),
+    variantName: asText(product?.defaultVariantName || product?.variantName || defaultVariant?.name),
   };
 }
 
@@ -89,10 +99,24 @@ function detailRouteByKind(kind, id) {
 
 // WMS-specific create items editor (rendered inside DocumentEngine itemsSlot).
 // Preserves the existing per-kind columns, product picker, qty/lot/receive fields.
-function WmsCreateItemsTable({ items, kind, errors, t, onAddItem, onRemoveItem, onItemField, onOpenPicker }) {
+function WmsCreateItemsTable({ items, kind, errors, t, onAddItem, onRemoveItem, onItemField, onOpenPicker, variants }) {
   const isReceipt = kind === 'receipt';
   const isAdjustment = kind === 'adjustment';
   const isTransfer = kind === 'transfer';
+  const variantOptionsFor = (item) => {
+    const rows = variants.filter((variant) => !item.productId || variant.productId === item.productId);
+    const options = rows.map((variant) => ({
+      value: variant.id,
+      label: formatVariantLabel(variant),
+    }));
+    if (item.variantId && !options.some((option) => option.value === item.variantId)) {
+      options.push({
+        value: item.variantId,
+        label: formatVariantLabel({ id: item.variantId, sku: item.variantSku, name: item.variantName }),
+      });
+    }
+    return [{ value: '', label: t('wms.create.noVariant', 'No variant') }, ...options];
+  };
   return (
     <>
       <div className={s.itemsHeader}>
@@ -124,19 +148,21 @@ function WmsCreateItemsTable({ items, kind, errors, t, onAddItem, onRemoveItem, 
                       {item.productId ? t('wms.create.changeProduct', 'Change product') : t('wms.create.selectProduct', 'Select product')}
                     </button>
                     <div className={s.productText}>
-                      {item.productName || t('wms.create.noProduct', 'No product selected')}
-                      {item.sku ? <span className={s.productSub}>SKU: {item.sku}</span> : null}
+                      {item.productId ? formatProductLabel(item) : t('wms.create.noProduct', 'No product selected')}
                     </div>
                   </div>
                   {errors[`item:${item.localId}:productId`] ? <div className={s.fieldError}>{errors[`item:${item.localId}:productId`]}</div> : null}
                 </td>
                 <td>
-                  <input
+                  <select
                     className={s.input}
                     value={item.variantId}
                     onChange={(event) => onItemField(item.localId, 'variantId', event.target.value)}
-                    placeholder={t('wms.columns.variant', 'Variant')}
-                  />
+                  >
+                    {variantOptionsFor(item).map((option) => (
+                      <option key={option.value || 'empty'} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
                 </td>
                 {isReceipt ? (
                   <td>
@@ -225,6 +251,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     { limit: 200, sort: 'code', dir: 'ASC', warehouseId: isTransfer ? header.toWarehouseId || undefined : undefined },
     { skip: !isTransfer, refetchOnMountOrArgChange: false }
   );
+  const { data: variantsData } = useListProductVariantsQuery({ page: 1, limit: 200 });
 
   const [createReceipt, { isLoading: isCreatingReceipt }] = useCreateReceiptMutation();
   const [receiveReceiptLine, { isLoading: isReceivingLine }] = useReceiveReceiptLineMutation();
@@ -241,7 +268,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     const rows = Array.isArray(warehousesData?.items) ? warehousesData.items : [];
     return [
       { value: '', label: t('wms.create.selectWarehouse', 'Select warehouse') },
-      ...rows.map((row) => ({ value: row.id, label: [asText(row.code), asText(row.name)].filter(Boolean).join(' · ') || row.id })),
+      ...rows.map((row) => ({ value: row.id, label: formatWarehouseLabel(row) })),
     ];
   }, [warehousesData?.items, t]);
 
@@ -249,7 +276,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     const rows = Array.isArray(locationsData?.items) ? locationsData.items : [];
     return [
       { value: '', label: t('wms.create.selectLocation', 'Select location') },
-      ...rows.map((row) => ({ value: row.id, label: [asText(row.code), asText(row.type)].filter(Boolean).join(' · ') || row.id })),
+      ...rows.map((row) => ({ value: row.id, label: formatLocationLabel(row) })),
     ];
   }, [locationsData?.items, t]);
 
@@ -257,7 +284,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     const rows = Array.isArray(fromLocationsData?.items) ? fromLocationsData.items : [];
     return [
       { value: '', label: t('wms.create.selectFromLocation', 'Select from location') },
-      ...rows.map((row) => ({ value: row.id, label: [asText(row.code), asText(row.type)].filter(Boolean).join(' · ') || row.id })),
+      ...rows.map((row) => ({ value: row.id, label: formatLocationLabel(row) })),
     ];
   }, [fromLocationsData?.items, t]);
 
@@ -265,9 +292,11 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     const rows = Array.isArray(toLocationsData?.items) ? toLocationsData.items : [];
     return [
       { value: '', label: t('wms.create.selectToLocation', 'Select to location') },
-      ...rows.map((row) => ({ value: row.id, label: [asText(row.code), asText(row.type)].filter(Boolean).join(' · ') || row.id })),
+      ...rows.map((row) => ({ value: row.id, label: formatLocationLabel(row) })),
     ];
   }, [toLocationsData?.items, t]);
+
+  const variants = useMemo(() => (Array.isArray(variantsData?.items) ? variantsData.items : []), [variantsData?.items]);
 
   const counterpartyOptions = useMemo(() => {
     const rows = Array.isArray(counterpartiesData?.items) ? counterpartiesData.items : [];
@@ -330,8 +359,10 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     if (isTransfer) {
       if (!header.fromWarehouseId) nextErrors.fromWarehouseId = t('wms.validation.fromWarehouseRequired', 'From warehouse is required');
       if (!header.toWarehouseId) nextErrors.toWarehouseId = t('wms.validation.toWarehouseRequired', 'To warehouse is required');
-      if (forExecute && !header.fromLocationId) nextErrors.fromLocationId = t('wms.validation.fromLocationRequired', 'From location is required');
-      if (forExecute && !header.toLocationId) nextErrors.toLocationId = t('wms.validation.toLocationRequired', 'To location is required');
+      // Source/target locations are persisted on the document (required for MM) so the
+      // transfer can be executed later from the detail page.
+      if (!header.fromLocationId) nextErrors.fromLocationId = t('wms.validation.fromLocationRequired', 'From location is required');
+      if (!header.toLocationId) nextErrors.toLocationId = t('wms.validation.toLocationRequired', 'To location is required');
     }
     items.forEach((item) => {
       if (!asText(item.productId)) nextErrors[`item:${item.localId}:productId`] = t('wms.validation.productRequired', 'Product is required');
@@ -380,6 +411,8 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
   const buildTransferPayload = () => ({
     fromWarehouseId: header.fromWarehouseId,
     toWarehouseId: header.toWarehouseId,
+    sourceLocationId: header.fromLocationId || null,
+    targetLocationId: header.toLocationId || null,
     issueDate: header.issueDate || null,
     items: items.map((item) => ({
       productId: item.productId,
@@ -504,8 +537,8 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
       { label: t('wms.fields.toWarehouse', 'To warehouse'), type: 'select', required: true, value: header.toWarehouseId, onChange: (v) => setHeaderField('toWarehouseId', v), options: warehouseOptions, error: errors.toWarehouseId },
     ];
     secondaryFields = [
-      { label: t('wms.fields.fromLocation', 'From location'), type: 'select', value: header.fromLocationId, onChange: (v) => setHeaderField('fromLocationId', v), options: fromLocationOptions, error: errors.fromLocationId },
-      { label: t('wms.fields.toLocation', 'To location'), type: 'select', value: header.toLocationId, onChange: (v) => setHeaderField('toLocationId', v), options: toLocationOptions, error: errors.toLocationId },
+      { label: t('wms.fields.fromLocation', 'From location'), type: 'select', required: true, value: header.fromLocationId, onChange: (v) => setHeaderField('fromLocationId', v), options: fromLocationOptions, error: errors.fromLocationId },
+      { label: t('wms.fields.toLocation', 'To location'), type: 'select', required: true, value: header.toLocationId, onChange: (v) => setHeaderField('toLocationId', v), options: toLocationOptions, error: errors.toLocationId },
       { label: t('wms.fields.date', 'Date'), type: 'date', value: header.issueDate, onChange: (v) => setHeaderField('issueDate', v) },
     ];
   }
@@ -567,6 +600,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
             kind={kind}
             errors={errors}
             t={t}
+            variants={variants}
             onAddItem={addItem}
             onRemoveItem={removeItem}
             onItemField={setItemField}

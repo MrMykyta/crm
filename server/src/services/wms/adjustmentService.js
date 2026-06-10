@@ -16,6 +16,15 @@ const {
   assertDocumentTypeEnabled,
   generateNextDocumentNumber,
 } = require('../crm/documentNumberingService');
+const {
+  enrichAdjustmentDto,
+  enrichStockMoveRows,
+  itemLocationInclude,
+  productInclude,
+  stockMoveIncludes,
+  variantInclude,
+  warehouseInclude,
+} = require('./wmsDto');
 
 const ADJUSTMENT_DOCUMENT_TYPES = new Set(['RW', 'PW']);
 const ADJUSTMENT_STATUSES = new Set(['draft', 'posted']);
@@ -158,12 +167,16 @@ function buildListWhere(companyId, query = {}) {
 async function getById(companyId, id, options = {}) {
   const transaction = options.transaction || null;
   if (!id) return null;
-  return Adjustment.findOne({
+  const row = await Adjustment.findOne({
     where: { id, companyId },
-    include: [{ model: AdjustmentItem, as: 'items' }],
+    include: [
+      warehouseInclude,
+      { model: AdjustmentItem, as: 'items', include: [itemLocationInclude, productInclude, variantInclude] },
+    ],
     order: [[{ model: AdjustmentItem, as: 'items' }, 'createdAt', 'ASC']],
     transaction,
   });
+  return enrichAdjustmentDto(row);
 }
 
 async function list(companyId, query = {}, options = {}) {
@@ -397,13 +410,14 @@ async function listStockMoves(companyId, adjustmentId, query = {}, options = {})
 
   const { rows, count } = await StockMove.findAndCountAll({
     where,
+    include: stockMoveIncludes,
     order: [['createdAt', 'ASC']],
     limit,
     offset,
     transaction,
   });
 
-  return { rows, count, page, limit };
+  return { rows: enrichStockMoveRows(rows), count, page, limit };
 }
 
 module.exports = {

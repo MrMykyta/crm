@@ -73,6 +73,17 @@ providesTags: (res) => [
       keepUnusedDataFor: 60,
     }),
 
+    productPicker: build.query({
+      query: (args = {}) => ({
+        url: '/products/picker',
+        method: 'GET',
+        params: buildParams(args),
+      }),
+      transformResponse: normalizeList,
+      providesTags: [{ type: 'ProductPicker', id: 'LIST' }],
+      keepUnusedDataFor: 30,
+    }),
+
     getProduct: build.query({
             // query: формирует параметры HTTP-запроса для endpoint-а.
 query: (id) => ({
@@ -83,6 +94,208 @@ query: (id) => ({
 transformResponse: (resp) => resp?.data ?? resp,
             // providesTags: возвращает теги кэша для автообновления данных.
 providesTags: (_res, _err, id) => [{ type: 'Product', id }],
+    }),
+
+    listProductVariants: build.query({
+      query: (args = {}) => ({
+        url: '/product-variants',
+        method: 'GET',
+        params: buildParams(args),
+      }),
+      transformResponse: normalizeList,
+      providesTags: (res) => [
+        { type: 'ProductVariant', id: 'LIST' },
+        ...(res?.items || []).map((item) => ({ type: 'ProductVariant', id: item.id })),
+      ],
+      keepUnusedDataFor: 60,
+    }),
+
+    getProductVariant: build.query({
+      query: (id) => ({
+        url: `/product-variants/${encodeURIComponent(id)}`,
+        method: 'GET',
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      providesTags: (_res, _err, id) => [{ type: 'ProductVariant', id }],
+      keepUnusedDataFor: 60,
+    }),
+
+    createProductVariant: build.mutation({
+      query: (payload) => ({
+        url: '/product-variants',
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      invalidatesTags: (_res, _err, payload) => [
+        { type: 'ProductVariant', id: 'LIST' },
+        { type: 'Product', id: payload?.productId },
+        { type: 'ProductPicker', id: 'LIST' },
+      ],
+    }),
+
+    updateProductVariant: build.mutation({
+      query: ({ id, payload }) => ({
+        url: `/product-variants/${encodeURIComponent(id)}`,
+        method: 'PUT',
+        body: stripCompanyId(payload),
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      invalidatesTags: (_res, _err, { id, payload }) => [
+        { type: 'ProductVariant', id },
+        { type: 'ProductVariant', id: 'LIST' },
+        { type: 'Product', id: payload?.productId },
+        { type: 'ProductPicker', id: 'LIST' },
+      ],
+    }),
+
+    deleteProductVariant: build.mutation({
+      query: (arg) => {
+        const id = typeof arg === 'object' ? arg?.id : arg;
+        return {
+          url: `/product-variants/${encodeURIComponent(id)}`,
+          method: 'DELETE',
+        };
+      },
+      invalidatesTags: (_res, _err, arg) => {
+        const id = typeof arg === 'object' ? arg?.id : arg;
+        const productId = typeof arg === 'object' ? arg?.productId : null;
+        return [
+          { type: 'ProductVariant', id },
+          { type: 'ProductVariant', id: 'LIST' },
+          { type: 'Product', id: productId },
+          { type: 'ProductPicker', id: 'LIST' },
+        ];
+      },
+    }),
+
+    listVariantOptions: build.query({
+      query: (args = {}) => ({
+        url: '/variant-options',
+        method: 'GET',
+        params: buildParams(args),
+      }),
+      transformResponse: normalizeList,
+      providesTags: (res, _err, args = {}) => [
+        { type: 'VariantOption', id: `VARIANT:${args?.variantId || 'LIST'}` },
+        ...(res?.items || []).map((item) => ({ type: 'VariantOption', id: item.id })),
+      ],
+      keepUnusedDataFor: 60,
+    }),
+
+    createVariantOption: build.mutation({
+      query: (payload) => ({
+        url: '/variant-options',
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      invalidatesTags: (_res, _err, payload) => [
+        { type: 'VariantOption', id: `VARIANT:${payload?.variantId || 'LIST'}` },
+        { type: 'ProductVariant', id: payload?.variantId },
+        { type: 'ProductVariant', id: 'LIST' },
+        { type: 'ProductPicker', id: 'LIST' },
+      ],
+    }),
+
+    updateVariantOption: build.mutation({
+      query: ({ id, payload }) => ({
+        url: `/variant-options/${encodeURIComponent(id)}`,
+        method: 'PUT',
+        body: stripCompanyId(payload),
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      invalidatesTags: (_res, _err, { id, payload }) => [
+        { type: 'VariantOption', id },
+        { type: 'VariantOption', id: `VARIANT:${payload?.variantId || 'LIST'}` },
+        { type: 'ProductVariant', id: payload?.variantId },
+        { type: 'ProductVariant', id: 'LIST' },
+        { type: 'ProductPicker', id: 'LIST' },
+      ],
+    }),
+
+    deleteVariantOption: build.mutation({
+      query: (arg) => {
+        const id = typeof arg === 'object' ? arg?.id : arg;
+        return {
+          url: `/variant-options/${encodeURIComponent(id)}`,
+          method: 'DELETE',
+        };
+      },
+      invalidatesTags: (_res, _err, arg) => {
+        const id = typeof arg === 'object' ? arg?.id : arg;
+        const variantId = typeof arg === 'object' ? arg?.variantId : null;
+        return [
+          { type: 'VariantOption', id },
+          { type: 'VariantOption', id: `VARIANT:${variantId || 'LIST'}` },
+          { type: 'ProductVariant', id: variantId },
+          { type: 'ProductVariant', id: 'LIST' },
+          { type: 'ProductPicker', id: 'LIST' },
+        ];
+      },
+    }),
+
+    listProductSuppliers: build.query({
+      query: (args = {}) => ({
+        url: '/product-suppliers',
+        method: 'GET',
+        params: buildParams(args),
+      }),
+      transformResponse: normalizeList,
+      providesTags: (res, _err, args = {}) => [
+        { type: 'ProductSupplier', id: `PRODUCT:${args?.productId || 'LIST'}` },
+        ...(res?.items || []).map((item) => ({ type: 'ProductSupplier', id: item.id })),
+      ],
+      keepUnusedDataFor: 60,
+    }),
+
+    createProductSupplier: build.mutation({
+      query: (payload) => ({
+        url: '/product-suppliers',
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      invalidatesTags: (_res, _err, payload) => [
+        { type: 'ProductSupplier', id: `PRODUCT:${payload?.productId || 'LIST'}` },
+        { type: 'Product', id: payload?.productId },
+        { type: 'ProductPicker', id: 'LIST' },
+      ],
+    }),
+
+    updateProductSupplier: build.mutation({
+      query: ({ id, payload }) => ({
+        url: `/product-suppliers/${encodeURIComponent(id)}`,
+        method: 'PUT',
+        body: stripCompanyId(payload),
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      invalidatesTags: (_res, _err, { id, payload }) => [
+        { type: 'ProductSupplier', id },
+        { type: 'ProductSupplier', id: `PRODUCT:${payload?.productId || 'LIST'}` },
+        { type: 'Product', id: payload?.productId },
+        { type: 'ProductPicker', id: 'LIST' },
+      ],
+    }),
+
+    deleteProductSupplier: build.mutation({
+      query: (arg) => {
+        const id = typeof arg === 'object' ? arg?.id : arg;
+        return {
+          url: `/product-suppliers/${encodeURIComponent(id)}`,
+          method: 'DELETE',
+        };
+      },
+      invalidatesTags: (_res, _err, arg) => {
+        const id = typeof arg === 'object' ? arg?.id : arg;
+        const productId = typeof arg === 'object' ? arg?.productId : null;
+        return [
+          { type: 'ProductSupplier', id },
+          { type: 'ProductSupplier', id: `PRODUCT:${productId || 'LIST'}` },
+          { type: 'Product', id: productId },
+          { type: 'ProductPicker', id: 'LIST' },
+        ];
+      },
     }),
 
     createProduct: build.mutation({
@@ -509,6 +722,23 @@ query: (args = {}) => ({
 
 export const {
   useListProductsQuery,
+  useProductPickerQuery,
+  useLazyProductPickerQuery,
+  useListProductVariantsQuery,
+  useCreateProductVariantMutation,
+  useUpdateProductVariantMutation,
+  useDeleteProductVariantMutation,
+  useListVariantOptionsQuery,
+  useCreateVariantOptionMutation,
+  useUpdateVariantOptionMutation,
+  useDeleteVariantOptionMutation,
+  useListProductSuppliersQuery,
+  useCreateProductSupplierMutation,
+  useUpdateProductSupplierMutation,
+  useDeleteProductSupplierMutation,
+  useLazyGetProductQuery,
+  useLazyGetProductVariantQuery,
+  useGetProductVariantQuery,
   useGetProductQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
@@ -540,4 +770,3 @@ export const {
   useListShippingClassesLookupQuery,
   useListPriceListsLookupQuery,
 } = productsApi;
-

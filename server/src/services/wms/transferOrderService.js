@@ -3,6 +3,18 @@
 const { Op } = require('sequelize');
 const { TransferOrder, TransferItem, StockMove } = require('../../models');
 const { assertDocumentTypeEnabled, generateNextDocumentNumber } = require('../crm/documentNumberingService');
+const {
+  enrichStockMoveRows,
+  enrichTransferDto,
+  productInclude,
+  resolveTransferMoveLocations,
+  sourceLocationInclude,
+  sourceWarehouseInclude,
+  stockMoveIncludes,
+  targetLocationInclude,
+  targetWarehouseInclude,
+  variantInclude,
+} = require('./wmsDto');
 
 function asText(value) {
   return String(value ?? '').trim();
@@ -49,12 +61,21 @@ module.exports.getById = async (id, companyId = null, options = {}) => {
   const transaction = options.transaction || null;
   if (!id) return null;
   const where = companyId ? { id, companyId } : { id };
-  return TransferOrder.findOne({
+  const row = await TransferOrder.findOne({
     where,
-    include: [{ model: TransferItem, as: 'items' }],
+    include: [
+      sourceWarehouseInclude,
+      targetWarehouseInclude,
+      sourceLocationInclude,
+      targetLocationInclude,
+      { model: TransferItem, as: 'items', include: [productInclude, variantInclude] },
+    ],
     order: [[{ model: TransferItem, as: 'items' }, 'createdAt', 'ASC']],
     transaction,
   });
+  if (!row) return null;
+  const relationOverrides = await resolveTransferMoveLocations({ companyId: row.companyId, transferId: row.id, transaction });
+  return enrichTransferDto(row, relationOverrides);
 };
 // create: создаёт новую запись и возвращает результат.
 module.exports.create  = async (payload = {}) => {
@@ -93,7 +114,8 @@ module.exports.create  = async (payload = {}) => {
 // update: обновляет запись и возвращает актуальные данные.
 module.exports.update  = async (id, payload = {}, companyId = null) => {
   if (!id) throw new Error('id is required');
-  const row = await module.exports.getById(id, companyId);
+  const where = companyId ? { id, companyId } : { id };
+  const row = await TransferOrder.findOne({ where });
   if (!row) return null;
   if (payload.companyId && payload.companyId !== row.companyId) throw new Error('companyId mismatch');
   await row.update(payload);
@@ -126,13 +148,14 @@ module.exports.listStockMovesByTransfer = async (transferId, companyId, query = 
 
   const { rows, count } = await StockMove.findAndCountAll({
     where,
+    include: stockMoveIncludes,
     order: [['createdAt', 'ASC']],
     limit,
     offset,
     transaction,
   });
 
-  return { rows, count, page, limit };
+  return { rows: enrichStockMoveRows(rows), count, page, limit };
 };
 
 // listStockMovesByTransferItem: возвращает историю stock_moves по строке MM (refItemId).
@@ -157,6 +180,7 @@ module.exports.listStockMovesByTransferItem = async (transferItemId, companyId, 
       refId: item.transferId,
       refItemId: item.id,
     },
+    include: stockMoveIncludes,
     order: [['createdAt', 'ASC']],
     limit,
     offset,
@@ -177,6 +201,7 @@ module.exports.listStockMovesByTransferItem = async (transferItemId, companyId, 
         lotId: item.lotId ?? null,
         type: 'transfer',
       },
+      include: stockMoveIncludes,
       order: [['createdAt', 'ASC']],
       limit,
       offset,
@@ -186,7 +211,7 @@ module.exports.listStockMovesByTransferItem = async (transferItemId, companyId, 
   }
 
   return {
-    rows: mergedRows,
+    rows: enrichStockMoveRows(mergedRows),
     count: mergedRows.length,
     page,
     limit,

@@ -43,5 +43,21 @@ module.exports.PERMISSIONS = [
   // Файлы (единая файловая подсистема)
   'file:read','file:upload','file:delete',
   // Legacy-attachments: временная обратная совместимость во время миграции.
-  'attachment:read','attachment:upload','attachment:delete'
+  'attachment:read','attachment:upload','attachment:delete',
+
+  // WMS
+  'wms:read',
+  'wms:settings:update',
+  'wms:warehouse:manage',
+  'wms:location:manage',
+  'wms:document:create',
+  'wms:document:update',
+  'wms:document:post',
+  'wms:document:correct',
+  'wms:inventory:read',
+  'wms:inventory:count',
+  'wms:reservation:manage',
+  'wms:picking:manage',
+  'wms:reports:read',
+  'wms:costing:manage'
 ];

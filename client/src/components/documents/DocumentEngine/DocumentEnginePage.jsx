@@ -39,6 +39,7 @@ function EngineView({
   viewMode = 'preview',
   onViewModeChange,
   viewModeDisabledModes = [],
+  viewModeHiddenModes = [],
   showPrintButton = false,
   onPrint,
   printLabel,
@@ -170,6 +171,7 @@ function EngineView({
                 value={viewMode}
                 onChange={onViewModeChange}
                 disabledModes={viewModeDisabledModes}
+                hiddenModes={viewModeHiddenModes}
               />
             ) : null}
 

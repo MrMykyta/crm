@@ -3,6 +3,12 @@
 // the page supplies items via itemsSlot and history/relations via sections.
 
 import { asNumber, asText } from '../LineItemsEditor/lineModel';
+import {
+  formatDocumentRelationLabel,
+  formatLocationLabel,
+  formatOrderLabel,
+  formatWarehouseLabel,
+} from './wmsDisplay';
 
 function statusText(status, t) {
   const key = asText(status).toLowerCase();
@@ -75,28 +81,29 @@ function commonHead(entity, { code, subtitle }, t, locale) {
 }
 
 // PZ / PZK — receipts. Correction (PZK) when it has a parent document.
-export function mapReceiptToDocumentModel(receipt, { t, locale }) {
+export function mapReceiptToDocumentModel(receipt, { t, locale, lookups = {} }) {
   const isCorrection = Boolean(getParentDocumentId(receipt));
   const code = isCorrection ? 'PZK' : 'PZ';
   const relations = [];
   const parentId = getParentDocumentId(receipt);
   const correctedById = getCorrectedById(receipt);
   if (parentId) {
-    relations.push({ key: 'original', label: t('wms.relations.originalDocument', 'Original document'), value: receipt?.parentDocument?.number || `#${String(parentId).slice(0, 8)}`, to: `/main/wms/receipts/${parentId}` });
+    relations.push({ key: 'original', label: t('wms.relations.originalDocument', 'Original document'), value: formatDocumentRelationLabel(receipt?.parentDocument || parentId), to: `/main/wms/receipts/${parentId}` });
   }
   if (correctedById) {
-    relations.push({ key: 'correction', label: t('wms.relations.correctionDocument', 'Correction document'), value: receipt?.correctedBy?.number || `#${String(correctedById).slice(0, 8)}`, to: `/main/wms/receipts/${correctedById}` });
+    relations.push({ key: 'correction', label: t('wms.relations.correctionDocument', 'Correction document'), value: formatDocumentRelationLabel(receipt?.correctedBy || correctedById), to: `/main/wms/receipts/${correctedById}` });
   }
+  const warehouseLabel = formatWarehouseLabel(receipt?.warehouse || receipt?.warehouseId, lookups.warehousesById);
   return {
     ...commonHead(receipt, { code, subtitle: t('wms.receipts.detailTitle', 'Receipt details') }, t, locale),
     facts: [
-      { label: t('wms.print.warehouse', 'Warehouse'), value: asText(receipt?.warehouseId) || '—' },
+      { label: t('wms.print.warehouse', 'Warehouse'), value: warehouseLabel },
       { label: t('oms.detailLabels.createdAt'), value: fmtDate(receipt?.createdAt, locale) },
     ],
     primaryFields: [
       { label: t('oms.detailLabels.number'), value: receipt?.number || '' },
       { label: t('oms.detailLabels.status'), value: statusText(receipt?.status, t) },
-      { label: t('wms.print.warehouse', 'Warehouse'), value: asText(receipt?.warehouseId) },
+      { label: t('wms.print.warehouse', 'Warehouse'), value: warehouseLabel },
     ],
     secondaryFields: [
       { label: t('oms.detailLabels.createdAt'), value: fmtDate(receipt?.createdAt, locale) },
@@ -108,31 +115,32 @@ export function mapReceiptToDocumentModel(receipt, { t, locale }) {
 }
 
 // WZ / WZK — shipments. Correction (WZK) when it has a parent document.
-export function mapShipmentToDocumentModel(shipment, { t, locale }) {
+export function mapShipmentToDocumentModel(shipment, { t, locale, lookups = {} }) {
   const isCorrection = Boolean(getParentDocumentId(shipment));
   const code = isCorrection ? 'WZK' : 'WZ';
   const relations = [];
   const parentId = getParentDocumentId(shipment);
   const correctedById = getCorrectedById(shipment);
   if (parentId) {
-    relations.push({ key: 'original', label: t('wms.relations.originalDocument', 'Original document'), value: shipment?.parentDocument?.number || `#${String(parentId).slice(0, 8)}`, to: `/main/wms/shipments/${parentId}` });
+    relations.push({ key: 'original', label: t('wms.relations.originalDocument', 'Original document'), value: formatDocumentRelationLabel(shipment?.parentDocument || parentId), to: `/main/wms/shipments/${parentId}` });
   }
   if (correctedById) {
-    relations.push({ key: 'correction', label: t('wms.relations.correctionDocument', 'Correction document'), value: shipment?.correctedBy?.number || `#${String(correctedById).slice(0, 8)}`, to: `/main/wms/shipments/${correctedById}` });
+    relations.push({ key: 'correction', label: t('wms.relations.correctionDocument', 'Correction document'), value: formatDocumentRelationLabel(shipment?.correctedBy || correctedById), to: `/main/wms/shipments/${correctedById}` });
   }
   if (shipment?.orderId) {
-    relations.push({ key: 'order', label: t('documents.types.order'), value: shipment?.order?.number || shipment.orderId, to: `/main/oms/orders/${shipment.orderId}` });
+    relations.push({ key: 'order', label: t('documents.types.order'), value: formatOrderLabel(shipment?.order || shipment.orderId), to: `/main/oms/orders/${shipment.orderId}` });
   }
+  const warehouseLabel = formatWarehouseLabel(shipment?.warehouse || shipment?.warehouseId, lookups.warehousesById);
   return {
     ...commonHead(shipment, { code, subtitle: t('wms.shipments.detailTitle', 'Shipment details') }, t, locale),
     facts: [
-      { label: t('wms.print.warehouse', 'Warehouse'), value: asText(shipment?.warehouseId) || '—' },
+      { label: t('wms.print.warehouse', 'Warehouse'), value: warehouseLabel },
       { label: t('oms.detailLabels.createdAt'), value: fmtDate(shipment?.createdAt, locale) },
     ],
     primaryFields: [
       { label: t('oms.detailLabels.number'), value: shipment?.number || '' },
       { label: t('oms.detailLabels.status'), value: statusText(shipment?.status, t) },
-      { label: t('wms.print.warehouse', 'Warehouse'), value: asText(shipment?.warehouseId) },
+      { label: t('wms.print.warehouse', 'Warehouse'), value: warehouseLabel },
     ],
     secondaryFields: [
       { label: t('oms.detailLabels.createdAt'), value: fmtDate(shipment?.createdAt, locale) },
@@ -144,21 +152,31 @@ export function mapShipmentToDocumentModel(shipment, { t, locale }) {
 }
 
 // MM — transfers (no corrections).
-export function mapTransferToDocumentModel(transfer, { t, locale }) {
+export function mapTransferToDocumentModel(transfer, { t, locale, lookups = {} }) {
+  const fromWarehouseLabel = formatWarehouseLabel(transfer?.sourceWarehouse || transfer?.fromWarehouse || transfer?.fromWarehouseId, lookups.warehousesById);
+  const toWarehouseLabel = formatWarehouseLabel(transfer?.targetWarehouse || transfer?.toWarehouse || transfer?.toWarehouseId, lookups.warehousesById);
+  const sourceLocationLabel = transfer?.sourceLocation || transfer?.sourceLocationId
+    ? formatLocationLabel(transfer?.sourceLocation || transfer?.sourceLocationId, lookups.locationsById)
+    : '—';
+  const targetLocationLabel = transfer?.targetLocation || transfer?.targetLocationId
+    ? formatLocationLabel(transfer?.targetLocation || transfer?.targetLocationId, lookups.locationsById)
+    : '—';
   return {
     ...commonHead(transfer, { code: 'MM', subtitle: t('wms.transfers.detailTitle', 'Transfer details') }, t, locale),
     facts: [
-      { label: t('wms.fields.fromWarehouse', 'From warehouse'), value: asText(transfer?.fromWarehouseId) || '—' },
-      { label: t('wms.fields.toWarehouse', 'To warehouse'), value: asText(transfer?.toWarehouseId) || '—' },
+      { label: t('wms.fields.fromWarehouse', 'From warehouse'), value: fromWarehouseLabel },
+      { label: t('wms.fields.toWarehouse', 'To warehouse'), value: toWarehouseLabel },
       { label: t('oms.detailLabels.createdAt'), value: fmtDate(transfer?.createdAt, locale) },
     ],
     primaryFields: [
       { label: t('oms.detailLabels.number'), value: transfer?.number || '' },
       { label: t('oms.detailLabels.status'), value: statusText(transfer?.status, t) },
-      { label: t('wms.fields.fromWarehouse', 'From warehouse'), value: asText(transfer?.fromWarehouseId) },
-      { label: t('wms.fields.toWarehouse', 'To warehouse'), value: asText(transfer?.toWarehouseId) },
+      { label: t('wms.fields.fromWarehouse', 'From warehouse'), value: fromWarehouseLabel },
+      { label: t('wms.fields.toWarehouse', 'To warehouse'), value: toWarehouseLabel },
     ],
     secondaryFields: [
+      { label: t('wms.fields.fromLocation', 'From location'), value: sourceLocationLabel },
+      { label: t('wms.fields.toLocation', 'To location'), value: targetLocationLabel },
       { label: t('oms.detailLabels.createdAt'), value: fmtDate(transfer?.createdAt, locale) },
       { label: t('oms.detailLabels.updatedAt'), value: fmtDate(transfer?.updatedAt, locale) },
     ],
@@ -168,25 +186,26 @@ export function mapTransferToDocumentModel(transfer, { t, locale }) {
 }
 
 // RW / PW — adjustments. Code from documentType, else from net qtyDelta sign.
-export function mapAdjustmentToDocumentModel(adjustment, { t, locale }) {
+export function mapAdjustmentToDocumentModel(adjustment, { t, locale, lookups = {} }) {
   let code = asText(adjustment?.documentType).toUpperCase();
   if (code !== 'RW' && code !== 'PW') {
     const net = (Array.isArray(adjustment?.items) ? adjustment.items : [])
       .reduce((acc, it) => acc + asNumber(it?.qtyDelta, 0), 0);
     code = net < 0 ? 'RW' : 'PW';
   }
+  const warehouseLabel = formatWarehouseLabel(adjustment?.warehouse || adjustment?.warehouseId, lookups.warehousesById);
   return {
     ...commonHead(adjustment, { code, subtitle: t('wms.adjustments.detailTitle', 'Adjustment details') }, t, locale),
     facts: [
       { label: t('wms.adjustments.filters.documentType', 'Type'), value: code },
-      { label: t('wms.print.warehouse', 'Warehouse'), value: asText(adjustment?.warehouseId) || '—' },
+      { label: t('wms.print.warehouse', 'Warehouse'), value: warehouseLabel },
       { label: t('oms.detailLabels.createdAt'), value: fmtDate(adjustment?.createdAt, locale) },
     ],
     primaryFields: [
       { label: t('oms.detailLabels.number'), value: adjustment?.number || '' },
       { label: t('wms.adjustments.filters.documentType', 'Type'), value: code },
       { label: t('oms.detailLabels.status'), value: statusText(adjustment?.status, t) },
-      { label: t('wms.print.warehouse', 'Warehouse'), value: asText(adjustment?.warehouseId) },
+      { label: t('wms.print.warehouse', 'Warehouse'), value: warehouseLabel },
       { label: t('wms.fields.reason', 'Reason'), value: asText(adjustment?.reason) },
     ],
     secondaryFields: [

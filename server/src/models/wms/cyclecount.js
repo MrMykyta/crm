@@ -16,6 +16,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey:'count_id', 
         as:'items' 
       });
+      CycleCount.belongsTo(models.Warehouse, {
+        as: 'warehouse',
+        foreignKey: { name: 'warehouseId', field: 'warehouse_id' },
+      });
     }
   }
   CycleCount.init({

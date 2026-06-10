@@ -85,6 +85,31 @@
     "clear": "Clear",
     "refresh": "Refresh"
   },
+  "productPicker": {
+    "placeholder": "Search product, variant, SKU, barcode, EAN or external code",
+    "searching": "Searching...",
+    "searchFailed": "Search failed",
+    "startTyping": "Start typing to search products",
+    "noProductsFound": "No products found",
+    "noResultsHelp": "Try searching by product name, SKU, barcode or EAN",
+    "clearSelection": "Clear selection",
+    "clearSearch": "Clear search",
+    "product": "Product",
+    "variant": "Variant",
+    "baseProduct": "Base product",
+    "productId": "Product ID",
+    "variantId": "Variant ID",
+    "barcode": "Barcode",
+    "noBarcode": "No barcode",
+    "available": "Available"
+  },
+  "Basic": "Basic",
+  "Identifiers": "Identifiers",
+  "Commerce": "Commerce",
+  "Logistics": "Logistics",
+  "Inventory Behaviour": "Inventory Behaviour",
+  "Lifecycle": "Lifecycle",
+  "Tax Category": "Tax Category",
   "documents": {
     "types": {
       "offer": "Offer",
@@ -200,11 +225,21 @@
     "products": "Products",
     "services": "Services",
     "wms": "WMS",
+    "wmsOverview": "WMS overview",
     "warehouse": "Warehouse",
     "stockBalances": "Stock balances",
+    "wmsStockMoves": "Stock moves",
+    "wmsWarehouses": "Warehouses",
+    "wmsLocations": "Locations",
+    "wmsReservations": "Reservations",
+    "wmsLots": "Lots",
+    "wmsSerials": "Serial numbers",
+    "wmsParcels": "Parcels",
     "wmsDocuments": "Warehouse documents",
     "wmsDocs": "Warehouse docs",
     "wmsReceipts": "PZ receipts",
+    "wmsPicks": "Picks",
+    "wmsNewShipment": "New Shipment",
     "transfers": "Transfers",
     "wmsShipments": "WZ shipments",
     "wmsAdjustments": "RW/PW adjustments",
@@ -214,7 +249,8 @@
     "stockValuation": "Stock value",
     "stockTurnover": "Stock turnover",
     "stockAsOf": "Stock as of date",
-    "inventoryLedger": "Inventory ledger"
+    "inventoryLedger": "Inventory ledger",
+    "wmsReports": "Reports"
   },
   "oms": {
     "stub": "This page is planned for the next stage.",
@@ -235,7 +271,18 @@
       "editTitle": "Edit offer"
     },
     "invoices": {
-      "detailTitle": "Invoice details"
+      "title": "Invoices",
+      "search": "Search by number or counterparty...",
+      "open": "Open invoice",
+      "columns": {
+        "number": "Number",
+        "counterparty": "Counterparty",
+        "status": "Status",
+        "issueDate": "Issue date",
+        "dueDate": "Due date",
+        "totalNet": "Total net",
+        "totalGross": "Total gross"
+      }
     },
     "relations": {
       "title": "Relations",
@@ -343,20 +390,6 @@
       "notFound": "Entity not found",
       "backToDetail": "Back to details"
     },
-    "invoices": {
-      "title": "Invoices",
-      "search": "Search by number or counterparty...",
-      "open": "Open invoice",
-      "columns": {
-        "number": "Number",
-        "counterparty": "Counterparty",
-        "status": "Status",
-        "issueDate": "Issue date",
-        "dueDate": "Due date",
-        "totalNet": "Total net",
-        "totalGross": "Total gross"
-      }
-    },
     "lineTypes": {
       "product": "Product",
       "service": "Service",
@@ -370,6 +403,11 @@
       "correctionDocument": "Correction document"
     },
     "fields": {
+      "code": "Code",
+      "name": "Name",
+      "warehouse": "Warehouse",
+      "type": "Type",
+      "isActive": "Active",
       "fromWarehouse": "From warehouse",
       "toWarehouse": "To warehouse",
       "reason": "Reason",
@@ -473,6 +511,42 @@
         "refItem": "Ref item"
       }
     },
+    "documents": {
+      "title": "Warehouse documents",
+      "search": "Search by number...",
+      "empty": "No warehouse documents",
+      "open": "Open warehouse document",
+      "actions": {
+        "create": "Create document"
+      },
+      "filters": {
+        "type": "Type"
+      },
+      "types": {
+        "PZ": "PZ",
+        "WZ": "WZ",
+        "MM": "MM",
+        "RW": "RW",
+        "PW": "PW",
+        "PZK": "PZK",
+        "WZK": "WZK"
+      },
+      "createTypes": {
+        "PZ": "PZ receipt",
+        "MM": "MM transfer",
+        "RW": "RW issue",
+        "PW": "PW internal receipt"
+      },
+      "columns": {
+        "type": "Type",
+        "number": "Number",
+        "date": "Date",
+        "status": "Status",
+        "warehouse": "Warehouse",
+        "itemsCount": "Lines",
+        "totalQty": "Quantity"
+      }
+    },
     "receipts": {
       "title": "PZ receipts",
       "detailTitle": "Receipt details",
@@ -483,6 +557,34 @@
         "status": "Status",
         "warehouse": "Warehouse",
         "createdAt": "Created"
+      },
+      "draftEdit": {
+        "title": "Edit draft receipt",
+        "addLine": "Add line",
+        "addLineHint": "New lines stay local until Save.",
+        "changeProduct": "Change product",
+        "chooseProduct": "Choose product",
+        "empty": "No draft lines yet. Add a line to choose product, quantity and cost.",
+        "lines": "Lines",
+        "productPickerTitle": "Choose product",
+        "removeSelected": "Remove selected",
+        "rowTotal": "Row total",
+        "searchVariant": "Search variant",
+        "selectAll": "Select all lines",
+        "selectLine": "Select line",
+        "selectedCount": "Selected",
+        "totalCost": "Total",
+        "totalQty": "Qty",
+        "priceSource": {
+          "supplierPrice": "Supplier Price",
+          "variantCost": "Variant Cost",
+          "productCost": "Product Cost",
+          "manual": "Manual"
+        },
+        "priceWarnings": {
+          "noSuggestedPrice": "No suggested purchase price",
+          "currencyMismatch": "Suggested currency differs from current line currency"
+        }
       }
     },
     "transfers": {
@@ -551,6 +653,184 @@
         "onHand": "On hand",
         "reserved": "Reserved",
         "available": "Available"
+      }
+    },
+    "common": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "activate": "Activate",
+      "deactivate": "Deactivate"
+    },
+    "overview": {
+      "title": "WMS overview",
+      "subtitle": "Warehouse operations, stock visibility and WMS reference data.",
+      "noReadPermission": "You do not have permission to view WMS.",
+      "links": {
+        "documents": "Unified document list",
+        "receipts": "Inbound PZ documents",
+        "transfers": "Warehouse transfers",
+        "shipments": "Outbound WZ documents",
+        "adjustments": "RW/PW stock adjustments",
+        "cycleCounts": "Inventory count sheets",
+        "stockBalances": "Current stock by product",
+        "stockMoves": "Read-only movement ledger",
+        "warehouses": "Warehouse master data",
+        "locations": "Location master data",
+        "reports": "Stock reports"
+      }
+    },
+    "reservations": {
+      "title": "Reservations",
+      "empty": "No reservations found",
+      "noReadPermission": "You do not have permission to view reservations.",
+      "filters": {
+        "status": "Status",
+        "warehouseId": "Warehouse ID",
+        "productId": "Product ID",
+        "variantId": "Variant ID",
+        "orderId": "Source order ID"
+      },
+      "columns": {
+        "status": "Status",
+        "qty": "Qty",
+        "warehouse": "Warehouse",
+        "product": "Product",
+        "variant": "Variant",
+        "order": "Source order",
+        "createdAt": "Created"
+      },
+      "status": {
+        "active": "Active",
+        "fulfilled": "Fulfilled",
+        "cancelled": "Cancelled"
+      }
+    },
+    "lots": {
+      "title": "Lots",
+      "empty": "No lots found",
+      "noReadPermission": "You do not have permission to view lots.",
+      "filters": {
+        "search": "Search by lot number...",
+        "productId": "Product ID"
+      },
+      "columns": {
+        "lotNumber": "Lot number",
+        "product": "Product",
+        "mfgDate": "Manufactured",
+        "expDate": "Expiry date",
+        "createdAt": "Created"
+      }
+    },
+    "serials": {
+      "title": "Serial numbers",
+      "empty": "No serials found",
+      "noReadPermission": "You do not have permission to view serial numbers.",
+      "filters": {
+        "search": "Search by serial number...",
+        "productId": "Product ID"
+      },
+      "columns": {
+        "serialNumber": "Serial number",
+        "product": "Product",
+        "createdAt": "Created"
+      }
+    },
+    "parcels": {
+      "title": "Parcels",
+      "empty": "No parcels found",
+      "noReadPermission": "You do not have permission to view parcels.",
+      "filters": {
+        "search": "Search by tracking number or carrier...",
+        "shipmentId": "Shipment ID"
+      },
+      "columns": {
+        "trackingNumber": "Tracking number",
+        "carrier": "Carrier",
+        "shipment": "Shipment",
+        "weight": "Weight",
+        "createdAt": "Created"
+      }
+    },
+    "warehouses": {
+      "title": "Warehouses",
+      "search": "Search by code or name...",
+      "empty": "No warehouses found",
+      "noReadPermission": "You do not have permission to view warehouses.",
+      "actions": {
+        "create": "Create warehouse",
+        "edit": "Edit warehouse"
+      },
+      "columns": {
+        "code": "Code",
+        "name": "Name",
+        "isActive": "Status"
+      },
+      "validation": {
+        "required": "Code and name are required."
+      },
+      "errors": {
+        "save": "Failed to save warehouse."
+      }
+    },
+    "locations": {
+      "title": "Locations",
+      "search": "Search by code...",
+      "empty": "No locations found",
+      "noReadPermission": "You do not have permission to view locations.",
+      "actions": {
+        "create": "Create location",
+        "edit": "Edit location"
+      },
+      "columns": {
+        "warehouse": "Warehouse",
+        "code": "Code",
+        "type": "Type",
+        "isActive": "Status"
+      },
+      "placeholders": {
+        "selectWarehouse": "Select warehouse"
+      },
+      "validation": {
+        "required": "Warehouse, code and type are required."
+      },
+      "errors": {
+        "save": "Failed to save location."
+      }
+    },
+    "stockMoves": {
+      "title": "Stock moves",
+      "empty": "No stock moves found",
+      "noReadPermission": "You do not have permission to view stock moves.",
+      "filters": {
+        "type": "Stock move type",
+        "productId": "Product ID",
+        "variantId": "Variant ID",
+        "dateFrom": "Date from",
+        "dateTo": "Date to",
+        "sourceType": "Source type",
+        "sourceId": "Source ID"
+      },
+      "columns": {
+        "createdAt": "Date",
+        "type": "Type",
+        "warehouse": "Warehouse",
+        "fromLocation": "From location",
+        "toLocation": "To location",
+        "product": "Product",
+        "variant": "Variant",
+        "qty": "Qty",
+        "source": "Source"
+      },
+      "types": {
+        "receipt": "receipt",
+        "putaway": "putaway",
+        "pick": "pick",
+        "pack": "pack",
+        "ship": "ship",
+        "adjustment": "adjustment",
+        "transfer": "transfer"
       }
     },
     "cycleCounts": {
@@ -806,6 +1086,11 @@
         "PARTIAL_PZ_CORRECTION_NOT_SUPPORTED": "Partial PZ correction is not supported in MVP.",
         "PARTIAL_WZ_CORRECTION_NOT_SUPPORTED": "Partial WZ correction is not supported in MVP."
       }
+    },
+    "policy": {
+      "executionRequiresLocations": "Execution requires source and target locations.",
+      "documentLocked": "Document is locked.",
+      "correctionUnavailable": "Correction is unavailable for this status."
     }
   },
   "statuses": {

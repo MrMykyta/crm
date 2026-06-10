@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const {
   sequelize,
   Company,
+  CompanyWarehouseDocumentSetting,
   Warehouse,
   Location,
   Product,
@@ -17,6 +18,7 @@ const {
 
 const inventoryService = require('../src/services/wms/inventoryService');
 const inventoryCountService = require('../src/services/wms/inventoryCountService');
+const receiptService = require('../src/services/wms/receiptService');
 
 const results = [];
 
@@ -40,6 +42,10 @@ function toNumber(value, fallback = 0) {
 
     const company = await Company.create({ name: 'Inventory Count Smoke' }, { transaction: t });
     const companyId = company.id;
+    await CompanyWarehouseDocumentSetting.create(
+      { companyId, inventoryCostMethod: 'FIFO', costingInitializedAt: new Date() },
+      { transaction: t }
+    );
 
     const warehouse = await Warehouse.create(
       {
@@ -70,23 +76,26 @@ function toNumber(value, fallback = 0) {
         name: 'Count Smoke Product',
         slug: `count-smoke-${Date.now()}`,
         sku: 'COUNT-SKU',
+        cost: 10,
+        currency: 'PLN',
       },
       { transaction: t }
     );
 
-    await inventoryService.applyMove(
+    const receipt = await receiptService.create(
+      companyId,
       {
-        companyId,
-        type: 'receipt',
         warehouseId: warehouse.id,
-        toLocationId: location.id,
-        productId: product.id,
-        qty: 10,
-        refType: 'PZ',
-        refId: crypto.randomUUID(),
-        refItemId: crypto.randomUUID(),
+        inboundLocationId: location.id,
+        items: [{ productId: product.id, qtyExpected: 10, unitCost: 10, currency: 'PLN' }],
       },
-      { transaction: t }
+      t
+    );
+    await receiptService.receiveLine(
+      companyId,
+      receipt.items[0].id,
+      { qty: 10, toLocationId: location.id },
+      t
     );
 
     const onHandAfterPz = await inventoryService.getOnHand(
@@ -208,4 +217,3 @@ function toNumber(value, fallback = 0) {
   console.log(`\nSUMMARY: ${results.length - failed.length}/${results.length} checks passed.`);
   process.exit(failed.length ? 1 : 0);
 })();
-

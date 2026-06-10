@@ -16,7 +16,19 @@ const MANAGER_PERMS  = [
   'contact:read','contact:create','contact:update',
   'note:read','note:create','note:update','note:delete',
   'chat.read','chat.write',
-  'report:read'
+  'report:read',
+  'wms:read',
+  'wms:warehouse:manage',
+  'wms:location:manage',
+  'wms:document:create',
+  'wms:document:update',
+  'wms:document:post',
+  'wms:document:correct',
+  'wms:inventory:read',
+  'wms:inventory:count',
+  'wms:reservation:manage',
+  'wms:picking:manage',
+  'wms:reports:read'
 ];
 
 // Базовый набор прав сотрудника:
@@ -27,7 +39,10 @@ const EMPLOYEE_PERMS = [
   'task:read','task:create','task:update:own',
   'contact:read',
   'note:read','note:create','note:update','note:delete',
-  'chat.read','chat.write'
+  'chat.read','chat.write',
+  'wms:read',
+  'wms:inventory:read',
+  'wms:reports:read'
 ];
 
 // Дополнительный набор для руководителя департамента:
@@ -44,5 +59,6 @@ module.exports.DEFAULT_ROLE_SETS = {
   owner: OWNER_PERMS,
   admin: ADMIN_PERMS,
   manager: MANAGER_PERMS,
+  employee: EMPLOYEE_PERMS,
   user: EMPLOYEE_PERMS
 };

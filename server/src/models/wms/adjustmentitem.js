@@ -15,6 +15,18 @@ module.exports = (sequelize, DataTypes) => {
         as: 'adjustment',
         foreignKey: { name: 'adjustmentId', field: 'adjustment_id' },
       });
+      AdjustmentItem.belongsTo(models.Location, {
+        as: 'location',
+        foreignKey: { name: 'locationId', field: 'location_id' },
+      });
+      AdjustmentItem.belongsTo(models.Product, {
+        as: 'product',
+        foreignKey: { name: 'productId', field: 'product_id' },
+      });
+      AdjustmentItem.belongsTo(models.ProductVariant, {
+        as: 'variant',
+        foreignKey: { name: 'variantId', field: 'variant_id' },
+      });
     }
   }
   AdjustmentItem.init({

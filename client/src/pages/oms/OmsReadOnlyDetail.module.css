@@ -195,6 +195,198 @@
   gap: 12px;
 }
 
+.shipModal {
+  display: grid;
+  gap: 12px;
+}
+
+.draftEditor {
+  display: grid;
+  gap: 12px;
+}
+
+.draftGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fieldStack {
+  display: grid;
+  gap: 6px;
+}
+
+.draftToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.draftSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 10px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--ui-surface-2) 72%, transparent);
+}
+
+.draftSummaryItem {
+  display: grid;
+  gap: 4px;
+  color: var(--ui-text-3);
+  font-size: var(--font-size-12);
+}
+
+.draftSummaryItem strong {
+  color: var(--ui-text-1);
+  font-size: var(--font-size-13);
+}
+
+.draftTotalList {
+  display: grid;
+  gap: 2px;
+}
+
+.draftTableShell {
+  display: grid;
+  gap: 8px;
+}
+
+.draftBulkBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--ui-surface-1) 92%, transparent);
+}
+
+.draftControl {
+  width: 100%;
+  min-width: 120px;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 8px;
+  padding: 7px 8px;
+  color: var(--ui-text-1);
+  background: color-mix(in srgb, var(--ui-surface-1) 96%, transparent);
+  font: inherit;
+}
+
+.draftControl:focus {
+  outline: none;
+  border-color: var(--ui-border-focus);
+}
+
+.draftNumberControl {
+  min-width: 92px;
+  text-align: right;
+}
+
+.draftPriceCell {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.draftPriceBadge,
+.draftPriceWarning {
+  max-width: 160px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.draftPriceBadge {
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 70%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-2) 88%, transparent);
+  color: color-mix(in srgb, var(--ui-text-2) 92%, transparent);
+}
+
+.draftPriceWarning {
+  border: 1px solid color-mix(in srgb, var(--warning, #f59e0b) 54%, var(--ui-border-soft));
+  background: color-mix(in srgb, var(--warning, #f59e0b) 14%, transparent);
+  color: color-mix(in srgb, var(--warning, #f59e0b) 86%, var(--ui-text-1));
+}
+
+.draftProductPicker {
+  display: grid;
+  gap: 6px;
+  min-width: 260px;
+}
+
+.draftProductSummary {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.draftProductButton {
+  flex: 1;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 9px;
+  padding: 7px 9px;
+  color: var(--ui-text-1);
+  background: color-mix(in srgb, var(--ui-surface-1) 96%, transparent);
+  text-align: left;
+  cursor: pointer;
+}
+
+.draftProductButton:hover:not(:disabled) {
+  border-color: var(--ui-border-focus);
+}
+
+.draftProductButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.draftProductName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-size-12);
+  font-weight: 600;
+}
+
+.draftProductMeta {
+  color: var(--ui-text-3);
+  font-size: 11px;
+}
+
+.draftRowTotal {
+  color: var(--ui-text-1);
+  white-space: nowrap;
+}
+
+.draftAddSection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px dashed var(--ui-border-soft);
+  padding-top: 10px;
+}
+
+.checkboxCell {
+  width: 36px;
+  min-width: 36px;
+  text-align: center !important;
+}
+
 .correctionHint {
   margin: 0;
   color: var(--ui-text-3);
@@ -224,6 +416,21 @@
   border-color: var(--ui-border-focus);
 }
 
+.select {
+  width: 100%;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: var(--ui-text-1);
+  background: color-mix(in srgb, var(--ui-surface-1) 96%, transparent);
+  font: inherit;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--ui-border-focus);
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -248,8 +455,28 @@
   color: color-mix(in srgb, var(--success, #22c55e) 85%, white);
 }
 
+.actionDanger {
+  border-color: color-mix(in srgb, var(--danger, #ef4444) 45%, var(--ui-border-soft));
+  color: color-mix(in srgb, var(--danger, #ef4444) 88%, var(--ui-text-1) 12%);
+}
+
 .printHidden {
   display: block;
+}
+
+@media (max-width: 720px) {
+  .draftGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .draftSummary {
+    grid-template-columns: 1fr;
+  }
+
+  .draftBulkBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 @media print {

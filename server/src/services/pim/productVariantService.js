@@ -12,7 +12,14 @@ module.exports.list = async ({ query = {}, user = {} } = {}) => {
   const where = {};
   if (query.companyId) where.companyId = query.companyId; else if (user?.companyId) where.companyId = user.companyId;
   if (query.productId) where.productId = query.productId;
-  if (query.q) { where[Op.or] = [{ sku: { [Op.iLike]: `%${query.q}%` } }]; }
+  if (query.q) {
+    where[Op.or] = [
+      { name: { [Op.iLike]: `%${query.q}%` } },
+      { sku: { [Op.iLike]: `%${query.q}%` } },
+      { barcode: { [Op.iLike]: `%${query.q}%` } },
+      { ean: { [Op.iLike]: `%${query.q}%` } },
+    ];
+  }
   const { rows, count } = await ProductVariant.findAndCountAll({ where,  order:[['createdAt','DESC']], limit, offset });
   return { rows, count, page, limit };
 };
@@ -25,4 +32,3 @@ module.exports.create  = (payload={}) => { if(!payload.companyId) throw new Erro
 module.exports.update  = async (id, payload={}) => { const it=await ProductVariant.findByPk(id); if(!it) return null; await it.update(payload); return module.exports.getById(id); };
 // remove: удаляет запись с учётом бизнес-ограничений.
 module.exports.remove  = (id) => ProductVariant.destroy({ where:{ id } });
-

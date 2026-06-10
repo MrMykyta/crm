@@ -1,41 +1,151 @@
-import React, { Suspense, lazy, useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+
+import ListPage from '../../../components/data/ListPage';
+import FilterToolbar from '../../../components/filters/FilterToolbar';
+import AddButton from '../../../components/buttons/AddButton/AddButton';
+import WorkspaceViewsDrawer from '../../../components/common/WorkspaceViews/WorkspaceViewsDrawer';
+import WorkspaceViewEditor from '../../../components/common/WorkspaceViews/WorkspaceViewEditor';
+import WorkspaceViewPicker from '../../../components/common/WorkspaceViews/WorkspaceViewPicker';
+import useGridPrefs from '../../../hooks/useGridPrefs';
+import { useListWarehouseDocumentsQuery } from '../../../store/rtk/wmsDocumentsApi';
 import { useListWorkspaceViewsQuery } from '../../../store/rtk/workspaceViewsApi';
-import { buildViewUrl, resolveActiveView } from '../../../utils/workspaceViews';
-import { buildWmsDocumentsFilterFromUrl } from '../../../utils/workspaceViewsWmsDocumentsFilter';
 import {
   closeManageDrawer,
   selectManageDrawerModule,
 } from '../../../store/slices/workspaceViewsDrawerSlice';
-import WorkspaceViewsDrawer from '../../../components/common/WorkspaceViews/WorkspaceViewsDrawer';
-import WorkspaceViewEditor from '../../../components/common/WorkspaceViews/WorkspaceViewEditor';
-import ComingSoonPage from '../../../components/common/ComingSoonPage/ComingSoonPage';
-
-// Workspace Views Phase 4 — adds the "Save current filters as a personal view" flow.
-// The page owns the editor state because we need to snapshot the current URL filters
-// at the moment the user clicks "+" (in the picker) or "Create new view" (in the drawer).
-
-const UnifiedDocumentsView = lazy(() => import('./UnifiedDocumentsView'));
-const CycleCountsListPage = lazy(() => import('../CycleCountsListPage'));
-
-const Loader = (
-  <div style={{ padding: 24, color: 'var(--ui-text-2)' }}>Loading…</div>
-);
+import { buildViewUrl, resolveActiveView } from '../../../utils/workspaceViews';
+import {
+  buildWmsDocumentsFilterFromState,
+  mapWmsDocumentsFilter,
+} from '../../../utils/workspaceViewsWmsDocumentsFilter';
+import { createWmsDocumentsColumns } from '../../../components/data/ListPage/columnSchemas/wmsDocumentsColumns';
+import s from './WmsDocumentsPage.module.css';
 
 const MODULE = 'wms.documents';
 const ROUTE_BASE = '/main/wms/documents';
+const DOCUMENT_TYPES = ['', 'PZ', 'WZ', 'MM', 'RW', 'PW', 'PZK', 'WZK'];
+const STATUS_OPTIONS = ['', 'draft', 'received', 'putaway', 'packing', 'shipped', 'cancelled', 'in_transit', 'posted'];
+const CREATE_OPTIONS = [
+  { type: 'PZ', to: '/main/wms/receipts/new' },
+  { type: 'MM', to: '/main/wms/transfers/new' },
+  { type: 'RW', to: '/main/wms/adjustments/new' },
+  { type: 'PW', to: '/main/wms/adjustments/new' },
+];
+
+function normalizePageQuery(query = {}) {
+  return {
+    page: Number(query.page) > 0 ? Number(query.page) : 1,
+    limit: Number(query.limit) > 0 ? Number(query.limit) : 25,
+    sort: query.sort || 'date',
+    dir: query.dir === 'ASC' ? 'ASC' : 'DESC',
+    search: query.search || undefined,
+    type: query.type || undefined,
+    status: query.status || undefined,
+    warehouseId: query.warehouseId || undefined,
+    dateFrom: query.dateFrom || undefined,
+    dateTo: query.dateTo || undefined,
+  };
+}
+
+function queryFromSearchParams(searchParams) {
+  return normalizePageQuery({
+    page: searchParams.get('page') || 1,
+    limit: searchParams.get('limit') || 25,
+    search: searchParams.get('search') || searchParams.get('q') || undefined,
+    type: searchParams.get('type') || undefined,
+    status: searchParams.get('status') || undefined,
+    warehouseId: searchParams.get('warehouseId') || undefined,
+    dateFrom: searchParams.get('dateFrom') || undefined,
+    dateTo: searchParams.get('dateTo') || undefined,
+  });
+}
+
+function adaptWarehouseDocumentsResponse(data, fallbackQuery) {
+  const items = Array.isArray(data?.data) ? data.data : [];
+  const pagination = data?.pagination || {};
+  return {
+    items,
+    total: Number(pagination.total ?? items.length ?? 0),
+    page: Number(pagination.page ?? fallbackQuery.page ?? 1),
+    limit: Number(pagination.limit ?? fallbackQuery.limit ?? 25),
+  };
+}
+
+function CreateDocumentMenu({ t, onCreate }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onMouseDown = (event) => {
+      if (wrapRef.current?.contains(event.target)) return;
+      setOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div className={s.createMenuWrap} ref={wrapRef}>
+      <AddButton onClick={() => setOpen((current) => !current)}>
+        {t('wms.documents.actions.create')}
+      </AddButton>
+      {open ? (
+        <div className={s.createMenu} role="menu">
+          {CREATE_OPTIONS.map((option) => (
+            <button
+              key={option.type}
+              type="button"
+              className={s.createMenuItem}
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onCreate(option.to);
+              }}
+            >
+              {t(`wms.documents.createTypes.${option.type}`, option.type)}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export default function WmsDocumentsPage() {
   const [searchParams] = useSearchParams();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const drawerOpenModule = useSelector(selectManageDrawerModule);
   const drawerOpen = drawerOpenModule === MODULE;
   const viewParam = (searchParams.get('view') || '').toLowerCase();
   const viewIdParam = searchParams.get('viewId') || null;
+
+  const [query, setQuery] = useState(() => queryFromSearchParams(searchParams));
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorFilter, setEditorFilter] = useState({ where: [] });
+  const appliedViewRef = useRef('');
+
+  const {
+    colWidths,
+    colOrder,
+    colVisibility,
+    onColumnResize,
+    onColumnOrderChange,
+    onColumnVisibilityChange,
+    resetGridPrefs,
+  } = useGridPrefs(MODULE);
 
   const { data: viewsResp } = useListWorkspaceViewsQuery({ module: MODULE });
   const views = useMemo(
@@ -47,21 +157,73 @@ export default function WmsDocumentsPage() {
     [views, viewIdParam, viewParam]
   );
 
-  // Editor state — `editorFilter` is the snapshot the editor renders as chips. We
-  // snapshot at open time so a quick URL change while the modal is open doesn't
-  // mutate the saved filter under the user.
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editorFilter, setEditorFilter] = useState({ where: [] });
+  const activeViewFilterParams = useMemo(
+    () => mapWmsDocumentsFilter(activeView?.filter),
+    [activeView]
+  );
+
+  useEffect(() => {
+    if (!activeView) return;
+    const activeKey = `${activeView.id || activeView.key || ''}:${JSON.stringify(activeViewFilterParams)}`;
+    if (appliedViewRef.current === activeKey) return;
+    appliedViewRef.current = activeKey;
+    setQuery((current) => normalizePageQuery({
+      ...current,
+      page: 1,
+      search: undefined,
+      type: undefined,
+      status: undefined,
+      warehouseId: undefined,
+      dateFrom: undefined,
+      dateTo: undefined,
+      ...activeViewFilterParams,
+    }));
+  }, [activeView, activeViewFilterParams]);
+
+  const listQuery = useMemo(() => normalizePageQuery(query), [query]);
+  const { data, isFetching, error, refetch } = useListWarehouseDocumentsQuery(listQuery);
+  const adapted = useMemo(
+    () => adaptWarehouseDocumentsResponse(data, listQuery),
+    [data, listQuery]
+  );
+
+  const openDetail = useCallback(
+    (row) => {
+      const route = row?.route;
+      if (!route) return;
+      navigate(route);
+    },
+    [navigate]
+  );
+
+  const columns = useMemo(
+    () => createWmsDocumentsColumns({ onOpenDetail: openDetail, t, locale: i18n.language }),
+    [openDetail, t, i18n.language]
+  );
+
+  const typeOptions = useMemo(
+    () => DOCUMENT_TYPES.map((value) => ({
+      value,
+      label: value ? t(`wms.documents.types.${value}`, value) : t('common.all'),
+    })),
+    [t]
+  );
+
+  const statusOptions = useMemo(
+    () => STATUS_OPTIONS.map((value) => ({
+      value,
+      label: value ? t(`statuses.${value}`, value) : t('common.all'),
+    })),
+    [t]
+  );
 
   const openEditor = useCallback(() => {
-    setEditorFilter(buildWmsDocumentsFilterFromUrl(searchParams));
+    setEditorFilter(buildWmsDocumentsFilterFromState(listQuery));
     setEditorOpen(true);
-  }, [searchParams]);
+  }, [listQuery]);
+
   const closeEditor = useCallback(() => setEditorOpen(false), []);
 
-  // After successful create: close the editor and navigate to the new personal view.
-  // The picker / sidebar / drawer all refresh via the LIST tag invalidation in the
-  // createWorkspaceView mutation.
   const onCreated = useCallback((created) => {
     setEditorOpen(false);
     if (created && created.id) {
@@ -69,64 +231,82 @@ export default function WmsDocumentsPage() {
     }
   }, [navigate]);
 
-  const drawer = (
-    <WorkspaceViewsDrawer
-      module={MODULE}
-      open={drawerOpen}
-      onClose={() => dispatch(closeManageDrawer())}
-      onCreate={openEditor}
-    />
-  );
-
-  const editor = (
-    <WorkspaceViewEditor
-      open={editorOpen}
-      module={MODULE}
-      initialFilter={editorFilter}
-      onClose={closeEditor}
-      onCreated={onCreated}
-    />
-  );
-
-  // Legacy placeholder views are still reachable via ?view=. We don't seed them as
-  // system views in MVP, so they won't normally appear in the workspace_views list —
-  // but if a stale bookmark hits the page we still serve a reasonable response.
-  if (viewParam === 'inventory') {
-    return (
-      <>
-        <Suspense fallback={Loader}><CycleCountsListPage /></Suspense>
-        {drawer}
-        {editor}
-      </>
-    );
-  }
-  if (viewParam === 'returns') {
-    const placeholderTitle = t(`wmsViews.${viewParam}`, viewParam.toUpperCase());
-    return (
-      <>
-        <ComingSoonPage
-          title={placeholderTitle}
-          moduleName={`wms.documents.${viewParam}`}
-          descriptionKey="wmsViews.placeholderDescription"
-        />
-        {drawer}
-        {editor}
-      </>
-    );
-  }
+  const activeViewId = activeView?.id || null;
+  const activeViewKey = activeView?.scope === 'system' ? activeView?.key || null : null;
 
   return (
     <>
-      <Suspense fallback={Loader}>
-        <UnifiedDocumentsView
-          module={MODULE}
-          routeBase={ROUTE_BASE}
-          activeView={activeView}
-          onCreateView={openEditor}
-        />
-      </Suspense>
-      {drawer}
-      {editor}
+      <ListPage
+        source="wmsDocuments"
+        externalData={adapted.items}
+        externalMeta={{ total: adapted.total, page: adapted.page, limit: adapted.limit }}
+        externalLoading={isFetching}
+        externalError={error}
+        onExternalRefetch={refetch}
+        query={listQuery}
+        onQueryChange={(next) => setQuery(normalizePageQuery(next))}
+        columns={columns}
+        defaultQuery={{ sort: 'date', dir: 'DESC', limit: 25 }}
+        emptyStateText={t('wms.documents.empty')}
+        actions={<CreateDocumentMenu t={t} onCreate={navigate} />}
+        columnWidths={colWidths}
+        onColumnResize={onColumnResize}
+        columnOrder={colOrder}
+        onColumnOrderChange={onColumnOrderChange}
+        columnVisibility={colVisibility}
+        onColumnVisibilityChange={onColumnVisibilityChange}
+        onResetColumns={resetGridPrefs}
+        enableSavedViews={false}
+        dynamicColumnsMode="none"
+        ToolbarComponent={(props) => (
+          <FilterToolbar
+            {...props}
+            controls={[
+              {
+                type: 'search',
+                key: 'search',
+                placeholder: t('wms.documents.search'),
+                debounce: 350,
+              },
+              {
+                type: 'select',
+                key: 'type',
+                label: t('wms.documents.filters.type'),
+                options: typeOptions,
+              },
+              {
+                type: 'select',
+                key: 'status',
+                label: t('common.status'),
+                options: statusOptions,
+              },
+            ]}
+            extra={(
+              <WorkspaceViewPicker
+                module={MODULE}
+                routeBase={ROUTE_BASE}
+                activeViewId={activeViewId}
+                activeViewKey={activeViewKey}
+                onCreateView={openEditor}
+              />
+            )}
+          />
+        )}
+      />
+
+      <WorkspaceViewsDrawer
+        module={MODULE}
+        open={drawerOpen}
+        onClose={() => dispatch(closeManageDrawer())}
+        onCreate={openEditor}
+      />
+      <WorkspaceViewEditor
+        open={editorOpen}
+        module={MODULE}
+        initialFilter={editorFilter}
+        onClose={closeEditor}
+        onCreated={onCreated}
+      />
     </>
   );
 }

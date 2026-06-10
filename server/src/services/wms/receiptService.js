@@ -8,6 +8,15 @@ const costingService = require('./costingService');
 const { resolveDefaultWarehouseId } = require('./warehouseResolver');
 const { Receipt, ReceiptItem, StockMove, CostLayer, Product, ProductVariant } = require('../../models');
 const { assertDocumentTypeEnabled, generateNextDocumentNumber } = require('../crm/documentNumberingService');
+const {
+  enrichReceiptDto,
+  enrichStockMoveRows,
+  inboundLocationInclude,
+  productInclude,
+  stockMoveIncludes,
+  variantInclude,
+  warehouseInclude,
+} = require('./wmsDto');
 
 function asText(value) {
   return String(value ?? '').trim();
@@ -30,6 +39,119 @@ function toPositiveQty(value) {
     throw new AppError(400, 'qty must be greater than 0', { code: 'VALIDATION_ERROR' });
   }
   return parsed;
+}
+
+function asOptionalUuid(value) {
+  const text = asText(value);
+  return text || null;
+}
+
+function asOptionalMoney(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = asNumber(value, NaN);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function currencyOrNull(value) {
+  const text = asText(value).toUpperCase();
+  return text || null;
+}
+
+function computeTotalCost(qtyExpected, unitCost) {
+  const qty = asNumber(qtyExpected, 0);
+  const cost = asOptionalMoney(unitCost);
+  if (!Number.isFinite(cost)) return null;
+  return round4(qty * cost);
+}
+
+async function assertDraftReceiptEditable(receipt, transaction) {
+  if (!receipt) return null;
+  if (receipt.parentDocumentId) {
+    throw new AppError(409, 'Correction receipt documents are immutable', {
+      code: 'CORRECTION_DOCUMENT_IMMUTABLE',
+      details: { receiptId: receipt.id, parentDocumentId: receipt.parentDocumentId },
+    });
+  }
+  if (receipt.status !== 'draft') {
+    throw new AppError(409, 'Receipt must be draft to edit', {
+      code: 'RECEIPT_NOT_DRAFT',
+      details: { receiptId: receipt.id, status: receipt.status },
+    });
+  }
+
+  const [receivedCount, moveCount] = await Promise.all([
+    ReceiptItem.count({
+      where: {
+        receiptId: receipt.id,
+        qtyReceived: { [Op.gt]: 0 },
+      },
+      transaction,
+    }),
+    StockMove.count({
+      where: {
+        companyId: receipt.companyId,
+        refType: 'PZ',
+        refId: receipt.id,
+      },
+      transaction,
+    }),
+  ]);
+
+  if (receivedCount > 0 || moveCount > 0) {
+    throw new AppError(409, 'Receipt cannot be edited after receiving has started', {
+      code: 'RECEIPT_ALREADY_RECEIVED',
+      details: { receiptId: receipt.id, receivedCount, moveCount },
+    });
+  }
+
+  return receipt;
+}
+
+async function loadEditableDraftReceipt(companyId, receiptId, transaction) {
+  if (!receiptId) {
+    throw new AppError(400, 'receiptId is required', { code: 'VALIDATION_ERROR' });
+  }
+  const receipt = await Receipt.findOne({
+    where: { id: receiptId, companyId },
+    transaction,
+    lock: transaction?.LOCK?.UPDATE,
+  });
+  if (!receipt) return null;
+  await assertDraftReceiptEditable(receipt, transaction);
+  return receipt;
+}
+
+function buildDraftItemPayload(payload = {}, existing = null) {
+  const productId = payload.productId !== undefined
+    ? asOptionalUuid(payload.productId)
+    : existing?.productId || null;
+  if (!productId) {
+    throw new AppError(400, 'productId is required', { code: 'VALIDATION_ERROR' });
+  }
+
+  const qtySource = payload.qtyExpected !== undefined ? payload.qtyExpected : payload.qty;
+  const qtyExpected = qtySource !== undefined
+    ? toPositiveQty(qtySource)
+    : asNumber(existing?.qtyExpected, NaN);
+  if (!Number.isFinite(qtyExpected) || qtyExpected <= 0) {
+    throw new AppError(400, 'qtyExpected must be greater than 0', { code: 'VALIDATION_ERROR' });
+  }
+
+  const nextUnitCost = payload.unitCost !== undefined
+    ? asOptionalMoney(payload.unitCost)
+    : (existing ? asOptionalMoney(existing.unitCost) : null);
+
+  return {
+    productId,
+    variantId: payload.variantId !== undefined ? asOptionalUuid(payload.variantId) : existing?.variantId ?? null,
+    lotNumber: payload.lotNumber !== undefined ? asText(payload.lotNumber) || null : existing?.lotNumber ?? null,
+    serialNumber: payload.serialNumber !== undefined ? asText(payload.serialNumber) || null : existing?.serialNumber ?? null,
+    qtyExpected: round4(qtyExpected),
+    qtyReceived: 0,
+    unitCost: nextUnitCost,
+    totalCost: computeTotalCost(qtyExpected, nextUnitCost),
+    currency: payload.currency !== undefined ? currencyOrNull(payload.currency) : existing?.currency ?? null,
+  };
 }
 
 // Resolves the per-unit cost for an incoming PZ line using the documented fallback chain:
@@ -140,11 +262,7 @@ module.exports.create = async (companyId, data, outerTx = null) => {
       );
     }
 
-    return Receipt.findOne({
-      where: { id: receipt.id, companyId },
-      include: [{ model: ReceiptItem, as: 'items' }],
-      transaction: t,
-    });
+    return module.exports.getById(companyId, receipt.id, { transaction: t });
   }, outerTx);
 };
 
@@ -161,11 +279,23 @@ module.exports.receiveLine = async (companyId, receiptItemId, { qty, toLocationI
 
     const receipt = await Receipt.findOne({
       where: { id: item.receiptId, companyId },
-      attributes: ['id', 'companyId', 'warehouseId'],
+      attributes: ['id', 'companyId', 'warehouseId', 'status', 'parentDocumentId'],
       transaction: t,
       lock: t.LOCK.UPDATE,
     });
     if (!receipt) return null;
+    if (receipt.parentDocumentId) {
+      throw new AppError(409, 'Correction receipt documents are immutable', {
+        code: 'CORRECTION_DOCUMENT_IMMUTABLE',
+        details: { receiptId: receipt.id, parentDocumentId: receipt.parentDocumentId },
+      });
+    }
+    if (receipt.status !== 'draft') {
+      throw new AppError(409, 'Receipt must be draft to receive', {
+        code: 'RECEIPT_NOT_DRAFT',
+        details: { receiptId: receipt.id, status: receipt.status },
+      });
+    }
 
     const qtyExpected = asNumber(item.qtyExpected, 0);
     const qtyReceived = asNumber(item.qtyReceived, 0);
@@ -259,6 +389,90 @@ module.exports.receiveLine = async (companyId, receiptItemId, { qty, toLocationI
   }, outerTx);
 };
 
+module.exports.updateDraft = async (companyId, receiptId, payload = {}, outerTx = null) => {
+  return withTx(async (t) => {
+    const receipt = await loadEditableDraftReceipt(companyId, receiptId, t);
+    if (!receipt) return null;
+
+    const updates = {};
+    if (payload.warehouseId !== undefined) {
+      const warehouseId = asOptionalUuid(payload.warehouseId);
+      if (!warehouseId) {
+        throw new AppError(400, 'warehouseId is required', { code: 'VALIDATION_ERROR' });
+      }
+      updates.warehouseId = warehouseId;
+      if (warehouseId !== asText(receipt.warehouseId)
+        && payload.inboundLocationId === undefined
+        && payload.locationId === undefined) {
+        updates.inboundLocationId = null;
+      }
+    }
+    if (payload.inboundLocationId !== undefined || payload.locationId !== undefined) {
+      updates.inboundLocationId = asOptionalUuid(
+        payload.inboundLocationId !== undefined ? payload.inboundLocationId : payload.locationId
+      );
+    }
+
+    if (Object.keys(updates).length) {
+      await receipt.update(updates, { transaction: t });
+    }
+
+    return module.exports.getById(companyId, receipt.id, { transaction: t });
+  }, outerTx);
+};
+
+module.exports.addDraftItem = async (companyId, receiptId, payload = {}, outerTx = null) => {
+  return withTx(async (t) => {
+    const receipt = await loadEditableDraftReceipt(companyId, receiptId, t);
+    if (!receipt) return null;
+
+    await ReceiptItem.create(
+      {
+        receiptId: receipt.id,
+        ...buildDraftItemPayload(payload),
+      },
+      { transaction: t }
+    );
+
+    return module.exports.getById(companyId, receipt.id, { transaction: t });
+  }, outerTx);
+};
+
+module.exports.updateDraftItem = async (companyId, receiptId, itemId, payload = {}, outerTx = null) => {
+  return withTx(async (t) => {
+    const receipt = await loadEditableDraftReceipt(companyId, receiptId, t);
+    if (!receipt) return null;
+
+    const item = await ReceiptItem.findOne({
+      where: { id: itemId, receiptId: receipt.id },
+      transaction: t,
+      lock: t.LOCK.UPDATE,
+    });
+    if (!item) return null;
+
+    await item.update(buildDraftItemPayload(payload, item), { transaction: t });
+
+    return module.exports.getById(companyId, receipt.id, { transaction: t });
+  }, outerTx);
+};
+
+module.exports.removeDraftItem = async (companyId, receiptId, itemId, outerTx = null) => {
+  return withTx(async (t) => {
+    const receipt = await loadEditableDraftReceipt(companyId, receiptId, t);
+    if (!receipt) return null;
+
+    const item = await ReceiptItem.findOne({
+      where: { id: itemId, receiptId: receipt.id },
+      transaction: t,
+      lock: t.LOCK.UPDATE,
+    });
+    if (!item) return null;
+
+    await item.destroy({ transaction: t });
+    return module.exports.getById(companyId, receipt.id, { transaction: t });
+  }, outerTx);
+};
+
 // K1.3 — createReceiptCorrection (PZK).
 //
 // Posts a PZK (PZ_KOREKTA) against an already-completed PZ. MVP policy:
@@ -318,7 +532,7 @@ module.exports.createReceiptCorrection = async (companyId, receiptId, payload = 
     }
     if (!['received', 'putaway'].includes(original.status)) {
       throw new AppError(409, `Receipt must be received/putaway to correct (current: ${original.status})`, {
-        code: 'RECEIPT_NOT_POSTED',
+        code: 'RECEIPT_NOT_CORRECTABLE',
         details: { receiptId, status: original.status },
       });
     }
@@ -485,12 +699,7 @@ module.exports.createReceiptCorrection = async (companyId, receiptId, payload = 
       { where: { id: original.id, companyId }, transaction: t }
     );
 
-    return Receipt.findOne({
-      where: { id: pzk.id, companyId },
-      include: [{ model: ReceiptItem, as: 'items' }],
-      order: [[{ model: ReceiptItem, as: 'items' }, 'createdAt', 'ASC']],
-      transaction: t,
-    });
+    return module.exports.getById(companyId, pzk.id, { transaction: t });
   }, options.transaction || null);
 };
 
@@ -516,12 +725,15 @@ module.exports.list = async (companyId, query = {}, options = {}) => {
 module.exports.getById = async (companyId, id, options = {}) => {
   const transaction = options.transaction || null;
   if (!id) return null;
-  return Receipt.findOne({
+  const row = await Receipt.findOne({
     where: { id, companyId },
     include: [
+      warehouseInclude,
+      inboundLocationInclude,
       {
         model: ReceiptItem,
         as: 'items',
+        include: [productInclude, variantInclude],
       },
       {
         model: Receipt,
@@ -537,6 +749,7 @@ module.exports.getById = async (companyId, id, options = {}) => {
     order: [[{ model: ReceiptItem, as: 'items' }, 'createdAt', 'ASC']],
     transaction,
   });
+  return enrichReceiptDto(row);
 };
 
 // listStockMoves: возвращает историю движений по PZ-документу.
@@ -560,13 +773,14 @@ module.exports.listStockMoves = async (companyId, receiptId, query = {}, options
 
   const { rows, count } = await StockMove.findAndCountAll({
     where,
+    include: stockMoveIncludes,
     order: [['createdAt', 'ASC']],
     limit,
     offset,
     transaction,
   });
 
-  return { rows, count, page, limit };
+  return { rows: enrichStockMoveRows(rows), count, page, limit };
 };
 
 // listItemStockMoves: возвращает историю движений по строке PZ через refItemId.
@@ -590,6 +804,7 @@ module.exports.listItemStockMoves = async (companyId, receiptItemId, query = {},
 
   const rows = await StockMove.findAll({
     where,
+    include: stockMoveIncludes,
     order: [['createdAt', 'ASC']],
     limit,
     offset,
@@ -609,6 +824,7 @@ module.exports.listItemStockMoves = async (companyId, receiptItemId, query = {},
         variantId: item.variantId ?? null,
         type: 'receipt',
       },
+      include: stockMoveIncludes,
       order: [['createdAt', 'ASC']],
       limit,
       offset,
@@ -618,7 +834,7 @@ module.exports.listItemStockMoves = async (companyId, receiptItemId, query = {},
   }
 
   return {
-    rows: mergedRows,
+    rows: enrichStockMoveRows(mergedRows),
     count: mergedRows.length,
     page,
     limit,

@@ -27,6 +27,50 @@ module.exports.receiveLine = async (req, res, next) => {
   }
 };
 
+module.exports.updateDraft = async (req, res, next) => {
+  try {
+    const companyId = req.user.companyId;
+    const row = await svc.updateDraft(companyId, req.params.id, req.body || {});
+    if (!row) return res.sendStatus(404);
+    res.status(200).send(row);
+  } catch (e) {
+    next(e);
+  }
+};
+
+module.exports.addDraftItem = async (req, res, next) => {
+  try {
+    const companyId = req.user.companyId;
+    const row = await svc.addDraftItem(companyId, req.params.id, req.body || {});
+    if (!row) return res.sendStatus(404);
+    res.status(201).send(row);
+  } catch (e) {
+    next(e);
+  }
+};
+
+module.exports.updateDraftItem = async (req, res, next) => {
+  try {
+    const companyId = req.user.companyId;
+    const row = await svc.updateDraftItem(companyId, req.params.id, req.params.itemId, req.body || {});
+    if (!row) return res.sendStatus(404);
+    res.status(200).send(row);
+  } catch (e) {
+    next(e);
+  }
+};
+
+module.exports.removeDraftItem = async (req, res, next) => {
+  try {
+    const companyId = req.user.companyId;
+    const row = await svc.removeDraftItem(companyId, req.params.id, req.params.itemId);
+    if (!row) return res.sendStatus(404);
+    res.status(200).send(row);
+  } catch (e) {
+    next(e);
+  }
+};
+
 // Возвращает список PZ-документов.
 module.exports.list = async (req, res, next) => {
   try {

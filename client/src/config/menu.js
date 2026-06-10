@@ -20,6 +20,13 @@ import {
   Warehouse,
   File,
   ArrowRightLeft,
+  BarChart3,
+  LayoutDashboard,
+  MapPin,
+  BookMarked,
+  Boxes,
+  Barcode,
+  PackageOpen,
 } from "lucide-react";
 
 export const MENU = [
@@ -54,7 +61,22 @@ export const MENU = [
   { key: "services", icon: Wrench, labelKey: "menu.services", route: "/main/pim/services", type: "item" },
 
   { key: "wms", icon: Warehouse, labelKey: "menu.wms", type: "section" },
+  { key: "wmsOverview", icon: LayoutDashboard, labelKey: "menu.wmsOverview", route: "/main/wms", type: "item" },
+  { key: "wmsReceipts", icon: File, labelKey: "menu.wmsReceipts", route: "/main/wms/receipts", type: "item" },
+  { key: "transfers", icon: ArrowRightLeft, labelKey: "menu.transfers", route: "/main/wms/transfers", type: "item" },
+  { key: "wmsShipments", icon: Truck, labelKey: "menu.wmsShipments", route: "/main/wms/shipments", type: "item" },
+  { key: "wmsPicks", icon: ClipboardList, labelKey: "menu.wmsPicks", route: "/main/wms/picks", type: "item" },
+  { key: "wmsNewShipment", icon: Truck, labelKey: "menu.wmsNewShipment", route: "/main/wms/shipments/new", type: "item" },
+  { key: "wmsAdjustments", icon: File, labelKey: "menu.wmsAdjustments", route: "/main/wms/adjustments", type: "item" },
+  { key: "wmsCycleCounts", icon: ClipboardList, labelKey: "menu.wmsCycleCounts", route: "/main/wms/cycle-counts", type: "item" },
   { key: "stockBalances", icon: Package, labelKey: "menu.stockBalances", route: "/main/wms/stock-balances", type: "item" },
+  { key: "wmsStockMoves", icon: ArrowRightLeft, labelKey: "menu.wmsStockMoves", route: "/main/wms/stock-moves", type: "item" },
+  { key: "wmsWarehouses", icon: Warehouse, labelKey: "menu.wmsWarehouses", route: "/main/wms/warehouses", type: "item" },
+  { key: "wmsLocations", icon: MapPin, labelKey: "menu.wmsLocations", route: "/main/wms/locations", type: "item" },
+  { key: "wmsReservations", icon: BookMarked, labelKey: "menu.wmsReservations", route: "/main/wms/reservations", type: "item" },
+  { key: "wmsLots", icon: Boxes, labelKey: "menu.wmsLots", route: "/main/wms/lots", type: "item" },
+  { key: "wmsSerials", icon: Barcode, labelKey: "menu.wmsSerials", route: "/main/wms/serials", type: "item" },
+  { key: "wmsParcels", icon: PackageOpen, labelKey: "menu.wmsParcels", route: "/main/wms/parcels", type: "item" },
   // Workspace Views Phase 2: pinned views render under this item via
   // <WorkspaceViewsSidebarSection module="wms.documents" />. The per-type list pages
   // (receipts/transfers/shipments/adjustments/cycle-counts) and reports are still
@@ -67,6 +89,7 @@ export const MENU = [
     type: "item",
     workspaceViewsModule: "wms.documents",
   },
+  { key: "wmsReports", icon: BarChart3, labelKey: "menu.wmsReports", route: "/main/wms/reports/stock-valuation", type: "item" },
 
   { key: "users", icon: Users, labelKey: "menu.users", route: "/main/company-users", type: "item" },
 ];

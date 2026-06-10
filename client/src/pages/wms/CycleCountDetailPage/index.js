@@ -6,6 +6,13 @@ import { Printer } from 'lucide-react';
 import ThemedSelect from '../../../components/inputs/RadixSelect';
 import OmsProductPicker from '../../../components/oms/OmsProductPicker';
 import {
+  buildLookupMap,
+  formatLocationLabel,
+  formatProductLabel,
+  formatVariantLabel,
+  formatWarehouseLabel,
+} from '../../../components/documents/DocumentEngine/wmsDisplay';
+import {
   useAddCycleCountItemsMutation,
   useGetCycleCountByIdQuery,
   useListInventoryItemsQuery,
@@ -127,7 +134,7 @@ export default function CycleCountDetailPage() {
       { value: '', label: t('wms.cycleCounts.selectLocation', 'Select location') },
       ...rows.map((row) => ({
         value: row.id,
-        label: [asText(row.code), asText(row.type)].filter(Boolean).join(' · ') || row.id,
+        label: formatLocationLabel(row),
       })),
     ];
   }, [locationsData?.items, t]);
@@ -137,17 +144,36 @@ export default function CycleCountDetailPage() {
     [inventoryItemsData?.items]
   );
 
-  const productLabelMap = useMemo(() => {
+  const locationsById = useMemo(() => {
+    const rows = [
+      ...(Array.isArray(locationsData?.items) ? locationsData.items : []),
+      ...(Array.isArray(cycleCount?.items) ? cycleCount.items.map((row) => row?.location).filter(Boolean) : []),
+      ...inventoryItems.map((row) => row?.location).filter(Boolean),
+    ];
+    return buildLookupMap(rows);
+  }, [cycleCount?.items, inventoryItems, locationsData?.items]);
+
+  const productsById = useMemo(() => {
+    const rows = [
+      ...(Array.isArray(cycleCount?.items) ? cycleCount.items.map((row) => row?.product).filter(Boolean) : []),
+      ...inventoryItems.map((row) => row?.product).filter(Boolean),
+    ];
+    return buildLookupMap(rows);
+  }, [cycleCount?.items, inventoryItems]);
+
+  const variantsById = useMemo(() => {
+    const rows = [
+      ...(Array.isArray(cycleCount?.items) ? cycleCount.items.map((row) => row?.variant).filter(Boolean) : []),
+      ...inventoryItems.map((row) => row?.variant).filter(Boolean),
+    ];
+    return buildLookupMap(rows);
+  }, [cycleCount?.items, inventoryItems]);
+
+  const inventoryRowsByKey = useMemo(() => {
     const map = new Map();
     inventoryItems.forEach((row) => {
-      const productId = asText(row?.productId);
-      if (!productId) return;
-      const productName = asText(row?.product?.name);
-      const sku = asText(row?.product?.sku);
-      const label = productName ? `${productName}${sku ? ` (${sku})` : ''}` : (sku || productId);
-      if (!map.has(productId)) {
-        map.set(productId, label);
-      }
+      const key = lineKey(row);
+      if (!map.has(key)) map.set(key, row);
     });
     return map;
   }, [inventoryItems]);
@@ -168,13 +194,17 @@ export default function CycleCountDetailPage() {
 
     return Array.from(groupedCounted.entries()).map(([key, countedQty]) => {
       const source = countedItems.find((item) => lineKey(item) === key) || {};
+      const systemSource = inventoryRowsByKey.get(key) || {};
       const systemQty = round4(groupedSystem.get(key) || 0);
       const difference = round4(countedQty - systemQty);
       return {
         key,
         locationId: source.locationId || '',
+        location: source.location || systemSource.location || null,
         productId: source.productId || '',
+        product: source.product || systemSource.product || null,
         variantId: source.variantId || '',
+        variant: source.variant || systemSource.variant || null,
         lotId: source.lotId || '',
         serialId: source.serialId || '',
         countedQty,
@@ -182,7 +212,7 @@ export default function CycleCountDetailPage() {
         difference,
       };
     });
-  }, [cycleCount?.items, inventoryItems]);
+  }, [cycleCount?.items, inventoryItems, inventoryRowsByKey]);
 
   const summary = useMemo(() => {
     return differenceRows.reduce((acc, row) => {
@@ -299,6 +329,8 @@ export default function CycleCountDetailPage() {
     );
   }
 
+  const warehouseLabel = formatWarehouseLabel(cycleCount.warehouse || cycleCount.warehouseId);
+
   return (
     <div className={s.page}>
       <section className={s.mainCard}>
@@ -308,7 +340,7 @@ export default function CycleCountDetailPage() {
               {t('wms.cycleCounts.detailTitle', 'Inventory count sheet')} #{asText(cycleCount.id).slice(0, 8)}
             </h1>
             <p className={s.subtle}>
-              {t('wms.cycleCounts.detailSubtle', 'Warehouse')}: {cycleCount.warehouseId}
+              {t('wms.cycleCounts.detailSubtle', 'Warehouse')}: {warehouseLabel}
             </p>
           </div>
           <div className={s.headerActions}>
@@ -373,9 +405,9 @@ export default function CycleCountDetailPage() {
                       : '—';
                   return (
                     <tr key={row.key}>
-                      <td>{row.locationId || '—'}</td>
-                      <td>{productLabelMap.get(row.productId) || row.productId || '—'}</td>
-                      <td>{row.variantId || '—'}</td>
+                      <td>{formatLocationLabel(row.location || row.locationId, locationsById)}</td>
+                      <td>{formatProductLabel(row.product || row.productId, productsById)}</td>
+                      <td>{formatVariantLabel(row.variant || row.variantId, variantsById)}</td>
                       <td>{formatQty(row.countedQty, i18n.language)}</td>
                       <td>{formatQty(row.systemQty, i18n.language)}</td>
                       <td className={diffClass}>{formatQty(row.difference, i18n.language)}</td>

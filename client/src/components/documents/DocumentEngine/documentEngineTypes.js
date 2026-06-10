@@ -53,6 +53,7 @@
  * @property {'preview'|'edit'|'split'} [viewMode]
  * @property {(mode:string)=>void} [onViewModeChange]
  * @property {string[]} [viewModeDisabledModes]
+ * @property {string[]} [viewModeHiddenModes]
  * @property {boolean} [showPrintButton]
  * @property {Function} [onPrint]
  * @property {boolean} [showSaveButton]

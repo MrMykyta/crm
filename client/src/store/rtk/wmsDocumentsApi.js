@@ -25,7 +25,21 @@ function pickListParams(args = {}) {
   if (source.search) params.q = source.search;
   if (source.status) params.status = source.status;
   if (source.documentType) params.documentType = source.documentType;
+  if (source.orderId) params.orderId = source.orderId;
+  if (source.shipmentId) params.shipmentId = source.shipmentId;
   if (source.warehouseId) params.warehouseId = source.warehouseId;
+  if (source.locationId) params.locationId = source.locationId;
+  if (source.fromLocationId) params.fromLocationId = source.fromLocationId;
+  if (source.toLocationId) params.toLocationId = source.toLocationId;
+  if (source.productId) params.productId = source.productId;
+  if (source.variantId) params.variantId = source.variantId;
+  if (source.type) params.type = source.type;
+  if (source.refType) params.refType = source.refType;
+  if (source.refId) params.refId = source.refId;
+  if (source.sourceType) params.refType = source.sourceType;
+  if (source.sourceId) params.refId = source.sourceId;
+  if (source.dateFrom) params.dateFrom = source.dateFrom;
+  if (source.dateTo) params.dateTo = source.dateTo;
   if (source.sort) {
     const dir = String(source.dir || 'desc').toUpperCase();
     params.sort = `${source.sort}:${dir}`;
@@ -56,7 +70,7 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
     }),
     listWarehouses: build.query({
       query: (args = {}) => ({
-        url: '/warehouses',
+        url: '/wms/warehouses',
         method: 'GET',
         params: pickListParams(args),
       }),
@@ -71,7 +85,7 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
     }),
     createWarehouse: build.mutation({
       query: (payload = {}) => ({
-        url: '/warehouses',
+        url: '/wms/warehouses',
         method: 'POST',
         body: payload,
       }),
@@ -79,7 +93,7 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
     }),
     updateWarehouse: build.mutation({
       query: ({ id, ...payload }) => ({
-        url: `/warehouses/${id}`,
+        url: `/wms/warehouses/${id}`,
         method: 'PUT',
         body: payload,
       }),
@@ -90,7 +104,7 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
     }),
     listLocations: build.query({
       query: (args = {}) => ({
-        url: '/locations',
+        url: '/wms/locations',
         method: 'GET',
         params: pickListParams(args),
       }),
@@ -105,7 +119,7 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
     }),
     createLocation: build.mutation({
       query: (payload = {}) => ({
-        url: '/locations',
+        url: '/wms/locations',
         method: 'POST',
         body: payload,
       }),
@@ -113,7 +127,7 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
     }),
     updateLocation: build.mutation({
       query: ({ id, ...payload }) => ({
-        url: `/locations/${id}`,
+        url: `/wms/locations/${id}`,
         method: 'PUT',
         body: payload,
       }),
@@ -121,6 +135,21 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
         { type: 'WmsLocationList', id: 'LIST' },
         { type: 'WmsLocation', id: arg?.id },
       ],
+    }),
+    listStockMoves: build.query({
+      query: (args = {}) => ({
+        url: '/wms/stock-moves',
+        method: 'GET',
+        params: pickListParams(args),
+      }),
+      transformResponse: (resp, _meta, args) => normalizeHistoryResponse(resp, args),
+      providesTags: (result) => [
+        { type: 'WmsStockMoveList', id: 'LIST' },
+        ...(Array.isArray(result?.items)
+          ? result.items.filter((item) => item?.id).map((item) => ({ type: 'WmsStockMove', id: item.id }))
+          : []),
+      ],
+      keepUnusedDataFor: 60,
     }),
     getCostingOpeningBalanceStatus: build.query({
       query: () => ({
@@ -212,10 +241,17 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
         params: pickListParams(args),
       }),
       transformResponse: (resp, _meta, args) => normalizeListResponse(resp, args),
+      providesTags: (result) => [
+        { type: 'WmsReceiptList', id: 'LIST' },
+        ...(Array.isArray(result?.items)
+          ? result.items.filter((item) => item?.id).map((item) => ({ type: 'WmsReceipt', id: item.id }))
+          : []),
+      ],
       keepUnusedDataFor: 60,
     }),
     getReceiptById: build.query({
       query: (id) => ({ url: `/receipts/${id}`, method: 'GET' }),
+      providesTags: (_result, _error, id) => [{ type: 'WmsReceipt', id }],
       keepUnusedDataFor: 60,
     }),
     getReceiptStockMoves: build.query({
@@ -229,6 +265,10 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
         },
       }),
       transformResponse: (resp, _meta, args) => normalizeHistoryResponse(resp, args),
+      providesTags: (_result, _error, arg) => [
+        { type: 'WmsStockMoveList', id: 'LIST' },
+        { type: 'WmsReceipt', id: arg?.id },
+      ],
       keepUnusedDataFor: 60,
     }),
     createReceipt: build.mutation({
@@ -237,6 +277,10 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
         method: 'POST',
         body: payload,
       }),
+      invalidatesTags: [
+        { type: 'WmsReceiptList', id: 'LIST' },
+        { type: 'WmsDocumentsUnified', id: 'LIST' },
+      ],
     }),
     receiveReceiptLine: build.mutation({
       query: ({ itemId, payload = {} }) => ({
@@ -244,6 +288,60 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
         method: 'POST',
         body: payload,
       }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'WmsReceiptList', id: 'LIST' },
+        { type: 'WmsReceipt', id: arg?.receiptId },
+        { type: 'WmsStockMoveList', id: 'LIST' },
+        { type: 'WmsDocumentsUnified', id: 'LIST' },
+        { type: 'ProductList', id: 'WMS_STOCK_BALANCES' },
+      ],
+    }),
+    updateReceiptDraft: build.mutation({
+      query: ({ id, payload = {} }) => ({
+        url: `/wms/receipts/${id}`,
+        method: 'PATCH',
+        body: payload,
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'WmsReceiptList', id: 'LIST' },
+        { type: 'WmsReceipt', id: arg?.id },
+        { type: 'WmsDocumentsUnified', id: 'LIST' },
+      ],
+    }),
+    addReceiptDraftItem: build.mutation({
+      query: ({ id, payload = {} }) => ({
+        url: `/wms/receipts/${id}/items`,
+        method: 'POST',
+        body: payload,
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'WmsReceiptList', id: 'LIST' },
+        { type: 'WmsReceipt', id: arg?.id },
+        { type: 'WmsDocumentsUnified', id: 'LIST' },
+      ],
+    }),
+    updateReceiptDraftItem: build.mutation({
+      query: ({ id, itemId, payload = {} }) => ({
+        url: `/wms/receipts/${id}/items/${itemId}`,
+        method: 'PATCH',
+        body: payload,
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'WmsReceiptList', id: 'LIST' },
+        { type: 'WmsReceipt', id: arg?.id },
+        { type: 'WmsDocumentsUnified', id: 'LIST' },
+      ],
+    }),
+    removeReceiptDraftItem: build.mutation({
+      query: ({ id, itemId }) => ({
+        url: `/wms/receipts/${id}/items/${itemId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'WmsReceiptList', id: 'LIST' },
+        { type: 'WmsReceipt', id: arg?.id },
+        { type: 'WmsDocumentsUnified', id: 'LIST' },
+      ],
     }),
     createReceiptCorrection: build.mutation({
       query: ({ id, payload = {} }) => ({
@@ -302,10 +400,17 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
         params: pickListParams(args),
       }),
       transformResponse: (resp, _meta, args) => normalizeListResponse(resp, args),
+      providesTags: (result) => [
+        { type: 'WmsShipmentList', id: 'LIST' },
+        ...(Array.isArray(result?.items)
+          ? result.items.filter((item) => item?.id).map((item) => ({ type: 'WmsShipment', id: item.id }))
+          : []),
+      ],
       keepUnusedDataFor: 60,
     }),
     getShipmentById: build.query({
       query: (id) => ({ url: `/shipments/${id}`, method: 'GET' }),
+      providesTags: (_result, _error, id) => [{ type: 'WmsShipment', id }],
       keepUnusedDataFor: 60,
     }),
     getShipmentStockMoves: build.query({
@@ -319,7 +424,86 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
         },
       }),
       transformResponse: (resp, _meta, args) => normalizeHistoryResponse(resp, args),
+      providesTags: (_result, _error, arg) => [
+        { type: 'WmsStockMoveList', id: 'LIST' },
+        { type: 'WmsShipment', id: arg?.id },
+      ],
       keepUnusedDataFor: 60,
+    }),
+    shipShipmentItem: build.mutation({
+      query: ({ itemId, payload = {} }) => ({
+        url: `/wms/shipments/item/${itemId}/ship`,
+        method: 'POST',
+        body: payload,
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'WmsShipmentList', id: 'LIST' },
+        { type: 'WmsShipment', id: arg?.shipmentId },
+        { type: 'WmsStockMoveList', id: 'LIST' },
+        { type: 'WmsDocumentsUnified', id: 'LIST' },
+        { type: 'ProductList', id: 'WMS_STOCK_BALANCES' },
+      ],
+    }),
+    listPickWaves: build.query({
+      query: (args = {}) => ({
+        url: '/wms/pick-waves',
+        method: 'GET',
+        params: {
+          page: args.page,
+          limit: args.limit,
+          sort: args.sort,
+          dir: args.dir,
+          status: args.status,
+          warehouseId: args.warehouseId,
+        },
+      }),
+      transformResponse: (resp, _meta, args) => normalizeListResponse(resp, args),
+      providesTags: (result) => [
+        { type: 'WmsPickWaveList', id: 'LIST' },
+        ...(Array.isArray(result?.items)
+          ? result.items.filter((item) => item?.id).map((item) => ({ type: 'WmsPickWave', id: item.id }))
+          : []),
+      ],
+      keepUnusedDataFor: 60,
+    }),
+    listPickTasks: build.query({
+      query: (args = {}) => ({
+        url: '/wms/pick-tasks',
+        method: 'GET',
+        params: {
+          page: args.page,
+          limit: args.limit,
+          sort: args.sort,
+          dir: args.dir,
+          status: args.status,
+        },
+      }),
+      transformResponse: (resp, _meta, args) => normalizeListResponse(resp, args),
+      providesTags: (result) => [
+        { type: 'WmsPickTaskList', id: 'LIST' },
+        ...(Array.isArray(result?.items)
+          ? result.items.filter((item) => item?.id).map((item) => ({ type: 'WmsPickTask', id: item.id }))
+          : []),
+      ],
+      keepUnusedDataFor: 60,
+    }),
+    completePickTask: build.mutation({
+      query: (id) => ({
+        url: `/wms/picks/task/${encodeURIComponent(id)}/complete`,
+        method: 'POST',
+        body: {},
+      }),
+      invalidatesTags: [
+        { type: 'WmsPickTaskList', id: 'LIST' },
+        { type: 'WmsPickWaveList', id: 'LIST' },
+      ],
+    }),
+    createShipment: build.mutation({
+      query: (payload = {}) => ({
+        url: '/wms/shipments',
+        method: 'POST',
+        body: payload,
+      }),
     }),
     createShipmentCorrection: build.mutation({
       query: ({ id, payload = {} }) => ({
@@ -382,6 +566,133 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: 'WmsAdjustmentList', id: 'LIST' }],
     }),
+    // Phase 4B-1 — Reservations (read-only UI). Backend list/detail exist; the whole
+    // reservation router is guarded by `wms:reservation:manage`. Create/release are
+    // intentionally NOT exposed: the real reservation lifecycle is order-driven
+    // (reserveOrder/releaseOrderReservations) and the generic CRUD bypasses stock recalc.
+    listReservations: build.query({
+      query: (args = {}) => ({
+        url: '/wms/reservations',
+        method: 'GET',
+        params: pickListParams(args),
+      }),
+      transformResponse: (resp, _meta, args) => normalizeListResponse(resp, args),
+      providesTags: (result) => [
+        { type: 'WmsReservationList', id: 'LIST' },
+        ...(Array.isArray(result?.items)
+          ? result.items.filter((item) => item?.id).map((item) => ({ type: 'WmsReservation', id: item.id }))
+          : []),
+      ],
+      keepUnusedDataFor: 60,
+    }),
+    getReservationById: build.query({
+      query: (id) => ({ url: `/wms/reservations/${id}`, method: 'GET' }),
+      providesTags: (_result, _error, id) => [{ type: 'WmsReservation', id }],
+      keepUnusedDataFor: 60,
+    }),
+
+    // Phase 4B-1 — Lots (read-only UI). Backend supports productId + `q` (lotNumber) filters.
+    // create/update mutations are wired to the existing generic backend CRUD for Phase 4B-2.
+    listLots: build.query({
+      query: (args = {}) => ({
+        url: '/wms/lots',
+        method: 'GET',
+        params: pickListParams(args),
+      }),
+      transformResponse: (resp, _meta, args) => normalizeListResponse(resp, args),
+      providesTags: (result) => [
+        { type: 'WmsLotList', id: 'LIST' },
+        ...(Array.isArray(result?.items)
+          ? result.items.filter((item) => item?.id).map((item) => ({ type: 'WmsLot', id: item.id }))
+          : []),
+      ],
+      keepUnusedDataFor: 60,
+    }),
+    getLotById: build.query({
+      query: (id) => ({ url: `/wms/lots/${id}`, method: 'GET' }),
+      providesTags: (_result, _error, id) => [{ type: 'WmsLot', id }],
+      keepUnusedDataFor: 60,
+    }),
+    createLot: build.mutation({
+      query: (payload = {}) => ({ url: '/wms/lots', method: 'POST', body: payload }),
+      invalidatesTags: [{ type: 'WmsLotList', id: 'LIST' }],
+    }),
+    updateLot: build.mutation({
+      query: ({ id, ...payload }) => ({ url: `/wms/lots/${id}`, method: 'PUT', body: payload }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'WmsLotList', id: 'LIST' },
+        { type: 'WmsLot', id: arg?.id },
+      ],
+    }),
+
+    // Phase 4B-1 — Serials (read-only UI). Backend supports productId + `q` (serialNumber) filters.
+    listSerials: build.query({
+      query: (args = {}) => ({
+        url: '/wms/serials',
+        method: 'GET',
+        params: pickListParams(args),
+      }),
+      transformResponse: (resp, _meta, args) => normalizeListResponse(resp, args),
+      providesTags: (result) => [
+        { type: 'WmsSerialList', id: 'LIST' },
+        ...(Array.isArray(result?.items)
+          ? result.items.filter((item) => item?.id).map((item) => ({ type: 'WmsSerial', id: item.id }))
+          : []),
+      ],
+      keepUnusedDataFor: 60,
+    }),
+    getSerialById: build.query({
+      query: (id) => ({ url: `/wms/serials/${id}`, method: 'GET' }),
+      providesTags: (_result, _error, id) => [{ type: 'WmsSerial', id }],
+      keepUnusedDataFor: 60,
+    }),
+    createSerial: build.mutation({
+      query: (payload = {}) => ({ url: '/wms/serials', method: 'POST', body: payload }),
+      invalidatesTags: [{ type: 'WmsSerialList', id: 'LIST' }],
+    }),
+    updateSerial: build.mutation({
+      query: ({ id, ...payload }) => ({ url: `/wms/serials/${id}`, method: 'PUT', body: payload }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'WmsSerialList', id: 'LIST' },
+        { type: 'WmsSerial', id: arg?.id },
+      ],
+    }),
+
+    // Phase 4B-1 — Parcels (read-only UI). Backend supports shipmentId + `q` (carrier/tracking)
+    // filters. NOTE: backend list currently filters by a non-existent `companyId` column on the
+    // Parcel model, so GET /wms/parcels can error — the UI surfaces this via its error state.
+    listParcels: build.query({
+      query: (args = {}) => ({
+        url: '/wms/parcels',
+        method: 'GET',
+        params: pickListParams(args),
+      }),
+      transformResponse: (resp, _meta, args) => normalizeListResponse(resp, args),
+      providesTags: (result) => [
+        { type: 'WmsParcelList', id: 'LIST' },
+        ...(Array.isArray(result?.items)
+          ? result.items.filter((item) => item?.id).map((item) => ({ type: 'WmsParcel', id: item.id }))
+          : []),
+      ],
+      keepUnusedDataFor: 60,
+    }),
+    getParcelById: build.query({
+      query: (id) => ({ url: `/wms/parcels/${id}`, method: 'GET' }),
+      providesTags: (_result, _error, id) => [{ type: 'WmsParcel', id }],
+      keepUnusedDataFor: 60,
+    }),
+    createParcel: build.mutation({
+      query: (payload = {}) => ({ url: '/wms/parcels', method: 'POST', body: payload }),
+      invalidatesTags: [{ type: 'WmsParcelList', id: 'LIST' }],
+    }),
+    updateParcel: build.mutation({
+      query: ({ id, ...payload }) => ({ url: `/wms/parcels/${id}`, method: 'PUT', body: payload }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'WmsParcelList', id: 'LIST' },
+        { type: 'WmsParcel', id: arg?.id },
+      ],
+    }),
+
     // WMS-DOCS-2 — unified PZ/WZ/MM/RW/PW list. The backend already returns the
     // normalised row shape, so no transformResponse is needed.
     listWarehouseDocuments: build.query({
@@ -420,6 +731,7 @@ export const {
   useListLocationsQuery,
   useCreateLocationMutation,
   useUpdateLocationMutation,
+  useListStockMovesQuery,
   useGetCostingOpeningBalanceStatusQuery,
   useDryRunCostingOpeningBalanceMutation,
   useInitializeCostingOpeningBalanceMutation,
@@ -435,6 +747,10 @@ export const {
   useGetReceiptStockMovesQuery,
   useCreateReceiptMutation,
   useReceiveReceiptLineMutation,
+  useUpdateReceiptDraftMutation,
+  useAddReceiptDraftItemMutation,
+  useUpdateReceiptDraftItemMutation,
+  useRemoveReceiptDraftItemMutation,
   useCreateReceiptCorrectionMutation,
   useListTransfersQuery,
   useGetTransferByIdQuery,
@@ -445,11 +761,30 @@ export const {
   useListShipmentsQuery,
   useGetShipmentByIdQuery,
   useGetShipmentStockMovesQuery,
+  useShipShipmentItemMutation,
+  useListPickWavesQuery,
+  useListPickTasksQuery,
+  useCompletePickTaskMutation,
+  useCreateShipmentMutation,
   useCreateShipmentCorrectionMutation,
   useListAdjustmentsQuery,
   useGetAdjustmentByIdQuery,
   useGetAdjustmentStockMovesQuery,
   usePostAdjustmentMutation,
   useCreateAdjustmentMutation,
+  useListReservationsQuery,
+  useGetReservationByIdQuery,
+  useListLotsQuery,
+  useGetLotByIdQuery,
+  useCreateLotMutation,
+  useUpdateLotMutation,
+  useListSerialsQuery,
+  useGetSerialByIdQuery,
+  useCreateSerialMutation,
+  useUpdateSerialMutation,
+  useListParcelsQuery,
+  useGetParcelByIdQuery,
+  useCreateParcelMutation,
+  useUpdateParcelMutation,
   useListWarehouseDocumentsQuery,
 } = wmsDocumentsApi;

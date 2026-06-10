@@ -15,6 +15,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: { name: 'adjustmentId', field: 'adjustment_id' },
         as: 'items',
       });
+      Adjustment.belongsTo(models.Warehouse, {
+        as: 'warehouse',
+        foreignKey: { name: 'warehouseId', field: 'warehouse_id' },
+      });
     }
   }
   Adjustment.init({

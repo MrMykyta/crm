@@ -16,6 +16,14 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey:{ name:'receiptId', field:'receipt_id' },
         as:'items'
       });
+      Receipt.belongsTo(models.Warehouse, {
+        as: 'warehouse',
+        foreignKey: { name: 'warehouseId', field: 'warehouse_id' },
+      });
+      Receipt.belongsTo(models.Location, {
+        as: 'inboundLocation',
+        foreignKey: { name: 'inboundLocationId', field: 'inbound_location_id' },
+      });
       // K1: self-references for correction documents (PZ_KOREKTA).
       Receipt.belongsTo(models.Receipt, {
         as: 'parentDocument',

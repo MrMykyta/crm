@@ -2,6 +2,7 @@
 // stockMoveService.js (generated)
 const { Op } = require('sequelize');
 const { StockMove } = require('../../models');
+const { enrichStockMoveDto, enrichStockMoveRows, stockMoveIncludes } = require('./wmsDto');
 
 // parsePaging: парсит и нормализует входные параметры.
 const parsePaging = (query = {}) => {
@@ -26,9 +27,30 @@ const buildWhere = (query = {}, user = {}) => {
   if (query.warehouseId) where.warehouseId = query.warehouseId;
   if (query.type) where.type = query.type;
   if (query.productId) where.productId = query.productId;
+  if (query.variantId) where.variantId = query.variantId;
   if (query.refType) where.refType = query.refType;
+  if (query.sourceType && !query.refType) where.refType = query.sourceType;
   if (query.refId) where.refId = query.refId;
+  if (query.sourceId && !query.refId) where.refId = query.sourceId;
   if (query.refItemId) where.refItemId = query.refItemId;
+  if (query.fromLocationId) where.fromLocationId = query.fromLocationId;
+  if (query.toLocationId) where.toLocationId = query.toLocationId;
+  if (query.locationId) {
+    where[Op.or] = [
+      { fromLocationId: query.locationId },
+      { toLocationId: query.locationId },
+    ];
+  }
+  const dateFrom = query.dateFrom ? new Date(query.dateFrom) : null;
+  const dateTo = query.dateTo ? new Date(query.dateTo) : null;
+  const createdAt = {};
+  if (dateFrom && !Number.isNaN(dateFrom.getTime())) createdAt[Op.gte] = dateFrom;
+  if (dateTo && !Number.isNaN(dateTo.getTime())) {
+    const inclusiveTo = new Date(dateTo);
+    inclusiveTo.setHours(23, 59, 59, 999);
+    createdAt[Op.lte] = inclusiveTo;
+  }
+  if (Object.keys(createdAt).length) where.createdAt = createdAt;
   // no free-text search
   return where;
 };
@@ -38,12 +60,16 @@ module.exports.list = async ({ query = {}, user = {} } = {}) => {
   const { page, limit, offset } = parsePaging(query);
   const where = buildWhere(query, user);
   const order = buildOrder(query);
-  const { rows, count } = await StockMove.findAndCountAll({ where,  order, limit, offset });
-  return { rows, count, page, limit };
+  const { rows, count } = await StockMove.findAndCountAll({ where, include: stockMoveIncludes, order, limit, offset });
+  return { rows: enrichStockMoveRows(rows), count, page, limit };
 };
 
 // getById: возвращает данные по входным параметрам сервиса.
-module.exports.getById = async (id) => id ? StockMove.findByPk(id, {  }) : null;
+module.exports.getById = async (id) => {
+  if (!id) return null;
+  const row = await StockMove.findByPk(id, { include: stockMoveIncludes });
+  return enrichStockMoveDto(row);
+};
 // create: создаёт новую запись и возвращает результат.
 module.exports.create  = async (payload = {}) => {
   if (!payload.companyId) throw new Error('companyId is required');
@@ -69,12 +95,13 @@ module.exports.listHistoryByDocument = async ({ companyId, refType, refId, refIt
 
   const { rows, count } = await StockMove.findAndCountAll({
     where,
+    include: stockMoveIncludes,
     order: [['createdAt', 'ASC']],
     limit: l,
     offset,
     transaction,
   });
-  return { rows, count, page: p, limit: l };
+  return { rows: enrichStockMoveRows(rows), count, page: p, limit: l };
 };
 
 // listHistoryByProduct: история движений по товару (productId + optional variantId).
@@ -87,10 +114,11 @@ module.exports.listHistoryByProduct = async ({ companyId, productId, variantId, 
 
   const { rows, count } = await StockMove.findAndCountAll({
     where,
+    include: stockMoveIncludes,
     order: [['createdAt', 'ASC']],
     limit: l,
     offset,
     transaction,
   });
-  return { rows, count, page: p, limit: l };
+  return { rows: enrichStockMoveRows(rows), count, page: p, limit: l };
 };

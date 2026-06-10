@@ -20,6 +20,7 @@ import {
   useMergeBrandLookupMutation,
   useMergeCategoryLookupMutation,
   useListProductTypesLookupQuery,
+  useListTaxCategoriesLookupQuery,
   useUpdateBrandLookupMutation,
   useUpdateCategoryLookupMutation,
   useUpdateProductMutation,
@@ -33,6 +34,9 @@ import s from './ProductDetailPage.module.css';
 const BASE_TABS = [
   { key: 'description', label: 'Описание' },
   { key: 'files', label: 'Файлы' },
+  { key: 'variants', label: 'Варианты' },
+  { key: 'suppliers-purchase', label: 'Поставщики / Закупка' },
+  { key: 'picker-demo', label: 'Подбор товара' },
   { key: 'prices', label: 'Цены' },
   { key: 'specifications', label: 'Характеристики' },
   { key: 'measurements', label: 'Измерения' },
@@ -60,6 +64,7 @@ function byLabel(a, b) {
   return String(a?.label || '').localeCompare(String(b?.label || ''), 'ru');
 }
 const PRODUCT_QUANTITY_UOM_FAMILIES = new Set(['piece', 'packaging', 'weight', 'volume', 'length']);
+const FULL_WIDTH_TABS = new Set(['variants', 'suppliers-purchase', 'picker-demo']);
 
 // useDebouncedValue: инкапсулирует переиспользуемую UI-логику.
 function useDebouncedValue(value, delay = 280) {
@@ -115,6 +120,7 @@ export default function ProductDetailPage() {
   const [managerState, setManagerState] = useState({ open: false, type: null });
   const [mergeState, setMergeState] = useState(null);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [activeDetailTab, setActiveDetailTab] = useState(BASE_TABS[0].key);
   const [managerError, setManagerError] = useState('');
   const [managerBusyKey, setManagerBusyKey] = useState('');
   const debouncedCategorySearch = useDebouncedValue(categorySearch, 300);
@@ -244,6 +250,15 @@ export default function ProductDetailPage() {
   );
 
   const { data: productTypesData, isFetching: isProductTypeLookupFetching } = useListProductTypesLookupQuery(
+    {
+      limit: 100,
+      sort: 'name',
+      dir: 'ASC',
+    },
+    { refetchOnMountOrArgChange: false }
+  );
+
+  const { data: taxCategoriesData, isFetching: isTaxCategoryLookupFetching } = useListTaxCategoriesLookupQuery(
     {
       limit: 100,
       sort: 'name',
@@ -464,6 +479,36 @@ export default function ProductDetailPage() {
       .sort(byLabel);
   }, [base?.type, productTypesData?.items]);
 
+  const taxCategoryOptions = useMemo(() => {
+    const selectedTaxCategory = base?.taxCategory
+      ? [{
+          id: base.taxCategory.id,
+          code: base.taxCategory.code,
+          name: base.taxCategory.name,
+          rate: base.taxCategory.rate,
+        }]
+      : [];
+    const items = Array.isArray(taxCategoriesData?.items) ? taxCategoriesData.items : [];
+    const merged = [...selectedTaxCategory, ...items];
+    const seen = new Set();
+    return merged
+      .filter((item) => {
+        const key = String(item?.id || '');
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map((item) => ({
+        value: item.id,
+        label: item.name || item.code || item.id,
+        secondary: [
+          item.code ? `Код: ${item.code}` : null,
+          item.rate !== undefined && item.rate !== null ? `Ставка: ${item.rate}%` : null,
+        ].filter(Boolean).join(' • ') || null,
+      }))
+      .sort(byLabel);
+  }, [base?.taxCategory, taxCategoriesData?.items]);
+
   const gtuOptions = useMemo(() => {
     const set = new Set(BASE_GTU_OPTIONS);
     const existing = String(base?.gtu || '').trim();
@@ -489,6 +534,10 @@ export default function ProductDetailPage() {
   const productTypeOptionById = useMemo(
     () => new Map(productTypeOptions.map((item) => [String(item.value), item])),
     [productTypeOptions]
+  );
+  const taxCategoryOptionById = useMemo(
+    () => new Map(taxCategoryOptions.map((item) => [String(item.value), item])),
+    [taxCategoryOptions]
   );
 
   const managerRows = useMemo(() => {
@@ -661,12 +710,19 @@ uomOptions: (values) => {
           return uomOptions;
         },
                 // productTypeOptions: вспомогательная логика компонента.
-productTypeOptions: (values) => {
+        productTypeOptions: (values) => {
           const selectedId = String(values?.productTypeId || '');
           const selected = selectedId ? productTypeOptionById.get(selectedId) : null;
           if (selected) return [selected, ...productTypeOptions.filter((item) => String(item.value) !== selectedId)];
           if (selectedId) return [{ value: selectedId, label: selectedId }, ...productTypeOptions];
           return productTypeOptions;
+        },
+        taxCategoryOptions: (values) => {
+          const selectedId = String(values?.taxCategoryId || '');
+          const selected = selectedId ? taxCategoryOptionById.get(selectedId) : null;
+          if (selected) return [selected, ...taxCategoryOptions.filter((item) => String(item.value) !== selectedId)];
+          if (selectedId) return [{ value: selectedId, label: selectedId }, ...taxCategoryOptions];
+          return taxCategoryOptions;
         },
         gtuOptions,
       });
@@ -977,6 +1033,13 @@ onClearOption: async (selectedOption) => {
           };
         }
 
+        if (field?.name === 'taxCategoryId') {
+          return {
+            ...field,
+            loading: Boolean(isTaxCategoryLookupFetching),
+          };
+        }
+
         return field;
       });
     },
@@ -1005,12 +1068,15 @@ onClearOption: async (selectedOption) => {
       isSubcategoryLookupFetching,
       isSupplierLookupFetching,
       isProductTypeLookupFetching,
+      isTaxCategoryLookupFetching,
       isUomLookupFetching,
       subcategoryOptionsByCategory,
       supplierOptionById,
       supplierOptions,
       productTypeOptionById,
       productTypeOptions,
+      taxCategoryOptionById,
+      taxCategoryOptions,
       uomOptionById,
       uomOptions,
       navigate,
@@ -1033,6 +1099,7 @@ onClearOption: async (selectedOption) => {
     }
     return out;
   }, [base?.trackInventory]);
+  const isFullWidthTab = FULL_WIDTH_TABS.has(activeDetailTab);
 
   const renderLeftTop = useCallback(
     ({ values, onChange }) => {
@@ -1051,6 +1118,9 @@ onClearOption: async (selectedOption) => {
       const productTypeLabel = productTypeOptionById.get(String(values?.productTypeId || ''))?.label
         || base?.type?.name
         || 'Не выбран';
+      const taxCategoryLabel = taxCategoryOptionById.get(String(values?.taxCategoryId || ''))?.label
+        || base?.taxCategory?.name
+        || 'Не выбрана';
       const selectedUom = uomOptionById.get(String(values?.uomId || '')) || base?.uom || null;
       const uomLabel = getUomSymbol(selectedUom, '') || getUomLabel(selectedUom, 'Не выбрана');
       const effectiveSellable = computeEffectiveSellable(values);
@@ -1065,25 +1135,32 @@ onClearOption: async (selectedOption) => {
       const visibilityLabel = values?.visibility === 'private' ? 'Скрытый' : 'Публичный';
       const hasStock = trackInventory && Number.isFinite(stockQuantity);
       const formattedStock = formatQuantity(stockQuantity, selectedUom, { fallback: '—' });
+      const active = values?.status === 'active';
 
       return (
       <div className={s.heroCard}>
         <div className={s.heroMain}>
-          <h2 className={s.heroTitle}>{values?.name || base?.name || 'Товар'}</h2>
-          <div className={s.heroMeta}>
-            {values?.sku ? <span>SKU: {values.sku}</span> : <span>SKU не указан</span>}
-            {values?.ean ? <span>EAN: {values.ean}</span> : null}
-            <span>Статус: {statusLabel}</span>
-            <span>Видимость: {visibilityLabel}</span>
-            <span>Обновлен: {lastUpdate}</span>
+          <div className={s.heroIdentity}>
+            <div className={s.heroKicker}>
+              <span>{values?.isService ? 'Услуга' : 'Товар'}</span>
+              <span>{statusLabel}</span>
+            </div>
+            <h2 className={s.heroTitle}>{values?.name || base?.name || 'Товар'}</h2>
+            <div className={s.heroMeta}>
+              {values?.sku ? <span>SKU: {values.sku}</span> : <span>SKU не указан</span>}
+              <span>EAN: {values?.ean || 'не указан'}</span>
+              <span>Производитель: {brandLabel}</span>
+              <span>Категория: {categoryLabel}</span>
+              <span>Обновлен: {lastUpdate}</span>
+            </div>
           </div>
           <div className={s.heroStats}>
-            <span className={s.heroStatChip}><b>Категория:</b> {categoryLabel}</span>
-            <span className={s.heroStatChip}><b>Производитель:</b> {brandLabel}</span>
+            {subcategoryLabel !== 'Не выбрана' ? <span className={s.heroStatChip}><b>Подкатегория:</b> {subcategoryLabel}</span> : null}
+            <span className={s.heroStatChip}><b>Видимость:</b> {visibilityLabel}</span>
             <span className={s.heroStatChip}><b>Ед. изм.:</b> {uomLabel}</span>
             {supplierLabel !== 'Не выбран' ? <span className={s.heroStatChip}><b>Поставщик:</b> {supplierLabel}</span> : null}
-            {subcategoryLabel !== 'Не выбрана' ? <span className={s.heroStatChip}><b>Подкатегория:</b> {subcategoryLabel}</span> : null}
             {productTypeLabel !== 'Не выбран' ? <span className={s.heroStatChip}><b>Тип:</b> {productTypeLabel}</span> : null}
+            {taxCategoryLabel !== 'Не выбрана' ? <span className={s.heroStatChip}><b>Налог:</b> {taxCategoryLabel}</span> : null}
             {hasStock ? <span className={s.heroStatChip}><b>Остаток:</b> {formattedStock}</span> : null}
           </div>
           <div className={s.heroActions}>
@@ -1096,7 +1173,7 @@ onClearOption: async (selectedOption) => {
                 if (field && typeof field.focus === 'function') field.focus();
               }}
             >
-              ✏️ Редактировать
+              Редактировать
             </button>
             <div className={s.heroMenuWrap}>
               <button
@@ -1163,16 +1240,27 @@ onClearOption: async (selectedOption) => {
           </div>
         </div>
 
-        <button
-          type="button"
-          className={effectiveSellable ? s.statusBadgeSellable : s.statusBadgeMuted}
-          onClick={() => onChange?.('isSellable', !Boolean(values?.isSellable))}
-          title="Быстрое переключение признака «Продаётся»"
-        >
-          {effectiveSellable
-            ? 'Продаётся'
-            : (values?.isSellable ? 'Не продаётся (вне периода)' : 'Не продаётся')}
-        </button>
+        <div className={s.heroStatusPanel} aria-label="Статус товара">
+          <span className={active ? s.heroStateChipOn : s.heroStateChipOff}>
+            {active ? 'Активен' : statusLabel}
+          </span>
+          <button
+            type="button"
+            className={effectiveSellable ? s.heroStateChipOn : s.heroStateChipOff}
+            onClick={() => onChange?.('isSellable', !Boolean(values?.isSellable))}
+            title="Быстрое переключение признака «Продаётся»"
+          >
+            {effectiveSellable
+              ? 'Продаётся'
+              : (values?.isSellable ? 'Не продаётся сейчас' : 'Не продаётся')}
+          </button>
+          <span className={trackInventory ? s.heroStateChipOn : s.heroStateChipOff}>
+            {trackInventory ? 'Учитываются остатки' : 'Без учета остатков'}
+          </span>
+          <span className={values?.isService ? s.heroStateChipService : s.heroStateChipProduct}>
+            {values?.isService ? 'Услуга' : 'Товар'}
+          </span>
+        </div>
       </div>
       );
     },
@@ -1184,6 +1272,7 @@ onClearOption: async (selectedOption) => {
       base?.stockQuantity,
       base?.subcategory?.name,
       base?.supplier?.shortName,
+      base?.taxCategory?.name,
       base?.type?.name,
       base?.uom,
       base?.updatedAt,
@@ -1191,6 +1280,7 @@ onClearOption: async (selectedOption) => {
       categoryOptionById,
       productTypeOptionById,
       supplierOptionById,
+      taxCategoryOptionById,
       headerMenuOpen,
       navigate,
       uomOptionById,
@@ -1218,7 +1308,9 @@ onClearOption: async (selectedOption) => {
         clearDraftOnUnmount
         leftTop={renderLeftTop}
         RightTabsComponent={ProductDetailTabs}
-        layoutClassName={s.layout}
+        activeTab={activeDetailTab}
+        onActiveTabChange={setActiveDetailTab}
+        layoutClassName={`${s.layout} ${isFullWidthTab ? s.layoutFullWidth : ''}`}
         leftPaneClassName={s.leftPane}
         rightPaneClassName={s.rightPane}
         tabsClassName={s.tabsArea}
@@ -1381,4 +1473,3 @@ onClearOption: async (selectedOption) => {
     </>
   );
 }
-

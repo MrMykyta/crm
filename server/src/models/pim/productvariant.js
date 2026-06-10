@@ -48,8 +48,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(64), 
       allowNull:false 
     },
+    name: {
+      type: DataTypes.STRING(255),
+      field: 'name'
+    },
     barcode: {
       type: DataTypes.STRING(64)
+    },
+    ean: {
+      type: DataTypes.STRING(32),
+      field: 'ean'
     },
     currency: {
       type: DataTypes.STRING(3), 

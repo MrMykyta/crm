@@ -8,6 +8,8 @@ const PRODUCT_MAX = {
   gtu: 32,
   hsCode: 32,
   countryOfOrigin: 2,
+  dangerousGoodsClass: 16,
+  unNumber: 10,
 };
 
 const PRODUCT_STATUS_OPTIONS = [
@@ -64,11 +66,12 @@ export function productEntitySchema(_i18n, options = {}) {
     supplierOptions = [],
     uomOptions = [],
     productTypeOptions = [],
+    taxCategoryOptions = [],
     gtuOptions = [],
   } = options;
 
   return [
-    { kind: 'section', title: 'Основное', collapsible: true, defaultCollapsed: false, emphasis: 'primary' },
+    { kind: 'section', title: 'Basic', collapsible: true, defaultCollapsed: false, emphasis: 'primary' },
     {
       name: 'name',
       label: 'Название',
@@ -87,24 +90,23 @@ export function productEntitySchema(_i18n, options = {}) {
       cols: 2,
     },
     {
-      name: 'ean',
-      label: 'EAN',
-      type: 'text',
+      name: 'productTypeId',
+      label: 'Тип товара',
+      type: 'autocomplete-select',
       float: true,
-      max: PRODUCT_MAX.ean,
+      options: productTypeOptions,
+      placeholder: 'Выберите тип товара',
       cols: 2,
     },
     {
-      name: 'barcode',
-      label: 'Штрихкод',
-      type: 'text',
+      name: 'brandId',
+      label: 'Производитель',
+      type: 'autocomplete-select',
       float: true,
-      max: PRODUCT_MAX.barcode,
+      options: brandOptions,
+      placeholder: 'Начните вводить производителя',
       cols: 2,
     },
-    { kind: 'spacer', cols: 2 },
-
-    { kind: 'section', title: 'Классификация', collapsible: true, defaultCollapsed: false, emphasis: 'primary' },
     {
       name: 'primaryCategoryId',
       label: 'Категория',
@@ -124,15 +126,6 @@ export function productEntitySchema(_i18n, options = {}) {
       cols: 2,
     },
     {
-      name: 'brandId',
-      label: 'Производитель',
-      type: 'autocomplete-select',
-      float: true,
-      options: brandOptions,
-      placeholder: 'Начните вводить производителя',
-      cols: 2,
-    },
-    {
       name: 'supplierId',
       label: 'Поставщик',
       type: 'autocomplete-select',
@@ -141,68 +134,25 @@ export function productEntitySchema(_i18n, options = {}) {
       placeholder: 'Начните вводить поставщика',
       cols: 2,
     },
-    {
-      name: 'productTypeId',
-      label: 'Тип товара',
-      type: 'autocomplete-select',
-      float: true,
-      options: productTypeOptions,
-      placeholder: 'Выберите тип товара',
-      cols: 2,
-    },
-    {
-      name: 'uomId',
-      label: 'Ед. изм.',
-      type: 'autocomplete-select',
-      float: true,
-      options: uomOptions,
-      placeholder: 'Выберите единицу',
-      cols: 2,
-    },
-
-    { kind: 'section', title: 'Продажи', collapsible: true, defaultCollapsed: false },
-    {
-      name: 'saleStartDate',
-      label: 'Дата начала продаж',
-      type: 'date',
-      float: true,
-      hint: 'Только дата',
-      cols: 2,
-    },
-    {
-      name: 'saleEndDate',
-      label: 'Дата окончания продаж',
-      type: 'date',
-      float: true,
-      hint: 'Только дата',
-      cols: 2,
-    },
-    { kind: 'section', title: 'Состояние', collapsible: true, defaultCollapsed: true },
-    {
-      name: 'status',
-      label: 'Статус',
-      type: 'dropdown-select',
-      float: true,
-      options: PRODUCT_STATUS_OPTIONS,
-      cols: 2,
-    },
-    {
-      name: 'visibility',
-      label: 'Видимость',
-      type: 'dropdown-select',
-      float: true,
-      options: PRODUCT_VISIBILITY_OPTIONS,
-      cols: 2,
-    },
-    {
-      name: 'isSellable',
-      label: 'Продаётся',
-      type: 'checkbox',
-      cols: 2,
-    },
     { kind: 'spacer', cols: 2 },
 
-    { kind: 'section', title: 'Коды и классификаторы', collapsible: true, defaultCollapsed: true },
+    { kind: 'section', title: 'Identifiers', collapsible: true, defaultCollapsed: false, emphasis: 'primary' },
+    {
+      name: 'barcode',
+      label: 'Штрихкод',
+      type: 'text',
+      float: true,
+      max: PRODUCT_MAX.barcode,
+      cols: 2,
+    },
+    {
+      name: 'ean',
+      label: 'EAN',
+      type: 'text',
+      float: true,
+      max: PRODUCT_MAX.ean,
+      cols: 2,
+    },
     {
       name: 'pkwiu',
       label: 'PKWiU',
@@ -235,24 +185,15 @@ export function productEntitySchema(_i18n, options = {}) {
       max: PRODUCT_MAX.hsCode,
       cols: 2,
     },
-    {
-      name: 'countryOfOrigin',
-      label: 'Страна происхождения',
-      type: 'text',
-      float: true,
-      max: PRODUCT_MAX.countryOfOrigin,
-      upper: true,
-      cols: 2,
-    },
-    { kind: 'spacer', cols: 2 },
 
-    { kind: 'section', title: 'Коммерция', collapsible: true, defaultCollapsed: true },
+    { kind: 'section', title: 'Commerce', collapsible: true, defaultCollapsed: false },
     {
-      name: 'cost',
-      label: 'Себестоимость',
-      type: 'text',
+      name: 'taxCategoryId',
+      label: 'Tax Category',
+      type: 'autocomplete-select',
       float: true,
-      inputMode: 'decimal',
+      options: taxCategoryOptions,
+      placeholder: 'Выберите налоговую категорию',
       cols: 2,
     },
     {
@@ -265,9 +206,177 @@ export function productEntitySchema(_i18n, options = {}) {
       cols: 2,
     },
     {
+      name: 'price',
+      label: 'Цена',
+      type: 'text',
+      float: true,
+      inputMode: 'decimal',
+      cols: 2,
+    },
+    {
+      name: 'oldPrice',
+      label: 'Старая цена',
+      type: 'text',
+      float: true,
+      inputMode: 'decimal',
+      cols: 2,
+    },
+    {
+      name: 'cost',
+      label: 'Себестоимость',
+      type: 'text',
+      float: true,
+      inputMode: 'decimal',
+      cols: 2,
+    },
+    {
+      name: 'isSellable',
+      label: 'Продаётся',
+      type: 'checkbox',
+      cols: 2,
+    },
+
+    { kind: 'section', title: 'Logistics', collapsible: true, defaultCollapsed: false },
+    {
+      name: 'uomId',
+      label: 'Ед. изм.',
+      type: 'autocomplete-select',
+      float: true,
+      options: uomOptions,
+      placeholder: 'Выберите единицу',
+      cols: 2,
+    },
+    {
+      name: 'weight',
+      label: 'Вес',
+      type: 'text',
+      float: true,
+      inputMode: 'decimal',
+      cols: 2,
+    },
+    {
+      name: 'length',
+      label: 'Длина',
+      type: 'text',
+      float: true,
+      inputMode: 'decimal',
+      cols: 2,
+    },
+    {
+      name: 'width',
+      label: 'Ширина',
+      type: 'text',
+      float: true,
+      inputMode: 'decimal',
+      cols: 2,
+    },
+    {
+      name: 'height',
+      label: 'Высота',
+      type: 'text',
+      float: true,
+      inputMode: 'decimal',
+      cols: 2,
+    },
+    {
+      name: 'warrantyMonths',
+      label: 'Гарантия, мес.',
+      type: 'text',
+      float: true,
+      inputMode: 'numeric',
+      cols: 2,
+    },
+    {
+      name: 'countryOfOrigin',
+      label: 'Страна происхождения',
+      type: 'text',
+      float: true,
+      max: PRODUCT_MAX.countryOfOrigin,
+      upper: true,
+      cols: 2,
+    },
+    {
+      name: 'dangerousGoodsClass',
+      label: 'Класс опасности',
+      type: 'text',
+      float: true,
+      max: PRODUCT_MAX.dangerousGoodsClass,
+      cols: 2,
+    },
+    {
+      name: 'unNumber',
+      label: 'UN Number',
+      type: 'text',
+      float: true,
+      max: PRODUCT_MAX.unNumber,
+      cols: 2,
+    },
+
+    { kind: 'section', title: 'Inventory Behaviour', collapsible: true, defaultCollapsed: false },
+    {
       name: 'trackInventory',
       label: 'Учитывать остатки',
       type: 'checkbox',
+      cols: 2,
+    },
+    {
+      name: 'isService',
+      label: 'Услуга',
+      type: 'checkbox',
+      cols: 2,
+    },
+    {
+      name: 'isSerialized',
+      label: 'Серийный учет',
+      type: 'checkbox',
+      cols: 2,
+    },
+    {
+      name: 'isLotTracked',
+      label: 'Партионный учет',
+      type: 'checkbox',
+      cols: 2,
+    },
+    {
+      name: 'shelfLifeDays',
+      label: 'Срок годности, дней',
+      type: 'text',
+      float: true,
+      inputMode: 'numeric',
+      cols: 2,
+    },
+
+    { kind: 'section', title: 'Lifecycle', collapsible: true, defaultCollapsed: true },
+    {
+      name: 'status',
+      label: 'Статус',
+      type: 'dropdown-select',
+      float: true,
+      options: PRODUCT_STATUS_OPTIONS,
+      cols: 2,
+    },
+    {
+      name: 'visibility',
+      label: 'Видимость',
+      type: 'dropdown-select',
+      float: true,
+      options: PRODUCT_VISIBILITY_OPTIONS,
+      cols: 2,
+    },
+    {
+      name: 'saleStartDate',
+      label: 'Дата начала продаж',
+      type: 'date',
+      float: true,
+      hint: 'Только дата',
+      cols: 2,
+    },
+    {
+      name: 'saleEndDate',
+      label: 'Дата окончания продаж',
+      type: 'date',
+      float: true,
+      hint: 'Только дата',
       cols: 2,
     },
   ];
@@ -297,6 +406,7 @@ export function toFormProduct(product = {}) {
     status: product?.status || 'draft',
     visibility: product?.visibility || 'public',
     isSellable: Boolean(product?.isSellable ?? true),
+    isService: Boolean(product?.isService ?? false),
 
     pkwiu: product?.pkwiu || '',
     cn: product?.cn || '',
@@ -304,6 +414,8 @@ export function toFormProduct(product = {}) {
     hsCode: product?.hsCode || '',
     countryOfOrigin: product?.countryOfOrigin || '',
 
+    price: product?.price ?? '',
+    oldPrice: product?.oldPrice ?? '',
     cost: product?.cost ?? '',
     currency: product?.currency || 'PLN',
     trackInventory: Boolean(product?.trackInventory ?? false),
@@ -324,9 +436,7 @@ export function toFormProduct(product = {}) {
     publishedAt: product?.publishedAt || null,
     discontinuedAt: product?.discontinuedAt || null,
 
-    // Transitional fields: keep for read compatibility only.
-    price: product?.price ?? '',
-    oldPrice: product?.oldPrice ?? '',
+    // Transitional inventory counters: keep for read compatibility only.
     stockQuantity: product?.stockQuantity ?? '',
     reservedQuantity: product?.reservedQuantity ?? '',
     orderedQuantity: product?.orderedQuantity ?? '',
@@ -363,6 +473,7 @@ export function toApiProduct(values = {}) {
     status: trimOrNull(values.status),
     visibility: trimOrNull(values.visibility),
     isSellable: Boolean(values.isSellable),
+    isService: Boolean(values.isService),
     discontinuedAt: trimOrNull(values.discontinuedAt),
 
     // Codes / classification
@@ -372,9 +483,13 @@ export function toApiProduct(values = {}) {
     hsCode: trimOrNull(values.hsCode),
     countryOfOrigin: trimOrNull(values.countryOfOrigin),
 
-    // Commerce flags
+    // Commerce
+    price: toNumberOrNull(values.price),
+    oldPrice: toNumberOrNull(values.oldPrice),
     cost: toNumberOrNull(values.cost),
     currency: trimOrNull(values.currency),
+
+    // Inventory behavior
     trackInventory: Boolean(values.trackInventory),
 
     // Related measurements / advanced logistics
@@ -390,4 +505,3 @@ export function toApiProduct(values = {}) {
     shelfLifeDays: toIntOrNull(values.shelfLifeDays),
   };
 }
-
