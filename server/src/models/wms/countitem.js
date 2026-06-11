@@ -44,7 +44,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     locationId:{ 
       type:DataTypes.UUID,
-      allowNull:false,  // This field is required in the database schema
+      allowNull:true,
       field:'location_id' 
     },
     productId:{ 

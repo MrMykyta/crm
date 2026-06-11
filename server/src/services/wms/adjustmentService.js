@@ -258,12 +258,6 @@ async function create(companyId, data = {}, outerTx = null) {
           code: 'VALIDATION_ERROR',
         });
       }
-      if (!row.locationId) {
-        throw new AppError(400, 'locationId is required for every item', {
-          code: 'VALIDATION_ERROR',
-        });
-      }
-
       // eslint-disable-next-line no-await-in-loop
       await AdjustmentItem.create(
         {
@@ -271,7 +265,7 @@ async function create(companyId, data = {}, outerTx = null) {
           adjustmentId: adjustment.id,
           productId: row.productId,
           variantId: row.variantId || null,
-          locationId: row.locationId,
+          locationId: row.locationId || null,
           lotId: row.lotId || null,
           serialId: row.serialId || null,
           qtyDelta,
@@ -339,8 +333,8 @@ async function post(companyId, adjustmentId, outerTx = null) {
       }
 
       const qty = Math.abs(qtyDelta);
-      const fromLocationId = documentType === 'RW' ? item.locationId : null;
-      const toLocationId = documentType === 'PW' ? item.locationId : null;
+      const fromLocationId = documentType === 'RW' ? item.locationId || null : null;
+      const toLocationId = documentType === 'PW' ? item.locationId || null : null;
 
       // eslint-disable-next-line no-await-in-loop
       const move = await Inventory.applyMove(

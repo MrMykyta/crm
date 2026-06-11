@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import EntityDetailPage from '../../../_scaffold/EntityDetailPage';
 import Modal from '../../../../components/Modal';
@@ -20,15 +21,25 @@ import {
   useMergeBrandLookupMutation,
   useMergeCategoryLookupMutation,
   useListProductTypesLookupQuery,
+  useListProductAttachmentsQuery,
+  useCreateProductAttachmentMutation,
+  useUpdateProductAttachmentMutation,
+  useDeleteProductAttachmentMutation,
   useListTaxCategoriesLookupQuery,
   useUpdateBrandLookupMutation,
   useUpdateCategoryLookupMutation,
   useUpdateProductMutation,
   useListUomsLookupQuery,
 } from '../../../../store/rtk/productsApi';
+import {
+  useGetSignedPreviewUrlQuery,
+  useListFilesByOwnerQuery,
+  useUploadFileMutation,
+} from '../../../../store/rtk/filesApi';
 import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
 import ProductDetailTabs from './ProductDetailTabs';
 import { formatQuantity, getUomLabel, getUomSymbol } from '../../../../utils/uom';
+import { withApiOrigin } from '../../../../config/api';
 import s from './ProductDetailPage.module.css';
 
 const BASE_TABS = [
@@ -64,7 +75,19 @@ function byLabel(a, b) {
   return String(a?.label || '').localeCompare(String(b?.label || ''), 'ru');
 }
 const PRODUCT_QUANTITY_UOM_FAMILIES = new Set(['piece', 'packaging', 'weight', 'volume', 'length']);
-const FULL_WIDTH_TABS = new Set(['variants', 'suppliers-purchase', 'picker-demo']);
+const IMAGE_MIME = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml',
+  'image/bmp',
+  'image/x-ms-bmp',
+  'image/tiff',
+  'image/heic',
+  'image/heif',
+]);
+const IMAGE_EXT = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg', 'tif', 'tiff', 'heic', 'heif']);
 
 // useDebouncedValue: инкапсулирует переиспользуемую UI-логику.
 function useDebouncedValue(value, delay = 280) {
@@ -90,8 +113,208 @@ function computeEffectiveSellable(values = {}) {
   return true;
 }
 
+function parseListPayload(payload) {
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload)) return payload;
+  return [];
+}
+
+function fileNameOf(file) {
+  return String(file?.filename || file?.safeName || file?.name || '');
+}
+
+function fileExt(file) {
+  const match = fileNameOf(file).toLowerCase().match(/\.([a-z0-9]+)$/i);
+  return match ? match[1] : '';
+}
+
+function isImageFile(file) {
+  const mime = String(file?.mime || file?.type || '').toLowerCase();
+  return mime.startsWith('image/') || IMAGE_MIME.has(mime) || IMAGE_EXT.has(fileExt(file));
+}
+
+function pickMainAttachment(attachments = []) {
+  return [...attachments]
+    .filter((row) => String(row?.role || '').toLowerCase() === 'image')
+    .sort((a, b) => {
+      const left = Number.isFinite(Number(a?.sortOrder)) ? Number(a.sortOrder) : 0;
+      const right = Number.isFinite(Number(b?.sortOrder)) ? Number(b.sortOrder) : 0;
+      if (left !== right) return left - right;
+      return new Date(a?.createdAt || 0) - new Date(b?.createdAt || 0);
+    })[0] || null;
+}
+
+function MainImageBlock({ productId, productName }) {
+  const fileInputRef = useRef(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const { data: attachmentData, refetch: refetchAttachments } = useListProductAttachmentsQuery(
+    { productId, limit: 100 },
+    { skip: !productId }
+  );
+  const { data: filesData, refetch: refetchFiles } = useListFilesByOwnerQuery(
+    { ownerType: 'product', ownerId: productId },
+    { skip: !productId }
+  );
+  const [uploadFile] = useUploadFileMutation();
+  const [createProductAttachment] = useCreateProductAttachmentMutation();
+  const [updateProductAttachment] = useUpdateProductAttachmentMutation();
+  const [deleteProductAttachment] = useDeleteProductAttachmentMutation();
+
+  const attachments = useMemo(() => parseListPayload(attachmentData), [attachmentData]);
+  const files = useMemo(() => parseListPayload(filesData), [filesData]);
+  const fileById = useMemo(() => {
+    const map = new Map();
+    files.forEach((file) => {
+      if (file?.id) map.set(String(file.id), file);
+    });
+    return map;
+  }, [files]);
+  const mainAttachment = useMemo(() => pickMainAttachment(attachments), [attachments]);
+  const mainFile = mainAttachment?.attachmentId ? fileById.get(String(mainAttachment.attachmentId)) : null;
+  const shouldSign = Boolean(mainFile?.id && mainFile?.visibility !== 'public');
+  const { data: signedPreview } = useGetSignedPreviewUrlQuery(mainFile?.id, { skip: !shouldSign });
+  const signedUrl = signedPreview?.data?.url || signedPreview?.url || '';
+  const imageUrl = mainFile?.visibility === 'public' && mainFile?.url
+    ? withApiOrigin(mainFile.url)
+    : withApiOrigin(signedUrl);
+  const initials = String(productName || 'P').trim().slice(0, 2).toUpperCase() || 'P';
+  const imageFiles = useMemo(() => files.filter(isImageFile), [files]);
+
+  const promoteAttachment = useCallback(async (fileId) => {
+    if (!productId || !fileId) return;
+    const existing = attachments.find((row) => String(row?.attachmentId) === String(fileId));
+    const others = attachments.filter((row) => row?.id && String(row?.id) !== String(existing?.id || ''));
+    const orderedOthers = others
+      .filter((row) => String(row?.role || '').toLowerCase() === 'image')
+      .sort((a, b) => Number(a?.sortOrder || 0) - Number(b?.sortOrder || 0));
+
+    await Promise.all(orderedOthers.map((row, index) => (
+      updateProductAttachment({
+        id: row.id,
+        payload: {
+          productId,
+          attachmentId: row.attachmentId,
+          role: row.role || 'image',
+          sortOrder: index + 1,
+        },
+      }).unwrap()
+    )));
+
+    if (existing) {
+      await updateProductAttachment({
+        id: existing.id,
+        payload: {
+          productId,
+          attachmentId: existing.attachmentId,
+          role: 'image',
+          sortOrder: 0,
+        },
+      }).unwrap();
+    } else {
+      await createProductAttachment({
+        productId,
+        attachmentId: fileId,
+        role: 'image',
+        sortOrder: 0,
+      }).unwrap();
+    }
+
+    await Promise.all([refetchAttachments(), refetchFiles()]);
+  }, [attachments, createProductAttachment, productId, refetchAttachments, refetchFiles, updateProductAttachment]);
+
+  const uploadMainImage = useCallback(async (fileList) => {
+    const file = Array.from(fileList || [])[0];
+    if (!file || !productId) return;
+    if (!isImageFile(file)) {
+      setError('Можно загрузить только изображение');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      const uploaded = await uploadFile({
+        ownerType: 'product',
+        ownerId: productId,
+        file,
+        purpose: 'product_image',
+        visibility: 'public',
+      }).unwrap();
+      const uploadedFile = uploaded?.data || uploaded;
+      const fileId = uploadedFile?.id;
+      if (!fileId) throw new Error('File id is missing');
+      await promoteAttachment(fileId);
+    } catch (e) {
+      setError(e?.data?.message || e?.message || 'Не удалось загрузить main image');
+    } finally {
+      setBusy(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }, [productId, promoteAttachment, uploadFile]);
+
+  const removeMainImage = useCallback(async () => {
+    if (!mainAttachment?.id) return;
+    setBusy(true);
+    setError('');
+    try {
+      await deleteProductAttachment({ id: mainAttachment.id, productId }).unwrap();
+      await refetchAttachments();
+    } catch (e) {
+      setError(e?.data?.message || e?.message || 'Не удалось убрать main image');
+    } finally {
+      setBusy(false);
+    }
+  }, [deleteProductAttachment, mainAttachment?.id, productId, refetchAttachments]);
+
+  return (
+    <div className={s.mainImageBlock}>
+      <div className={s.mainImagePreview}>
+        {imageUrl ? (
+          <img src={imageUrl} alt={mainFile?.filename || productName || 'Product image'} />
+        ) : (
+          <span>{initials}</span>
+        )}
+      </div>
+      <div className={s.mainImageActions}>
+        <button
+          type="button"
+          className={s.mainImageAction}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={busy}
+        >
+          {mainAttachment ? 'Заменить фото' : 'Загрузить фото'}
+        </button>
+        {mainAttachment ? (
+          <button
+            type="button"
+            className={`${s.mainImageAction} ${s.mainImageActionMuted}`}
+            onClick={removeMainImage}
+            disabled={busy}
+          >
+            Убрать
+          </button>
+        ) : null}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className={s.fileInputHidden}
+          onChange={(event) => uploadMainImage(event.target.files)}
+        />
+      </div>
+      {imageFiles.length && !mainAttachment ? (
+        <div className={s.mainImageHint}>В файлах есть изображения. Их можно назначить main image во вкладке «Файлы».</div>
+      ) : null}
+      {mainFile ? <div className={s.mainImageFileName}>{mainFile.filename || mainFile.safeName}</div> : null}
+      {error ? <div className={s.mainImageError}>{error}</div> : null}
+    </div>
+  );
+}
+
 // Компонент ProductDetailPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ProductDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -1093,13 +1316,16 @@ onClearOption: async (selectedOption) => {
 
   const detailTabs = useMemo(() => {
     const out = [...BASE_TABS];
-    const shouldShowWarehouse = Boolean(base?.trackInventory);
-    if (shouldShowWarehouse) {
-      out.splice(3, 0, { key: 'warehouse', label: 'Склад' });
-    }
+    out.splice(3, 0, { key: 'warehouse', label: t('pim.stock.tab') });
+    out.splice(
+      4,
+      0,
+      { key: 'reservations', label: t('wms.reservations.title') },
+      { key: 'lots', label: t('wms.lots.title') },
+      { key: 'serials', label: t('wms.serials.title') }
+    );
     return out;
-  }, [base?.trackInventory]);
-  const isFullWidthTab = FULL_WIDTH_TABS.has(activeDetailTab);
+  }, [t]);
 
   const renderLeftTop = useCallback(
     ({ values, onChange }) => {
@@ -1139,6 +1365,7 @@ onClearOption: async (selectedOption) => {
 
       return (
       <div className={s.heroCard}>
+        <MainImageBlock productId={id} productName={values?.name || base?.name || 'Товар'} />
         <div className={s.heroMain}>
           <div className={s.heroIdentity}>
             <div className={s.heroKicker}>
@@ -1282,6 +1509,7 @@ onClearOption: async (selectedOption) => {
       supplierOptionById,
       taxCategoryOptionById,
       headerMenuOpen,
+      id,
       navigate,
       uomOptionById,
     ]
@@ -1310,7 +1538,7 @@ onClearOption: async (selectedOption) => {
         RightTabsComponent={ProductDetailTabs}
         activeTab={activeDetailTab}
         onActiveTabChange={setActiveDetailTab}
-        layoutClassName={`${s.layout} ${isFullWidthTab ? s.layoutFullWidth : ''}`}
+        layoutClassName={s.layout}
         leftPaneClassName={s.leftPane}
         rightPaneClassName={s.rightPane}
         tabsClassName={s.tabsArea}

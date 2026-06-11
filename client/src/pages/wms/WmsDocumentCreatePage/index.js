@@ -97,6 +97,20 @@ function detailRouteByKind(kind, id) {
   return `/main/wms/transfers/${id}`;
 }
 
+function locationOptionalLabel(t, key = 'label') {
+  const fallback = {
+    label: 'Location optional',
+    inboundLabel: 'Inbound location optional',
+    fromLabel: 'Source location optional',
+    toLabel: 'Target location optional',
+  };
+  return t(`wms.locationOptional.${key}`, fallback[key] || fallback.label);
+}
+
+function warehouseLevelOption(t) {
+  return { value: '', label: t('wms.locationOptional.warehouseLevelStock', 'Warehouse-level stock') };
+}
+
 // WMS-specific create items editor (rendered inside DocumentEngine itemsSlot).
 // Preserves the existing per-kind columns, product picker, qty/lot/receive fields.
 function WmsCreateItemsTable({ items, kind, errors, t, onAddItem, onRemoveItem, onItemField, onOpenPicker, variants }) {
@@ -275,7 +289,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
   const locationOptions = useMemo(() => {
     const rows = Array.isArray(locationsData?.items) ? locationsData.items : [];
     return [
-      { value: '', label: t('wms.create.selectLocation', 'Select location') },
+      warehouseLevelOption(t),
       ...rows.map((row) => ({ value: row.id, label: formatLocationLabel(row) })),
     ];
   }, [locationsData?.items, t]);
@@ -283,7 +297,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
   const fromLocationOptions = useMemo(() => {
     const rows = Array.isArray(fromLocationsData?.items) ? fromLocationsData.items : [];
     return [
-      { value: '', label: t('wms.create.selectFromLocation', 'Select from location') },
+      warehouseLevelOption(t),
       ...rows.map((row) => ({ value: row.id, label: formatLocationLabel(row) })),
     ];
   }, [fromLocationsData?.items, t]);
@@ -291,7 +305,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
   const toLocationOptions = useMemo(() => {
     const rows = Array.isArray(toLocationsData?.items) ? toLocationsData.items : [];
     return [
-      { value: '', label: t('wms.create.selectToLocation', 'Select to location') },
+      warehouseLevelOption(t),
       ...rows.map((row) => ({ value: row.id, label: formatLocationLabel(row) })),
     ];
   }, [toLocationsData?.items, t]);
@@ -345,24 +359,17 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     const nextErrors = {};
     if (isReceipt) {
       if (!header.warehouseId) nextErrors.warehouseId = t('wms.validation.warehouseRequired', 'Warehouse is required');
-      const isReceiveAction = receiveMode === 'all' || receiveMode === 'selected';
-      if (isReceiveAction && !header.inboundLocationId) nextErrors.inboundLocationId = t('wms.validation.inboundLocationRequired', 'Inbound location is required');
       if (receiveMode === 'selected' && !items.some((item) => item.receiveNow)) {
         nextErrors.items = t('wms.validation.selectLineForReceive', 'Select at least one line for receive');
       }
     }
     if (isAdjustment) {
       if (!header.warehouseId) nextErrors.warehouseId = t('wms.validation.warehouseRequired', 'Warehouse is required');
-      if (!header.locationId) nextErrors.locationId = t('wms.validation.locationRequired', 'Location is required');
       if (!header.documentType) nextErrors.documentType = t('wms.validation.typeRequired', 'Type is required');
     }
     if (isTransfer) {
       if (!header.fromWarehouseId) nextErrors.fromWarehouseId = t('wms.validation.fromWarehouseRequired', 'From warehouse is required');
       if (!header.toWarehouseId) nextErrors.toWarehouseId = t('wms.validation.toWarehouseRequired', 'To warehouse is required');
-      // Source/target locations are persisted on the document (required for MM) so the
-      // transfer can be executed later from the detail page.
-      if (!header.fromLocationId) nextErrors.fromLocationId = t('wms.validation.fromLocationRequired', 'From location is required');
-      if (!header.toLocationId) nextErrors.toLocationId = t('wms.validation.toLocationRequired', 'To location is required');
     }
     items.forEach((item) => {
       if (!asText(item.productId)) nextErrors[`item:${item.localId}:productId`] = t('wms.validation.productRequired', 'Product is required');
@@ -401,7 +408,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
         return {
           productId: item.productId,
           variantId: asText(item.variantId) || null,
-          locationId: header.locationId,
+          locationId: asText(header.locationId) || null,
           qtyDelta: type === 'RW' ? -absQty : absQty,
         };
       }),
@@ -443,7 +450,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
           const qty = round4(qtyExpected - qtyReceived);
           if (qty <= 0) continue;
           // eslint-disable-next-line no-await-in-loop
-          await receiveReceiptLine({ itemId: line.id, payload: { qty, toLocationId: header.inboundLocationId, lotId: null } }).unwrap();
+          await receiveReceiptLine({ itemId: line.id, payload: { qty, toLocationId: asText(header.inboundLocationId) || null, lotId: null } }).unwrap();
         }
       }
       navigate(detailRouteByKind('receipt', receiptId));
@@ -490,7 +497,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
           const qty = round4(plannedQty - movedQty);
           if (qty <= 0) continue;
           // eslint-disable-next-line no-await-in-loop
-          await executeTransferLine({ itemId: line.id, payload: { fromLocationId: header.fromLocationId, toLocationId: header.toLocationId, qty } }).unwrap();
+          await executeTransferLine({ itemId: line.id, payload: { fromLocationId: asText(header.fromLocationId) || null, toLocationId: asText(header.toLocationId) || null, qty } }).unwrap();
         }
       }
       navigate(detailRouteByKind('transfer', transferId));
@@ -515,7 +522,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
   if (isReceipt) {
     primaryFields = [
       { label: t('wms.print.warehouse', 'Warehouse'), type: 'select', required: true, value: header.warehouseId, onChange: (v) => setHeaderField('warehouseId', v), options: warehouseOptions, error: errors.warehouseId },
-      { label: t('wms.fields.inboundLocation', 'Inbound location'), type: 'select', value: header.inboundLocationId, onChange: (v) => setHeaderField('inboundLocationId', v), options: locationOptions, error: errors.inboundLocationId },
+      { label: locationOptionalLabel(t, 'inboundLabel'), type: 'select', value: header.inboundLocationId, onChange: (v) => setHeaderField('inboundLocationId', v), options: locationOptions, error: errors.inboundLocationId },
     ];
     secondaryFields = [
       { label: t('wms.fields.supplier', 'Supplier'), type: 'select', value: header.counterpartyId, onChange: (v) => setHeaderField('counterpartyId', v), options: counterpartyOptions },
@@ -525,7 +532,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     primaryFields = [
       { label: t('wms.fields.documentType', 'Document type'), type: 'select', required: true, value: header.documentType, onChange: (v) => setHeaderField('documentType', v), options: [{ value: 'PW', label: 'PW' }, { value: 'RW', label: 'RW' }], error: errors.documentType },
       { label: t('wms.print.warehouse', 'Warehouse'), type: 'select', required: true, value: header.warehouseId, onChange: (v) => setHeaderField('warehouseId', v), options: warehouseOptions, error: errors.warehouseId },
-      { label: t('wms.fields.location', 'Location'), type: 'select', required: true, value: header.locationId, onChange: (v) => setHeaderField('locationId', v), options: locationOptions, error: errors.locationId },
+      { label: locationOptionalLabel(t), type: 'select', value: header.locationId, onChange: (v) => setHeaderField('locationId', v), options: locationOptions, error: errors.locationId },
     ];
     secondaryFields = [
       { label: t('wms.fields.date', 'Date'), type: 'date', value: header.issueDate, onChange: (v) => setHeaderField('issueDate', v) },
@@ -537,8 +544,8 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
       { label: t('wms.fields.toWarehouse', 'To warehouse'), type: 'select', required: true, value: header.toWarehouseId, onChange: (v) => setHeaderField('toWarehouseId', v), options: warehouseOptions, error: errors.toWarehouseId },
     ];
     secondaryFields = [
-      { label: t('wms.fields.fromLocation', 'From location'), type: 'select', required: true, value: header.fromLocationId, onChange: (v) => setHeaderField('fromLocationId', v), options: fromLocationOptions, error: errors.fromLocationId },
-      { label: t('wms.fields.toLocation', 'To location'), type: 'select', required: true, value: header.toLocationId, onChange: (v) => setHeaderField('toLocationId', v), options: toLocationOptions, error: errors.toLocationId },
+      { label: locationOptionalLabel(t, 'fromLabel'), type: 'select', value: header.fromLocationId, onChange: (v) => setHeaderField('fromLocationId', v), options: fromLocationOptions, error: errors.fromLocationId },
+      { label: locationOptionalLabel(t, 'toLabel'), type: 'select', value: header.toLocationId, onChange: (v) => setHeaderField('toLocationId', v), options: toLocationOptions, error: errors.toLocationId },
       { label: t('wms.fields.date', 'Date'), type: 'date', value: header.issueDate, onChange: (v) => setHeaderField('issueDate', v) },
     ];
   }

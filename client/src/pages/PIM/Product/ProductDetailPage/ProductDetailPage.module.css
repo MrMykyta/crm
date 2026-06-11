@@ -1,27 +1,16 @@
 .layout {
-  grid-template-columns: minmax(600px, 1.12fr) minmax(560px, 1fr);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  box-sizing: border-box;
+  grid-template-columns: minmax(320px, 3fr) minmax(0, 7fr);
   gap: 16px;
   height: calc(100dvh - var(--topbar-h, 64px) - 24px);
 }
 
-.layoutFullWidth {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.layoutFullWidth .leftPane {
-  display: none;
-}
-
-.layoutFullWidth .rightPane {
-  min-width: 0;
-}
-
-.layoutFullWidth .panel {
-  min-height: 0;
-}
-
 .leftPane {
   padding: 12px;
+  min-width: 0;
 }
 
 .leftForm {
@@ -32,6 +21,7 @@
   padding: 10px;
   gap: 10px;
   overflow: hidden;
+  min-width: 0;
 }
 
 .tabsArea {
@@ -52,6 +42,7 @@
 
 .heroCard {
   display: flex;
+  flex-wrap: wrap;
   align-items: stretch;
   justify-content: space-between;
   gap: 16px;
@@ -65,7 +56,90 @@
   box-shadow: var(--ui-shadow-sm);
 }
 
+.mainImageBlock {
+  flex: 0 0 118px;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.mainImagePreview {
+  width: 118px;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 82%, transparent);
+  background:
+    radial-gradient(circle at 34% 22%, color-mix(in srgb, var(--focus) 15%, transparent), transparent 42%),
+    color-mix(in srgb, var(--ui-surface-1) 92%, transparent);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: color-mix(in srgb, var(--ui-text-2) 88%, transparent);
+  font-size: var(--font-size-28);
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
+}
+
+.mainImagePreview img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.mainImageActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mainImageAction {
+  min-height: 28px;
+  flex: 1 1 auto;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 82%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-2) 96%, var(--ui-surface-1) 4%);
+  color: color-mix(in srgb, var(--ui-text-1) 88%, transparent);
+  font-size: var(--font-size-11);
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0 9px;
+}
+
+.mainImageAction:hover {
+  border-color: var(--ui-border-focus);
+  background: var(--ui-surface-hover);
+}
+
+.mainImageAction:disabled {
+  opacity: .58;
+  cursor: not-allowed;
+}
+
+.mainImageActionMuted {
+  color: color-mix(in srgb, var(--ui-text-3) 92%, transparent);
+}
+
+.mainImageHint,
+.mainImageFileName,
+.mainImageError {
+  color: color-mix(in srgb, var(--ui-text-3) 88%, transparent);
+  font-size: var(--font-size-11);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.mainImageFileName {
+  color: color-mix(in srgb, var(--ui-text-2) 88%, transparent);
+}
+
+.mainImageError {
+  color: var(--ui-action-danger-text);
+}
+
 .heroMain {
+  flex: 1 1 170px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -231,11 +305,11 @@
 }
 
 .heroStatusPanel {
-  flex: 0 0 210px;
+  flex: 1 1 100%;
   display: flex;
   align-content: flex-start;
   align-items: flex-start;
-  justify-content: flex-end;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 7px;
 }
@@ -413,6 +487,122 @@ button.heroStateChipOff {
   color: color-mix(in srgb, var(--text) 94%, transparent);
 }
 
+.gallerySectionCard {
+  border: 1px solid color-mix(in srgb, var(--card-brd) 68%, transparent);
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
+}
+
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 12px;
+}
+
+.galleryItem {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 72%, transparent);
+  border-radius: 12px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+  display: grid;
+  gap: 8px;
+  transition: border-color .14s ease, background .14s ease, transform .14s ease;
+}
+
+.galleryItem:hover {
+  border-color: color-mix(in srgb, var(--ui-border-focus) 62%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-hover) 62%, var(--card-bg) 38%);
+  transform: translateY(-1px);
+}
+
+.galleryItemMain {
+  border-color: color-mix(in srgb, var(--focus) 62%, var(--card-brd));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 20%, transparent);
+}
+
+.galleryPreviewButton {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  min-height: 128px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 72%, transparent);
+  border-radius: 9px;
+  overflow: hidden;
+  background: color-mix(in srgb, #0b111d 84%, transparent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.galleryPreviewButton:disabled {
+  cursor: default;
+  opacity: .72;
+}
+
+.galleryMeta {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.galleryActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.galleryActions .actionBtn {
+  flex: 1 1 auto;
+}
+
+.galleryEmptyState {
+  min-height: 116px;
+  border: 1px dashed color-mix(in srgb, var(--card-brd) 72%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ui-surface-2) 94%, transparent);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  color: color-mix(in srgb, var(--ui-text-2) 92%, transparent);
+}
+
+.galleryEmptyState strong,
+.galleryEmptyState span {
+  display: block;
+}
+
+.galleryEmptyState strong {
+  color: color-mix(in srgb, var(--ui-text-1) 94%, transparent);
+  font-size: var(--font-size-13);
+}
+
+.galleryEmptyState span {
+  margin-top: 3px;
+  font-size: var(--font-size-12);
+  line-height: 1.45;
+}
+
+.galleryEmptyIcon {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 72%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-1) 92%, transparent);
+  color: color-mix(in srgb, var(--ui-text-2) 88%, transparent);
+  font-size: var(--font-size-11);
+  font-weight: 800;
+}
+
 .filesList {
   display: flex;
   gap: 12px;
@@ -454,6 +644,11 @@ button.heroStateChipOff {
 .fileItem:focus-visible {
   outline: none;
   box-shadow: var(--ui-focus-ring);
+}
+
+.fileItemMain {
+  border-color: color-mix(in srgb, var(--focus) 62%, var(--card-brd));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--focus) 20%, transparent);
 }
 
 .uploadDropZone {
@@ -500,6 +695,26 @@ button.heroStateChipOff {
   justify-content: center;
 }
 
+.fileMainBadge {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  z-index: 2;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--focus) 45%, transparent);
+  background: color-mix(in srgb, var(--ui-overlay-bg-strong) 88%, var(--focus) 12%);
+  color: color-mix(in srgb, var(--ui-text-1) 94%, transparent);
+  font-size: var(--font-size-10);
+  font-weight: 900;
+  padding: 0 8px;
+  text-transform: uppercase;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
 .filePreview::after {
   content: "";
   position: absolute;
@@ -524,6 +739,7 @@ button.heroStateChipOff {
   image-rendering: auto;
   -webkit-image-rendering: auto;
   transform: translateZ(0);
+  pointer-events: none;
 }
 
 .fileThumbImageContain {
@@ -596,7 +812,7 @@ button.heroStateChipOff {
   opacity: 0;
   transform: translateY(6px);
   transition: opacity .14s ease, transform .14s ease;
-  pointer-events: none;
+  pointer-events: auto;
   z-index: 2;
 }
 
@@ -604,10 +820,12 @@ button.heroStateChipOff {
 .fileItem:focus-within .filePreviewOverlay {
   opacity: 1;
   transform: translateY(0);
-  pointer-events: auto;
 }
 
 .previewOverlayBtn {
+  position: relative;
+  z-index: 3;
+  pointer-events: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -653,6 +871,13 @@ button.heroStateChipOff {
 .actionBtn:hover {
   background: color-mix(in srgb, var(--sidebar-hover) 76%, transparent);
   border-color: color-mix(in srgb, var(--focus) 35%, transparent);
+}
+
+.actionBtn:disabled {
+  cursor: default;
+  opacity: .48;
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  border-color: color-mix(in srgb, var(--card-brd) 68%, transparent);
 }
 
 .actionDanger {
@@ -794,6 +1019,215 @@ button.heroStateChipOff {
   min-width: 0;
   display: flex;
   align-items: center;
+}
+
+.stockSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  gap: 10px;
+}
+
+.stockMetricCard {
+  min-width: 0;
+  min-height: 92px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 68%, transparent);
+  border-radius: 14px;
+  padding: 12px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ui-surface-3) 92%, transparent), color-mix(in srgb, var(--ui-surface-2) 90%, transparent));
+  display: grid;
+  align-content: space-between;
+  gap: 8px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent);
+}
+
+.stockMetricLabel {
+  color: color-mix(in srgb, var(--ui-text-3) 92%, transparent);
+  font-size: var(--font-size-12);
+  font-weight: 700;
+}
+
+.stockMetricValue {
+  color: color-mix(in srgb, var(--ui-text-1) 96%, transparent);
+  font-size: var(--font-size-24);
+  line-height: 1;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.stockMetricHint {
+  color: color-mix(in srgb, var(--ui-text-3) 86%, transparent);
+  font-size: var(--font-size-11);
+}
+
+.stockWarehouseSection {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.sectionHeaderCompact {
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sectionHeaderCompact h4 {
+  margin: 0;
+  color: color-mix(in srgb, var(--ui-text-1) 94%, transparent);
+  font-size: var(--font-size-16);
+  font-weight: 800;
+}
+
+.sectionHeaderCompact p {
+  margin: 4px 0 0;
+  color: color-mix(in srgb, var(--ui-text-3) 88%, transparent);
+  font-size: var(--font-size-12);
+}
+
+.stockWarehouseGroups {
+  display: grid;
+  gap: 12px;
+}
+
+.stockWarehouseGroup {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 72%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ui-surface-2) 94%, transparent);
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.stockWarehouseHeader {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.stockWarehouseHeader > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.stockWarehouseHeader strong {
+  min-width: 0;
+  color: color-mix(in srgb, var(--ui-text-1) 94%, transparent);
+  font-size: var(--font-size-15);
+  overflow-wrap: anywhere;
+}
+
+.stockWarehouseCode {
+  color: color-mix(in srgb, var(--ui-text-3) 92%, transparent);
+  font-size: var(--font-size-11);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.stockWarehouseTotals {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  color: color-mix(in srgb, var(--ui-text-2) 90%, transparent);
+  font-size: var(--font-size-12);
+  font-variant-numeric: tabular-nums;
+}
+
+.stockWarehouseTotals span {
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 72%, transparent);
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--ui-surface-1) 88%, transparent);
+  white-space: nowrap;
+}
+
+.stockLocationRows {
+  display: grid;
+  gap: 8px;
+}
+
+.stockLocationRow {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 64%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ui-surface-1) 92%, transparent);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(260px, 1.4fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.stockLocationIdentity {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.stockLocationIdentity strong {
+  color: color-mix(in srgb, var(--ui-text-1) 92%, transparent);
+  font-size: var(--font-size-14);
+  overflow-wrap: anywhere;
+}
+
+.stockLocationIdentity span {
+  color: color-mix(in srgb, var(--ui-text-3) 88%, transparent);
+  font-size: var(--font-size-12);
+}
+
+.stockLocationMetrics {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stockLocationMetrics span {
+  min-width: 0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--ui-surface-3) 70%, transparent);
+  color: color-mix(in srgb, var(--ui-text-3) 90%, transparent);
+  font-size: var(--font-size-11);
+  display: grid;
+  gap: 4px;
+}
+
+.stockLocationMetrics strong {
+  color: color-mix(in srgb, var(--ui-text-1) 94%, transparent);
+  font-size: var(--font-size-15);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 980px) {
+  .sectionHeaderCompact,
+  .stockWarehouseHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .stockWarehouseTotals {
+    justify-content: flex-start;
+  }
+
+  .stockLocationRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .stockLocationMetrics {
+    grid-template-columns: 1fr;
+  }
 }
 
 .emptyInline {
@@ -1178,6 +1612,179 @@ button.heroStateChipOff {
   border-color: color-mix(in srgb, var(--card-brd) 72%, transparent);
 }
 
+.movementSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.movementMetricCard {
+  min-width: 0;
+  min-height: 78px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 68%, transparent);
+  border-radius: 14px;
+  padding: 12px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ui-surface-3) 92%, transparent), color-mix(in srgb, var(--ui-surface-2) 90%, transparent));
+  display: grid;
+  align-content: space-between;
+  gap: 8px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
+}
+
+.movementMetricCard span {
+  color: color-mix(in srgb, var(--ui-text-3) 92%, transparent);
+  font-size: var(--font-size-12);
+  font-weight: 750;
+}
+
+.movementMetricCard strong {
+  color: color-mix(in srgb, var(--ui-text-1) 96%, transparent);
+  font-size: var(--font-size-22);
+  line-height: 1;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.movementLedger {
+  display: grid;
+  gap: 10px;
+}
+
+.movementCard {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 72%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ui-surface-2) 94%, transparent);
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+  box-shadow: var(--ui-shadow-sm);
+}
+
+.movementCardHeader {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.movementHeaderMain {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.movementTypeBadge {
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 72%, transparent);
+  display: inline-flex;
+  align-items: center;
+  color: color-mix(in srgb, var(--ui-text-1) 90%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-3) 86%, transparent);
+  font-size: var(--font-size-11);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.movementType_receipt {
+  color: color-mix(in srgb, #1f7a4d 82%, var(--ui-text-1) 18%);
+  border-color: color-mix(in srgb, #1f7a4d 38%, var(--ui-border-soft) 62%);
+  background: color-mix(in srgb, #1f7a4d 12%, var(--ui-surface-2) 88%);
+}
+
+.movementType_shipment {
+  color: color-mix(in srgb, #b14343 82%, var(--ui-text-1) 18%);
+  border-color: color-mix(in srgb, #b14343 36%, var(--ui-border-soft) 64%);
+  background: color-mix(in srgb, #b14343 10%, var(--ui-surface-2) 90%);
+}
+
+.movementType_transfer {
+  color: color-mix(in srgb, #3566a7 82%, var(--ui-text-1) 18%);
+  border-color: color-mix(in srgb, #3566a7 36%, var(--ui-border-soft) 64%);
+  background: color-mix(in srgb, #3566a7 10%, var(--ui-surface-2) 90%);
+}
+
+.movementType_adjustment {
+  color: color-mix(in srgb, #8d6530 82%, var(--ui-text-1) 18%);
+  border-color: color-mix(in srgb, #8d6530 36%, var(--ui-border-soft) 64%);
+  background: color-mix(in srgb, #8d6530 10%, var(--ui-surface-2) 90%);
+}
+
+.movementType_reservation,
+.movementType_release {
+  color: color-mix(in srgb, var(--primary) 78%, var(--ui-text-1) 22%);
+  border-color: color-mix(in srgb, var(--primary) 34%, var(--ui-border-soft) 66%);
+  background: color-mix(in srgb, var(--primary) 10%, var(--ui-surface-2) 90%);
+}
+
+.movementType_neutral {
+  color: color-mix(in srgb, var(--ui-text-2) 88%, transparent);
+  border-color: color-mix(in srgb, var(--ui-border-soft) 72%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-3) 86%, transparent);
+}
+
+.movementDate {
+  flex: 0 0 auto;
+  color: color-mix(in srgb, var(--ui-text-3) 92%, transparent);
+  font-size: var(--font-size-12);
+  font-weight: 650;
+  text-align: right;
+}
+
+.movementBodyGrid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.movementInfoBlock {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 58%, transparent);
+  border-radius: 11px;
+  padding: 8px 9px;
+  background: color-mix(in srgb, var(--ui-surface-1) 86%, transparent);
+  display: grid;
+  gap: 3px;
+}
+
+.movementInfoBlock span {
+  color: color-mix(in srgb, var(--ui-text-3) 90%, transparent);
+  font-size: var(--font-size-11);
+  font-weight: 750;
+}
+
+.movementInfoBlock strong {
+  min-width: 0;
+  color: color-mix(in srgb, var(--ui-text-1) 92%, transparent);
+  font-size: var(--font-size-12);
+  font-weight: 760;
+  overflow-wrap: anywhere;
+}
+
+.movementFooter {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: color-mix(in srgb, var(--ui-text-3) 88%, transparent);
+  font-size: var(--font-size-12);
+}
+
+.movementRef,
+.movementNote {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .managerWrap {
   display: grid;
   gap: 12px;
@@ -1248,10 +1855,11 @@ button.heroStateChipOff {
   gap: 6px;
 }
 
-@media (max-width: 1380px) {
+@media (max-width: 1100px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
     height: auto;
+    max-width: none;
   }
 
   .rightPane {
@@ -1260,6 +1868,20 @@ button.heroStateChipOff {
 }
 
 @media (max-width: 980px) {
+  .movementSummaryGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .movementCardHeader,
+  .movementFooter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .movementDate {
+    text-align: left;
+  }
+
   .responsiveRowHeader {
     flex-direction: column;
   }

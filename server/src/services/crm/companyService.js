@@ -5,6 +5,7 @@ const { bootstrapCompanyAcl } = require('../system/aclBootstrap');
 const { addContacts } = require('./contactPointService');
 const { ensureDefaultUomsForCompany } = require('../pim/uomDefaults');
 const { bootstrapCompanyNumberingSettings } = require('./documentNumberingService');
+const { ensureMainWarehouse } = require('../wms/warehouseResolver');
 
 const UUID_RE = /^[0-9a-fA-F-]{32,36}$/;
 // isFileApiUrl: проверяет бизнес-условие и возвращает boolean.
@@ -123,6 +124,8 @@ module.exports.createWithOwner = async (ownerUserId, data = {}) => {
     // 6) дефолтные настройки нумерации документов компании
     await bootstrapCompanyNumberingSettings({ companyId: company.id, transaction: t });
 
+    // 7) Default WMS warehouse only; no default location.
+    await ensureMainWarehouse(company.id, { transaction: t });
 
     await t.commit();
     return company;

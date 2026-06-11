@@ -103,6 +103,44 @@
     "noBarcode": "No barcode",
     "available": "Available"
   },
+  "pim": {
+    "stock": {
+      "tab": "Stock",
+      "stock": "Stock",
+      "description": "Read-only WMS stock snapshot for this product.",
+      "readOnly": "Read-only",
+      "refreshing": "Refreshing...",
+      "loading": "Loading stock...",
+      "onHand": "On hand",
+      "reserved": "Reserved",
+      "available": "Available",
+      "warehousesWithStock": "Warehouses with stock",
+      "locationsWithStock": "Locations with stock",
+      "variantsWithStock": "Variants with stock",
+      "productLevel": "Product level",
+      "warehouse": "Warehouse",
+      "variant": "Variant",
+      "warehouseGroups": "Warehouse groups",
+      "locationViewHint": "Location-level view based on existing WMS inventory item rows.",
+      "location": "Location",
+      "locations": "Locations",
+      "locationType": "Location type",
+      "locationDataUnavailable": "Location-level stock data is not available from the current WMS response.",
+      "noLocationRows": "No location-level stock rows yet.",
+      "context": "Context",
+      "stockByWarehouseVariant": "Stock by warehouse and variant",
+      "noStockYet": "No stock yet",
+      "noStockYetHint": "Stock rows will appear here after warehouse documents post inventory movements.",
+      "inventoryDisabled": "Inventory tracking is disabled",
+      "inventoryDisabledHint": "Enable inventory tracking in the product card to use WMS stock visibility.",
+      "serviceNoStock": "Service product has no stock tracking",
+      "serviceNoStockHint": "Services do not create stock rows or warehouse balances.",
+      "noPermission": "No permission to view stock",
+      "noPermissionHint": "This read-only stock view uses WMS inventory permissions.",
+      "errorTitle": "Failed to load stock",
+      "errorHint": "Try refreshing the product card or check WMS inventory access."
+    }
+  },
   "Basic": "Basic",
   "Identifiers": "Identifiers",
   "Commerce": "Commerce",
@@ -420,6 +458,14 @@
       "date": "Date",
       "documentType": "Document type"
     },
+    "locationOptional": {
+      "label": "Location optional",
+      "inboundLabel": "Inbound location optional",
+      "fromLabel": "Source location optional",
+      "toLabel": "Target location optional",
+      "warehouseLevelStock": "Warehouse-level stock",
+      "warehouseLevelHint": "No location selected; this document will use warehouse-level stock."
+    },
     "create": {
       "subtitleReceipt": "Create receipt and optionally receive lines",
       "subtitleAdjustment": "Create RW/PW adjustment and optionally post",
@@ -448,14 +494,14 @@
     },
     "validation": {
       "warehouseRequired": "Warehouse is required",
-      "inboundLocationRequired": "Inbound location is required",
+      "inboundLocationRequired": "Inbound location is optional",
       "selectLineForReceive": "Select at least one line for receive",
-      "locationRequired": "Location is required",
+      "locationRequired": "Location is optional",
       "typeRequired": "Type is required",
       "fromWarehouseRequired": "From warehouse is required",
       "toWarehouseRequired": "To warehouse is required",
-      "fromLocationRequired": "From location is required",
-      "toLocationRequired": "To location is required",
+      "fromLocationRequired": "Source location is optional",
+      "toLocationRequired": "Target location is optional",
       "productRequired": "Product is required",
       "qtyExpectedPositive": "Qty expected must be > 0",
       "qtyDeltaPositive": "Qty delta must be > 0",
@@ -894,7 +940,7 @@
       },
       "validation": {
         "warehouseRequired": "Warehouse is required",
-        "locationRequired": "Location is required",
+        "locationRequired": "Location is optional",
         "productRequired": "Product is required",
         "qtyNonNegative": "Qty counted must be >= 0"
       },
@@ -1088,7 +1134,7 @@
       }
     },
     "policy": {
-      "executionRequiresLocations": "Execution requires source and target locations.",
+      "executionRequiresLocations": "Execution can use warehouse-level stock when no location is selected.",
       "documentLocked": "Document is locked.",
       "correctionUnavailable": "Correction is unavailable for this status."
     }

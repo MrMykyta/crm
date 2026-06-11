@@ -146,18 +146,8 @@ module.exports.executeLine = async (
     }
     // Use explicit payload locations when present; otherwise fall back to the document's
     // default source/target locations.
-    const effectiveFromLocationId = asText(fromLocationId) || asText(transfer.sourceLocationId);
-    const effectiveToLocationId = asText(toLocationId) || asText(transfer.targetLocationId);
-    if (!effectiveFromLocationId || !effectiveToLocationId) {
-      throw new AppError(400, 'Execution requires source and target locations', {
-        code: 'TRANSFER_LOCATION_REQUIRED',
-        details: {
-          transferId: transfer.id,
-          fromLocationId: effectiveFromLocationId || null,
-          toLocationId: effectiveToLocationId || null,
-        },
-      });
-    }
+    const effectiveFromLocationId = asText(fromLocationId) || asText(transfer.sourceLocationId) || null;
+    const effectiveToLocationId = asText(toLocationId) || asText(transfer.targetLocationId) || null;
 
     const plannedQty = asNumber(item.qty, 0);
     const movedQty = asNumber(item.movedQty, 0);
@@ -216,7 +206,7 @@ module.exports.executeLine = async (
         companyId,
         type: 'transfer',
         warehouseId: transfer.fromWarehouseId,
-        fromLocationId: effectiveFromLocationId,
+        fromLocationId: effectiveFromLocationId || null,
         productId: item.productId,
         variantId: item.variantId,
         lotId: item.lotId,
@@ -232,7 +222,7 @@ module.exports.executeLine = async (
         companyId,
         type: 'transfer',
         warehouseId: transfer.toWarehouseId,
-        toLocationId: effectiveToLocationId,
+        toLocationId: effectiveToLocationId || null,
         productId: item.productId,
         variantId: item.variantId,
         lotId: item.lotId,

@@ -102,6 +102,44 @@
     "noBarcode": "Без штрихкоду",
     "available": "Доступно"
   },
+  "pim": {
+    "stock": {
+      "tab": "Залишки",
+      "stock": "Залишки",
+      "description": "Зріз складських залишків WMS для цього товару тільки для перегляду.",
+      "readOnly": "Тільки перегляд",
+      "refreshing": "Оновлення...",
+      "loading": "Завантаження залишків...",
+      "onHand": "В наявності",
+      "reserved": "У резерві",
+      "available": "Доступно",
+      "warehousesWithStock": "Складів із залишком",
+      "locationsWithStock": "Локацій із залишком",
+      "variantsWithStock": "Варіантів із залишком",
+      "productLevel": "Рівень товару",
+      "warehouse": "Склад",
+      "variant": "Варіант",
+      "warehouseGroups": "Групи за складами",
+      "locationViewHint": "Перегляд за локаціями на основі наявних рядків WMS InventoryItem.",
+      "location": "Локація",
+      "locations": "Локації",
+      "locationType": "Тип локації",
+      "locationDataUnavailable": "Дані залишків за локаціями недоступні в поточній відповіді WMS.",
+      "noLocationRows": "Рядків залишків за локаціями поки немає.",
+      "context": "Контекст",
+      "stockByWarehouseVariant": "Залишки за складом і варіантом",
+      "noStockYet": "Залишків поки немає",
+      "noStockYetHint": "Рядки залишків з'являться після проведення складських документів.",
+      "inventoryDisabled": "Облік залишків вимкнено",
+      "inventoryDisabledHint": "Увімкніть облік залишків у картці товару, щоб бачити складські залишки WMS.",
+      "serviceNoStock": "Послуга не має складського обліку",
+      "serviceNoStockHint": "Послуги не створюють складські рядки або залишки.",
+      "noPermission": "Немає доступу до залишків",
+      "noPermissionHint": "Цей екран тільки для перегляду використовує права WMS inventory.",
+      "errorTitle": "Не вдалося завантажити залишки",
+      "errorHint": "Оновіть картку товару або перевірте доступ до WMS inventory."
+    }
+  },
   "Basic": "Основне",
   "Identifiers": "Ідентифікатори",
   "Commerce": "Комерція",
@@ -419,6 +457,14 @@
       "date": "Дата",
       "documentType": "Тип документа"
     },
+    "locationOptional": {
+      "label": "Локація необов'язкова",
+      "inboundLabel": "Локація приймання необов'язкова",
+      "fromLabel": "Локація-джерело необов'язкова",
+      "toLabel": "Цільова локація необов'язкова",
+      "warehouseLevelStock": "Залишок на рівні складу",
+      "warehouseLevelHint": "Локацію не вибрано; документ використає залишок на рівні складу."
+    },
     "create": {
       "subtitleReceipt": "Створіть приймання та за потреби прийміть позиції",
       "subtitleAdjustment": "Створіть RW/PW і за потреби проведіть",
@@ -447,14 +493,14 @@
     },
     "validation": {
       "warehouseRequired": "Склад обов'язковий",
-      "inboundLocationRequired": "Локація приймання обов'язкова",
+      "inboundLocationRequired": "Локація приймання необов'язкова",
       "selectLineForReceive": "Виберіть хоча б один рядок для приймання",
-      "locationRequired": "Локація обов'язкова",
+      "locationRequired": "Локація необов'язкова",
       "typeRequired": "Тип обов'язковий",
       "fromWarehouseRequired": "Склад-джерело обов'язковий",
       "toWarehouseRequired": "Склад-отримувач обов'язковий",
-      "fromLocationRequired": "Локація-джерело обов'язкова",
-      "toLocationRequired": "Локація-отримувач обов'язкова",
+      "fromLocationRequired": "Локація-джерело необов'язкова",
+      "toLocationRequired": "Цільова локація необов'язкова",
       "productRequired": "Товар обов'язковий",
       "qtyExpectedPositive": "Очікувана к-сть має бути > 0",
       "qtyDeltaPositive": "Зміна к-сті має бути > 0",
@@ -893,7 +939,7 @@
       },
       "validation": {
         "warehouseRequired": "Склад обов'язковий",
-        "locationRequired": "Локація обов'язкова",
+        "locationRequired": "Локація необов'язкова",
         "productRequired": "Товар обов'язковий",
         "qtyNonNegative": "Порахована кількість має бути >= 0"
       },
@@ -1087,7 +1133,7 @@
       }
     },
     "policy": {
-      "executionRequiresLocations": "Для виконання потрібні вихідна та цільова локації.",
+      "executionRequiresLocations": "Виконання може використати залишок на рівні складу, якщо локацію не вибрано.",
       "documentLocked": "Документ заблоковано.",
       "correctionUnavailable": "Коригування недоступне для цього статусу."
     }

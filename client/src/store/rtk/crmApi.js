@@ -221,6 +221,7 @@ export const crmApi = createApi({
     'ProductList',
     'ProductPicker',
     'ProductVariant',
+    'ProductAttachment',
     'ProductSupplier',
     'VariantOption',
     'ProductPrice',

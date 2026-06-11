@@ -267,7 +267,7 @@ module.exports.create = async (companyId, data, outerTx = null) => {
 };
 
 // receiveLine: выполняет вспомогательную бизнес-логику сервиса.
-module.exports.receiveLine = async (companyId, receiptItemId, { qty, toLocationId, lotId = null }, outerTx = null) => {
+module.exports.receiveLine = async (companyId, receiptItemId, { qty, lotId = null }, outerTx = null) => {
   return withTx(async (t) => {
     const moveQty = toPositiveQty(qty);
     const item = await ReceiptItem.findOne({
@@ -279,7 +279,7 @@ module.exports.receiveLine = async (companyId, receiptItemId, { qty, toLocationI
 
     const receipt = await Receipt.findOne({
       where: { id: item.receiptId, companyId },
-      attributes: ['id', 'companyId', 'warehouseId', 'status', 'parentDocumentId'],
+      attributes: ['id', 'companyId', 'warehouseId', 'inboundLocationId', 'status', 'parentDocumentId'],
       transaction: t,
       lock: t.LOCK.UPDATE,
     });
@@ -356,7 +356,7 @@ module.exports.receiveLine = async (companyId, receiptItemId, { qty, toLocationI
         companyId,
         type: 'receipt',
         warehouseId: receipt.warehouseId,
-        toLocationId,
+        toLocationId: receipt.inboundLocationId || null,
         productId: item.productId,
         variantId: item.variantId,
         lotId,

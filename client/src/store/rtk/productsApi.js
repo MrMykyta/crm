@@ -298,6 +298,69 @@ providesTags: (_res, _err, id) => [{ type: 'Product', id }],
       },
     }),
 
+    listProductAttachments: build.query({
+      query: (args = {}) => ({
+        url: '/product-attachments',
+        method: 'GET',
+        params: buildParams(args),
+      }),
+      transformResponse: normalizeList,
+      providesTags: (res, _err, args = {}) => [
+        { type: 'ProductAttachment', id: `PRODUCT:${args?.productId || 'LIST'}` },
+        ...(res?.items || []).map((item) => ({ type: 'ProductAttachment', id: item.id })),
+      ],
+      keepUnusedDataFor: 60,
+    }),
+
+    createProductAttachment: build.mutation({
+      query: (payload) => ({
+        url: '/product-attachments',
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      invalidatesTags: (_res, _err, payload) => [
+        { type: 'ProductAttachment', id: `PRODUCT:${payload?.productId || 'LIST'}` },
+        { type: 'Product', id: payload?.productId },
+        { type: 'ProductPicker', id: 'LIST' },
+      ],
+    }),
+
+    updateProductAttachment: build.mutation({
+      query: ({ id, payload }) => ({
+        url: `/product-attachments/${encodeURIComponent(id)}`,
+        method: 'PUT',
+        body: stripCompanyId(payload),
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      invalidatesTags: (_res, _err, { id, payload }) => [
+        { type: 'ProductAttachment', id },
+        { type: 'ProductAttachment', id: `PRODUCT:${payload?.productId || 'LIST'}` },
+        { type: 'Product', id: payload?.productId },
+        { type: 'ProductPicker', id: 'LIST' },
+      ],
+    }),
+
+    deleteProductAttachment: build.mutation({
+      query: (arg) => {
+        const id = typeof arg === 'object' ? arg?.id : arg;
+        return {
+          url: `/product-attachments/${encodeURIComponent(id)}`,
+          method: 'DELETE',
+        };
+      },
+      invalidatesTags: (_res, _err, arg) => {
+        const id = typeof arg === 'object' ? arg?.id : arg;
+        const productId = typeof arg === 'object' ? arg?.productId : null;
+        return [
+          { type: 'ProductAttachment', id },
+          { type: 'ProductAttachment', id: `PRODUCT:${productId || 'LIST'}` },
+          { type: 'Product', id: productId },
+          { type: 'ProductPicker', id: 'LIST' },
+        ];
+      },
+    }),
+
     createProduct: build.mutation({
             // query: формирует параметры HTTP-запроса для endpoint-а.
 query: (payload) => ({
@@ -736,6 +799,10 @@ export const {
   useCreateProductSupplierMutation,
   useUpdateProductSupplierMutation,
   useDeleteProductSupplierMutation,
+  useListProductAttachmentsQuery,
+  useCreateProductAttachmentMutation,
+  useUpdateProductAttachmentMutation,
+  useDeleteProductAttachmentMutation,
   useLazyGetProductQuery,
   useLazyGetProductVariantQuery,
   useGetProductVariantQuery,

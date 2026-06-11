@@ -57,6 +57,19 @@ function getErrorText(error, fallback = 'Operation failed') {
   return error?.data?.message || error?.data?.error || error?.error || error?.message || fallback;
 }
 
+function warehouseLevelStockText(t) {
+  return t('wms.locationOptional.warehouseLevelStock', 'Warehouse-level stock');
+}
+
+function warehouseLevelHint(t) {
+  return t('wms.locationOptional.warehouseLevelHint', 'No location selected; this document will use warehouse-level stock.');
+}
+
+function formatOptionalLocationLabel(locationOrId, locationsById, t) {
+  const id = typeof locationOrId === 'object' ? asText(locationOrId?.id) : asText(locationOrId);
+  return id ? formatLocationLabel(locationOrId, locationsById) : warehouseLevelStockText(t);
+}
+
 function createDraftRow() {
   return {
     localId: uid(),
@@ -131,7 +144,7 @@ export default function CycleCountDetailPage() {
   const locationOptions = useMemo(() => {
     const rows = Array.isArray(locationsData?.items) ? locationsData.items : [];
     return [
-      { value: '', label: t('wms.cycleCounts.selectLocation', 'Select location') },
+      { value: '', label: warehouseLevelStockText(t) },
       ...rows.map((row) => ({
         value: row.id,
         label: formatLocationLabel(row),
@@ -256,9 +269,6 @@ export default function CycleCountDetailPage() {
   const validateItems = () => {
     const nextErrors = {};
     draftItems.forEach((item) => {
-      if (!asText(item.locationId)) {
-        nextErrors[`item:${item.localId}:locationId`] = t('wms.cycleCounts.validation.locationRequired', 'Location is required');
-      }
       if (!asText(item.productId)) {
         nextErrors[`item:${item.localId}:productId`] = t('wms.cycleCounts.validation.productRequired', 'Product is required');
       }
@@ -275,7 +285,7 @@ export default function CycleCountDetailPage() {
     setErrorText('');
     try {
       const payloadItems = draftItems.map((item) => ({
-        locationId: item.locationId,
+        locationId: asText(item.locationId) || null,
         productId: item.productId,
         variantId: asText(item.variantId) || null,
         lotId: asText(item.lotId) || null,
@@ -405,7 +415,7 @@ export default function CycleCountDetailPage() {
                       : '—';
                   return (
                     <tr key={row.key}>
-                      <td>{formatLocationLabel(row.location || row.locationId, locationsById)}</td>
+                      <td>{formatOptionalLocationLabel(row.location || row.locationId, locationsById, t)}</td>
                       <td>{formatProductLabel(row.product || row.productId, productsById)}</td>
                       <td>{formatVariantLabel(row.variant || row.variantId, variantsById)}</td>
                       <td>{formatQty(row.countedQty, i18n.language)}</td>
@@ -434,7 +444,7 @@ export default function CycleCountDetailPage() {
               <table className={s.table}>
                 <thead>
                   <tr>
-                    <th>{t('wms.cycleCounts.columns.location', 'Location')} *</th>
+                    <th>{t('wms.locationOptional.label', 'Location optional')}</th>
                     <th>{t('wms.cycleCounts.columns.product', 'Product')} *</th>
                     <th>{t('wms.cycleCounts.columns.variant', 'Variant')}</th>
                     <th>{t('wms.cycleCounts.columns.lot', 'Lot')}</th>
@@ -451,10 +461,10 @@ export default function CycleCountDetailPage() {
                           value={item.locationId}
                           onChange={(value) => setDraftField(item.localId, 'locationId', value)}
                           options={locationOptions}
-                          placeholder={t('wms.cycleCounts.selectLocation', 'Select location')}
+                          placeholder={warehouseLevelStockText(t)}
                         />
-                        {errors[`item:${item.localId}:locationId`] ? (
-                          <div className={s.fieldError}>{errors[`item:${item.localId}:locationId`]}</div>
+                        {!asText(item.locationId) ? (
+                          <div className={s.smallText}>{warehouseLevelHint(t)}</div>
                         ) : null}
                       </td>
                       <td>

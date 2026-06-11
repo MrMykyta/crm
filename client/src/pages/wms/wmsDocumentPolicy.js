@@ -11,13 +11,6 @@ function getCorrectedById(document) {
   return document?.correctedById || document?.corrected_by_id || null;
 }
 
-function getTransferLocationIds(document) {
-  return {
-    fromLocationId: asText(document?.fromLocationId || document?.sourceLocationId),
-    toLocationId: asText(document?.toLocationId || document?.targetLocationId),
-  };
-}
-
 export function getWmsDocumentPolicy({ kind, document }) {
   const status = asText(document?.status).toLowerCase();
   const isCorrection = Boolean(getParentDocumentId(document));
@@ -58,14 +51,11 @@ export function getWmsDocumentPolicy({ kind, document }) {
   }
 
   if (kind === 'transfer') {
-    const { fromLocationId, toLocationId } = getTransferLocationIds(document);
     const executionStatus = ['draft', 'in_transit'].includes(status);
-    const hasExecutionLocations = Boolean(fromLocationId && toLocationId);
     return {
       ...base,
       documentType: 'MM',
-      canExecute: executionStatus && hasExecutionLocations,
-      lockedReason: executionStatus && !hasExecutionLocations ? 'executionRequiresLocations' : '',
+      canExecute: executionStatus,
     };
   }
 

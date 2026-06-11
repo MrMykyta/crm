@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import DataTable from '../../../../components/data/DataTable';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import Modal from '../../../../components/Modal';
@@ -24,14 +25,25 @@ import {
   useListPriceListsLookupQuery,
   useListUomsLookupQuery,
   useCreateProductSupplierMutation,
+  useCreateProductAttachmentMutation,
+  useDeleteProductAttachmentMutation,
   useUpdateProductVariantMutation,
+  useListProductAttachmentsQuery,
   useUpdateProductDescriptionMutation,
+  useUpdateProductAttachmentMutation,
   useUpdateProductPriceMutation,
   useUpdateProductSpecificationMutation,
   useUpdateProductSupplierMutation,
   useUpdateVariantOptionMutation,
 } from '../../../../store/rtk/productsApi';
 import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
+import { useGetStockBalancesQuery } from '../../../../store/rtk/stockBalancesApi';
+import {
+  useListInventoryItemsQuery,
+  useListLotsQuery,
+  useListReservationsQuery,
+  useListSerialsQuery,
+} from '../../../../store/rtk/wmsDocumentsApi';
 import {
   useDeleteFileMutation,
   useGetSignedPreviewUrlQuery,
@@ -93,9 +105,32 @@ function normalizeUrl(value = '') {
 
 // parseOwnerFilesPayload: парсит входные данные для UI.
 function parseOwnerFilesPayload(payload) {
+  if (Array.isArray(payload?.items)) return payload.items;
   if (Array.isArray(payload?.data)) return payload.data;
   if (Array.isArray(payload)) return payload;
   return [];
+}
+
+function pickMainAttachment(attachments = []) {
+  return [...attachments]
+    .filter((row) => String(row?.role || '').toLowerCase() === 'image')
+    .sort((a, b) => {
+      const left = Number.isFinite(Number(a?.sortOrder)) ? Number(a.sortOrder) : 0;
+      const right = Number.isFinite(Number(b?.sortOrder)) ? Number(b.sortOrder) : 0;
+      if (left !== right) return left - right;
+      return new Date(a?.createdAt || 0) - new Date(b?.createdAt || 0);
+    })[0] || null;
+}
+
+function sortImageAttachments(attachments = []) {
+  return [...attachments]
+    .filter((row) => row?.id && String(row?.role || '').toLowerCase() === 'image')
+    .sort((a, b) => {
+      const left = Number.isFinite(Number(a?.sortOrder)) ? Number(a.sortOrder) : 0;
+      const right = Number.isFinite(Number(b?.sortOrder)) ? Number(b.sortOrder) : 0;
+      if (left !== right) return left - right;
+      return new Date(a?.createdAt || 0) - new Date(b?.createdAt || 0);
+    });
 }
 
 const MEDIA_EXT = new Set([
@@ -499,8 +534,26 @@ function FilesTab({ productId }) {
     ownerType: 'product',
     ownerId: productId,
   });
+  const { data: attachmentData, refetch: refetchAttachments } = useListProductAttachmentsQuery(
+    { productId, limit: 100 },
+    { skip: !productId }
+  );
 
   const files = useMemo(() => parseOwnerFilesPayload(data), [data]);
+  const attachments = useMemo(() => parseOwnerFilesPayload(attachmentData), [attachmentData]);
+  const mainAttachment = useMemo(() => pickMainAttachment(attachments), [attachments]);
+  const fileById = useMemo(() => {
+    const map = new Map();
+    files.forEach((file) => {
+      if (file?.id) map.set(String(file.id), file);
+    });
+    return map;
+  }, [files]);
+  const imageRelations = useMemo(() => sortImageAttachments(attachments), [attachments]);
+  const galleryItems = useMemo(() => imageRelations.map((attachment) => ({
+    attachment,
+    file: attachment?.attachmentId ? fileById.get(String(attachment.attachmentId)) : null,
+  })), [fileById, imageRelations]);
   const orderedFiles = useMemo(
     () => [...files].sort((a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0)),
     [files]
@@ -516,6 +569,9 @@ function FilesTab({ productId }) {
 
   const [uploadFile] = useUploadFileMutation();
   const [deleteFile] = useDeleteFileMutation();
+  const [createProductAttachment] = useCreateProductAttachmentMutation();
+  const [updateProductAttachment] = useUpdateProductAttachmentMutation();
+  const [deleteProductAttachment] = useDeleteProductAttachmentMutation();
   const [getSignedPreview] = useLazyGetSignedFileUrlQuery();
   const [getSignedDownload] = useLazyGetSignedDownloadUrlQuery();
   const [busyUpload, setBusyUpload] = useState(false);
@@ -651,9 +707,106 @@ const onRemove = async (fileId) => {
     if (!fileId) return;
     try {
       await deleteFile(fileId).unwrap();
+      await refetchAttachments();
       await refetch();
     } catch {
       setError('Не удалось удалить файл');
+    }
+  };
+
+  const normalizeImageOrder = useCallback(async (orderedRelations) => {
+    await Promise.all(orderedRelations.map((row, index) => (
+      updateProductAttachment({
+        id: row.id,
+        payload: {
+          productId,
+          attachmentId: row.attachmentId,
+          role: 'image',
+          sortOrder: index,
+        },
+      }).unwrap()
+    )));
+  }, [productId, updateProductAttachment]);
+
+  const setAsMainImage = async (fileOrAttachment) => {
+    const fileId = fileOrAttachment?.attachmentId || fileOrAttachment?.id;
+    const file = fileOrAttachment?.attachmentId ? fileById.get(String(fileOrAttachment.attachmentId)) : fileOrAttachment;
+    if (!fileId || !productId) return;
+    if (file && !isImageFile(file)) {
+      setError('Main image можно назначить только для изображения');
+      return;
+    }
+    setError('');
+    try {
+      const existing = attachments.find((row) => String(row?.attachmentId) === String(fileId));
+      const imageRelations = attachments
+        .filter((row) => row?.id && String(row?.role || '').toLowerCase() === 'image' && String(row?.id) !== String(existing?.id || ''))
+        .sort((a, b) => Number(a?.sortOrder || 0) - Number(b?.sortOrder || 0));
+
+      await Promise.all(imageRelations.map((row, index) => (
+        updateProductAttachment({
+          id: row.id,
+          payload: {
+            productId,
+            attachmentId: row.attachmentId,
+            role: row.role || 'image',
+            sortOrder: index + 1,
+          },
+        }).unwrap()
+      )));
+
+      if (existing) {
+        await updateProductAttachment({
+          id: existing.id,
+          payload: {
+            productId,
+            attachmentId: existing.attachmentId,
+            role: 'image',
+            sortOrder: 0,
+          },
+        }).unwrap();
+      } else {
+        await createProductAttachment({
+          productId,
+          attachmentId: fileId,
+          role: 'image',
+          sortOrder: 0,
+        }).unwrap();
+      }
+
+      await Promise.all([refetchAttachments(), refetch()]);
+    } catch (e) {
+      setError(e?.data?.message || e?.message || 'Не удалось назначить main image');
+    }
+  };
+
+  const moveGalleryImage = async (attachment, delta) => {
+    if (!attachment?.id || !delta) return;
+    const currentIndex = imageRelations.findIndex((row) => String(row.id) === String(attachment.id));
+    const nextIndex = currentIndex + delta;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= imageRelations.length) return;
+    setError('');
+    try {
+      const nextOrder = [...imageRelations];
+      const [current] = nextOrder.splice(currentIndex, 1);
+      nextOrder.splice(nextIndex, 0, current);
+      await normalizeImageOrder(nextOrder);
+      await Promise.all([refetchAttachments(), refetch()]);
+    } catch (e) {
+      setError(e?.data?.message || e?.message || 'Не удалось изменить порядок изображений');
+    }
+  };
+
+  const removeImageRelation = async (attachment) => {
+    if (!attachment?.id) return;
+    setError('');
+    try {
+      await deleteProductAttachment({ id: attachment.id, productId }).unwrap();
+      const nextOrder = imageRelations.filter((row) => String(row.id) !== String(attachment.id));
+      if (nextOrder.length) await normalizeImageOrder(nextOrder);
+      await Promise.all([refetchAttachments(), refetch()]);
+    } catch (e) {
+      setError(e?.data?.message || e?.message || 'Не удалось убрать изображение из галереи');
     }
   };
 
@@ -710,6 +863,95 @@ const onRemove = async (fileId) => {
         }}
       />
 
+      <section className={s.gallerySectionCard}>
+        <div className={s.fileSectionHeader}>
+          <div className={s.fileSectionHeadMain}>
+            <h4>Галерея изображений</h4>
+            <span className={s.metaChip}>{galleryItems.length}</span>
+          </div>
+          <AddButton onClick={() => inputRef.current?.click()}>Добавить изображения</AddButton>
+        </div>
+
+        {galleryItems.length === 0 ? (
+          <div className={s.galleryEmptyState}>
+            <div className={s.galleryEmptyIcon}>IMG</div>
+            <div>
+              <strong>Галерея пока пустая</strong>
+              <span>Загрузите изображения или назначьте image-файлы как main image во вкладке файлов.</span>
+            </div>
+          </div>
+        ) : (
+          <div className={s.galleryGrid}>
+            {galleryItems.map(({ attachment, file }, index) => {
+              const isMain = mainAttachment && String(mainAttachment.id) === String(attachment.id);
+              const fileName = file?.filename || file?.safeName || attachment?.attachmentId || 'Изображение';
+              return (
+                <article
+                  key={attachment.id}
+                  className={`${s.galleryItem} ${isMain ? s.galleryItemMain : ''}`}
+                >
+                  <button
+                    type="button"
+                    className={s.galleryPreviewButton}
+                    onClick={() => (file ? openFile(file) : null)}
+                    disabled={!file}
+                    title={file ? 'Открыть preview' : 'Файл недоступен'}
+                    aria-label={file ? `Открыть ${fileName}` : 'Файл недоступен'}
+                  >
+                    {file ? <FileThumb file={file} /> : <span className={s.filePreviewFallback}>IMG</span>}
+                    {isMain ? <span className={s.fileMainBadge}>Main</span> : null}
+                  </button>
+                  <div className={s.galleryMeta}>
+                    <div className={s.fileName}>{fileName}</div>
+                    <div className={s.fileSub}>
+                      {file ? formatBytes(file.size) : 'Связь без File'}
+                      {' · '}
+                      sortOrder {Number.isFinite(Number(attachment?.sortOrder)) ? Number(attachment.sortOrder) : index}
+                    </div>
+                  </div>
+                  <div className={s.galleryActions}>
+                    <button
+                      type="button"
+                      className={s.actionBtn}
+                      onClick={() => moveGalleryImage(attachment, -1)}
+                      disabled={index === 0}
+                      title="Переместить влево"
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      className={s.actionBtn}
+                      onClick={() => moveGalleryImage(attachment, 1)}
+                      disabled={index === galleryItems.length - 1}
+                      title="Переместить вправо"
+                    >
+                      →
+                    </button>
+                    <button
+                      type="button"
+                      className={s.actionBtn}
+                      onClick={() => setAsMainImage(attachment)}
+                      disabled={isMain}
+                    >
+                      Main
+                    </button>
+                    <button
+                      type="button"
+                      className={`${s.actionBtn} ${s.actionDanger}`}
+                      onClick={() => removeImageRelation(attachment)}
+                      title="Убрать связь из галереи"
+                    >
+                      Убрать
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
       <div className={s.fileSections}>
         {FILE_SECTION_META.map((sectionMeta) => {
           const sectionKey = sectionMeta.key;
@@ -730,10 +972,12 @@ const onRemove = async (fileId) => {
                 </div>
               ) : (
                 <div className={s.filesList}>
-                  {sectionItems.map((file) => (
+                  {sectionItems.map((file) => {
+                    const isMain = mainAttachment && String(mainAttachment.attachmentId) === String(file.id);
+                    return (
                     <article
                       key={file.id}
-                      className={s.fileItem}
+                      className={`${s.fileItem} ${isMain ? s.fileItemMain : ''}`}
                       role="button"
                       tabIndex={0}
                       onClick={() => openFile(file)}
@@ -746,7 +990,20 @@ const onRemove = async (fileId) => {
                     >
                       <div className={s.filePreview} aria-hidden>
                         <FileThumb file={file} />
+                        {isMain ? <span className={s.fileMainBadge}>Main</span> : null}
                         <div className={s.filePreviewOverlay} onClick={(event) => event.stopPropagation()}>
+                          {isImageFile(file) ? (
+                            <button
+                              type="button"
+                              className={s.previewOverlayBtn}
+                              onClick={() => setAsMainImage(file)}
+                              title={isMain ? 'Main image' : 'Set as main image'}
+                              aria-label={isMain ? 'Main image' : 'Set as main image'}
+                              disabled={isMain}
+                            >
+                              ★
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             className={s.previewOverlayBtn}
@@ -778,10 +1035,14 @@ const onRemove = async (fileId) => {
                       </div>
                       <div className={s.fileMeta}>
                         <div className={s.fileName}>{file.filename || file.safeName || file.id}</div>
-                        <div className={s.fileSub}>{formatBytes(file.size)}</div>
+                        <div className={s.fileSub}>
+                          {formatBytes(file.size)}
+                          {isMain ? ' · main image' : ''}
+                        </div>
                       </div>
                     </article>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>
@@ -889,6 +1150,218 @@ function InfoGroup({ title, children }) {
       <div className={s.infoGroupTitle}>{title}</div>
       <div className={s.infoGroupBody}>{children}</div>
     </div>
+  );
+}
+
+function formatDateOnly(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(+date)) return '—';
+  return date.toLocaleDateString();
+}
+
+function productDisplayName(product) {
+  return product?.name || product?.sku || product?.id || '—';
+}
+
+function reservationVariantDisplayName(row) {
+  return row?.variantName || row?.variant?.name || row?.variant?.sku || row?.variantId || '—';
+}
+
+function reservationStatusClass(status) {
+  return String(status || '').toLowerCase() === 'active' ? s.statusPillActive : s.statusPillInactive;
+}
+
+function ReadOnlyState({ icon = '—', title, text }) {
+  return (
+    <div className={s.emptyStateCard}>
+      <div className={s.emptyStateIcon}>{icon}</div>
+      <div className={s.emptyStateTitle}>{title}</div>
+      {text ? <div className={s.emptyStateText}>{text}</div> : null}
+    </div>
+  );
+}
+
+function ReservationsTab({ productId, product }) {
+  const { t } = useTranslation();
+  const { data, isFetching, isError, error } = useListReservationsQuery(
+    { productId, limit: 100, sort: 'createdAt', dir: 'DESC' },
+    { skip: !productId }
+  );
+  const items = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data?.items]);
+  const statusCode = error?.status || error?.originalStatus;
+
+  return (
+    <section className={s.sectionCard}>
+      <div className={s.sectionHeader}>
+        <h3>{t('wms.reservations.title')}</h3>
+        <div className={s.sectionLeadMeta}>
+          <span className={s.metaChip}>{t('wms.reservations.columns.qty')}: {formatQuantity(items.reduce((sum, row) => sum + (Number(row?.qty) || 0), 0), product?.uom)}</span>
+          {isFetching ? <span className={s.inlineState}>{t('common.loading', 'Loading...')}</span> : null}
+        </div>
+      </div>
+
+      {isError ? (
+        <ReadOnlyState
+          icon="R"
+          title={statusCode === 403 ? t('wms.reservations.noReadPermission') : t('common.error', 'Error')}
+          text={statusCode === 403 ? 'Reservation list is guarded by WMS reservation permissions.' : 'Reservations could not be loaded.'}
+        />
+      ) : null}
+
+      {!isError && !isFetching && items.length === 0 ? (
+        <ReadOnlyState icon="R" title="No reservations" text="Reserved quantities for this product will appear here." />
+      ) : null}
+
+      {!isError && items.length > 0 ? (
+        <div className={s.responsiveRows}>
+          {items.map((row) => (
+            <article className={s.responsiveRowCard} key={row.id}>
+              <div className={s.responsiveRowHeader}>
+                <div className={s.responsiveRowIdentity}>
+                  <div className={s.responsiveTitleLine}>
+                    <span className={reservationStatusClass(row.status)}>{row.status || '—'}</span>
+                    <strong>{formatQuantity(row.qty, product?.uom)}</strong>
+                  </div>
+                  <span>{formatDateTime(row.createdAt)}</span>
+                </div>
+              </div>
+              <div className={s.responsiveRowGrid}>
+                <InfoGroup title="Reservation">
+                  <InfoLine label="Warehouse">{row.warehouseName || row.warehouse?.name || row.warehouseId || '—'}</InfoLine>
+                  <InfoLine label="Product">{row.productName || productDisplayName(product)}</InfoLine>
+                  <InfoLine label="Variant">{reservationVariantDisplayName(row)}</InfoLine>
+                </InfoGroup>
+                <InfoGroup title="Source">
+                  <InfoLine label="Order ID"><span className={s.codeCell}>{row.orderId || '—'}</span></InfoLine>
+                  <InfoLine label="Order item ID"><span className={s.codeCell}>{row.orderItemId || '—'}</span></InfoLine>
+                </InfoGroup>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function LotsTab({ productId, product }) {
+  const { t } = useTranslation();
+  const { data, isFetching, isError, error } = useListLotsQuery(
+    { productId, limit: 100, sort: 'createdAt', dir: 'DESC' },
+    { skip: !productId }
+  );
+  const items = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data?.items]);
+  const statusCode = error?.status || error?.originalStatus;
+
+  return (
+    <section className={s.sectionCard}>
+      <div className={s.sectionHeader}>
+        <h3>{t('wms.lots.title')}</h3>
+        <div className={s.sectionLeadMeta}>
+          <span className={s.metaChip}>Rows: {items.length}</span>
+          {isFetching ? <span className={s.inlineState}>{t('common.loading', 'Loading...')}</span> : null}
+        </div>
+      </div>
+
+      {isError ? (
+        <ReadOnlyState
+          icon="L"
+          title={statusCode === 403 ? t('wms.lots.noReadPermission') : t('common.error', 'Error')}
+          text="Lot metadata could not be loaded."
+        />
+      ) : null}
+
+      {!isError && !isFetching && items.length === 0 ? (
+        <ReadOnlyState icon="L" title="No lots" text="Lot metadata for this product will appear here." />
+      ) : null}
+
+      {!isError && items.length > 0 ? (
+        <div className={s.responsiveRows}>
+          {items.map((row) => (
+            <article className={s.responsiveRowCard} key={row.id}>
+              <div className={s.responsiveRowHeader}>
+                <div className={s.responsiveRowIdentity}>
+                  <div className={s.responsiveTitleLine}>
+                    <strong>{row.lotNumber || '—'}</strong>
+                    <span className={s.scopePillMuted}>Lot</span>
+                  </div>
+                  <span>{productDisplayName(product)}</span>
+                </div>
+              </div>
+              <div className={s.responsiveRowGrid}>
+                <InfoGroup title="Lot metadata">
+                  <InfoLine label="Manufacture date">{formatDateOnly(row.mfgDate)}</InfoLine>
+                  <InfoLine label="Expiry date">{formatDateOnly(row.expDate)}</InfoLine>
+                  <InfoLine label="Created">{formatDateTime(row.createdAt)}</InfoLine>
+                </InfoGroup>
+                <InfoGroup title="Product">
+                  <InfoLine label="Product"><span className={s.codeCell}>{row.productId || productId}</span></InfoLine>
+                </InfoGroup>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function SerialsTab({ productId, product }) {
+  const { t } = useTranslation();
+  const { data, isFetching, isError, error } = useListSerialsQuery(
+    { productId, limit: 100, sort: 'createdAt', dir: 'DESC' },
+    { skip: !productId }
+  );
+  const items = useMemo(() => (Array.isArray(data?.items) ? data.items : []), [data?.items]);
+  const statusCode = error?.status || error?.originalStatus;
+
+  return (
+    <section className={s.sectionCard}>
+      <div className={s.sectionHeader}>
+        <h3>{t('wms.serials.title')}</h3>
+        <div className={s.sectionLeadMeta}>
+          <span className={s.metaChip}>Rows: {items.length}</span>
+          {isFetching ? <span className={s.inlineState}>{t('common.loading', 'Loading...')}</span> : null}
+        </div>
+      </div>
+
+      {isError ? (
+        <ReadOnlyState
+          icon="S"
+          title={statusCode === 403 ? t('wms.serials.noReadPermission') : t('common.error', 'Error')}
+          text="Serial metadata could not be loaded."
+        />
+      ) : null}
+
+      {!isError && !isFetching && items.length === 0 ? (
+        <ReadOnlyState icon="S" title="No serial numbers" text="Serial numbers for this product will appear here." />
+      ) : null}
+
+      {!isError && items.length > 0 ? (
+        <div className={s.responsiveRows}>
+          {items.map((row) => (
+            <article className={s.responsiveRowCard} key={row.id}>
+              <div className={s.responsiveRowHeader}>
+                <div className={s.responsiveRowIdentity}>
+                  <div className={s.responsiveTitleLine}>
+                    <strong>{row.serialNumber || '—'}</strong>
+                    <span className={s.scopePillMuted}>Serial</span>
+                  </div>
+                  <span>{productDisplayName(product)}</span>
+                </div>
+              </div>
+              <div className={s.responsiveRowGrid}>
+                <InfoGroup title="Serial metadata">
+                  <InfoLine label="Product"><span className={s.codeCell}>{row.productId || productId}</span></InfoLine>
+                  <InfoLine label="Created">{formatDateTime(row.createdAt)}</InfoLine>
+                </InfoGroup>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -2780,12 +3253,55 @@ const onDimensionInput = (fieldName, nextText) => {
   );
 }
 
+const MOVEMENT_TYPE_META = {
+  receipt: { label: 'Receipt', tone: 'receipt' },
+  putaway: { label: 'Receipt', tone: 'receipt' },
+  transfer: { label: 'Transfer', tone: 'transfer' },
+  ship: { label: 'Shipment', tone: 'shipment' },
+  pick: { label: 'Shipment', tone: 'shipment' },
+  pack: { label: 'Shipment', tone: 'shipment' },
+  adjustment: { label: 'Adjustment', tone: 'adjustment' },
+  reservation: { label: 'Reservation', tone: 'reservation' },
+  release: { label: 'Release', tone: 'release' },
+};
+
+function getMovementMeta(type) {
+  const key = String(type || '').toLowerCase();
+  return MOVEMENT_TYPE_META[key] || { label: type || 'Movement', tone: 'neutral' };
+}
+
+function buildMovementRef(row) {
+  if (!row?.refType && !row?.refId) return '—';
+  return [row.refType, row.refId].filter(Boolean).join(' #');
+}
+
+function MovementInfo({ label, value }) {
+  if (value === undefined || value === null || value === '') return null;
+  return (
+    <div className={s.movementInfoBlock}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
 // Компонент MovementsTab: отвечает за отображение UI и обработку взаимодействий пользователя.
 function MovementsTab({ productId, productUom }) {
   const { data, isFetching } = useGetProductMovementsQuery({ id: productId, page: 1, limit: 50 });
-  const items = Array.isArray(data?.items) ? data.items : [];
-    // movementBadge: вспомогательная логика компонента.
-const movementBadge = (qty) => {
+  const dataItems = data?.items;
+  const items = useMemo(() => (Array.isArray(dataItems) ? dataItems : []), [dataItems]);
+
+  const summary = useMemo(() => items.reduce((acc, row) => {
+    const number = Number(row?.qty);
+    const qty = Number.isFinite(number) ? number : 0;
+    const meta = getMovementMeta(row?.type);
+    if (meta.tone === 'receipt') acc.receipts += Math.abs(qty);
+    if (meta.tone === 'shipment') acc.shipments += Math.abs(qty);
+    if (meta.tone === 'adjustment') acc.adjustments += qty;
+    return acc;
+  }, { receipts: 0, shipments: 0, adjustments: 0 }), [items]);
+
+  const movementBadge = (qty) => {
     const number = Number(qty);
     if (!Number.isFinite(number)) return <span className={s.movementNeutral}>0</span>;
     if (number === 0) return <span className={s.movementNeutral}>{formatQuantity(0, productUom)}</span>;
@@ -2803,60 +3319,400 @@ const movementBadge = (qty) => {
           <span className={s.inlineState}>История операций по товару</span>
         </div>
       </div>
+      <div className={s.movementSummaryGrid} aria-label="Movement Summary">
+        <div className={s.movementMetricCard}>
+          <span>Receipts</span>
+          <strong>{formatQuantity(summary.receipts, productUom)}</strong>
+        </div>
+        <div className={s.movementMetricCard}>
+          <span>Shipments</span>
+          <strong>{formatQuantity(summary.shipments, productUom)}</strong>
+        </div>
+        <div className={s.movementMetricCard}>
+          <span>Adjustments</span>
+          <strong>{formatQuantity(summary.adjustments, productUom)}</strong>
+        </div>
+      </div>
+      {isFetching && items.length === 0 ? (
+        <div className={s.inlineState}>Загрузка движений...</div>
+      ) : null}
       {items.length === 0 ? (
         <div className={s.emptyStateCard}>
+          <div className={s.emptyStateIcon}>↔</div>
           <div className={s.emptyStateTitle}>Передвижений пока нет</div>
           <div className={s.emptyStateText}>Когда по товару появятся складские движения, они автоматически отобразятся здесь.</div>
         </div>
       ) : null}
       {items.length > 0 ? (
-        <DataTable
-          columns={[
-            { key: 'createdAt', title: 'Дата', width: 180,             // render : render.
-// render: описывает рендер соответствующего блока UI.
-render: (row) => formatDateTime(row.createdAt) },
-            { key: 'type', title: 'Тип', width: 130,             // render : render.
-// render: описывает рендер соответствующего блока UI.
-render: (row) => row.type || '—' },
-            { key: 'qty', title: 'Количество', width: 110,             // render : render.
-// render: описывает рендер соответствующего блока UI.
-render: (row) => movementBadge(row.qty) },
-            { key: 'warehouseName', title: 'Склад', width: 190,             // render : render.
-// render: описывает рендер соответствующего блока UI.
-render: (row) => row.warehouseName || '—' },
-            { key: 'ref', title: 'Источник', width: 220,             // render : render.
-// render: описывает рендер соответствующего блока UI.
-render: (row) => (row.refType ? `${row.refType}${row.refId ? ` #${row.refId}` : ''}` : '—') },
-          ]}
-          data={items}
-          loading={isFetching}
-        />
+        <div className={s.movementLedger}>
+          {items.map((row) => {
+            const meta = getMovementMeta(row.type);
+            const ref = buildMovementRef(row);
+            return (
+              <article key={row.id || `${row.type}-${row.createdAt}-${row.refId}`} className={s.movementCard}>
+                <header className={s.movementCardHeader}>
+                  <div className={s.movementHeaderMain}>
+                    <span className={`${s.movementTypeBadge} ${s[`movementType_${meta.tone}`] || s.movementType_neutral}`}>
+                      {meta.label}
+                    </span>
+                    {movementBadge(row.qty)}
+                  </div>
+                  <time className={s.movementDate} dateTime={row.createdAt || row.updatedAt || undefined}>
+                    {formatDateTime(row.createdAt || row.updatedAt)}
+                  </time>
+                </header>
+                <div className={s.movementBodyGrid}>
+                  <MovementInfo label="Warehouse" value={row.warehouseName || row.warehouseId || '—'} />
+                  <MovementInfo label="From location" value={row.fromLocationCode || row.fromLocationName || row.fromLocationId || '—'} />
+                  <MovementInfo label="To location" value={row.toLocationCode || row.toLocationName || row.toLocationId || '—'} />
+                  <MovementInfo label="Source document" value={ref} />
+                  <MovementInfo label="User" value={row.userName || row.userEmail || row.createdByName || row.createdBy || null} />
+                </div>
+                <footer className={s.movementFooter}>
+                  <span className={s.movementRef}>Reference: {ref}</span>
+                  {row.notes ? <span className={s.movementNote}>{row.notes}</span> : null}
+                </footer>
+              </article>
+            );
+          })}
+        </div>
       ) : null}
     </section>
   );
 }
 
-// Компонент WarehousePlaceholderTab: отвечает за отображение UI и обработку взаимодействий пользователя.
-function WarehousePlaceholderTab({ trackInventory }) {
+function stockNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function StockMetricCard({ label, value, hint }) {
+  return (
+    <div className={s.stockMetricCard}>
+      <span className={s.stockMetricLabel}>{label}</span>
+      <strong className={s.stockMetricValue}>{value}</strong>
+      {hint ? <span className={s.stockMetricHint}>{hint}</span> : null}
+    </div>
+  );
+}
+
+function StockEmptyState({ title, text }) {
+  return (
+    <div className={s.emptyStateCard}>
+      <div className={s.emptyStateIcon}>▤</div>
+      <div className={s.emptyStateTitle}>{title}</div>
+      {text ? <div className={s.emptyStateText}>{text}</div> : null}
+    </div>
+  );
+}
+
+function makeWarehouseLabel(row) {
+  return [row?.warehouseCode ?? row?.warehouse?.code, row?.warehouseName ?? row?.warehouse?.name]
+    .filter(Boolean)
+    .join(' · ')
+    || row?.warehouseId
+    || '—';
+}
+
+function makeLocationLabel(row) {
+  return row?.locationCode
+    || row?.location?.code
+    || row?.locationId
+    || '—';
+}
+
+function makeLocationType(row) {
+  return row?.locationType || row?.location?.type || '—';
+}
+
+// Компонент StockSummaryTab: отвечает за отображение read-only складских остатков товара.
+function StockSummaryTab({ productId, product, values }) {
+  const { t } = useTranslation();
+  const isService = Boolean(values?.isService ?? product?.isService);
+  const trackInventory = Boolean(values?.trackInventory ?? product?.trackInventory);
+  const selectedUom = product?.uom || null;
+
+  const { data: variantsData } = useListProductVariantsQuery(
+    { productId, limit: 200 },
+    { skip: !productId }
+  );
+  const variantById = useMemo(() => {
+    const map = new Map();
+    (Array.isArray(variantsData?.items) ? variantsData.items : []).forEach((variant) => {
+      if (!variant?.id) return;
+      map.set(String(variant.id), variant);
+    });
+    return map;
+  }, [variantsData?.items]);
+
+  const shouldFetchStock = Boolean(productId) && !isService && trackInventory;
+  const {
+    data,
+    isFetching,
+    isLoading,
+    isError,
+    error,
+  } = useGetStockBalancesQuery(
+    { productId, onlyPositive: true },
+    { skip: !shouldFetchStock }
+  );
+  const {
+    data: inventoryItemsData,
+    isFetching: isInventoryItemsFetching,
+    isError: isInventoryItemsError,
+  } = useListInventoryItemsQuery(
+    { productId, limit: 200 },
+    { skip: !shouldFetchStock }
+  );
+
+  const rows = useMemo(() => {
+    const items = Array.isArray(data?.items) ? data.items : [];
+    return [...items].sort((a, b) => {
+      const warehouseA = `${a?.warehouseCode || ''} ${a?.warehouseName || ''}`;
+      const warehouseB = `${b?.warehouseCode || ''} ${b?.warehouseName || ''}`;
+      const byWarehouse = warehouseA.localeCompare(warehouseB, undefined, { sensitivity: 'base' });
+      if (byWarehouse) return byWarehouse;
+      return String(a?.variantName || a?.variantId || '').localeCompare(String(b?.variantName || b?.variantId || ''));
+    });
+  }, [data?.items]);
+
+  const locationGroups = useMemo(() => {
+    const items = Array.isArray(inventoryItemsData?.items) ? inventoryItemsData.items : [];
+    const warehouseMap = new Map();
+
+    items.forEach((item) => {
+      const rowOnHand = stockNumber(item?.qtyOnHand);
+      if (rowOnHand <= 0) return;
+
+      const warehouseId = String(item?.warehouseId || item?.warehouse?.id || 'unknown-warehouse');
+      const locationId = String(item?.locationId || item?.location?.id || 'unknown-location');
+      const warehouseCode = item?.warehouse?.code || item?.warehouseCode || '';
+      const warehouseName = item?.warehouse?.name || item?.warehouseName || '';
+      const locationCode = makeLocationLabel(item);
+      const locationType = makeLocationType(item);
+
+      if (!warehouseMap.has(warehouseId)) {
+        warehouseMap.set(warehouseId, {
+          warehouseId,
+          warehouseCode,
+          warehouseName,
+          warehouseLabel: makeWarehouseLabel(item),
+          onHand: 0,
+          reserved: 0,
+          available: 0,
+          locations: new Map(),
+        });
+      }
+
+      const group = warehouseMap.get(warehouseId);
+      const reserved = stockNumber(item?.qtyReserved);
+      const available = Math.max(0, rowOnHand - reserved);
+      group.onHand += rowOnHand;
+      group.reserved += reserved;
+      group.available += available;
+
+      if (!group.locations.has(locationId)) {
+        group.locations.set(locationId, {
+          locationId,
+          locationCode,
+          locationType,
+          onHand: 0,
+          reserved: 0,
+          available: 0,
+        });
+      }
+
+      const location = group.locations.get(locationId);
+      location.onHand += rowOnHand;
+      location.reserved += reserved;
+      location.available += available;
+    });
+
+    return Array.from(warehouseMap.values())
+      .map((group) => ({
+        ...group,
+        locations: Array.from(group.locations.values()).sort((a, b) => (
+          String(a.locationCode || '').localeCompare(String(b.locationCode || ''), undefined, { sensitivity: 'base' })
+        )),
+      }))
+      .sort((a, b) => (
+        String(a.warehouseLabel || '').localeCompare(String(b.warehouseLabel || ''), undefined, { sensitivity: 'base' })
+      ));
+  }, [inventoryItemsData?.items]);
+
+  const summary = useMemo(() => {
+    const warehouses = new Set();
+    const variants = new Set();
+    let onHand = 0;
+    let reserved = 0;
+    let available = 0;
+
+    rows.forEach((row) => {
+      const rowOnHand = stockNumber(row?.onHand);
+      onHand += rowOnHand;
+      reserved += stockNumber(row?.reserved);
+      available += stockNumber(row?.available);
+      if (rowOnHand > 0 && row?.warehouseId) warehouses.add(String(row.warehouseId));
+      if (rowOnHand > 0 && row?.variantId) variants.add(String(row.variantId));
+    });
+
+    return {
+      onHand,
+      reserved,
+      available,
+      warehouses: warehouses.size,
+      variants: variants.size,
+      locations: locationGroups.reduce((sum, group) => sum + group.locations.length, 0),
+    };
+  }, [locationGroups, rows]);
+
+  const formatStockQty = (value) => formatQuantity(value, selectedUom, { fallback: '0' });
+
   return (
     <section className={s.sectionCard}>
       <div className={s.sectionHeader}>
-        <h3>Склад</h3>
-        <span className={s.metaChip}>Пока заглушка</span>
+        <h3>{t('pim.stock.tab')}</h3>
+        <div className={s.sectionLeadMeta}>
+          <span className={s.metaChip}>{t('pim.stock.readOnly')}</span>
+          {isFetching && rows.length ? <span className={s.inlineState}>{t('pim.stock.refreshing')}</span> : null}
+        </div>
       </div>
-      <div className={s.placeholderCard}>
-        {trackInventory ? (
-          <>
-            <p>Раздел складских остатков пока не реализован на уровне бизнес-логики.</p>
-            <p>Интерфейс сохранён как placeholder и будет подключён к WMS после релиза складового модуля.</p>
-          </>
-        ) : (
-          <>
-            <p>Учёт остатков выключен для товара.</p>
-            <p>Включите «Учитывать остатки» в блоке «Коммерция», чтобы работать со складом для этого товара.</p>
-          </>
-        )}
-      </div>
+      <div className={s.hint}>{t('pim.stock.description')}</div>
+
+      {isService ? (
+        <StockEmptyState
+          title={t('pim.stock.serviceNoStock')}
+          text={t('pim.stock.serviceNoStockHint')}
+        />
+      ) : null}
+
+      {!isService && !trackInventory ? (
+        <StockEmptyState
+          title={t('pim.stock.inventoryDisabled')}
+          text={t('pim.stock.inventoryDisabledHint')}
+        />
+      ) : null}
+
+      {!isService && trackInventory && (isLoading || (isFetching && !rows.length)) ? (
+        <div className={s.emptyInline}>{t('pim.stock.loading')}</div>
+      ) : null}
+
+      {!isService && trackInventory && isError ? (
+        <StockEmptyState
+          title={Number(error?.status) === 403 ? t('pim.stock.noPermission') : t('pim.stock.errorTitle')}
+          text={Number(error?.status) === 403 ? t('pim.stock.noPermissionHint') : t('pim.stock.errorHint')}
+        />
+      ) : null}
+
+      {!isService && trackInventory && !isLoading && !isFetching && !isError && !rows.length ? (
+        <StockEmptyState
+          title={t('pim.stock.noStockYet')}
+          text={t('pim.stock.noStockYetHint')}
+        />
+      ) : null}
+
+      {!isService && trackInventory && !isError && rows.length ? (
+        <>
+          <div className={s.stockSummaryGrid}>
+            <StockMetricCard label={t('pim.stock.onHand')} value={formatStockQty(summary.onHand)} />
+            <StockMetricCard label={t('pim.stock.reserved')} value={formatStockQty(summary.reserved)} />
+            <StockMetricCard label={t('pim.stock.available')} value={formatStockQty(summary.available)} />
+            <StockMetricCard label={t('pim.stock.warehousesWithStock')} value={summary.warehouses} />
+            <StockMetricCard label={t('pim.stock.locationsWithStock')} value={isInventoryItemsError ? '—' : summary.locations} />
+            <StockMetricCard label={t('pim.stock.variantsWithStock')} value={summary.variants} />
+          </div>
+
+          <div className={s.responsiveRows}>
+            {rows.map((row) => {
+              const variant = row?.variantId ? variantById.get(String(row.variantId)) : null;
+              const variantLabel = variant
+                ? [variant.name, variant.sku].filter(Boolean).join(' · ')
+                : t('pim.stock.productLevel');
+              const warehouseLabel = makeWarehouseLabel(row);
+              const rowKey = `${row?.warehouseId || 'warehouse'}:${row?.variantId || 'product'}`;
+
+              return (
+                <article className={s.responsiveRowCard} key={rowKey}>
+                  <div className={s.responsiveRowHeader}>
+                    <div className={s.responsiveRowIdentity}>
+                      <div className={s.responsiveTitleLine}>
+                        <strong>{warehouseLabel}</strong>
+                        <span className={row?.variantId ? s.scopePill : s.scopePillMuted}>{variantLabel}</span>
+                      </div>
+                      <span>{t('pim.stock.stockByWarehouseVariant')}</span>
+                    </div>
+                  </div>
+                  <div className={s.responsiveRowGrid}>
+                    <InfoGroup title={t('pim.stock.stock')}>
+                      <InfoLine label={t('pim.stock.onHand')}>{formatStockQty(row?.onHand)}</InfoLine>
+                      <InfoLine label={t('pim.stock.reserved')}>{formatStockQty(row?.reserved)}</InfoLine>
+                      <InfoLine label={t('pim.stock.available')}>{formatStockQty(row?.available)}</InfoLine>
+                    </InfoGroup>
+                    <InfoGroup title={t('pim.stock.context')}>
+                      <InfoLine label={t('pim.stock.warehouse')}>{warehouseLabel}</InfoLine>
+                      <InfoLine label={t('pim.stock.variant')}>{variantLabel}</InfoLine>
+                    </InfoGroup>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          <div className={s.stockWarehouseSection}>
+            <div className={s.sectionHeaderCompact}>
+              <div>
+                <h4>{t('pim.stock.warehouseGroups')}</h4>
+                <p>{t('pim.stock.locationViewHint')}</p>
+              </div>
+              {isInventoryItemsFetching ? <span className={s.inlineState}>{t('pim.stock.refreshing')}</span> : null}
+            </div>
+
+            {isInventoryItemsError ? (
+              <div className={s.emptyInline}>{t('pim.stock.locationDataUnavailable')}</div>
+            ) : null}
+
+            {!isInventoryItemsError && !isInventoryItemsFetching && !locationGroups.length ? (
+              <div className={s.emptyInline}>{t('pim.stock.noLocationRows')}</div>
+            ) : null}
+
+            {!isInventoryItemsError && locationGroups.length ? (
+              <div className={s.stockWarehouseGroups}>
+                {locationGroups.map((group) => (
+                  <article className={s.stockWarehouseGroup} key={group.warehouseId}>
+                    <div className={s.stockWarehouseHeader}>
+                      <div>
+                        <span className={s.stockWarehouseCode}>{group.warehouseCode || group.warehouseId}</span>
+                        <strong>{group.warehouseName || group.warehouseLabel}</strong>
+                      </div>
+                      <div className={s.stockWarehouseTotals}>
+                        <span>{t('pim.stock.onHand')}: {formatStockQty(group.onHand)}</span>
+                        <span>{t('pim.stock.reserved')}: {formatStockQty(group.reserved)}</span>
+                        <span>{t('pim.stock.available')}: {formatStockQty(group.available)}</span>
+                      </div>
+                    </div>
+
+                    <div className={s.stockLocationRows}>
+                      {group.locations.map((location) => (
+                        <div className={s.stockLocationRow} key={location.locationId}>
+                          <div className={s.stockLocationIdentity}>
+                            <strong>{location.locationCode}</strong>
+                            <span>{t('pim.stock.locationType')}: {location.locationType}</span>
+                          </div>
+                          <div className={s.stockLocationMetrics}>
+                            <span>{t('pim.stock.onHand')} <strong>{formatStockQty(location.onHand)}</strong></span>
+                            <span>{t('pim.stock.reserved')} <strong>{formatStockQty(location.reserved)}</strong></span>
+                            <span>{t('pim.stock.available')} <strong>{formatStockQty(location.available)}</strong></span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </>
+      ) : null}
     </section>
   );
 }
@@ -2906,7 +3762,10 @@ export default function ProductDetailTabs({ tab, data, values, onChange }) {
   if (tab === 'suppliers-purchase') return <SuppliersPurchaseTab productId={productId} product={data} />;
   if (tab === 'picker-demo') return <ProductPickerDemoTab />;
   if (tab === 'prices') return <PricesTab productId={productId} product={data} />;
-  if (tab === 'warehouse') return <WarehousePlaceholderTab trackInventory={Boolean(values?.trackInventory)} />;
+  if (tab === 'warehouse') return <StockSummaryTab productId={productId} product={data} values={values} />;
+  if (tab === 'reservations') return <ReservationsTab productId={productId} product={data} />;
+  if (tab === 'lots') return <LotsTab productId={productId} product={data} />;
+  if (tab === 'serials') return <SerialsTab productId={productId} product={data} />;
   if (tab === 'specifications') return <SpecificationsTab productId={productId} />;
   if (tab === 'measurements') return <MeasurementsTab values={values} onChange={onChange} productUom={data?.uom} />;
   if (tab === 'movements') return <MovementsTab productId={productId} productUom={data?.uom} />;

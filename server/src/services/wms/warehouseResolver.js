@@ -13,8 +13,35 @@ const { Warehouse, CompanyWarehouseDocumentSetting } = require('../../models');
 
 const DEFAULT_MAIN_WAREHOUSE = Object.freeze({
   code: 'MAIN',
-  name: 'Main warehouse',
+  name: 'Main Warehouse',
 });
+
+// ensureMainWarehouse: idempotently ensures a company's MAIN warehouse exists and is active.
+async function ensureMainWarehouse(companyId, { transaction } = {}) {
+  if (!companyId) {
+    throw new AppError(403, 'Company context required', { code: 'COMPANY_CONTEXT_REQUIRED' });
+  }
+
+  return withTx(async (t) => {
+    const [main] = await Warehouse.findOrCreate({
+      where: { companyId, code: DEFAULT_MAIN_WAREHOUSE.code },
+      defaults: {
+        id: crypto.randomUUID(),
+        companyId,
+        code: DEFAULT_MAIN_WAREHOUSE.code,
+        name: DEFAULT_MAIN_WAREHOUSE.name,
+        isActive: true,
+      },
+      transaction: t,
+    });
+
+    if (!main.isActive) {
+      await main.update({ isActive: true }, { transaction: t });
+    }
+
+    return main;
+  }, transaction);
+}
 
 // resolveDefaultWarehouseId: возвращает id активного склада по умолчанию для компании,
 // при необходимости создавая MAIN. Все обращения идут в переданной транзакции.
@@ -54,26 +81,14 @@ async function resolveDefaultWarehouseId(companyId, { transaction } = {}) {
       return firstActive.id;
     }
 
-    // 3) Складов нет → создаём MAIN. Дедуп через UNIQUE(company_id, code).
-    const [main] = await Warehouse.findOrCreate({
-      where: { companyId, code: DEFAULT_MAIN_WAREHOUSE.code },
-      defaults: {
-        id: crypto.randomUUID(),
-        companyId,
-        code: DEFAULT_MAIN_WAREHOUSE.code,
-        name: DEFAULT_MAIN_WAREHOUSE.name,
-        isActive: true,
-      },
-      transaction: t,
-    });
-
-    // Если ранее MAIN был деактивирован — вернуть его как пригодный к работе.
-    if (!main.isActive) {
-      await main.update({ isActive: true }, { transaction: t });
-    }
-
+    // 3) No active warehouse exists: create/reactivate MAIN via UNIQUE(company_id, code).
+    const main = await ensureMainWarehouse(companyId, { transaction: t });
     return main.id;
   }, transaction);
 }
 
-module.exports = { resolveDefaultWarehouseId };
+module.exports = {
+  DEFAULT_MAIN_WAREHOUSE,
+  ensureMainWarehouse,
+  resolveDefaultWarehouseId,
+};

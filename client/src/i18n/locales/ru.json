@@ -140,6 +140,44 @@
     "noBarcode": "Без штрихкода",
     "available": "Доступно"
   },
+  "pim": {
+    "stock": {
+      "tab": "Остатки",
+      "stock": "Остатки",
+      "description": "Снимок складских остатков WMS по этому товару только для просмотра.",
+      "readOnly": "Только просмотр",
+      "refreshing": "Обновление...",
+      "loading": "Загрузка остатков...",
+      "onHand": "В наличии",
+      "reserved": "В резерве",
+      "available": "Доступно",
+      "warehousesWithStock": "Складов с остатком",
+      "locationsWithStock": "Локаций с остатком",
+      "variantsWithStock": "Вариантов с остатком",
+      "productLevel": "Уровень товара",
+      "warehouse": "Склад",
+      "variant": "Вариант",
+      "warehouseGroups": "Группы по складам",
+      "locationViewHint": "Разрез по локациям на основе существующих строк WMS InventoryItem.",
+      "location": "Локация",
+      "locations": "Локации",
+      "locationType": "Тип локации",
+      "locationDataUnavailable": "Данные остатков по локациям недоступны в текущем WMS-ответе.",
+      "noLocationRows": "Строк остатков по локациям пока нет.",
+      "context": "Контекст",
+      "stockByWarehouseVariant": "Остатки по складу и варианту",
+      "noStockYet": "Остатков пока нет",
+      "noStockYetHint": "Строки остатков появятся после проведения складских документов.",
+      "inventoryDisabled": "Учёт остатков выключен",
+      "inventoryDisabledHint": "Включите учёт остатков в карточке товара, чтобы видеть складские остатки WMS.",
+      "serviceNoStock": "Услуга не ведёт складской учёт",
+      "serviceNoStockHint": "Услуги не создают складские строки и остатки.",
+      "noPermission": "Нет доступа к остаткам",
+      "noPermissionHint": "Этот экран только для просмотра использует права доступа WMS inventory.",
+      "errorTitle": "Не удалось загрузить остатки",
+      "errorHint": "Обновите карточку товара или проверьте доступ к WMS inventory."
+    }
+  },
   "Basic": "Основное",
   "Identifiers": "Идентификаторы",
   "Commerce": "Коммерция",
@@ -458,6 +496,14 @@
       "date": "Дата",
       "documentType": "Тип документа"
     },
+    "locationOptional": {
+      "label": "Локация необязательна",
+      "inboundLabel": "Локация приёмки необязательна",
+      "fromLabel": "Локация-источник необязательна",
+      "toLabel": "Локация-получатель необязательна",
+      "warehouseLevelStock": "Остаток на уровне склада",
+      "warehouseLevelHint": "Локация не выбрана; документ использует остаток на уровне склада."
+    },
     "create": {
       "subtitleReceipt": "Создайте приёмку и при необходимости примите позиции",
       "subtitleAdjustment": "Создайте RW/PW и при необходимости проведите",
@@ -486,14 +532,14 @@
     },
     "validation": {
       "warehouseRequired": "Склад обязателен",
-      "inboundLocationRequired": "Локация приёмки обязательна",
+      "inboundLocationRequired": "Локация приёмки необязательна",
       "selectLineForReceive": "Выберите хотя бы одну строку для приёмки",
-      "locationRequired": "Локация обязательна",
+      "locationRequired": "Локация необязательна",
       "typeRequired": "Тип обязателен",
       "fromWarehouseRequired": "Склад-источник обязателен",
       "toWarehouseRequired": "Склад-получатель обязателен",
-      "fromLocationRequired": "Локация-источник обязательна",
-      "toLocationRequired": "Локация-получатель обязательна",
+      "fromLocationRequired": "Локация-источник необязательна",
+      "toLocationRequired": "Локация-получатель необязательна",
       "productRequired": "Товар обязателен",
       "qtyExpectedPositive": "Ожидаемое кол-во должно быть > 0",
       "qtyDeltaPositive": "Изменение кол-ва должно быть > 0",
@@ -932,7 +978,7 @@
       },
       "validation": {
         "warehouseRequired": "Склад обязателен",
-        "locationRequired": "Локация обязательна",
+        "locationRequired": "Локация необязательна",
         "productRequired": "Товар обязателен",
         "qtyNonNegative": "Подсчитанное количество должно быть >= 0"
       },
@@ -1126,7 +1172,7 @@
       }
     },
     "policy": {
-      "executionRequiresLocations": "Для выполнения нужны исходная и целевая локации.",
+      "executionRequiresLocations": "Выполнение может использовать остаток на уровне склада, если локация не выбрана.",
       "documentLocked": "Документ заблокирован.",
       "correctionUnavailable": "Корректировка недоступна для этого статуса."
     }

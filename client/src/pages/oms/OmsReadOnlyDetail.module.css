@@ -202,7 +202,7 @@
 
 .draftEditor {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .draftGrid {
@@ -220,33 +220,234 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 74%, transparent);
+  border-radius: 8px;
+  padding: 7px 9px;
+  background: color-mix(in srgb, var(--ui-surface-1) 94%, transparent);
+}
+
+.draftToolbarMain {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.draftHint {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text-3);
+  font-size: var(--font-size-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.draftKeyboardHints {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.draftKeyHint {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 72%, transparent);
+  border-radius: 999px;
+  padding: 0 7px 0 5px;
+  color: var(--ui-text-3);
+  background: color-mix(in srgb, var(--ui-surface-2) 76%, transparent);
+  font-size: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.draftKeyHint kbd {
+  min-width: 28px;
+  min-height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 82%, transparent);
+  border-radius: 4px;
+  padding: 0 4px;
+  color: var(--ui-text-1);
+  background: color-mix(in srgb, var(--ui-surface-3) 80%, transparent);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.draftScanBar {
+  position: relative;
+  z-index: 14;
+  display: grid;
+  grid-template-columns: minmax(280px, 430px) minmax(0, 1fr);
+  gap: 8px;
+  align-items: end;
+  border: 1px solid color-mix(in srgb, var(--focus, #6aa8ff) 28%, var(--ui-border-soft));
+  border-radius: 8px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 5%, var(--ui-surface-1));
+}
+
+.draftScanField {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.draftScanInput {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid color-mix(in srgb, var(--focus, #6aa8ff) 38%, var(--ui-border-soft));
+  border-radius: 7px;
+  padding: 6px 9px;
+  color: var(--ui-text-1);
+  background: color-mix(in srgb, var(--ui-surface-1) 96%, transparent);
+  font: inherit;
+  font-size: var(--font-size-13);
+}
+
+.draftScanInput:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--focus, #6aa8ff) 78%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus, #6aa8ff) 18%, transparent);
+}
+
+.draftScanMeta {
+  min-height: 34px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--ui-text-3);
+  font-size: var(--font-size-11);
+}
+
+.draftScanMeta strong {
+  color: var(--ui-text-2);
+  font-weight: 700;
+}
+
+.draftScanError {
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--danger, #ef4444) 56%, var(--ui-border-soft));
+  border-radius: 999px;
+  padding: 0 7px;
+  background: color-mix(in srgb, var(--danger, #ef4444) 12%, transparent);
+  color: color-mix(in srgb, var(--danger, #ef4444) 88%, var(--ui-text-1)) !important;
+  font-size: 10px;
+}
+
+.draftScanResults {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 8px;
+  width: min(430px, calc(100% - 16px));
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 86%, transparent);
+  border-radius: 9px;
+  background: var(--ui-surface-3);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.24);
+}
+
+.draftScanResult {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-border-soft) 62%, transparent);
+  padding: 8px 10px;
+  color: var(--ui-text-2);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.draftScanResult:last-child {
+  border-bottom: 0;
+}
+
+.draftScanResult:hover,
+.draftScanResult:focus {
+  outline: none;
+  border-left-color: color-mix(in srgb, var(--focus, #6aa8ff) 78%, transparent);
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 10%, transparent);
+}
+
+.draftScanResultTitle {
+  overflow: hidden;
+  color: var(--ui-text-1);
+  font-size: var(--font-size-12);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.draftScanResultMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  color: var(--ui-text-3);
+  font-size: var(--font-size-11);
+}
+
+.draftScanResultMeta span {
+  min-height: 18px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 62%, transparent);
+  border-radius: 6px;
+  padding: 0 5px;
 }
 
 .draftSummary {
+  position: sticky;
+  top: 8px;
+  z-index: 12;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 6px;
   border: 1px solid var(--ui-border-soft);
-  border-radius: 10px;
-  padding: 10px;
-  background: color-mix(in srgb, var(--ui-surface-2) 72%, transparent);
+  border-radius: 8px;
+  padding: 7px;
+  background: color-mix(in srgb, var(--ui-surface-2) 94%, transparent);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
 }
 
 .draftSummaryItem {
-  display: grid;
-  gap: 4px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 62%, transparent);
+  border-radius: 7px;
+  padding: 5px 7px;
   color: var(--ui-text-3);
   font-size: var(--font-size-12);
+  background: color-mix(in srgb, var(--ui-surface-1) 82%, transparent);
 }
 
 .draftSummaryItem strong {
   color: var(--ui-text-1);
   font-size: var(--font-size-13);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .draftTotalList {
   display: grid;
+  justify-items: end;
   gap: 2px;
 }
 
@@ -255,26 +456,51 @@
   gap: 8px;
 }
 
+.draftTableWrap {
+  overflow: visible;
+}
+
+.draftTableWrap .table {
+  min-width: 1040px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.draftTableWrap .table th,
+.draftTableWrap .table td {
+  padding: 6px 7px;
+  vertical-align: top;
+}
+
+.draftTableWrap .table th {
+  position: sticky;
+  top: 58px;
+  z-index: 10;
+  border-bottom-color: color-mix(in srgb, var(--ui-border-soft) 86%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-1) 96%, transparent);
+}
+
 .draftBulkBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   border: 1px solid var(--ui-border-soft);
-  border-radius: 10px;
-  padding: 8px 10px;
+  border-radius: 8px;
+  padding: 6px 8px;
   background: color-mix(in srgb, var(--ui-surface-1) 92%, transparent);
 }
 
 .draftControl {
   width: 100%;
-  min-width: 120px;
+  min-width: 96px;
   border: 1px solid var(--ui-border-soft);
-  border-radius: 8px;
-  padding: 7px 8px;
+  border-radius: 7px;
+  padding: 5px 7px;
   color: var(--ui-text-1);
   background: color-mix(in srgb, var(--ui-surface-1) 96%, transparent);
   font: inherit;
+  font-size: var(--font-size-12);
 }
 
 .draftControl:focus {
@@ -283,26 +509,26 @@
 }
 
 .draftNumberControl {
-  min-width: 92px;
+  min-width: 78px;
   text-align: right;
 }
 
 .draftPriceCell {
   display: grid;
   justify-items: end;
-  gap: 4px;
+  gap: 3px;
 }
 
 .draftPriceBadge,
 .draftPriceWarning {
-  max-width: 160px;
+  max-width: 130px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 20px;
-  padding: 0 7px;
+  min-height: 17px;
+  padding: 0 5px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1.2;
   text-align: center;
 }
@@ -321,8 +547,161 @@
 
 .draftProductPicker {
   display: grid;
-  gap: 6px;
-  min-width: 260px;
+  gap: 4px;
+  min-width: 250px;
+}
+
+.draftProductPicker input {
+  min-height: 32px;
+  padding: 5px 8px;
+  font-size: var(--font-size-12);
+}
+
+.draftProductPicker button {
+  font-size: var(--font-size-11);
+}
+
+.draftDataRow td:first-child {
+  border-left: 4px solid transparent;
+}
+
+.draftDataRow td {
+  background: color-mix(in srgb, var(--ui-surface-1) 86%, transparent);
+}
+
+.draftDataRow[data-row-state="READY"] td:first-child {
+  border-left-color: color-mix(in srgb, var(--success, #22c55e) 72%, transparent);
+}
+
+.draftDataRow[data-row-state="READY"] td {
+  background: color-mix(in srgb, var(--success, #22c55e) 7%, var(--ui-surface-1));
+}
+
+.draftDataRow[data-row-state="READY"] .draftStateBadge {
+  border-color: color-mix(in srgb, var(--success, #22c55e) 54%, var(--ui-border-soft));
+  background: color-mix(in srgb, var(--success, #22c55e) 14%, transparent);
+  color: color-mix(in srgb, var(--success, #22c55e) 84%, var(--ui-text-1));
+}
+
+.draftDataRow[data-row-state="DETAILS_EXPANDED"] td:first-child {
+  border-left-color: color-mix(in srgb, var(--focus, #6aa8ff) 76%, transparent);
+}
+
+.draftDataRow[data-row-state="DETAILS_EXPANDED"] td {
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 6%, var(--ui-surface-1));
+}
+
+.draftDataRow[data-row-state="DETAILS_EXPANDED"] .draftStateBadge {
+  border-color: color-mix(in srgb, var(--focus, #6aa8ff) 54%, var(--ui-border-soft));
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 13%, transparent);
+  color: color-mix(in srgb, var(--focus, #6aa8ff) 82%, var(--ui-text-1));
+}
+
+.draftDataRow[data-row-expanded="true"] td {
+  border-bottom-color: transparent;
+}
+
+.draftDataRow[data-row-state="ERROR"] td:first-child {
+  border-left-color: color-mix(in srgb, var(--danger, #ef4444) 72%, transparent);
+}
+
+.draftDataRow[data-row-state="SEARCHING_PRODUCT"] td:first-child,
+.draftDataRow[data-row-state="QTY_EDITING"] td:first-child {
+  border-left-color: color-mix(in srgb, var(--focus, #6aa8ff) 72%, transparent);
+}
+
+.draftDataRow[data-row-state="EMPTY"] {
+  opacity: 1;
+}
+
+.draftDataRow[data-row-state="EMPTY"] td {
+  border-bottom-style: dashed;
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 4%, var(--ui-surface-1));
+}
+
+.draftDataRow[data-row-state="EMPTY"] td:first-child {
+  border-left-color: color-mix(in srgb, var(--focus, #6aa8ff) 46%, transparent);
+}
+
+.draftDataRow[data-row-state="EMPTY"] .draftStateBadge {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--focus, #6aa8ff) 42%, var(--ui-border-soft));
+  color: color-mix(in srgb, var(--focus, #6aa8ff) 76%, var(--ui-text-2));
+}
+
+.draftRowMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.draftCellMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.draftStateBadge,
+.draftFieldError,
+.draftFieldWarning {
+  min-height: 17px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 5px;
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+.draftStateBadge {
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 76%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-2) 86%, transparent);
+  color: var(--ui-text-3);
+  text-transform: lowercase;
+}
+
+.draftFieldError {
+  border: 1px solid color-mix(in srgb, var(--danger, #ef4444) 54%, var(--ui-border-soft));
+  background: color-mix(in srgb, var(--danger, #ef4444) 12%, transparent);
+  color: color-mix(in srgb, var(--danger, #ef4444) 88%, var(--ui-text-1));
+}
+
+.draftFieldWarning {
+  border: 1px solid color-mix(in srgb, var(--warning, #f59e0b) 54%, var(--ui-border-soft));
+  background: color-mix(in srgb, var(--warning, #f59e0b) 12%, transparent);
+  color: color-mix(in srgb, var(--warning, #f59e0b) 84%, var(--ui-text-1));
+}
+
+.draftLotBadge {
+  max-width: 130px;
+  min-height: 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 70%, transparent);
+  border-radius: 999px;
+  padding: 0 6px;
+  color: var(--ui-text-3);
+  background: color-mix(in srgb, var(--ui-surface-2) 80%, transparent);
+  font-size: 9px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.draftLotBadge[data-state="warning"] {
+  border-color: color-mix(in srgb, var(--warning, #f59e0b) 58%, var(--ui-border-soft));
+  background: color-mix(in srgb, var(--warning, #f59e0b) 13%, transparent);
+  color: color-mix(in srgb, var(--warning, #f59e0b) 86%, var(--ui-text-1));
+}
+
+.draftLotBadge[data-state="ready"] {
+  border-color: color-mix(in srgb, var(--success, #22c55e) 54%, var(--ui-border-soft));
+  background: color-mix(in srgb, var(--success, #22c55e) 12%, transparent);
+  color: color-mix(in srgb, var(--success, #22c55e) 84%, var(--ui-text-1));
 }
 
 .draftProductSummary {
@@ -370,6 +749,172 @@
 .draftRowTotal {
   color: var(--ui-text-1);
   white-space: nowrap;
+}
+
+.draftRowActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.draftDetailsToggle {
+  width: 26px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--focus, #6aa8ff) 38%, var(--ui-border-soft));
+  border-radius: 6px;
+  padding: 0;
+  color: color-mix(in srgb, var(--focus, #6aa8ff) 82%, var(--ui-text-1));
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 7%, var(--ui-surface-1));
+  cursor: pointer;
+}
+
+.draftDetailsToggle:hover:not(:disabled),
+.draftDetailsToggle:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--focus, #6aa8ff) 74%, transparent);
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 13%, var(--ui-surface-1));
+}
+
+.draftDetailsToggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.draftDetailsRow td {
+  padding: 0 8px 8px;
+  border-top: 0;
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 4%, var(--ui-surface-1));
+}
+
+.draftDetailsPanel {
+  display: grid;
+  gap: 10px;
+  border: 1px solid color-mix(in srgb, var(--focus, #6aa8ff) 32%, var(--ui-border-soft));
+  border-left: 4px solid color-mix(in srgb, var(--focus, #6aa8ff) 70%, transparent);
+  border-radius: 8px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--ui-surface-2) 92%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+}
+
+.draftDetailsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ui-text-1);
+  font-size: var(--font-size-12);
+  font-weight: 800;
+}
+
+.draftDetailsClose {
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 72%, transparent);
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: var(--ui-text-2);
+  background: color-mix(in srgb, var(--ui-surface-1) 88%, transparent);
+  font-size: var(--font-size-11);
+  cursor: pointer;
+}
+
+.draftDetailsClose:hover,
+.draftDetailsClose:focus-visible {
+  outline: none;
+  border-color: var(--ui-border-focus);
+}
+
+.draftDetailsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.draftDetailsSection {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 72%, transparent);
+  border-radius: 8px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--ui-surface-1) 82%, transparent);
+}
+
+.draftDetailsSection[data-section-state="warning"] {
+  border-color: color-mix(in srgb, var(--warning, #f59e0b) 42%, var(--ui-border-soft));
+  background: color-mix(in srgb, var(--warning, #f59e0b) 5%, var(--ui-surface-1));
+}
+
+.draftDetailsSection[data-section-state="ready"] {
+  border-color: color-mix(in srgb, var(--success, #22c55e) 36%, var(--ui-border-soft));
+  background: color-mix(in srgb, var(--success, #22c55e) 5%, var(--ui-surface-1));
+}
+
+.draftDetailsSectionHead {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.draftDetailsSectionHead strong {
+  overflow: hidden;
+  color: var(--ui-text-1);
+  font-size: var(--font-size-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.draftDetailsFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.draftDetailsField {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  color: var(--ui-text-3);
+  font-size: var(--font-size-11);
+}
+
+.draftDetailsField > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.draftDetailsMuted {
+  color: var(--ui-text-3);
+  font-size: var(--font-size-11);
+}
+
+.draftDetailsWarnings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.draftSerialPlaceholder {
+  display: grid;
+  gap: 4px;
+  border: 1px dashed color-mix(in srgb, var(--ui-border-soft) 88%, transparent);
+  border-radius: 7px;
+  padding: 7px;
+  color: var(--ui-text-3);
+  background: color-mix(in srgb, var(--ui-surface-2) 64%, transparent);
+  font-size: var(--font-size-11);
+}
+
+.draftSerialPlaceholder strong {
+  color: var(--ui-text-1);
+  font-weight: 700;
 }
 
 .draftAddSection {
@@ -476,6 +1021,57 @@
   .draftBulkBar {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 1100px) {
+  .draftToolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .draftToolbarMain {
+    width: 100%;
+  }
+
+  .draftKeyboardHints {
+    justify-content: flex-start;
+  }
+
+  .draftScanBar {
+    grid-template-columns: 1fr;
+  }
+
+  .draftScanResults {
+    width: calc(100% - 16px);
+  }
+
+  .draftSummary {
+    grid-template-columns: 1fr;
+  }
+
+  .draftTableWrap {
+    overflow: auto;
+    padding-bottom: 4px;
+  }
+
+  .draftTableWrap .table {
+    min-width: 980px;
+  }
+
+  .draftTableWrap .table th {
+    top: 8px;
+  }
+
+  .draftDetailsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .draftDetailsGrid,
+  .draftDetailsFields {
+    grid-template-columns: 1fr;
   }
 }
 

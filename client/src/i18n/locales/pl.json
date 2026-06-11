@@ -103,6 +103,44 @@
     "noBarcode": "Brak kodu kreskowego",
     "available": "Dostępne"
   },
+  "pim": {
+    "stock": {
+      "tab": "Stany",
+      "stock": "Stany",
+      "description": "Tylko do odczytu: bieżący obraz stanów WMS dla tego produktu.",
+      "readOnly": "Tylko odczyt",
+      "refreshing": "Odświeżanie...",
+      "loading": "Ładowanie stanów...",
+      "onHand": "Na stanie",
+      "reserved": "Zarezerwowane",
+      "available": "Dostępne",
+      "warehousesWithStock": "Magazyny ze stanem",
+      "locationsWithStock": "Lokalizacje ze stanem",
+      "variantsWithStock": "Warianty ze stanem",
+      "productLevel": "Poziom produktu",
+      "warehouse": "Magazyn",
+      "variant": "Wariant",
+      "warehouseGroups": "Grupy magazynów",
+      "locationViewHint": "Widok lokalizacji na podstawie istniejących wierszy WMS InventoryItem.",
+      "location": "Lokalizacja",
+      "locations": "Lokalizacje",
+      "locationType": "Typ lokalizacji",
+      "locationDataUnavailable": "Dane stanów według lokalizacji nie są dostępne w bieżącej odpowiedzi WMS.",
+      "noLocationRows": "Brak wierszy stanów według lokalizacji.",
+      "context": "Kontekst",
+      "stockByWarehouseVariant": "Stany według magazynu i wariantu",
+      "noStockYet": "Brak stanów",
+      "noStockYetHint": "Stany pojawią się po zaksięgowaniu dokumentów magazynowych.",
+      "inventoryDisabled": "Śledzenie stanów jest wyłączone",
+      "inventoryDisabledHint": "Włącz śledzenie stanów w karcie produktu, aby widzieć stany WMS.",
+      "serviceNoStock": "Usługa nie ma śledzenia stanów",
+      "serviceNoStockHint": "Usługi nie tworzą pozycji magazynowych ani stanów.",
+      "noPermission": "Brak uprawnień do stanów",
+      "noPermissionHint": "Ten widok tylko do odczytu używa uprawnień WMS inventory.",
+      "errorTitle": "Nie udało się załadować stanów",
+      "errorHint": "Odśwież kartę produktu albo sprawdź dostęp do WMS inventory."
+    }
+  },
   "Basic": "Podstawowe",
   "Identifiers": "Identyfikatory",
   "Commerce": "Handel",
@@ -420,6 +458,14 @@
       "date": "Data",
       "documentType": "Typ dokumentu"
     },
+    "locationOptional": {
+      "label": "Lokalizacja opcjonalna",
+      "inboundLabel": "Lokalizacja przyjęcia opcjonalna",
+      "fromLabel": "Lokalizacja źródłowa opcjonalna",
+      "toLabel": "Lokalizacja docelowa opcjonalna",
+      "warehouseLevelStock": "Stan na poziomie magazynu",
+      "warehouseLevelHint": "Nie wybrano lokalizacji; dokument użyje stanu na poziomie magazynu."
+    },
     "create": {
       "subtitleReceipt": "Utwórz przyjęcie i opcjonalnie przyjmij pozycje",
       "subtitleAdjustment": "Utwórz korektę RW/PW i opcjonalnie zaksięguj",
@@ -448,14 +494,14 @@
     },
     "validation": {
       "warehouseRequired": "Magazyn jest wymagany",
-      "inboundLocationRequired": "Lokalizacja przyjęcia jest wymagana",
+      "inboundLocationRequired": "Lokalizacja przyjęcia jest opcjonalna",
       "selectLineForReceive": "Wybierz co najmniej jedną pozycję do przyjęcia",
-      "locationRequired": "Lokalizacja jest wymagana",
+      "locationRequired": "Lokalizacja jest opcjonalna",
       "typeRequired": "Typ jest wymagany",
       "fromWarehouseRequired": "Magazyn źródłowy jest wymagany",
       "toWarehouseRequired": "Magazyn docelowy jest wymagany",
-      "fromLocationRequired": "Lokalizacja źródłowa jest wymagana",
-      "toLocationRequired": "Lokalizacja docelowa jest wymagana",
+      "fromLocationRequired": "Lokalizacja źródłowa jest opcjonalna",
+      "toLocationRequired": "Lokalizacja docelowa jest opcjonalna",
       "productRequired": "Produkt jest wymagany",
       "qtyExpectedPositive": "Ilość oczekiwana musi być > 0",
       "qtyDeltaPositive": "Zmiana ilości musi być > 0",
@@ -894,7 +940,7 @@
       },
       "validation": {
         "warehouseRequired": "Magazyn jest wymagany",
-        "locationRequired": "Lokalizacja jest wymagana",
+        "locationRequired": "Lokalizacja jest opcjonalna",
         "productRequired": "Produkt jest wymagany",
         "qtyNonNegative": "Ilość policzona musi być >= 0"
       },
@@ -1088,7 +1134,7 @@
       }
     },
     "policy": {
-      "executionRequiresLocations": "Wykonanie wymaga lokalizacji źródłowej i docelowej.",
+      "executionRequiresLocations": "Wykonanie może użyć stanu na poziomie magazynu, gdy lokalizacja nie jest wybrana.",
       "documentLocked": "Dokument jest zablokowany.",
       "correctionUnavailable": "Korekta jest niedostępna dla tego statusu."
     }

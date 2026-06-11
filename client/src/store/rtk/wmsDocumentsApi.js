@@ -250,7 +250,7 @@ export const wmsDocumentsApi = crmApi.injectEndpoints({
       keepUnusedDataFor: 60,
     }),
     getReceiptById: build.query({
-      query: (id) => ({ url: `/receipts/${id}`, method: 'GET' }),
+      query: (id) => ({ url: `/receipts/${id}`, method: 'GET', params: { _: Date.now() } }),
       providesTags: (_result, _error, id) => [{ type: 'WmsReceipt', id }],
       keepUnusedDataFor: 60,
     }),

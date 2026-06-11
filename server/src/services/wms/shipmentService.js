@@ -201,7 +201,7 @@ module.exports.shipItem = async (
         companyId,
         type: 'ship',
         warehouseId: shipment.warehouseId,
-        fromLocationId,
+        fromLocationId: asText(fromLocationId) || null,
         productId: item.productId,
         variantId: item.variantId,
         lotId,

@@ -78,11 +78,6 @@ function normalizeCountItemInput(raw = {}) {
     raw.qtyCounted ?? raw.countedQty ?? raw.qty ?? raw.quantity,
     NaN
   );
-  if (!locationId) {
-    throw new AppError(400, 'locationId is required for every count item', {
-      code: 'VALIDATION_ERROR',
-    });
-  }
   if (!productId) {
     throw new AppError(400, 'productId is required for every count item', {
       code: 'VALIDATION_ERROR',
@@ -232,7 +227,7 @@ async function addCountItems(cycleCountId, items = [], options = {}) {
 
 function buildReconcileKey(item) {
   return [
-    item.locationId,
+    item.locationId || 'null',
     item.productId,
     item.variantId || 'null',
     item.lotId || 'null',

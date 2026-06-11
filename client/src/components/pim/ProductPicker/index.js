@@ -56,6 +56,7 @@ export default function ProductPicker({
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [selected, setSelected] = useState(value);
+  const [brokenThumbs, setBrokenThumbs] = useState(() => new Set());
 
   useEffect(() => {
     setSelected(value);
@@ -173,7 +174,17 @@ export default function ProductPicker({
   const busy = isLoading || isFetching || waitingForDebounce;
   const selectedKey = selected ? rowKey(selected) : null;
   const selectedThumb = selected?.thumbnailUrl ? withApiOrigin(selected.thumbnailUrl) : '';
+  const selectedThumbVisible = selectedThumb && !brokenThumbs.has(selectedThumb);
   const inputPlaceholder = placeholder || t('productPicker.placeholder');
+  const markBrokenThumb = (src) => {
+    if (!src) return;
+    setBrokenThumbs((prev) => {
+      if (prev.has(src)) return prev;
+      const next = new Set(prev);
+      next.add(src);
+      return next;
+    });
+  };
 
   return (
     <div className={s.shell} ref={rootRef}>
@@ -195,7 +206,13 @@ export default function ProductPicker({
       {selected ? (
         <div className={s.selectedCard}>
           <span className={s.selectedThumb}>
-            {selectedThumb ? <img src={selectedThumb} alt={selected.productName || 'product'} /> : asText(selected.productName).slice(0, 2).toUpperCase() || 'P'}
+            {selectedThumbVisible ? (
+              <img
+                src={selectedThumb}
+                alt={selected.productName || 'product'}
+                onError={() => markBrokenThumb(selectedThumb)}
+              />
+            ) : asText(selected.productName).slice(0, 2).toUpperCase() || 'P'}
           </span>
           <span className={s.selectedInfo}>
             <span className={s.selectedTitle}>{selected.productName || '—'}</span>
@@ -247,6 +264,7 @@ export default function ProductPicker({
                 const isSelected = rowKey(row) === selectedKey;
                 const sku = row.variantSku || row.sku || '—';
                 const thumb = row.thumbnailUrl ? withApiOrigin(row.thumbnailUrl) : '';
+                const thumbVisible = thumb && !brokenThumbs.has(thumb);
                 const variantText = row.variantLabel || (row.variantId ? row.variantSku || t('productPicker.variant') : t('productPicker.baseProduct'));
                 const available = formatQty(row.stock?.available);
                 return (
@@ -261,7 +279,13 @@ export default function ProductPicker({
                     aria-selected={active || isSelected}
                   >
                     <span className={s.thumb}>
-                      {thumb ? <img src={thumb} alt={row.productName || 'product'} /> : asText(row.productName).slice(0, 2).toUpperCase() || 'P'}
+                      {thumbVisible ? (
+                        <img
+                          src={thumb}
+                          alt={row.productName || 'product'}
+                          onError={() => markBrokenThumb(thumb)}
+                        />
+                      ) : asText(row.productName).slice(0, 2).toUpperCase() || 'P'}
                     </span>
                     <span className={s.nameCell}>
                       <span className={s.primary}>{row.productName || '—'}</span>

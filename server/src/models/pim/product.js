@@ -48,6 +48,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'product_id', 
         as: 'variants' 
       });
+      Product.hasMany(models.InventoryItem, {
+        foreignKey: { name: 'productId', field: 'product_id' },
+        as: 'inventoryItems'
+      });
       Product.hasMany(models.ProductAttributeValue, { 
         foreignKey: 'product_id', 
         as: 'attributes' 
@@ -345,4 +349,3 @@ module.exports = (sequelize, DataTypes) => {
   });
   return Product;
 };
-

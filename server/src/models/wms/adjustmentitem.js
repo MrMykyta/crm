@@ -52,7 +52,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     locationId:{ 
       type:DataTypes.UUID,
-      allowNull:false, 
+      allowNull:true,
       field:'location_id' 
     },
     lotId:{ 

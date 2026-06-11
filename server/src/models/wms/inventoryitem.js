@@ -20,6 +20,14 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey:'warehouse_id', 
         as:'warehouse' 
       });
+      InventoryItem.belongsTo(models.Product, {
+        foreignKey: { name: 'productId', field: 'product_id' },
+        as: 'product'
+      });
+      InventoryItem.belongsTo(models.ProductVariant, {
+        foreignKey: { name: 'variantId', field: 'variant_id' },
+        as: 'variant'
+      });
     }
   }
   InventoryItem.init({
@@ -41,7 +49,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     locationId:{ 
       type:DataTypes.UUID,
-      allowNull:false,  // Set the locationId as the foreign key in the 'InventoryItem' table
+      allowNull:true,
       field:'location_id' 
     },
     productId:{ 
