@@ -288,7 +288,11 @@
     "stockTurnover": "Stock turnover",
     "stockAsOf": "Stock as of date",
     "inventoryLedger": "Inventory ledger",
-    "wmsReports": "Reports"
+    "wmsReports": "Reports",
+    "wmsNavDocuments": "Documents",
+    "wmsNavInventory": "Inventory",
+    "wmsNavPicking": "Picking",
+    "wmsNavSetup": "Setup"
   },
   "oms": {
     "stub": "This page is planned for the next stage.",

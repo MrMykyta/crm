@@ -1,0 +1,343 @@
+.workspace {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px 20px 28px;
+  color: var(--ui-text-1);
+}
+
+.topbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 760;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+.topbar p {
+  margin: 5px 0 0;
+  color: var(--ui-text-2);
+  font-size: 13px;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 290px) minmax(260px, 1fr) auto;
+  gap: 8px;
+  min-width: 0;
+}
+
+.selectBox,
+.searchBox,
+.filterHint {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 38px;
+  gap: 8px;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ui-surface-1) 88%, transparent);
+  color: var(--ui-text-2);
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.selectBox select,
+.searchBox input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ui-text-1);
+  font: inherit;
+  font-weight: 560;
+}
+
+.searchBox input::placeholder {
+  color: var(--ui-text-3);
+}
+
+.filterHint {
+  white-space: nowrap;
+}
+
+.tabs,
+.drillTabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tab,
+.drillTab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ui-surface-1) 86%, transparent);
+  color: var(--ui-text-2);
+  font-size: 13px;
+  font-weight: 680;
+  text-decoration: none;
+  letter-spacing: 0;
+}
+
+.tab:hover,
+.tab:focus-visible,
+.drillTab:hover,
+.drillTab:focus-visible {
+  border-color: var(--ui-border-focus);
+  color: var(--ui-text-1);
+  outline: none;
+}
+
+.active {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--ui-border-soft));
+  background: color-mix(in srgb, var(--accent) 14%, var(--ui-surface-1));
+  color: var(--ui-text-1);
+}
+
+.content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+  align-items: start;
+}
+
+.withDrill {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+}
+
+.mainPanel,
+.drillPanel {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tableWrap {
+  min-width: 0;
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  background: color-mix(in srgb, var(--ui-surface-1) 86%, transparent);
+}
+
+.table th,
+.table td {
+  min-height: 34px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--ui-border-soft);
+  color: var(--ui-text-1);
+  font-size: 13px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: color-mix(in srgb, var(--ui-surface-1) 94%, transparent);
+  color: var(--ui-text-2);
+  font-size: 11px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.clickableRow {
+  cursor: pointer;
+}
+
+.clickableRow:hover td {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.numeric {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.primaryCell {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.primaryCell strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text-1);
+  font-weight: 720;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.primaryCell span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text-3);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inlineLink,
+.textLink,
+.secondaryAction {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 680;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.inlineLink:hover,
+.inlineLink:focus-visible,
+.textLink:hover,
+.textLink:focus-visible,
+.secondaryAction:hover,
+.secondaryAction:focus-visible {
+  color: var(--ui-text-1);
+  outline: none;
+  text-decoration: underline;
+}
+
+.drillPanel {
+  position: sticky;
+  top: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.drillHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.drillHeader h2 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ui-text-1);
+  font-size: 17px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drillHeader p {
+  margin: 4px 0 0;
+  color: var(--ui-text-2);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 8px;
+  background: var(--ui-surface-1);
+  color: var(--ui-text-2);
+  cursor: pointer;
+}
+
+.iconButton:hover,
+.iconButton:focus-visible {
+  border-color: var(--ui-border-focus);
+  color: var(--ui-text-1);
+  outline: none;
+}
+
+.drillTab {
+  min-height: 28px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.drillContent {
+  min-width: 0;
+}
+
+.drillContent .table {
+  min-width: 460px;
+}
+
+.drillContent .table th,
+.drillContent .table td {
+  padding: 8px 9px;
+  font-size: 12px;
+}
+
+.secondaryAction {
+  justify-self: start;
+  min-height: 30px;
+  padding: 0;
+}
+
+@media (max-width: 1100px) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .filterHint {
+    justify-content: flex-start;
+    white-space: normal;
+  }
+
+  .withDrill {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .drillPanel {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .workspace {
+    padding: 14px 12px 22px;
+  }
+
+  .topbar h1 {
+    font-size: 23px;
+  }
+
+  .tab {
+    min-height: 30px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+}

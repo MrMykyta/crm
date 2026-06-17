@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
@@ -22,17 +22,28 @@ import {
   mapWmsDocumentsFilter,
 } from '../../../utils/workspaceViewsWmsDocumentsFilter';
 import { createWmsDocumentsColumns } from '../../../components/data/ListPage/columnSchemas/wmsDocumentsColumns';
+import { isWmsUiDocumentsEnabled, isWmsUiNavEnabled } from '../../../config/featureFlags';
+import WmsSectionTabs from '../navigation/WmsSectionTabs';
+import {
+  WMS_DOCUMENT_TYPES,
+  WMS_DOCUMENT_TYPE_VIEWS,
+  WMS_DOCUMENT_WORKFLOW_VIEWS,
+  getWmsDocumentCreateRoute,
+} from '../navigation/wmsUiNavigation';
+import WmsDocumentsWorkspace from './WmsDocumentsWorkspace';
 import s from './WmsDocumentsPage.module.css';
 
 const MODULE = 'wms.documents';
 const ROUTE_BASE = '/main/wms/documents';
-const DOCUMENT_TYPES = ['', 'PZ', 'WZ', 'MM', 'RW', 'PW', 'PZK', 'WZK'];
+const DOCUMENT_TYPES = ['', ...WMS_DOCUMENT_TYPES, 'PZK', 'WZK'];
 const STATUS_OPTIONS = ['', 'draft', 'received', 'putaway', 'packing', 'shipped', 'cancelled', 'in_transit', 'posted'];
 const CREATE_OPTIONS = [
   { type: 'PZ', to: '/main/wms/receipts/new' },
+  { type: 'WZ', to: '/main/wms/shipments/new' },
   { type: 'MM', to: '/main/wms/transfers/new' },
-  { type: 'RW', to: '/main/wms/adjustments/new' },
-  { type: 'PW', to: '/main/wms/adjustments/new' },
+  { type: 'RW', to: '/main/wms/adjustments/new?type=RW' },
+  { type: 'PW', to: '/main/wms/adjustments/new?type=PW' },
+  { type: 'CC', to: '/main/wms/cycle-counts/new' },
 ];
 
 function normalizePageQuery(query = {}) {
@@ -51,15 +62,17 @@ function normalizePageQuery(query = {}) {
 }
 
 function queryFromSearchParams(searchParams) {
+  const view = (searchParams.get('view') || '').toLowerCase();
+  const today = new Date().toISOString().slice(0, 10);
   return normalizePageQuery({
     page: searchParams.get('page') || 1,
     limit: searchParams.get('limit') || 25,
     search: searchParams.get('search') || searchParams.get('q') || undefined,
     type: searchParams.get('type') || undefined,
-    status: searchParams.get('status') || undefined,
+    status: searchParams.get('status') || (view === 'needs-action' ? 'packing' : undefined),
     warehouseId: searchParams.get('warehouseId') || undefined,
-    dateFrom: searchParams.get('dateFrom') || undefined,
-    dateTo: searchParams.get('dateTo') || undefined,
+    dateFrom: searchParams.get('dateFrom') || (view === 'posted-today' ? today : undefined),
+    dateTo: searchParams.get('dateTo') || (view === 'posted-today' ? today : undefined),
   });
 }
 
@@ -98,7 +111,7 @@ function CreateDocumentMenu({ t, onCreate }) {
   return (
     <div className={s.createMenuWrap} ref={wrapRef}>
       <AddButton onClick={() => setOpen((current) => !current)}>
-        {t('wms.documents.actions.create')}
+        {t('wms.documents.actions.create', 'Create Document')}
       </AddButton>
       {open ? (
         <div className={s.createMenu} role="menu">
@@ -122,15 +135,50 @@ function CreateDocumentMenu({ t, onCreate }) {
   );
 }
 
-export default function WmsDocumentsPage() {
+function getSingleDocumentType(type) {
+  const normalized = String(type || '').toUpperCase();
+  return WMS_DOCUMENT_TYPES.includes(normalized) ? normalized : '';
+}
+
+function getWorkflowKey({ viewParam, query }) {
+  if (query?.type) return '';
+  if (viewParam === 'needs-action') return 'needsAction';
+  if (viewParam === 'posted-today') return 'postedToday';
+  if (query?.status === 'draft') return 'drafts';
+  return 'all';
+}
+
+function DocumentsCreateAction({ t, type, onCreate }) {
+  const singleType = getSingleDocumentType(type);
+  const directRoute = getWmsDocumentCreateRoute(singleType);
+
+  if (directRoute) {
+    return (
+      <AddButton onClick={() => onCreate(directRoute)}>
+        {`Create ${singleType}`}
+      </AddButton>
+    );
+  }
+
+  return <CreateDocumentMenu t={t} onCreate={onCreate} />;
+}
+
+function WmsDocumentsLegacyPage() {
   const [searchParams] = useSearchParams();
   const { t, i18n } = useTranslation();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const drawerOpenModule = useSelector(selectManageDrawerModule);
   const drawerOpen = drawerOpenModule === MODULE;
   const viewParam = (searchParams.get('view') || '').toLowerCase();
   const viewIdParam = searchParams.get('viewId') || null;
+  const wmsNavEnabled = isWmsUiNavEnabled();
+  const hasUiNavQueryView = wmsNavEnabled && (
+    searchParams.has('type')
+    || searchParams.has('status')
+    || viewParam === 'needs-action'
+    || viewParam === 'posted-today'
+  );
 
   const [query, setQuery] = useState(() => queryFromSearchParams(searchParams));
   const [editorOpen, setEditorOpen] = useState(false);
@@ -153,14 +201,21 @@ export default function WmsDocumentsPage() {
     [viewsResp]
   );
   const activeView = useMemo(
-    () => resolveActiveView(views, viewIdParam, viewParam || null),
-    [views, viewIdParam, viewParam]
+    () => (hasUiNavQueryView ? null : resolveActiveView(views, viewIdParam, viewParam || null)),
+    [hasUiNavQueryView, views, viewIdParam, viewParam]
   );
 
   const activeViewFilterParams = useMemo(
     () => mapWmsDocumentsFilter(activeView?.filter),
     [activeView]
   );
+
+  const searchKey = searchParams.toString();
+
+  useEffect(() => {
+    if (activeView) return;
+    setQuery(queryFromSearchParams(new URLSearchParams(searchKey)));
+  }, [activeView, searchKey]);
 
   useEffect(() => {
     if (!activeView) return;
@@ -181,7 +236,10 @@ export default function WmsDocumentsPage() {
   }, [activeView, activeViewFilterParams]);
 
   const listQuery = useMemo(() => normalizePageQuery(query), [query]);
-  const { data, isFetching, error, refetch } = useListWarehouseDocumentsQuery(listQuery);
+  const skipDocumentsQuery = wmsNavEnabled && getSingleDocumentType(listQuery.type) === 'CC';
+  const { data, isFetching, error, refetch } = useListWarehouseDocumentsQuery(listQuery, {
+    skip: skipDocumentsQuery,
+  });
   const adapted = useMemo(
     () => adaptWarehouseDocumentsResponse(data, listQuery),
     [data, listQuery]
@@ -233,9 +291,38 @@ export default function WmsDocumentsPage() {
 
   const activeViewId = activeView?.id || null;
   const activeViewKey = activeView?.scope === 'system' ? activeView?.key || null : null;
+  const activeType = getSingleDocumentType(listQuery.type);
+  const activeWorkflowKey = getWorkflowKey({ viewParam, query: listQuery });
+
+  if (wmsNavEnabled && activeType === 'CC') {
+    return <Navigate to="/main/wms/cycle-counts" replace />;
+  }
 
   return (
     <>
+      {wmsNavEnabled ? (
+        <WmsSectionTabs
+          title="Documents"
+          groups={[
+            {
+              key: 'views',
+              label: 'Views',
+              items: WMS_DOCUMENT_WORKFLOW_VIEWS.map((item) => ({
+                ...item,
+                active: item.key === activeWorkflowKey,
+              })),
+            },
+            {
+              key: 'types',
+              label: 'Types',
+              items: WMS_DOCUMENT_TYPE_VIEWS.map((item) => ({
+                ...item,
+                active: item.type === activeType,
+              })),
+            },
+          ]}
+        />
+      ) : null}
       <ListPage
         source="wmsDocuments"
         externalData={adapted.items}
@@ -248,7 +335,7 @@ export default function WmsDocumentsPage() {
         columns={columns}
         defaultQuery={{ sort: 'date', dir: 'DESC', limit: 25 }}
         emptyStateText={t('wms.documents.empty')}
-        actions={<CreateDocumentMenu t={t} onCreate={navigate} />}
+        actions={<DocumentsCreateAction t={t} type={listQuery.type} onCreate={navigate} />}
         columnWidths={colWidths}
         onColumnResize={onColumnResize}
         columnOrder={colOrder}
@@ -309,4 +396,12 @@ export default function WmsDocumentsPage() {
       />
     </>
   );
+}
+
+export default function WmsDocumentsPage() {
+  if (isWmsUiDocumentsEnabled()) {
+    return <WmsDocumentsWorkspace />;
+  }
+
+  return <WmsDocumentsLegacyPage />;
 }

@@ -19,6 +19,9 @@ import {
   useListLocationsQuery,
   useReconcileCycleCountMutation,
 } from '../../../store/rtk/wmsDocumentsApi';
+import { isWmsShellCcReconcileEnabled } from '../../../config/featureFlags';
+import { buildCycleCountItemsPayload } from '../documentAdapters/payloadBuilders';
+import CcReconcileShellPage from '../WmsDocumentShell/CcReconcileShellPage';
 import s from '../CycleCountPage.module.css';
 
 function asText(value) {
@@ -94,7 +97,7 @@ function lineKey(row) {
   ].join('|');
 }
 
-export default function CycleCountDetailPage() {
+function LegacyCycleCountDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
@@ -284,15 +287,8 @@ export default function CycleCountDetailPage() {
     if (!id || !validateItems()) return;
     setErrorText('');
     try {
-      const payloadItems = draftItems.map((item) => ({
-        locationId: asText(item.locationId) || null,
-        productId: item.productId,
-        variantId: asText(item.variantId) || null,
-        lotId: asText(item.lotId) || null,
-        serialId: asText(item.serialId) || null,
-        qtyCounted: round4(asNumber(item.qtyCounted, 0)),
-      }));
-      await addItems({ id, items: payloadItems }).unwrap();
+      const payload = buildCycleCountItemsPayload({ rows: draftItems });
+      await addItems({ id, items: payload.items }).unwrap();
       setDraftItems([createDraftRow()]);
       setErrors({});
       await refetch();
@@ -593,4 +589,12 @@ export default function CycleCountDetailPage() {
       />
     </div>
   );
+}
+
+export default function CycleCountDetailPage() {
+  const legacy = <LegacyCycleCountDetailPage />;
+  if (isWmsShellCcReconcileEnabled()) {
+    return <CcReconcileShellPage fallback={legacy} />;
+  }
+  return legacy;
 }

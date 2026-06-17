@@ -15,6 +15,9 @@ import {
 import { useListOrdersQuery } from '../../../store/rtk/ordersApi';
 import { useListProductVariantsQuery } from '../../../store/rtk/productsApi';
 import { formatVariantLabel } from '../../../components/documents/DocumentEngine/wmsDisplay';
+import { isWmsShellWzCreateEnabled } from '../../../config/featureFlags';
+import { buildShipmentPayload } from '../documentAdapters/payloadBuilders';
+import WzCreateShellPage from '../WmsDocumentShell/WzCreateShellPage';
 import s from './ShipmentCreatePage.module.css';
 
 function asText(value) {
@@ -26,10 +29,6 @@ function asNumber(value, fallback = 0) {
   if (value === null || value === undefined || value === '') return fallback;
   const parsed = Number(String(value).replace(',', '.'));
   return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function round4(value) {
-  return Math.round((Number(value) + Number.EPSILON) * 1e4) / 1e4;
 }
 
 function uid() {
@@ -82,7 +81,7 @@ function applyProductToItem(item, product) {
   };
 }
 
-export default function ShipmentCreatePage() {
+function LegacyShipmentCreatePage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { can, isLoading: isLoadingAcl, hasResolvedPermissions } = useAclPermissions();
@@ -248,22 +247,7 @@ export default function ShipmentCreatePage() {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const payload = useMemo(() => {
-    const rows = items
-      .filter((item) => asText(item.productId) && asNumber(item.qty, 0) > 0)
-      .map((item) => ({
-        productId: item.productId,
-        variantId: item.variantId || undefined,
-        qty: round4(asNumber(item.qty, 0)),
-      }));
-    const orderId = asText(form.orderId);
-
-    return {
-      warehouseId: form.warehouseId,
-      ...(orderId ? { orderId } : {}),
-      items: rows,
-    };
-  }, [form.orderId, form.warehouseId, items]);
+  const payload = useMemo(() => buildShipmentPayload({ form, items }), [form, items]);
 
   const onCreate = async () => {
     setSubmitError('');
@@ -494,4 +478,12 @@ export default function ShipmentCreatePage() {
       />
     </div>
   );
+}
+
+export default function ShipmentCreatePage() {
+  if (isWmsShellWzCreateEnabled()) {
+    return <WzCreateShellPage />;
+  }
+
+  return <LegacyShipmentCreatePage />;
 }

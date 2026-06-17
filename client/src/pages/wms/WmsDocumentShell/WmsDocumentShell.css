@@ -1,0 +1,673 @@
+.wmsShellPage {
+  min-height: calc(100vh - 96px);
+  padding: 18px;
+  --wms-shell-surface: var(--wms-surface, var(--card-bg, #111827));
+  --wms-shell-soft: var(--wms-surface-soft, color-mix(in srgb, var(--surface, #0f172a) 80%, transparent));
+  --wms-shell-border: var(--wms-border, color-mix(in srgb, var(--border, #334155) 72%, transparent));
+  --wms-shell-text: var(--wms-text, var(--text, #e2e8f0));
+  --wms-shell-muted: var(--wms-text-muted, var(--text-secondary, #94a3b8));
+  --wms-shell-focus: var(--wms-focus-ring, color-mix(in srgb, var(--accent, #3b82f6) 22%, transparent));
+  --wms-shell-success-bg: var(--wms-tone-success-bg, color-mix(in srgb, #22c55e 8%, transparent));
+  --wms-shell-warning-bg: var(--wms-tone-warning-bg, color-mix(in srgb, #f59e0b 8%, transparent));
+  --wms-shell-danger-bg: var(--wms-tone-danger-bg, color-mix(in srgb, #ef4444 8%, transparent));
+  --wms-shell-info-bg: var(--wms-tone-info-bg, color-mix(in srgb, #0ea5e9 8%, transparent));
+}
+
+.wmsShellCard {
+  border: 1px solid color-mix(in srgb, var(--border, #334155) 72%, transparent);
+  background: color-mix(in srgb, var(--card-bg, #111827) 86%, transparent);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.wmsShellDocumentBar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border, #334155) 70%, transparent);
+  background: color-mix(in srgb, var(--card-bg, #111827) 94%, #020617);
+}
+
+.wmsShellDocumentBar p,
+.wmsShellWorkspaceHeader span,
+.wmsShellHint,
+.wmsShellMuted,
+.wmsShellItemsMeta {
+  color: var(--text-secondary, #94a3b8);
+}
+
+.wmsShellDocumentBar p {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+.wmsShellTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wmsShellTitleRow h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+  color: var(--text, #f8fafc);
+}
+
+.wmsShellBadge,
+.wmsShellMode,
+.wmsShellRowBadgeEmpty,
+.wmsShellRowBadgeReady {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.wmsShellBadge {
+  background: color-mix(in srgb, #22c55e 18%, transparent);
+  border: 1px solid color-mix(in srgb, #22c55e 50%, transparent);
+  color: #bbf7d0;
+}
+
+.wmsShellMode,
+.wmsShellRowBadgeEmpty {
+  border: 1px solid color-mix(in srgb, var(--border, #334155) 72%, transparent);
+  color: var(--text-secondary, #94a3b8);
+}
+
+.wmsShellRowBadgeReady {
+  border: 1px solid color-mix(in srgb, #22c55e 44%, transparent);
+  color: #86efac;
+}
+
+.wmsShellActions,
+.wmsShellSummaryBar,
+.wmsShellItemsMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wmsShellButton,
+.wmsShellPrimaryButton {
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.wmsShellButton {
+  border: 1px solid color-mix(in srgb, var(--border, #334155) 72%, transparent);
+  background: color-mix(in srgb, var(--surface, #0f172a) 82%, transparent);
+  color: var(--text, #e2e8f0);
+}
+
+.wmsShellPrimaryButton {
+  border: 1px solid color-mix(in srgb, var(--accent, #2563eb) 55%, transparent);
+  background: color-mix(in srgb, var(--accent, #2563eb) 80%, #0f172a);
+  color: #fff;
+  font-weight: 700;
+}
+
+.wmsShellButton:disabled,
+.wmsShellPrimaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.wmsShellErrorBanner,
+.wmsShellNoticeBanner,
+.wmsShellReceiveWarning {
+  margin: 12px 16px 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.wmsShellErrorBanner {
+  border: 1px solid color-mix(in srgb, #ef4444 48%, transparent);
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  color: #fecaca;
+}
+
+.wmsShellNoticeBanner {
+  border: 1px solid color-mix(in srgb, #22c55e 42%, transparent);
+  background: color-mix(in srgb, #22c55e 10%, transparent);
+  color: #bbf7d0;
+}
+
+.wmsShellReceiveWarning {
+  border: 1px solid color-mix(in srgb, #f59e0b 34%, transparent);
+  background: color-mix(in srgb, #f59e0b 8%, transparent);
+  color: #fde68a;
+}
+
+.wmsShellBody {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  min-height: 520px;
+}
+
+.wmsShellHeaderRail {
+  border-right: 1px solid color-mix(in srgb, var(--border, #334155) 70%, transparent);
+  padding: 14px;
+}
+
+.wmsShellHeaderRail h2,
+.wmsShellWorkspaceHeader h2 {
+  margin: 0;
+  color: var(--text, #f1f5f9);
+  font-size: 15px;
+}
+
+.wmsShellField {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.wmsShellField > span:first-child {
+  font-size: 12px;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.wmsShellWorkspace {
+  min-width: 0;
+  padding: 14px;
+}
+
+.wmsShellWorkspaceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.wmsShellScanBar {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(220px, 360px) auto 1fr;
+  align-items: end;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--border, #334155) 70%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface, #0f172a) 54%, transparent);
+}
+
+.wmsShellScanField {
+  display: grid;
+  gap: 4px;
+}
+
+.wmsShellScanField span {
+  font-size: 11px;
+  color: var(--text-secondary, #94a3b8);
+  text-transform: uppercase;
+}
+
+.wmsShellScanInput {
+  min-height: 34px;
+  padding: 7px 9px;
+}
+
+.wmsShellScanMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 12px;
+}
+
+.wmsShellScanMeta span:first-child {
+  border: 1px solid color-mix(in srgb, var(--border, #334155) 72%, transparent);
+  border-radius: 5px;
+  padding: 2px 6px;
+  color: var(--text, #e2e8f0);
+  font-weight: 700;
+}
+
+.wmsShellScanState,
+.wmsShellScanError {
+  align-self: center;
+  font-size: 12px;
+}
+
+.wmsShellScanState {
+  color: var(--text-secondary, #94a3b8);
+}
+
+.wmsShellScanError {
+  color: #fca5a5;
+}
+
+.wmsShellScanResults {
+  position: absolute;
+  z-index: 9;
+  left: 8px;
+  top: calc(100% - 4px);
+  width: min(460px, calc(100vw - 380px));
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--border, #334155) 78%, transparent);
+  background: color-mix(in srgb, var(--card-bg, #111827) 97%, #020617);
+  border-radius: 8px;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+}
+
+.wmsShellScanResult {
+  display: grid;
+  width: 100%;
+  gap: 2px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border, #334155) 58%, transparent);
+  background: transparent;
+  color: var(--text, #e2e8f0);
+  padding: 9px 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wmsShellScanResult:hover {
+  background: color-mix(in srgb, var(--accent, #2563eb) 14%, transparent);
+}
+
+.wmsShellScanResult span {
+  color: var(--text-secondary, #94a3b8);
+  font-size: 12px;
+}
+
+.wmsShellItemsMeta {
+  margin-bottom: 8px;
+  padding: 0 2px;
+  font-size: 12px;
+}
+
+.wmsShellTableWrap {
+  overflow: auto;
+  border: 1px solid var(--wms-shell-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wms-shell-surface) 88%, transparent);
+}
+
+.wmsShellTable {
+  width: 100%;
+  min-width: 860px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.wmsShellTable th,
+.wmsShellTable td {
+  border-bottom: 1px solid color-mix(in srgb, var(--wms-shell-border) 82%, transparent);
+  padding: 6px 7px;
+  vertical-align: middle;
+}
+
+.wmsShellTable th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--wms-shell-surface) 94%, var(--surface, #0f172a));
+  color: var(--wms-shell-muted);
+  font-size: 11px;
+  font-weight: 760;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.wmsShellTable tr:last-child td {
+  border-bottom: none;
+}
+
+.wmsShellEmptyRow {
+  background: color-mix(in srgb, var(--wms-shell-info-bg) 70%, transparent);
+}
+
+.wmsShellReadyRow {
+  background: color-mix(in srgb, var(--wms-shell-success-bg) 58%, transparent);
+}
+
+.wmsShellRowStateWarning {
+  background: color-mix(in srgb, var(--wms-shell-warning-bg) 78%, transparent);
+}
+
+.wmsShellRowStateError {
+  background: color-mix(in srgb, var(--wms-shell-danger-bg) 82%, transparent);
+}
+
+.wmsShellTable tbody tr:hover td {
+  background: color-mix(in srgb, var(--accent, #2563eb) 7%, transparent);
+}
+
+.wmsShellRowStateEmpty td:first-child,
+.wmsShellRowStateReady td:first-child,
+.wmsShellRowStateWarning td:first-child,
+.wmsShellRowStateError td:first-child {
+  box-shadow: inset 3px 0 0 var(--wms-tone-info-text, #38bdf8);
+}
+
+.wmsShellRowStateReady td:first-child {
+  box-shadow: inset 3px 0 0 var(--wms-tone-success-text, #22c55e);
+}
+
+.wmsShellRowStateWarning td:first-child {
+  box-shadow: inset 3px 0 0 var(--wms-tone-warning-text, #f59e0b);
+}
+
+.wmsShellRowStateError td:first-child {
+  box-shadow: inset 3px 0 0 var(--wms-tone-danger-text, #ef4444);
+}
+
+.wmsShellTable td:nth-child(2),
+.wmsShellTable td.wmsShellMuted {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  color: var(--wms-shell-muted);
+  font-size: 12px;
+}
+
+.wmsShellTable td:nth-child(3),
+.wmsShellTable td:nth-child(5) {
+  text-align: right;
+}
+
+.wmsShellProductCell {
+  position: relative;
+  min-width: 0;
+}
+
+.wmsShellProductCellFrame {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wmsShellProductThumb,
+.wmsShellPickerThumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--wms-shell-border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--wms-shell-soft) 88%, transparent);
+  color: var(--wms-shell-muted);
+  font-size: 12px;
+  font-weight: 780;
+}
+
+.wmsShellProductThumb {
+  width: 32px;
+  height: 32px;
+}
+
+.wmsShellProductThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wmsShellProductEditor {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.wmsShellProductSubline {
+  overflow: hidden;
+  color: var(--wms-shell-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wmsShellInput {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 32px;
+  border: 1px solid var(--wms-shell-border);
+  background: color-mix(in srgb, var(--surface, #0f172a) 78%, transparent);
+  color: var(--wms-shell-text);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.wmsShellProductInput {
+  font-weight: 650;
+}
+
+.wmsShellCostInput {
+  min-width: 92px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.wmsShellCurrencyInput {
+  min-width: 72px;
+  text-align: center;
+  text-transform: uppercase;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+.wmsShellIconButton {
+  width: 28px;
+  height: 28px;
+  border: 1px solid color-mix(in srgb, var(--border, #334155) 72%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface, #0f172a) 82%, transparent);
+  color: var(--text, #e2e8f0);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.wmsShellIconButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wmsShellInput:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent, #3b82f6) 58%, transparent);
+  box-shadow: 0 0 0 2px var(--wms-shell-focus);
+}
+
+.wmsShellQtyInput {
+  max-width: 130px;
+  margin-left: auto;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.wmsShellPicker {
+  position: absolute;
+  z-index: 8;
+  left: 0;
+  top: calc(100% + 6px);
+  width: min(460px, 68vw);
+  max-height: 236px;
+  overflow: auto;
+  border: 1px solid var(--wms-shell-border);
+  background: color-mix(in srgb, var(--wms-shell-surface) 97%, #020617);
+  border-radius: 8px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+}
+
+.wmsShellPickerState {
+  padding: 9px 11px;
+  color: var(--wms-shell-muted);
+  font-size: 12px;
+}
+
+.wmsShellPickerRow {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--wms-shell-border) 62%, transparent);
+  background: transparent;
+  color: var(--wms-shell-text);
+  padding: 7px 9px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wmsShellPickerRow:hover,
+.wmsShellPickerRow:focus-visible {
+  background: color-mix(in srgb, var(--accent, #2563eb) 14%, transparent);
+  outline: none;
+}
+
+.wmsShellPickerThumb {
+  width: 30px;
+  height: 30px;
+}
+
+.wmsShellPickerMain,
+.wmsShellPickerMeta {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.wmsShellPickerMain strong {
+  overflow: hidden;
+  color: var(--wms-shell-text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wmsShellPickerMain span,
+.wmsShellPickerMeta {
+  color: var(--wms-shell-muted);
+  font-size: 12px;
+}
+
+.wmsShellFieldError,
+.wmsShellFieldWarning {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.wmsShellFieldError {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid var(--wms-tone-danger-border, color-mix(in srgb, #ef4444 42%, transparent));
+  border-radius: 999px;
+  background: var(--wms-tone-danger-bg, color-mix(in srgb, #ef4444 10%, transparent));
+  color: var(--wms-tone-danger-text, #fca5a5);
+  padding: 2px 7px;
+}
+
+.wmsShellFieldWarning {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid var(--wms-tone-warning-border, color-mix(in srgb, #f59e0b 40%, transparent));
+  border-radius: 999px;
+  background: var(--wms-tone-warning-bg, color-mix(in srgb, #f59e0b 9%, transparent));
+  color: var(--wms-tone-warning-text, #fde68a);
+  padding: 2px 7px;
+}
+
+.wmsShellDetailCell {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--wms-shell-border) 74%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wms-shell-soft) 72%, transparent);
+  padding: 7px;
+}
+
+.wmsShellDetailLabel {
+  overflow: hidden;
+  color: var(--wms-shell-muted);
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.wmsShellDetailValue {
+  color: var(--wms-shell-text);
+  font-size: 13px;
+}
+
+.wmsShellSummaryBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  justify-content: flex-end;
+  border-top: 1px solid var(--wms-shell-border);
+  background: color-mix(in srgb, var(--wms-shell-surface) 96%, #020617);
+  padding: 9px 16px;
+  color: var(--wms-shell-muted);
+  font-size: 13px;
+  box-shadow: 0 -10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.wmsShellSummaryMetric {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  border: 1px solid var(--wms-shell-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wms-shell-soft) 84%, transparent);
+  padding: 3px 10px;
+}
+
+.wmsShellSummaryBar strong {
+  color: var(--wms-shell-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.wmsShellSummaryChip,
+.wmsShellRowStateChip {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 960px) {
+  .wmsShellBody {
+    grid-template-columns: 1fr;
+  }
+
+  .wmsShellHeaderRail {
+    border-right: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border, #334155) 70%, transparent);
+  }
+
+  .wmsShellScanBar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .wmsShellScanResults {
+    width: calc(100% - 16px);
+  }
+}

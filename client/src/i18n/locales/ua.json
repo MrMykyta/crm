@@ -287,7 +287,11 @@
     "inventoryLedger": "Картка складу",
     "wmsReports": "Звіти",
     "wmsPicks": "Комплектація",
-    "wmsNewShipment": "Нова відвантаження"
+    "wmsNewShipment": "Нова відвантаження",
+    "wmsNavDocuments": "Documents",
+    "wmsNavInventory": "Inventory",
+    "wmsNavPicking": "Picking",
+    "wmsNavSetup": "Setup"
   },
   "oms": {
     "stub": "Ця сторінка запланована на наступний етап.",

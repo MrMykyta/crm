@@ -288,7 +288,11 @@
     "inventoryLedger": "Karta magazynowa",
     "wmsReports": "Raporty",
     "wmsPicks": "Kompletacja",
-    "wmsNewShipment": "Nowa wysyłka"
+    "wmsNewShipment": "Nowa wysyłka",
+    "wmsNavDocuments": "Dokumenty",
+    "wmsNavInventory": "Magazyn",
+    "wmsNavPicking": "Kompletacja",
+    "wmsNavSetup": "Konfiguracja"
   },
   "oms": {
     "stub": "Ta strona jest zaplanowana na kolejny etap.",

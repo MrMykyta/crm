@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import ThemedSelect from '../../../components/inputs/RadixSelect';
+import { isWmsShellCcCreateEnabled } from '../../../config/featureFlags';
 import {
   useCreateCycleCountMutation,
   useListWarehousesQuery,
 } from '../../../store/rtk/wmsDocumentsApi';
+import { buildCycleCountPayload } from '../documentAdapters/payloadBuilders';
+import CcCreateShellPage from '../WmsDocumentShell/CcCreateShellPage';
 import s from '../CycleCountPage.module.css';
 
 function asText(value) {
@@ -18,7 +21,7 @@ function getErrorText(error, fallback = 'Failed to create count sheet') {
   return error?.data?.message || error?.data?.error || error?.error || error?.message || fallback;
 }
 
-export default function CycleCountCreatePage() {
+function LegacyCycleCountCreatePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [warehouseId, setWarehouseId] = useState('');
@@ -51,7 +54,7 @@ export default function CycleCountCreatePage() {
     }
     setFieldError('');
     try {
-      const created = await createCycleCount({ warehouseId }).unwrap();
+      const created = await createCycleCount(buildCycleCountPayload({ header: { warehouseId } })).unwrap();
       const createdId = created?.id;
       if (!createdId) throw new Error('Cycle count id missing');
       navigate(`/main/wms/cycle-counts/${createdId}`);
@@ -113,4 +116,12 @@ export default function CycleCountCreatePage() {
       </section>
     </div>
   );
+}
+
+export default function CycleCountCreatePage() {
+  if (isWmsShellCcCreateEnabled()) {
+    return <CcCreateShellPage />;
+  }
+
+  return <LegacyCycleCountCreatePage />;
 }

@@ -326,7 +326,11 @@
     "inventoryLedger": "Карточка склада",
     "wmsReports": "Отчёты",
     "wmsPicks": "Комплектация",
-    "wmsNewShipment": "Новая отгрузка"
+    "wmsNewShipment": "Новая отгрузка",
+    "wmsNavDocuments": "Documents",
+    "wmsNavInventory": "Inventory",
+    "wmsNavPicking": "Picking",
+    "wmsNavSetup": "Setup"
   },
   "oms": {
     "stub": "Эта страница запланирована на следующий этап.",

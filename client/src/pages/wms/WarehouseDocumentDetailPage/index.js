@@ -43,13 +43,14 @@ import {
   formatWarehouseLabel,
 } from '../../../components/documents/DocumentEngine/wmsDisplay';
 import { getWmsDocumentPolicy } from '../wmsDocumentPolicy';
+import { mmConfig, pwConfig, pzConfig, wzConfig } from '../documentTypes';
 import useAclPermissions from '../../../hooks/useAclPermissions';
 
 const ROUTE_BASE = {
-  receipt: '/main/wms/receipts',
-  shipment: '/main/wms/shipments',
-  transfer: '/main/wms/transfers',
-  adjustment: '/main/wms/adjustments',
+  receipt: pzConfig.routeBase,
+  shipment: wzConfig.routeBase,
+  transfer: mmConfig.routeBase,
+  adjustment: pwConfig.routeBase,
 };
 
 function asText(value) {
@@ -2155,7 +2156,7 @@ export default function WarehouseDocumentDetailPage({ kind = 'receipt' }) {
     }
   }, [activeHistoryQuery, activeQuery, createReceiptCorrection, createShipmentCorrection, id, kind, navigate, t]);
 
-  if (activeQuery.isLoading || activeQuery.isFetching) {
+  if (activeQuery.isLoading || (activeQuery.isFetching && !activeQuery.data)) {
     return <DocumentEnginePage.State title={t('common.loading', 'Loading...')} text={t('documents.editor.loadingHint', 'Preparing…')} />;
   }
   if (activeQuery.isError) {

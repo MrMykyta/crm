@@ -1,0 +1,211 @@
+const pzConfig = {
+  type: 'PZ',
+  kindKey: 'receipt',
+  i18nKey: 'wms.receipts',
+  badge: 'PZ',
+  color: 'receipt',
+  routeBase: '/main/wms/receipts',
+
+  header: {
+    fields: [
+      {
+        key: 'warehouseId',
+        labelKey: 'wms.fields.warehouse',
+        type: 'warehouseSelect',
+        requiredFor: ['create', 'draft'],
+        source: 'companyWarehouses',
+      },
+      {
+        key: 'inboundLocationId',
+        labelKey: 'wms.locationOptional.inboundLabel',
+        type: 'locationSelect',
+        requiredFor: [],
+        source: 'warehouseLocations',
+        optionalHintKey: 'wms.locationOptional.warehouseLevelStock',
+      },
+      {
+        key: 'counterpartyId',
+        labelKey: 'wms.fields.supplier',
+        type: 'counterpartySelect',
+        requiredFor: [],
+      },
+      {
+        key: 'sourceRef',
+        labelKey: 'wms.fields.sourceReference',
+        type: 'sourceReference',
+        requiredFor: [],
+        todo: 'PZ source reference is not exposed as stable React state in the current create/detail screens.',
+      },
+      {
+        key: 'issueDate',
+        labelKey: 'wms.fields.date',
+        type: 'date',
+        requiredFor: [],
+      },
+    ],
+  },
+
+  columns: [
+    {
+      key: 'product',
+      labelKey: 'wms.columns.product',
+      label: 'Product',
+      type: 'product',
+      required: true,
+      editable: true,
+      inputField: 'productName',
+      clearFields: ['productId', 'variantId', 'sku'],
+      displayNameFields: ['productName', 'pickerProductName'],
+      displayCodeFields: ['sku'],
+      errorField: 'productId',
+      resultIdField: 'productId',
+      resultVariantField: 'variantId',
+      resultTitleField: 'productName',
+      resultCodeField: 'sku',
+      resultCodeLabel: 'SKU',
+    },
+    { key: 'sku', labelKey: 'wms.columns.sku', label: 'SKU', type: 'readonly', editable: false, cellClassName: 'wmsShellMuted' },
+    { key: 'qtyExpected', labelKey: 'wms.create.qtyExpected', label: 'Qty', type: 'qty', required: true, editable: true },
+    { key: 'lotNumber', labelKey: 'wms.receipts.draftEdit.details.lot', label: 'Lot', type: 'lot', editable: true, detailSection: 'lot' },
+    { key: 'unitCost', labelKey: 'wms.columns.unitCost', label: 'Unit cost', type: 'cost', editable: true, inputClassName: 'wmsShellInput wmsShellCostInput' },
+    { key: 'currency', labelKey: 'wms.columns.currency', label: 'Currency', type: 'currency', editable: true, inputClassName: 'wmsShellInput wmsShellCurrencyInput' },
+    { key: 'rowState', labelKey: 'wms.columns.status', label: 'State', type: 'status', editable: false, warningFields: ['unitCost'] },
+  ],
+
+  qtyField: 'qtyExpected',
+  qtySign: 'positive',
+
+  rowController: {
+    stockAware: false,
+    cost: true,
+    lots: 'create',
+    serials: 'receive-placeholder',
+    locations: 'putaway',
+    scanMode: 'newLine',
+    autoRow: {
+      enabled: true,
+      mode: 'trailingEmpty',
+      exactlyOneTrailingEmpty: true,
+      excludeEmptyFromTotals: true,
+      excludeEmptyFromSave: true,
+    },
+    keyboardPreset: 'wms-default',
+    detailSections: [
+      { key: 'cost', type: 'cost', labelKey: 'wms.receipts.draftEdit.details.cost', fields: ['unitCost', 'currency', 'purchasePriceSource', 'purchasePriceWarning'] },
+      { key: 'putAway', labelKey: 'wms.receipts.draftEdit.details.putAway', fields: ['inboundLocationId'] },
+      { key: 'lot', type: 'lot', placement: 'column', columnKey: 'lotNumber', labelKey: 'wms.receipts.draftEdit.details.lot', fields: ['lotNumber'] },
+      {
+        key: 'serials',
+        labelKey: 'wms.receipts.draftEdit.details.serials',
+        fields: ['serialNumber'],
+        visibleWhen: 'product.isSerialized',
+        todo: 'Full serial lifecycle is blocked by backend roadmap; current UI remains placeholder-only.',
+      },
+      { key: 'receiveNow', labelKey: 'wms.receipts.draftEdit.details.receiveNow', fields: ['receiveNow'], visibleWhen: 'row.receiveNow exists' },
+    ],
+  },
+
+  validation: [
+    {
+      key: 'warehouseRequired',
+      scope: 'header',
+      field: 'warehouseId',
+      level: 'blocking',
+      rule: 'required',
+      messageKey: 'wms.validation.warehouseRequired',
+      fallback: 'Warehouse is required',
+    },
+    {
+      key: 'rowsRequired',
+      scope: 'document',
+      level: 'blocking',
+      rule: 'hasPersistableRows',
+      messageKey: 'wms.validation.rowsRequired',
+      fallback: 'Add at least one product row before saving.',
+    },
+    {
+      key: 'productRequired',
+      scope: 'row',
+      field: 'productId',
+      level: 'blocking',
+      rule: 'requiredWhenRowIsNotEmpty',
+      messageKey: 'wms.validation.productRequired',
+      fallback: 'Product is required',
+    },
+    {
+      key: 'qtyPositive',
+      scope: 'row',
+      field: '$qtyField',
+      level: 'blocking',
+      rule: 'numberGreaterThan',
+      value: 0,
+      messageKey: 'wms.validation.qtyPositive',
+      fallback: 'Qty must be greater than 0',
+    },
+    {
+      key: 'unitCostWarning',
+      scope: 'row',
+      field: 'unitCost',
+      level: 'warning',
+      rule: 'missingOrManualCostSource',
+      messageKey: 'wms.receipts.draftEdit.priceWarnings.noSuggestedPrice',
+      fallback: 'Unit cost missing',
+      todo: 'Current warning depends on picker purchase-price state and manual cost edits.',
+    },
+    {
+      key: 'lotWarning',
+      scope: 'row',
+      field: 'lotNumber',
+      level: 'warning',
+      rule: 'requiredWhenProductFlag',
+      productFlag: 'isLotTracked',
+      messageKey: 'wms.receipts.draftEdit.lot.required',
+      fallback: 'Lot required',
+    },
+  ],
+
+  lifecycle: {
+    statuses: ['draft', 'received', 'corrected'],
+    transitions: [
+      { key: 'save', from: ['draft'], to: 'draft', action: 'save' },
+      { key: 'receive', from: ['draft'], to: 'received', action: 'receive' },
+      { key: 'correct', from: ['received'], to: 'corrected', action: 'correct' },
+      { key: 'print', from: ['draft', 'received', 'corrected'], action: 'print' },
+    ],
+    todo: 'Lifecycle execution remains in WarehouseDocumentDetailPage and RTK mutations for SHELL-0.2.',
+  },
+
+  actions: {
+    save: 'receipt.saveDraft',
+    receive: 'receipt.receive',
+    correct: 'receipt.correct',
+    print: 'receipt.print',
+    todo: 'Adapter binding is intentionally not implemented in SHELL-0.2.',
+  },
+
+  summary: [
+    { key: 'lines', labelKey: 'wms.receipts.draftEdit.lines', source: 'persistableRows.length' },
+    { key: 'totalQty', labelKey: 'wms.receipts.draftEdit.totalQty', source: 'sum($qtyField)' },
+    { key: 'totalValue', labelKey: 'wms.receipts.draftEdit.totalCost', source: 'sum($qtyField * unitCost)' },
+    { key: 'warningCount', labelKey: 'wms.summary.warningCount', source: 'rowWarnings.length' },
+    { key: 'blockingCount', labelKey: 'wms.summary.blockingCount', source: 'rowErrors.length' },
+  ],
+
+  permissions: {
+    view: 'wms:read',
+    create: 'wms:document:create',
+    update: 'wms:document:update',
+    post: 'wms:document:post',
+    correct: 'wms:document:correct',
+  },
+
+  pickerContext: 'purchase',
+
+  todos: [
+    'Move JSX rendering to a type-agnostic Shell host in a later task.',
+    'Move RTK mutations into adapter bindings in a later task.',
+    'Convert React-state-heavy row validation into declarative predicates after Shell foundation exists.',
+  ],
+};
+
+export default pzConfig;

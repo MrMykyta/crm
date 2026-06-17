@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import s from './Dashboard.module.css';
+import { isWmsUiDashWidgetsEnabled } from '../../config/featureFlags';
+import WmsDashboardSection from '../wms/dashboard/WmsDashboardSection';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -10,6 +12,7 @@ const MARGIN = [12, 12];        // [marginX, marginY]
 const CONTAINER_PADDING = [0, 0];
 const ROW_CEIL_BIAS = 0.2;
 const STORAGE_KEY = 'dashboard.layouts.v5';
+const WMS_WIDGET_ID = 'wms';
 
 /* ================= helpers ================= */
 
@@ -33,6 +36,25 @@ const clampLayouts = (ls) => {
     return { ...it, minW, minH, w, h, resizeHandles };
   });
   return { ...ls, lg };
+};
+
+const withOptionalWmsLayout = (ls, enabled) => {
+  const next = clampLayouts(ls);
+  const lg = next.lg || [];
+
+  if (!enabled) {
+    return { ...next, lg: lg.filter((item) => item.i !== WMS_WIDGET_ID) };
+  }
+
+  if (lg.some((item) => item.i === WMS_WIDGET_ID)) return next;
+
+  return {
+    ...next,
+    lg: [
+      ...lg,
+      { i: WMS_WIDGET_ID, x: 3, y: 0, w: 9, h: 14, minW: 6, minH: 12, resizeHandles: ['e', 's', 'se'] },
+    ],
+  };
 };
 
 // jsonEqual: вспомогательная логика компонента.
@@ -106,17 +128,18 @@ function Card({ id, currentH, onAutoMinH, paused, children }) {
 /* ================= Dashboard ================= */
 
 export default function Dashboard() {
+  const wmsWidgetsEnabled = isWmsUiDashWidgetsEnabled();
   const [layouts, setLayouts] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return clampLayouts(JSON.parse(saved));
+      if (saved) return withOptionalWmsLayout(JSON.parse(saved), wmsWidgetsEnabled);
     } catch {}
     // стартовые размеры; minW/minH скромные, дальше карточка поднимет minH сама
-    return clampLayouts({
+    return withOptionalWmsLayout({
       lg: [
         { i:'kpi', x:0, y:0, w:3, h:6, minW:3, minH:6, resizeHandles:['e','s','se'] },
       ],
-    });
+    }, wmsWidgetsEnabled);
   });
 
   const [paused, setPaused] = useState(false);
@@ -191,6 +214,18 @@ export default function Dashboard() {
             <KpiWidget/>
           </Card>
         </div>
+        {wmsWidgetsEnabled ? (
+          <div key={WMS_WIDGET_ID}>
+            <Card
+              id={WMS_WIDGET_ID}
+              currentH={hMap.get(WMS_WIDGET_ID) || 1}
+              onAutoMinH={handleAutoMinH}
+              paused={paused}
+            >
+              <WmsDashboardSection />
+            </Card>
+          </div>
+        ) : null}
       </ResponsiveGridLayout>
     </div>
   );

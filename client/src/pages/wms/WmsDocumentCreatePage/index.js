@@ -24,6 +24,11 @@ import {
   formatVariantLabel,
   formatWarehouseLabel,
 } from '../../../components/documents/DocumentEngine/wmsDisplay';
+import {
+  buildAdjustmentPayload as buildAdjustmentAdapterPayload,
+  buildReceiptPayload as buildReceiptAdapterPayload,
+  buildTransferPayload as buildTransferAdapterPayload,
+} from '../documentAdapters/payloadBuilders';
 import s from './WmsDocumentCreatePage.module.css';
 
 function asText(value) {
@@ -224,7 +229,7 @@ function WmsCreateItemsTable({ items, kind, errors, t, onAddItem, onRemoveItem, 
   );
 }
 
-export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
+export default function WmsDocumentCreatePage({ kind = 'receipt', documentConfig = null }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [isPickerOpen, setPickerOpen] = useState(false);
@@ -236,6 +241,8 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
   const isReceipt = kind === 'receipt';
   const isAdjustment = kind === 'adjustment';
   const isTransfer = kind === 'transfer';
+  const receiptConfig = isReceipt ? documentConfig : null;
+  const receiptQtyField = receiptConfig?.qtyField || 'qtyExpected';
 
   const [header, setHeader] = useState({
     warehouseId: '', inboundLocationId: '', counterpartyId: '', issueDate: '', documentType: 'PW',
@@ -384,56 +391,18 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const buildReceiptPayload = () => ({
-    warehouseId: header.warehouseId,
-    inboundLocationId: header.inboundLocationId || null,
-    issueDate: header.issueDate || null,
-    items: items.map((item) => ({
-      productId: item.productId,
-      variantId: asText(item.variantId) || null,
-      lotNumber: asText(item.lotNumber) || null,
-      qtyExpected: round4(asNumber(item.qtyExpected, 0)),
-    })),
-  });
+  const buildReceiptCreatePayload = () => buildReceiptAdapterPayload({ header, rows: items });
 
-  const buildAdjustmentPayload = () => {
-    const type = asText(header.documentType || 'PW').toUpperCase();
-    return {
-      documentType: type,
-      warehouseId: header.warehouseId,
-      reason: asText(header.reason) || null,
-      issueDate: header.issueDate || null,
-      items: items.map((item) => {
-        const absQty = Math.abs(round4(asNumber(item.qtyDelta, 0)));
-        return {
-          productId: item.productId,
-          variantId: asText(item.variantId) || null,
-          locationId: asText(header.locationId) || null,
-          qtyDelta: type === 'RW' ? -absQty : absQty,
-        };
-      }),
-    };
-  };
+  const buildAdjustmentCreatePayload = () => buildAdjustmentAdapterPayload({ header, rows: items });
 
-  const buildTransferPayload = () => ({
-    fromWarehouseId: header.fromWarehouseId,
-    toWarehouseId: header.toWarehouseId,
-    sourceLocationId: header.fromLocationId || null,
-    targetLocationId: header.toLocationId || null,
-    issueDate: header.issueDate || null,
-    items: items.map((item) => ({
-      productId: item.productId,
-      variantId: asText(item.variantId) || null,
-      qty: round4(asNumber(item.qty, 0)),
-    })),
-  });
+  const buildTransferCreatePayload = () => buildTransferAdapterPayload({ header, rows: items });
 
   const handleReceiptSave = async ({ receiveMode = 'none' } = {}) => {
     if (!validate({ receiveMode })) return;
     setSaveError('');
     setActionError('');
     try {
-      const created = await createReceipt(buildReceiptPayload()).unwrap();
+      const created = await createReceipt(buildReceiptCreatePayload()).unwrap();
       const receiptId = created?.id;
       if (!receiptId) throw new Error('Receipt not created');
       if (receiveMode === 'all' || receiveMode === 'selected') {
@@ -466,7 +435,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     setSaveError('');
     setActionError('');
     try {
-      const created = await createAdjustment(buildAdjustmentPayload()).unwrap();
+      const created = await createAdjustment(buildAdjustmentCreatePayload()).unwrap();
       const adjustmentId = created?.id;
       if (!adjustmentId) throw new Error('Adjustment not created');
       if (post) {
@@ -485,7 +454,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
     setSaveError('');
     setActionError('');
     try {
-      const created = await createTransfer(buildTransferPayload()).unwrap();
+      const created = await createTransfer(buildTransferCreatePayload()).unwrap();
       const transferId = created?.id;
       if (!transferId) throw new Error('Transfer not created');
       if (execute) {
@@ -509,7 +478,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
   };
 
   // ----- DocumentEngine model -----
-  const typeLabel = isReceipt ? 'PZ' : isTransfer ? 'MM' : asText(header.documentType || 'PW').toUpperCase();
+  const typeLabel = isReceipt ? (receiptConfig?.badge || 'PZ') : isTransfer ? 'MM' : asText(header.documentType || 'PW').toUpperCase();
   const title = `${t('common.new', 'New')} ${typeLabel}`;
   const subtitle = isReceipt
     ? t('wms.create.subtitleReceipt', 'Create receipt and optionally receive lines')
@@ -553,7 +522,7 @@ export default function WmsDocumentCreatePage({ kind = 'receipt' }) {
   const summaryRows = (() => {
     const rows = [{ label: t('wms.summary.items', 'Items'), value: String(items.length) }];
     if (isReceipt) {
-      const totalExpected = items.reduce((acc, it) => acc + asNumber(it.qtyExpected, 0), 0);
+      const totalExpected = items.reduce((acc, it) => acc + asNumber(it[receiptQtyField], 0), 0);
       rows.push({ label: t('wms.summary.qtyTotal', 'Total qty'), value: round4(totalExpected), strong: true });
     } else if (isAdjustment) {
       const totalDelta = items.reduce((acc, it) => acc + Math.abs(asNumber(it.qtyDelta, 0)), 0);
