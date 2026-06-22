@@ -22,7 +22,7 @@ assert.equal(getWmsDocumentsLegacyRoute('receipts'), '/main/wms/documents?type=P
 assert.equal(getWmsDocumentsLegacyRoute('shipments'), '/main/wms/documents?type=WZ');
 assert.equal(getWmsDocumentsLegacyRoute('transfers'), '/main/wms/documents?type=MM');
 assert.equal(getWmsDocumentsLegacyRoute('adjustments'), '/main/wms/documents?type=RW,PW');
-assert.equal(getWmsDocumentsLegacyRoute('cycle-counts'), '/main/wms/cycle-counts');
+assert.equal(getWmsDocumentsLegacyRoute('cycle-counts'), '/main/wms/documents?type=CC');
 
 assert.equal(getWmsInventoryLegacyRoute('stock-moves'), '/main/wms/inventory?tab=moves');
 assert.equal(getWmsInventoryLegacyRoute('reservations'), '/main/wms/inventory?tab=reservations');

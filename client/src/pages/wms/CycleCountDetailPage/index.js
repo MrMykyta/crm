@@ -19,7 +19,6 @@ import {
   useListLocationsQuery,
   useReconcileCycleCountMutation,
 } from '../../../store/rtk/wmsDocumentsApi';
-import { isWmsShellCcReconcileEnabled } from '../../../config/featureFlags';
 import { buildCycleCountItemsPayload } from '../documentAdapters/payloadBuilders';
 import CcReconcileShellPage from '../WmsDocumentShell/CcReconcileShellPage';
 import s from '../CycleCountPage.module.css';
@@ -593,8 +592,5 @@ function LegacyCycleCountDetailPage() {
 
 export default function CycleCountDetailPage() {
   const legacy = <LegacyCycleCountDetailPage />;
-  if (isWmsShellCcReconcileEnabled()) {
-    return <CcReconcileShellPage fallback={legacy} />;
-  }
-  return legacy;
+  return <CcReconcileShellPage fallback={legacy} />;
 }

@@ -37,6 +37,7 @@ function getScanResultKey(row = {}) {
 function useScannerModule({
   config,
   enabled = false,
+  onScanFeedback,
   queryProductPicker,
   rowApi = {},
   resetKey,
@@ -73,12 +74,19 @@ function useScannerModule({
     setScanResults([]);
   }, []);
 
-  const selectScanResult = useCallback((row) => {
+  const selectScanResult = useCallback((row, feedback = {}) => {
     const target = rowApi.addOrFillFromProductPicker?.(row);
+    onScanFeedback?.({
+      status: 'found',
+      query: feedback.query || asText(scanQuery),
+      row,
+      title: getScanResultTitle(row),
+      meta: getScanResultMeta(row),
+    });
     clearScan();
     if (target?.localId) rowApi.focusQty?.(target.localId);
     return target;
-  }, [clearScan, rowApi]);
+  }, [clearScan, onScanFeedback, rowApi, scanQuery]);
 
   const resolveScan = useCallback(async () => {
     const query = asText(scanQuery);
@@ -100,28 +108,32 @@ function useScannerModule({
       const pickerRows = normalizeProductPickerRows(result);
       const exactRows = pickerRows.filter((row) => isExactProductPickerScanMatch(row, query));
       if (exactRows.length === 1) {
-        selectScanResult(exactRows[0]);
+        selectScanResult(exactRows[0], { query });
         return;
       }
       if (exactRows.length > 1) {
         setScanResults(exactRows);
+        onScanFeedback?.({ status: 'multiple', query, count: exactRows.length });
         focusScan();
         return;
       }
       if (pickerRows.length) {
         setScanResults(pickerRows);
+        onScanFeedback?.({ status: 'multiple', query, count: pickerRows.length });
         focusScan();
         return;
       }
       setScanError('Barcode/SKU not found');
+      onScanFeedback?.({ status: 'unknown', query, message: 'Barcode/SKU not found' });
       focusScan();
     } catch (error) {
       setScanError(error?.message || 'Product search failed');
+      onScanFeedback?.({ status: 'unknown', query, message: error?.message || 'Product search failed' });
       focusScan();
     } finally {
       setScanning(false);
     }
-  }, [enabled, focusScan, pickerContext, queryProductPicker, scanMode, scanQuery, selectScanResult]);
+  }, [enabled, focusScan, onScanFeedback, pickerContext, queryProductPicker, scanMode, scanQuery, selectScanResult]);
 
   const onScanKeyDown = useCallback((event) => {
     if (event.key === 'Enter') {

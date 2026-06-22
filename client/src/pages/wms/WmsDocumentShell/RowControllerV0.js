@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   getCellRenderer,
   getColumnLabel,
@@ -38,6 +39,7 @@ const RowControllerV0 = forwardRef(function RowControllerV0({
   onQtyCommit,
   labels = {},
 }, ref) {
+  const { t } = useTranslation();
   const [picker, setPicker] = useState({ rowId: '', query: '', results: [], busy: false, error: '' });
   const qtyRefs = useRef({});
   const productRefs = useRef({});
@@ -46,6 +48,67 @@ const RowControllerV0 = forwardRef(function RowControllerV0({
   const keyboard = useMemo(() => (
     getKeyboardPreset(config?.rowController?.keyboardPreset)
   ), [config?.rowController?.keyboardPreset]);
+  const translatedLabels = useMemo(() => ({
+    addLine: t('wms.create.addLine', 'Add line'),
+    emptyRow: t('wms.shell.rows.emptyRow', 'New row'),
+    lines: t('wms.shell.rows.lines', 'Lines'),
+    manualRows: t('wms.shell.rows.manualRows', 'Manual rows'),
+    noProducts: t('wms.shell.product.noProducts', 'No products found'),
+    noSku: t('wms.shell.product.noSku', 'No SKU'),
+    persistedRow: t('wms.shell.rows.persistedRow', 'Saved'),
+    productHint: t('wms.shell.product.placeholder', 'Start typing product / SKU / EAN'),
+    readyRow: t('wms.shell.rows.readyRow', 'Ready'),
+    removeRow: t('wms.shell.rows.removeRow', 'Remove row'),
+    searchFailed: t('wms.shell.product.searchFailed', 'Search failed'),
+    searching: t('wms.shell.product.searching', 'Searching...'),
+    startTyping: t('wms.shell.product.placeholder', 'Start typing product / SKU / EAN'),
+    stock: t('wms.shell.product.stock', 'Stock'),
+    cost: t('wms.shell.product.cost', 'Cost'),
+    trailingEmpty: t('wms.shell.rows.trailingEmpty', 'New row is ready'),
+    unnamedProduct: t('wms.shell.product.unnamed', 'Product'),
+    translate: t,
+    ...labels,
+  }), [labels, t]);
+
+  const getPickerAnchor = (localId) => {
+    const node = productRefs.current[localId];
+    if (!node || typeof node.getBoundingClientRect !== 'function') return null;
+    const rect = node.getBoundingClientRect();
+    const summary = document.querySelector('.wmsShellSummaryBar')?.getBoundingClientRect?.();
+    const scanner = document.querySelector('.wmsShellScanBar')?.getBoundingClientRect?.();
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1280;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 720;
+    const safeBottom = (summary?.top || viewportHeight) - 8;
+    const safeTop = (scanner?.bottom || 0) + 8;
+    const left = Math.min(Math.max(12, rect.left), Math.max(12, viewportWidth - 292));
+    const width = Math.min(360, Math.max(300, rect.width + 116, viewportWidth - left - 12));
+    const availableBelow = safeBottom - rect.bottom - 8;
+    const availableAbove = rect.top - safeTop - 6;
+    if (availableBelow < 210 && availableAbove > availableBelow) {
+      const maxHeight = Math.max(130, Math.min(220, availableAbove - 6));
+      return {
+        left,
+        maxHeight,
+        top: Math.max(safeTop, rect.top - maxHeight - 6),
+        width,
+      };
+    }
+    return {
+      left,
+      maxHeight: Math.max(130, Math.min(220, availableBelow)),
+      top: rect.bottom + 6,
+      width,
+    };
+  };
+
+  const openPicker = (rowId, patch = {}) => {
+    setPicker((prev) => ({
+      ...prev,
+      rowId,
+      anchor: getPickerAnchor(rowId),
+      ...patch,
+    }));
+  };
 
   useEffect(() => {
     if (!Array.isArray(rows) || rows.length === 0) {
@@ -80,7 +143,7 @@ const RowControllerV0 = forwardRef(function RowControllerV0({
             ...prev,
             results: [],
             busy: false,
-            error: error?.message || labels.searchFailed || 'Search failed',
+            error: error?.message || translatedLabels.searchFailed || 'Search failed',
           }));
         }
       }
@@ -90,7 +153,22 @@ const RowControllerV0 = forwardRef(function RowControllerV0({
       cancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [labels.searchFailed, picker.query, picker.rowId, searchProducts]);
+  }, [picker.query, picker.rowId, searchProducts, translatedLabels.searchFailed]);
+
+  useEffect(() => {
+    if (!picker.rowId) return undefined;
+    const updateAnchor = () => {
+      setPicker((prev) => (
+        prev.rowId ? { ...prev, anchor: getPickerAnchor(prev.rowId) } : prev
+      ));
+    };
+    window.addEventListener('resize', updateAnchor);
+    window.addEventListener('scroll', updateAnchor, true);
+    return () => {
+      window.removeEventListener('resize', updateAnchor);
+      window.removeEventListener('scroll', updateAnchor, true);
+    };
+  }, [picker.rowId]);
 
   const committableCount = useMemo(() => rows.filter((row) => isCommittableRow(row, config)).length, [config, rows]);
 
@@ -158,7 +236,7 @@ const RowControllerV0 = forwardRef(function RowControllerV0({
       patch[field] = '';
     });
     updateRow(row.localId, patch);
-    setPicker({ rowId: row.localId, query: value, results: [], busy: true, error: '' });
+    openPicker(row.localId, { query: value, results: [], busy: true, error: '' });
   };
 
   const closePicker = () => {
@@ -184,8 +262,8 @@ const RowControllerV0 = forwardRef(function RowControllerV0({
   return (
     <div>
       <div className="wmsShellItemsMeta">
-        <span>{labels.lines || 'Lines'}: {committableCount}</span>
-        <span>{autoRowEnabled ? (labels.trailingEmpty || 'New row is ready') : (labels.manualRows || 'Manual rows')}</span>
+        <span>{translatedLabels.lines}: {committableCount}</span>
+        <span>{autoRowEnabled ? translatedLabels.trailingEmpty : translatedLabels.manualRows}</span>
         {!autoRowEnabled ? (
           <button
             type="button"
@@ -193,7 +271,7 @@ const RowControllerV0 = forwardRef(function RowControllerV0({
             onClick={addManualRow}
             disabled={disabled}
           >
-            {labels.addLine || 'Add line'}
+            {translatedLabels.addLine}
           </button>
         ) : null}
       </div>
@@ -207,7 +285,7 @@ const RowControllerV0 = forwardRef(function RowControllerV0({
                   className={column.headerClassName || ''}
                   style={column.width ? { width: column.width } : undefined}
                 >
-                  {getColumnLabel(column, labels)}
+                  {getColumnLabel(column, translatedLabels)}
                 </th>
               ))}
               <th />
@@ -230,7 +308,7 @@ const RowControllerV0 = forwardRef(function RowControllerV0({
                           config={config}
                           disabled={disabled}
                           empty={empty}
-                          labels={labels}
+                          labels={translatedLabels}
                           picker={picker}
                           productRefs={productRefs}
                           qtyRefs={qtyRefs}
@@ -239,6 +317,7 @@ const RowControllerV0 = forwardRef(function RowControllerV0({
                           rowWarnings={rowWarnings}
                           onCellKeyDown={onCellKeyDown}
                           onProductInputChange={onProductInputChange}
+                          openPicker={openPicker}
                           selectProduct={selectProduct}
                           setPicker={setPicker}
                           updateRow={updateRow}
@@ -253,7 +332,7 @@ const RowControllerV0 = forwardRef(function RowControllerV0({
                         className="wmsShellIconButton"
                         onClick={() => onRemoveRow?.(row.localId, row)}
                         disabled={disabled}
-                        aria-label={labels.removeRow || 'Remove row'}
+                        aria-label={translatedLabels.removeRow}
                       >
                         ×
                       </button>

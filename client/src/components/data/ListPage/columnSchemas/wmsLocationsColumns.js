@@ -1,3 +1,5 @@
+import { WmsStatusChip } from '../../../wms/ui';
+
 function asText(value) {
   if (value === null || value === undefined) return '';
   return String(value).trim();
@@ -17,7 +19,6 @@ function warehouseLabel(row, warehouseById) {
 }
 
 function activeLabel(value, t) {
-  if (value === undefined || value === null) return '—';
   return value === false
     ? t('wms.common.inactive', 'Inactive')
     : t('wms.common.active', 'Active');
@@ -41,15 +42,21 @@ const LOCATION_COLUMNS = [
   {
     key: 'type',
     width: 150,
-    render: (row) => asDash(row?.type),
+    render: (row, { typeLabel }) => typeLabel(row?.type),
     labelKey: 'wms.locations.columns.type',
     fallbackLabel: 'Type',
   },
   {
     key: 'isActive',
     width: 150,
-    defaultVisible: false,
-    render: (row, { t }) => activeLabel(row?.isActive, t),
+    render: (row, { t }) => {
+      const status = row?.isActive === false ? 'inactive' : 'active';
+      return (
+        <WmsStatusChip status={status} size="sm">
+          {activeLabel(row?.isActive, t)}
+        </WmsStatusChip>
+      );
+    },
     labelKey: 'wms.locations.columns.isActive',
     fallbackLabel: 'Status',
   },
@@ -59,6 +66,7 @@ export function createWmsLocationsColumns(options = {}) {
   const {
     t = (key, fallback) => fallback || key,
     warehouseById,
+    typeLabel = asDash,
   } = options;
 
   return LOCATION_COLUMNS.map((column) => ({
@@ -72,6 +80,6 @@ export function createWmsLocationsColumns(options = {}) {
     canHide: true,
     align: 'left',
     resizable: true,
-    render: (row) => column.render(row, { t, warehouseById }),
+    render: (row) => column.render(row, { t, warehouseById, typeLabel }),
   }));
 }

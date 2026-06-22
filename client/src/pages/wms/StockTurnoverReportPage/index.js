@@ -86,7 +86,7 @@ function rowKey(row, groupBy) {
   ].join('-');
 }
 
-export default function StockTurnoverReportPage() {
+export default function StockTurnoverReportPage({ embedded = false }) {
   const { t, i18n } = useTranslation();
   const [filters, setFilters] = useState({
     dateFrom: monthStartIsoDate(),
@@ -161,7 +161,7 @@ export default function StockTurnoverReportPage() {
   };
 
   return (
-    <div className={s.page}>
+    <div className={`${s.page} ${embedded ? s.embedded : ''}`}>
       <header className={s.header}>
         <div>
           <h1 className={s.title}>{t('wms.stockTurnover.title', 'Obroty magazynowe')}</h1>

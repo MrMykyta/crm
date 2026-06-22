@@ -15,7 +15,13 @@
 
 /* слой пользовательского фона из ThemeProvider (url) */
 .bg{
-  background-image: var(--custom-bg-layer, none), var(--bg-radial-1), var(--bg-radial-2), var(--bg-gradient);
+  --wms-wallpaper-scrim: linear-gradient(
+    135deg,
+    rgba(2, 6, 23, 0.3) 0%,
+    rgba(2, 6, 23, 0.16) 48%,
+    rgba(2, 6, 23, 0.26) 100%
+  );
+  background-image: var(--wms-wallpaper-scrim), var(--custom-bg-layer, none), var(--bg-radial-1), var(--bg-radial-2), var(--bg-gradient);
 }
 
 .bg::before,

@@ -1,5 +1,6 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useMemo, useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useSelector } from "react-redux";
 import { MENU } from "../../../config/menu";
 import SidebarTooltip from "../SidebarTooltip";
@@ -7,6 +8,7 @@ import CompanyMenu from "../../company/CompanyMenu";
 import WorkspaceViewsSidebarSection from "../../common/WorkspaceViews/WorkspaceViewsSidebarSection";
 import WorkspaceViewsFlyout from "../../common/WorkspaceViews/WorkspaceViewsFlyout";
 import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
+import { useListWarehousesQuery } from "../../../store/rtk/wmsDocumentsApi";
 import styles from "./Sidebar.module.css";
 
 // RTK Query — данные компании
@@ -24,6 +26,14 @@ export default function Sidebar({ collapsed = false, onToggle, onNavigate, t }) 
   const { data: company, isFetching: loadingCompany } = useGetCompanyQuery(companyId, {
     skip: !companyId,
   });
+  const { data: sidebarWarehousesData } = useListWarehousesQuery(
+    { limit: 200, sort: 'code', dir: 'ASC' },
+    { skip: !companyId }
+  );
+  const warehousesLoaded = Array.isArray(sidebarWarehousesData?.items);
+  const navigationDisabledKeys = useMemo(() => (
+    warehousesLoaded && sidebarWarehousesData.items.length < 2 ? { MM: true } : {}
+  ), [sidebarWarehousesData, warehousesLoaded]);
 
   const [preAvatar, setPreAvatar] = useState(() => {
     try {
@@ -186,7 +196,8 @@ const hideTip = () => setTip((s) => ({ ...s, visible: false }));
                     const Icon = it.icon;
                     const label = tr(it.labelKey);
                     const hasWorkspaceViews = typeof it.workspaceViewsModule === 'string';
-                    if (hasWorkspaceViews) {
+                    const hasNavigationFlyout = Array.isArray(it.navigationFlyout) && it.navigationFlyout.length > 0;
+                    if (hasWorkspaceViews || hasNavigationFlyout) {
                       return (
                         <WorkspaceMenuItem
                           key={it.key}
@@ -197,6 +208,8 @@ const hideTip = () => setTip((s) => ({ ...s, visible: false }));
                           showTip={showTip}
                           hideTip={hideTip}
                           onNavigate={onNavigate}
+                          tr={tr}
+                          disabledNavigationKeys={navigationDisabledKeys}
                           styles={styles}
                         />
                       );
@@ -238,10 +251,11 @@ const hideTip = () => setTip((s) => ({ ...s, visible: false }));
 // The flyout is portal-rendered so the sidebar's `overflow: hidden` can't clip it.
 // Hover-bridge timers prevent the panel from collapsing as the cursor travels from the
 // menu row into the panel itself.
-function WorkspaceMenuItem({ item, Icon, label, collapsed, showTip, hideTip, onNavigate, styles }) {
+function WorkspaceMenuItem({ item, Icon, label, collapsed, showTip, hideTip, onNavigate, tr, disabledNavigationKeys, styles }) {
   const anchorRef = useRef(null);
   const closeTimerRef = useRef(null);
   const [open, setOpen] = useState(false);
+  const hasNavigationFlyout = Array.isArray(item.navigationFlyout) && item.navigationFlyout.length > 0;
 
   const openNow = () => {
     if (closeTimerRef.current) {
@@ -292,7 +306,7 @@ function WorkspaceMenuItem({ item, Icon, label, collapsed, showTip, hideTip, onN
         )}
         {!collapsed && <span className={styles.label}>{label}</span>}
       </NavLink>
-      {!collapsed ? (
+      {!collapsed && !hasNavigationFlyout ? (
         <WorkspaceViewsSidebarSection
           module={item.workspaceViewsModule}
           routeBase={item.route}
@@ -300,19 +314,182 @@ function WorkspaceMenuItem({ item, Icon, label, collapsed, showTip, hideTip, onN
           styles={styles}
         />
       ) : null}
-      <WorkspaceViewsFlyout
-        open={open}
-        anchorEl={anchorRef.current}
-        module={item.workspaceViewsModule}
-        routeBase={item.route}
-        titleKey={item.labelKey}
-        collapsedSidebar={collapsed}
-        onMouseEnter={openNow}
-        onMouseLeave={scheduleClose}
-        onSelect={() => setOpen(false)}
-        onClose={() => setOpen(false)}
-      />
+      {hasNavigationFlyout ? (
+        <StaticNavigationFlyout
+          open={open}
+          anchorEl={anchorRef.current}
+          groups={item.navigationFlyout}
+          title={label}
+          collapsedSidebar={collapsed}
+          tr={tr}
+          disabledKeys={disabledNavigationKeys}
+          styles={styles}
+          onMouseEnter={openNow}
+          onMouseLeave={scheduleClose}
+          onSelect={() => setOpen(false)}
+          onClose={() => setOpen(false)}
+        />
+      ) : (
+        <WorkspaceViewsFlyout
+          open={open}
+          anchorEl={anchorRef.current}
+          module={item.workspaceViewsModule}
+          routeBase={item.route}
+          titleKey={item.labelKey}
+          collapsedSidebar={collapsed}
+          onMouseEnter={openNow}
+          onMouseLeave={scheduleClose}
+          onSelect={() => setOpen(false)}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </div>
   );
 }
 
+function StaticNavigationFlyout({
+  open,
+  anchorEl,
+  groups = [],
+  title,
+  collapsedSidebar = false,
+  tr,
+  disabledKeys = {},
+  styles,
+  onMouseEnter,
+  onMouseLeave,
+  onSelect,
+  onClose,
+}) {
+  const location = useLocation();
+  const panelRef = useRef(null);
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0, maxHeight: 480 });
+
+  useEffect(() => {
+    if (!open || !anchorEl) return undefined;
+    const update = () => {
+      const r = anchorEl.getBoundingClientRect();
+      const left = Math.round(r.right + (collapsedSidebar ? 14 : 8));
+      const maxH = Math.max(240, window.innerHeight - 32);
+      let top = Math.round(r.bottom - 8);
+      const panelH = panelRef.current
+        ? panelRef.current.getBoundingClientRect().height
+        : Math.min(maxH, 420);
+      const bottom = window.innerHeight - 16;
+      if (top + panelH > bottom) top = Math.max(16, bottom - panelH);
+      setPosition({ top, left, maxHeight: maxH });
+    };
+    update();
+    const raf = requestAnimationFrame(update);
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
+    };
+  }, [open, anchorEl, collapsedSidebar, mounted]);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      const raf = requestAnimationFrame(() => setVisible(true));
+      return () => cancelAnimationFrame(raf);
+    }
+    setVisible(false);
+    const tm = setTimeout(() => setMounted(false), 180);
+    return () => clearTimeout(tm);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (event) => {
+      if (event.key === 'Escape') onClose?.();
+    };
+    const onDocClick = (event) => {
+      if (panelRef.current && panelRef.current.contains(event.target)) return;
+      if (anchorEl && anchorEl.contains(event.target)) return;
+      onClose?.();
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDocClick);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDocClick);
+    };
+  }, [open, onClose, anchorEl]);
+
+  const isActiveRoute = (route) => {
+    if (!route) return false;
+    const url = new URL(route, window.location.origin);
+    if (location.pathname !== url.pathname) return false;
+    const targetSearch = url.searchParams;
+    const current = new URLSearchParams(location.search);
+    if ([...targetSearch.keys()].length === 0) {
+      return !current.get('view') && !current.get('type');
+    }
+    return [...targetSearch.entries()].every(([key, value]) => current.get(key) === value);
+  };
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      ref={panelRef}
+      className={`${styles.navFlyout} ${visible ? styles.navFlyoutVisible : ''}`}
+      style={{ top: position.top, left: position.left, maxHeight: position.maxHeight }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      role="menu"
+      aria-label={title}
+    >
+      {title ? <div className={styles.navFlyoutTitle}>{title}</div> : null}
+      <div className={styles.navFlyoutGroups}>
+        {groups.map((group) => (
+          <section key={group.key} className={styles.navFlyoutGroup}>
+            <div className={styles.navFlyoutGroupTitle}>{tr(group.labelKey)}</div>
+            <div className={styles.navFlyoutList}>
+              {(group.items || []).map((item) => {
+                const active = isActiveRoute(item.to);
+                const disabled = !!disabledKeys[item.key];
+                const label = tr(item.labelKey);
+                const disabledReason = item.disabledReasonKey ? tr(item.disabledReasonKey) : '';
+                if (disabled) {
+                  return (
+                    <span
+                      key={item.key}
+                      className={`${styles.navFlyoutItem} ${styles.navFlyoutItemDisabled}`}
+                      title={disabledReason || label}
+                      role="menuitem"
+                      aria-disabled="true"
+                    >
+                      <span>{label}</span>
+                      {disabledReason ? <small>{disabledReason}</small> : null}
+                    </span>
+                  );
+                }
+                return (
+                  <Link
+                    key={item.key}
+                    to={item.to || '#'}
+                    className={`${styles.navFlyoutItem} ${active ? styles.navFlyoutItemActive : ''}`}
+                    onClick={() => {
+                      onSelect?.(item);
+                      onClose?.();
+                    }}
+                    role="menuitem"
+                  >
+                    <span>{label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>,
+    document.body
+  );
+}

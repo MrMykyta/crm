@@ -1,38 +1,64 @@
 .page {
   min-height: 100vh;
-  background: var(--ui-bg, #0f172a);
-  padding: 24px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(96, 165, 250, 0.22), transparent 31%),
+    radial-gradient(circle at 86% 10%, rgba(45, 212, 191, 0.16), transparent 35%),
+    linear-gradient(135deg, rgba(8, 15, 30, 0.76), rgba(15, 23, 42, 0.68) 48%, rgba(3, 7, 18, 0.78));
+  -webkit-backdrop-filter: blur(14px) saturate(1.08);
+  backdrop-filter: blur(14px) saturate(1.08);
+  padding: 22px 18px 56px;
 }
 
 .toolbar {
-  width: min(100%, 940px);
-  margin: 0 auto 14px;
+  width: min(100%, 210mm);
+  margin: 0 auto 16px;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  position: sticky;
+  top: 12px;
+  z-index: 5;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.74);
+  box-shadow: 0 18px 42px rgba(2, 6, 23, 0.28);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  backdrop-filter: blur(18px) saturate(1.12);
+  padding: 8px;
 }
 
 .button,
 .primaryButton {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
   border-radius: 8px;
-  padding: 8px 12px;
+  min-height: 34px;
+  padding: 7px 13px;
   font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
 .button {
-  border: 1px solid var(--ui-border-soft, #334155);
-  background: var(--ui-surface-1, #111827);
-  color: var(--ui-text-2, #e5e7eb);
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  background: rgba(15, 23, 42, 0.58);
+  color: #e5e7eb;
 }
 
 .primaryButton {
   border: 1px solid color-mix(in srgb, var(--accent, #2563eb) 60%, transparent);
-  background: color-mix(in srgb, var(--accent, #2563eb) 84%, #0f172a);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent, #2563eb) 92%, #ffffff), color-mix(in srgb, var(--accent, #2563eb) 84%, #0f172a));
   color: #fff;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent, #2563eb) 24%, transparent);
+}
+
+.button:not(:disabled):hover,
+.primaryButton:not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--accent, #2563eb) 58%, rgba(148, 163, 184, 0.34));
+  transform: translateY(-1px);
 }
 
 .primaryButton:disabled {
@@ -42,28 +68,186 @@
 
 .state,
 .stateError {
-  width: min(100%, 940px);
+  width: min(100%, 210mm);
   margin: 0 auto;
-  border: 1px solid var(--ui-border-soft, #334155);
-  background: var(--ui-surface-1, #111827);
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  background: rgba(15, 23, 42, 0.74);
   border-radius: 10px;
   padding: 18px;
-  color: var(--ui-text-2, #e5e7eb);
+  color: #e5e7eb;
 }
 
 .stateError {
   color: var(--danger, #fca5a5);
 }
 
+.skeletonSheet {
+  width: 210mm;
+  min-height: 297mm;
+  box-sizing: border-box;
+  margin: 0 auto;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.38);
+  padding: 18mm 16mm 16mm;
+  overflow: hidden;
+}
+
+.skeletonHeader,
+.skeletonMeta,
+.skeletonBlock,
+.skeletonSectionTitle,
+.skeletonPill,
+.skeletonTitle,
+.skeletonStatus,
+.skeletonTable span {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #eef2f7 0%, #f8fafc 42%, #eef2f7 78%);
+  background-size: 220% 100%;
+  animation: printSkeleton 1.25s ease-in-out infinite;
+}
+
+.skeletonHeader {
+  display: grid;
+  align-content: start;
+  gap: 5mm;
+  width: 52%;
+  min-height: 38mm;
+  background: transparent;
+  animation: none;
+}
+
+.skeletonPill {
+  width: 48mm;
+  height: 9mm;
+  border-radius: 999px;
+}
+
+.skeletonTitle {
+  width: 72mm;
+  height: 12mm;
+}
+
+.skeletonStatus {
+  width: 28mm;
+  height: 8mm;
+  border-radius: 999px;
+}
+
+.skeletonMeta {
+  width: 100%;
+  height: 1px;
+  margin: 8mm 0 10mm;
+  border-radius: 0;
+}
+
+.skeletonBlock {
+  height: 24mm;
+  margin-bottom: 11mm;
+}
+
+.skeletonSectionTitle {
+  width: 36mm;
+  height: 7mm;
+  margin-bottom: 5mm;
+}
+
+.skeletonTable {
+  display: grid;
+  gap: 2mm;
+  border: 1px solid #d7dee8;
+  border-radius: 3mm;
+  padding: 4mm;
+}
+
+.skeletonTable span {
+  display: block;
+  height: 10mm;
+}
+
+@keyframes printSkeleton {
+  0% {
+    background-position: 110% 0;
+  }
+
+  100% {
+    background-position: -110% 0;
+  }
+}
+
 @media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  :global(html),
+  :global(body),
+  :global(#root) {
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
+  }
+
+  :global(body *) {
+    visibility: hidden !important;
+  }
+
+  :global([class*="MainLayout_bg"]),
+  :global([class*="MainLayout_shell"]),
+  :global([class*="MainLayout_content"]),
+  :global([class*="MainLayout_body"]) {
+    position: static !important;
+    display: block !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  :global([class*="MainLayout_bg"]::before),
+  :global([class*="MainLayout_bg"]::after) {
+    display: none !important;
+  }
+
   .page {
     background: #fff;
     padding: 0;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  :global([data-print-area="warehouse-print"]),
+  :global([data-print-area="warehouse-print"] *) {
+    visibility: visible !important;
+  }
+
+  :global([data-print-area="warehouse-print"]) {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    background: #fff !important;
   }
 
   .toolbar,
   .state,
-  .stateError {
+  .stateError,
+  .skeletonSheet {
     display: none !important;
   }
 }

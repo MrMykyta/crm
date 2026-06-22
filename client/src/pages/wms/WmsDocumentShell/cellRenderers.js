@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom';
+
 import {
   getDetailSectionForColumn,
   renderDetailSection,
@@ -18,7 +20,12 @@ function resolveColumnField(column = {}, config = {}) {
   return column.key;
 }
 
+function translate(labels = {}, key = '', fallback = '', options) {
+  return typeof labels.translate === 'function' && key ? labels.translate(key, fallback, options) : fallback;
+}
+
 function getColumnLabel(column = {}, labels = {}) {
+  if (column.labelKey) return translate(labels, column.labelKey, column.label || column.fallbackLabel || column.key || '');
   return column.label || labels[column.key] || column.fallbackLabel || column.key || '';
 }
 
@@ -47,6 +54,7 @@ function renderProductCell(ctx) {
     productRefs,
     row,
     rowErrors,
+    openPicker,
     onCellKeyDown,
     onProductInputChange,
     selectProduct,
@@ -56,6 +64,58 @@ function renderProductCell(ctx) {
   const pickerOpen = picker.rowId === row.localId;
   const errorField = column.errorField || column.key;
   const imageUrl = readProductImage(row);
+  const pickerDropdown = pickerOpen ? (
+    <div
+      className="wmsShellPicker"
+      style={picker.anchor ? {
+        left: picker.anchor.left,
+        maxHeight: picker.anchor.maxHeight,
+        top: picker.anchor.top,
+        width: picker.anchor.width,
+      } : undefined}
+    >
+      {picker.busy ? <div className="wmsShellPickerState">{labels.searching || 'Searching...'}</div> : null}
+      {picker.error ? <div className="wmsShellPickerState">{picker.error}</div> : null}
+      {!picker.busy && !picker.error && picker.query && !picker.results.length ? (
+        <div className="wmsShellPickerState">{labels.noProducts || 'No products found'}</div>
+      ) : null}
+      {!picker.query ? (
+        <div className="wmsShellPickerState">{labels.startTyping || 'Start typing product / SKU / EAN'}</div>
+      ) : null}
+      {picker.results.slice(0, 8).map((result) => {
+        const picked = mapProductPickerRowToPzRowPatch(result);
+        const title = asText(picked[column.resultTitleField]) || labels.unnamedProduct || 'Product';
+        const code = asText(picked[column.resultCodeField]);
+        const available = asText(result.available ?? result.availableQty ?? result.stockAvailable);
+        const cost = asText(result.unitCost ?? result.cost ?? result.lastCost);
+        const key = [
+          asText(picked[column.resultIdField]),
+          asText(picked[column.resultVariantField]) || 'base',
+        ].join(':');
+        return (
+          <button
+            type="button"
+            key={key}
+            className="wmsShellPickerRow"
+            onMouseDown={(event) => {
+              event.preventDefault();
+              selectProduct(row.localId, result);
+            }}
+          >
+            <span className="wmsShellPickerThumb" aria-hidden="true">{getProductInitial(picked, title)}</span>
+            <span className="wmsShellPickerMain">
+              <strong>{title}</strong>
+              <span>{code ? `${column.resultCodeLabel || 'SKU'} ${code}` : labels.noSku || 'No SKU'}</span>
+            </span>
+            <span className="wmsShellPickerMeta">
+              {available ? <span>{labels.stock || 'Stock'} {available}</span> : null}
+              {cost ? <span>{labels.cost || 'Cost'} {cost}</span> : null}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  ) : null;
 
   return (
     <div className="wmsShellProductCell">
@@ -71,13 +131,17 @@ function renderProductCell(ctx) {
             onChange={(event) => onProductInputChange(row, column, event.target.value)}
             onKeyDown={(event) => onCellKeyDown?.(event, row, column)}
             onFocus={() => {
-              setPicker({
-                rowId: row.localId,
+              const nextPicker = {
                 query: productLabel,
                 results: [],
                 busy: Boolean(productLabel),
                 error: '',
-              });
+              };
+              if (typeof openPicker === 'function') {
+                openPicker(row.localId, nextPicker);
+              } else {
+                setPicker({ rowId: row.localId, ...nextPicker });
+              }
             }}
             placeholder={labels.productHint || column.placeholder || 'Start typing product / SKU / EAN'}
             disabled={disabled}
@@ -86,50 +150,7 @@ function renderProductCell(ctx) {
           {asText(row.sku) ? <span className="wmsShellProductSubline">{row.sku}</span> : null}
         </div>
       </div>
-      {pickerOpen ? (
-        <div className="wmsShellPicker">
-          {picker.busy ? <div className="wmsShellPickerState">{labels.searching || 'Searching...'}</div> : null}
-          {picker.error ? <div className="wmsShellPickerState">{picker.error}</div> : null}
-          {!picker.busy && !picker.error && picker.query && !picker.results.length ? (
-            <div className="wmsShellPickerState">{labels.noProducts || 'No products found'}</div>
-          ) : null}
-          {!picker.query ? (
-            <div className="wmsShellPickerState">{labels.startTyping || 'Start typing product / SKU / EAN'}</div>
-          ) : null}
-          {picker.results.slice(0, 8).map((result) => {
-            const picked = mapProductPickerRowToPzRowPatch(result);
-            const title = asText(picked[column.resultTitleField]) || labels.unnamedProduct || 'Product';
-            const code = asText(picked[column.resultCodeField]);
-            const available = asText(result.available ?? result.availableQty ?? result.stockAvailable);
-            const cost = asText(result.unitCost ?? result.cost ?? result.lastCost);
-            const key = [
-              asText(picked[column.resultIdField]),
-              asText(picked[column.resultVariantField]) || 'base',
-            ].join(':');
-            return (
-              <button
-                type="button"
-                key={key}
-                className="wmsShellPickerRow"
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  selectProduct(row.localId, result);
-                }}
-              >
-                <span className="wmsShellPickerThumb" aria-hidden="true">{getProductInitial(picked, title)}</span>
-                <span className="wmsShellPickerMain">
-                  <strong>{title}</strong>
-                  <span>{code ? `${column.resultCodeLabel || 'SKU'} ${code}` : labels.noSku || 'No SKU'}</span>
-                </span>
-                <span className="wmsShellPickerMeta">
-                  {available ? <span>Stock {available}</span> : null}
-                  {cost ? <span>Cost {cost}</span> : null}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+      {pickerDropdown && typeof document !== 'undefined' ? createPortal(pickerDropdown, document.body) : pickerDropdown}
       {rowErrors[errorField] ? <div className="wmsShellFieldError">{rowErrors[errorField]}</div> : null}
     </div>
   );

@@ -342,8 +342,10 @@ async function main() {
   const adjustmentPostExistingCalls = [];
   const cycleCountReconcileExistingCalls = [];
   const cycleCountAddItemsCalls = [];
+  const receiptCorrectionCalls = [];
+  const shipmentCorrectionCalls = [];
   const registry = createDocumentAdapterRegistry({
-    permissions: ['wms:document:create', 'wms:document:update', 'wms:document:post', 'wms:read'],
+    permissions: ['wms:document:create', 'wms:document:update', 'wms:document:post', 'wms:document:correct', 'wms:read'],
     triggers: {
       receipt: {
         createReceipt: (payload) => makeUnwrap({ id: 'receipt-1', status: 'draft', payload }),
@@ -353,6 +355,10 @@ async function main() {
         updateReceiptDraftItem: (payload) => makeUnwrap({ id: payload.id, status: 'draft', itemPatch: payload.payload }),
         removeReceiptDraftItem: (payload) => makeUnwrap({ id: payload.id, status: 'draft', removed: payload.itemId }),
         receiveReceiptLine: (payload) => makeUnwrap({ id: payload.itemId }),
+        createReceiptCorrection: (payload) => {
+          receiptCorrectionCalls.push(payload);
+          return makeUnwrap({ id: 'receipt-correction-1', status: 'received' });
+        },
         printDocument: (payload) => makeUnwrap({ url: `/print/${payload.id}` }),
       },
       shipment: {
@@ -360,6 +366,10 @@ async function main() {
         fetchShipmentById: () => makeUnwrap({ id: 'shipment-1', status: 'shipped', items: [{ id: 'si-1', qty: 5 }, { id: 'si-2', qty: 2 }] }),
         fetchShipmentStockMoves: () => makeUnwrap({ items: [{ refItemId: 'si-1', type: 'ship', qty: 2 }, { refItemId: 'si-2', type: 'ship', qty: 2 }] }),
         shipShipmentItem: (payload) => makeUnwrap({ id: payload.itemId }),
+        createShipmentCorrection: (payload) => {
+          shipmentCorrectionCalls.push(payload);
+          return makeUnwrap({ id: 'shipment-correction-1', status: 'shipped' });
+        },
         printDocument: (payload) => makeUnwrap({ url: `/print/${payload.id}` }),
       },
       transfer: {
@@ -407,8 +417,10 @@ async function main() {
   assert.equal(registry.get('receipt').supports(ACTIONS.LOAD_DRAFT), true);
   assert.equal(registry.get('receipt').supports(ACTIONS.ADD_ITEM), true);
   assert.equal(registry.get('receipt').supports(ACTIONS.RECEIVE_EXISTING), true);
+  assert.equal(registry.get('receipt').supports(ACTIONS.CORRECT), true);
   assert.equal(registry.get('shipment').supports(ACTIONS.SHIP), true);
   assert.equal(registry.get('shipment').supports(ACTIONS.SHIP_EXISTING), true);
+  assert.equal(registry.get('shipment').supports(ACTIONS.CORRECT), true);
   assert.equal(registry.get('transfer').permissionFor(ACTIONS.EXECUTE), 'wms:document:post');
   assert.equal(registry.get('transfer').supports(ACTIONS.EXECUTE_EXISTING), true);
   assert.equal(registry.get('adjustment').supports(ACTIONS.RECEIVE), false);
@@ -428,6 +440,23 @@ async function main() {
   assert.equal(receiveExistingResult.ok, true);
   assert.equal(receiveExistingResult.documentId, 'receipt-1');
 
+  const receiptCorrectionResult = await registry.get('receipt').run(ACTIONS.CORRECT, {
+    id: 'receipt-1',
+    payload: {
+      reason: 'Runtime correction',
+      items: [{ originalItemId: 'ri-1', qty: 2 }],
+    },
+  });
+  assert.equal(receiptCorrectionResult.ok, true);
+  assert.equal(receiptCorrectionResult.documentId, 'receipt-correction-1');
+  assert.deepEqual(receiptCorrectionCalls, [{
+    id: 'receipt-1',
+    payload: {
+      reason: 'Runtime correction',
+      items: [{ originalItemId: 'ri-1', qty: 2 }],
+    },
+  }]);
+
   const shipExistingResult = await registry.get('shipment').run(ACTIONS.SHIP_EXISTING, {
     id: 'shipment-1',
     header: { fromLocationId: '' },
@@ -440,6 +469,23 @@ async function main() {
   assert.equal(shipExistingResult.ok, true);
   assert.equal(shipExistingResult.documentId, 'shipment-1');
   assert.equal(shipExistingResult.status, 'shipped');
+
+  const shipmentCorrectionResult = await registry.get('shipment').run(ACTIONS.CORRECT, {
+    id: 'shipment-1',
+    payload: {
+      reason: 'Runtime correction',
+      items: [{ originalItemId: 'si-1', qty: 5 }],
+    },
+  });
+  assert.equal(shipmentCorrectionResult.ok, true);
+  assert.equal(shipmentCorrectionResult.documentId, 'shipment-correction-1');
+  assert.deepEqual(shipmentCorrectionCalls, [{
+    id: 'shipment-1',
+    payload: {
+      reason: 'Runtime correction',
+      items: [{ originalItemId: 'si-1', qty: 5 }],
+    },
+  }]);
 
   transferExecuteExistingCalls.length = 0;
   const executeExistingResult = await registry.get('transfer').run(ACTIONS.EXECUTE_EXISTING, {

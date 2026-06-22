@@ -2,6 +2,13 @@
   display: grid;
   gap: 10px;
   padding: 16px 20px 0;
+  margin: 0 0 2px;
+  border: 1px solid var(--wms-work-surface-border, var(--ui-border));
+  border-radius: 8px;
+  background: var(--wms-work-surface-soft-bg, color-mix(in srgb, var(--ui-surface-1, #0f172a) 86%, #020617));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+  -webkit-backdrop-filter: var(--wms-work-surface-blur, blur(18px) saturate(1.08));
+  backdrop-filter: var(--wms-work-surface-blur, blur(18px) saturate(1.08));
 }
 
 .header {
@@ -54,9 +61,9 @@
   align-items: center;
   min-height: 30px;
   padding: 0 10px;
-  border: 1px solid var(--ui-border);
-  border-radius: 6px;
-  background: var(--ui-surface-1);
+  border: 1px solid var(--wms-work-surface-border, var(--ui-border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--wms-work-surface-bg, var(--ui-surface-1, #0f172a)) 90%, transparent);
   color: var(--ui-text);
   font-size: 13px;
   font-weight: 600;
@@ -73,7 +80,8 @@
 }
 
 .active {
-  border-color: var(--focus, #6aa8ff);
-  background: color-mix(in srgb, var(--focus, #6aa8ff) 10%, var(--ui-surface-1));
-  color: var(--focus, #6aa8ff);
+  border-color: color-mix(in srgb, var(--focus, #6aa8ff) 48%, var(--wms-work-surface-border, var(--ui-border)));
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 10%, var(--wms-work-surface-bg, var(--ui-surface-1, #0f172a)));
+  color: var(--ui-text);
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--focus, #6aa8ff) 82%, transparent);
 }

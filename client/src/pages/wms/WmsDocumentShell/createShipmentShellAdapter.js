@@ -9,8 +9,10 @@ import { mapAdapterResult } from '../documentAdapters/resultMapping.js';
 
 const ACTION_SAVE = 'save';
 const ACTION_SHIP_EXISTING = 'shipExisting';
+const ACTION_CORRECT = 'correct';
 const PERMISSION_CREATE = 'wms:document:create';
 const PERMISSION_POST = 'wms:document:post';
+const PERMISSION_CORRECT = 'wms:document:correct';
 
 async function invokeTrigger(trigger, arg) {
   if (typeof trigger !== 'function') {
@@ -72,11 +74,12 @@ function createShipmentShellAdapter({ triggers = {}, permissions } = {}) {
   return {
     kindKey: 'shipment',
     supports(action) {
-      return action === ACTION_SAVE || action === ACTION_SHIP_EXISTING;
+      return action === ACTION_SAVE || action === ACTION_SHIP_EXISTING || action === ACTION_CORRECT;
     },
     permissionFor(action) {
       if (action === ACTION_SAVE) return PERMISSION_CREATE;
       if (action === ACTION_SHIP_EXISTING) return PERMISSION_POST;
+      if (action === ACTION_CORRECT) return PERMISSION_CORRECT;
       return null;
     },
     async run(action, input = {}) {
@@ -160,10 +163,18 @@ function createShipmentShellAdapter({ triggers = {}, permissions } = {}) {
           };
         }
 
+        if (action === ACTION_CORRECT) {
+          const payload = input.payload || input.lines || {};
+          const raw = await invokeTrigger(triggers.createShipmentCorrection, { id: input.id, payload });
+          return mapAdapterResult(raw, { status: raw?.status || 'corrected' });
+        }
+
         return unsupported(action);
       } catch (error) {
         return mapAdapterError(error, {
-          fallback: action === ACTION_SHIP_EXISTING
+          fallback: action === ACTION_CORRECT
+            ? 'Failed to create correction'
+            : action === ACTION_SHIP_EXISTING
             ? 'Failed to ship shipment'
             : 'Failed to create shipment',
         });

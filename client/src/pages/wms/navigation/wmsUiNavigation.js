@@ -13,14 +13,44 @@ export const WMS_DOCUMENT_TYPE_VIEWS = WMS_DOCUMENT_TYPES.map((type) => ({
   key: type.toLowerCase(),
   label: type,
   type,
-  to: type === 'CC' ? '/main/wms/cycle-counts' : `/main/wms/documents?type=${type}`,
+  to: `/main/wms/documents?type=${type}`,
 }));
 
 export const WMS_DOCUMENT_WORKFLOW_VIEWS = [
   { key: 'all', label: 'All Documents', to: '/main/wms/documents' },
-  { key: 'drafts', label: 'Drafts', to: '/main/wms/documents?status=draft' },
+  { key: 'drafts', label: 'Drafts', to: '/main/wms/documents?view=drafts' },
   { key: 'needsAction', label: 'Needs Action', to: '/main/wms/documents?view=needs-action' },
   { key: 'postedToday', label: 'Posted Today', to: '/main/wms/documents?view=posted-today' },
+];
+
+export const WMS_DOCUMENT_NAVIGATION_GROUPS = [
+  {
+    key: 'warehouse-documents',
+    labelKey: 'wms.documents.navigation.groups.warehouseDocuments',
+    items: [
+      { key: 'all', labelKey: 'wms.documents.navigation.views.all', to: '/main/wms/documents' },
+      { key: 'drafts', labelKey: 'wms.documents.navigation.views.drafts', to: '/main/wms/documents?view=drafts' },
+      { key: 'needs-action', labelKey: 'wms.documents.navigation.views.needsAction', to: '/main/wms/documents?view=needs-action' },
+      { key: 'posted-today', labelKey: 'wms.documents.navigation.views.postedToday', to: '/main/wms/documents?view=posted-today' },
+    ],
+  },
+  {
+    key: 'by-type',
+    labelKey: 'wms.documents.navigation.groups.byType',
+    items: [
+      { key: 'PZ', labelKey: 'wms.documents.navigation.types.PZ', to: '/main/wms/documents?type=PZ' },
+      { key: 'WZ', labelKey: 'wms.documents.navigation.types.WZ', to: '/main/wms/documents?type=WZ' },
+      {
+        key: 'MM',
+        labelKey: 'wms.documents.navigation.types.MM',
+        to: '/main/wms/documents?type=MM',
+        disabledReasonKey: 'wms.documents.mmGuard.title',
+      },
+      { key: 'RW', labelKey: 'wms.documents.navigation.types.RW', to: '/main/wms/documents?type=RW' },
+      { key: 'PW', labelKey: 'wms.documents.navigation.types.PW', to: '/main/wms/documents?type=PW' },
+      { key: 'CC', labelKey: 'wms.documents.navigation.types.CC', to: '/main/wms/documents?type=CC' },
+    ],
+  },
 ];
 
 export const WMS_INVENTORY_TABS = [
@@ -49,7 +79,7 @@ export function getWmsDocumentsLegacyRoute(kind) {
   if (normalized === 'shipments') return '/main/wms/documents?type=WZ';
   if (normalized === 'transfers') return '/main/wms/documents?type=MM';
   if (normalized === 'adjustments') return '/main/wms/documents?type=RW,PW';
-  if (normalized === 'cycle-counts') return '/main/wms/cycle-counts';
+  if (normalized === 'cycle-counts') return '/main/wms/documents?type=CC';
   return '/main/wms/documents';
 }
 
@@ -60,7 +90,7 @@ export function getWmsInventoryLegacyRoute(kind) {
   if (normalized === 'lots') return '/main/wms/inventory?tab=lots';
   if (normalized === 'serials') return '/main/wms/inventory?tab=serials';
   if (normalized === 'locations-stock') return '/main/wms/inventory?tab=locations';
-  if (normalized === 'reports') return '/main/wms/inventory?tab=reports';
+  if (normalized === 'reports') return '/main/wms/inventory?tab=reports&report=valuation';
   return '/main/wms/inventory?tab=balances';
 }
 

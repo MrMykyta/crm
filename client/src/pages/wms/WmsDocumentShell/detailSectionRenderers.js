@@ -41,7 +41,13 @@ function getSectionField(section = {}, fallback = '') {
   return section.field || asArray(section.fields)[0] || fallback;
 }
 
-function getSectionLabel(section = {}, column = {}) {
+function translate(labels = {}, key = '', fallback = '') {
+  return typeof labels.translate === 'function' && key ? labels.translate(key, fallback) : fallback;
+}
+
+function getSectionLabel(section = {}, column = {}, labels = {}) {
+  if (section.labelKey) return translate(labels, section.labelKey, section.label || column.label || section.key || column.key || '');
+  if (column.labelKey) return translate(labels, column.labelKey, section.label || column.label || section.key || column.key || '');
   return section.label || column.label || section.key || column.key || '';
 }
 
@@ -59,7 +65,7 @@ function renderInputSection(ctx) {
   return React.createElement(
     'span',
     { className: 'wmsShellDetailCell' },
-    React.createElement('span', { className: 'wmsShellDetailLabel' }, getSectionLabel(section, column)),
+    React.createElement('span', { className: 'wmsShellDetailLabel' }, getSectionLabel(section, column, ctx.labels)),
     React.createElement('input', {
       className: section.inputClassName || column.inputClassName || 'wmsShellInput',
       value: row[field],
@@ -87,7 +93,7 @@ function renderCostSection(ctx) {
   return React.createElement(
     'span',
     { className: 'wmsShellDetailCell' },
-    React.createElement('span', { className: 'wmsShellDetailLabel' }, getSectionLabel(section, column)),
+    React.createElement('span', { className: 'wmsShellDetailLabel' }, getSectionLabel(section, column, ctx.labels)),
     React.createElement('input', {
       className: section.inputClassName || column.inputClassName || 'wmsShellInput',
       type: 'number',
@@ -103,12 +109,12 @@ function renderCostSection(ctx) {
   );
 }
 
-function renderReadonlySection({ column, row, section }) {
+function renderReadonlySection({ column, labels, row, section }) {
   const field = getSectionField(section, column.key);
   return React.createElement(
     'span',
     { className: 'wmsShellDetailCell' },
-    React.createElement('span', { className: 'wmsShellDetailLabel' }, getSectionLabel(section, column)),
+    React.createElement('span', { className: 'wmsShellDetailLabel' }, getSectionLabel(section, column, labels)),
     React.createElement('span', { className: 'wmsShellDetailValue' }, row[field] || '-')
   );
 }

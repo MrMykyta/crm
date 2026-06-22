@@ -9,6 +9,14 @@ import {
   hasLocations,
   normalizeBalanceRow,
 } from './wmsInventoryWorkspaceModel.js';
+import {
+  getWarehouseLocationRows,
+  getWmsLocationMode,
+  getWmsLocationModeDescription,
+  getWmsLocationModeLabel,
+  isAdvancedLocationMode,
+  isLocationFieldKey,
+} from '../locationsMode.js';
 
 assert.equal(getInventoryWorkspaceTab('moves'), 'moves');
 assert.equal(getInventoryWorkspaceTab('unknown'), 'balances');
@@ -55,5 +63,17 @@ assert.deepEqual(filterInventoryRows([
 
 assert.equal(hasLocations([]), false);
 assert.equal(hasLocations([{ id: 'loc-1' }]), true);
+assert.equal(getWmsLocationMode({ locations: [], warehouseId: 'wh-1' }), 'simple');
+assert.equal(getWmsLocationMode({ locations: [{ id: 'loc-1', warehouseId: 'wh-1' }], warehouseId: 'wh-1' }), 'advanced');
+assert.equal(getWmsLocationMode({ locations: [{ id: 'loc-1', warehouseId: 'wh-2' }], warehouseId: 'wh-1' }), 'simple');
+assert.equal(isAdvancedLocationMode('advanced'), true);
+assert.equal(getWmsLocationModeLabel('simple'), 'Simple Mode');
+assert.equal(getWmsLocationModeDescription('simple'), 'Location management is disabled. Warehouse-level stock is used.');
+assert.deepEqual(getWarehouseLocationRows([
+  { id: 'loc-1', warehouseId: 'wh-1' },
+  { id: 'loc-2', warehouseId: 'wh-2' },
+], 'wh-1').map((row) => row.id), ['loc-1']);
+assert.equal(isLocationFieldKey('fromLocationId'), true);
+assert.equal(isLocationFieldKey('warehouseId'), false);
 
 console.log('WMS inventory workspace model smoke passed');

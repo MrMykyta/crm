@@ -38,9 +38,16 @@ async function main() {
     isExactProductPickerScanMatch,
     mapProductPickerRowToPzRowPatch,
     mapReceiptToShellDraft,
+    mapReceiptToShellPosted,
     normalizeProductPickerRows,
     normalizeRows,
   } = await import('./rowControllerModel.js');
+  const {
+    mapAdjustmentToShellPosted,
+    mapCycleCountToShellPosted,
+    mapShipmentToShellPosted,
+    mapTransferToShellPosted,
+  } = await import('./postedViewMappers.js');
   const qtyField = pzConfig.qtyField;
   const keyboard = getKeyboardPreset(pzConfig.rowController.keyboardPreset);
   const productColumn = pzConfig.columns.find((column) => column.type === 'product');
@@ -96,6 +103,86 @@ async function main() {
   );
   assert.equal(getScanMode(pzConfig), 'newLine');
   assert.equal(getPickerContext(pzConfig), 'purchase');
+  const postedReceiptModel = mapReceiptToShellPosted({
+    id: 'receipt-posted-1',
+    number: 'PZ-POSTED-1',
+    status: 'received',
+    warehouseId: 'warehouse-pz',
+    inboundLocationId: null,
+    supplierName: 'Supplier A',
+    sourceRef: 'PO-1',
+    issueDate: '2026-06-20T10:00:00.000Z',
+    items: [{
+      id: 'receipt-line-1',
+      productId: 'prod-pz',
+      productName: 'Posted product',
+      sku: 'PZ-SKU',
+      qtyExpected: '5',
+      qtyReceived: '5',
+      lotNumber: 'LOT-1',
+      unitCost: '10',
+      currency: 'PLN',
+    }],
+  }, pzConfig);
+  assert.equal(postedReceiptModel.header.documentNumber, 'PZ-POSTED-1');
+  assert.equal(postedReceiptModel.header.status, 'received');
+  assert.equal(postedReceiptModel.header.inboundLocationId, '');
+  assert.equal(postedReceiptModel.header.counterpartyId, 'Supplier A');
+  assert.equal(postedReceiptModel.rows.length, 1);
+  assert.equal(postedReceiptModel.rows[0].qtyExpected, '5');
+  assert.equal(postedReceiptModel.rows[0].qtyReceived, '5');
+
+  const postedShipmentModel = mapShipmentToShellPosted({
+    id: 'shipment-posted-1',
+    number: 'WZ-POSTED-1',
+    status: 'shipped',
+    warehouseId: 'warehouse-wz',
+    fromLocationId: null,
+    items: [{ id: 'wz-line-posted-1', productId: 'prod-wz', productName: 'Shipped product', qty: 7, qtyShipped: 7 }],
+  });
+  assert.equal(postedShipmentModel.header.documentNumber, 'WZ-POSTED-1');
+  assert.equal(postedShipmentModel.header.status, 'shipped');
+  assert.equal(postedShipmentModel.rows[0].qty, '7');
+  assert.equal(postedShipmentModel.rows[0].qtyShipped, '7');
+
+  const postedTransferModel = mapTransferToShellPosted({
+    id: 'transfer-posted-1',
+    number: 'MM-POSTED-1',
+    status: 'completed',
+    fromWarehouseId: 'warehouse-from',
+    toWarehouseId: 'warehouse-to',
+    items: [{ id: 'mm-line-posted-1', productId: 'prod-mm', productName: 'Moved product', qty: 4, movedQty: 4 }],
+  });
+  assert.equal(postedTransferModel.header.documentNumber, 'MM-POSTED-1');
+  assert.equal(postedTransferModel.header.status, 'completed');
+  assert.equal(postedTransferModel.rows[0].qty, '4');
+  assert.equal(postedTransferModel.rows[0].movedQty, '4');
+
+  const postedAdjustmentModel = mapAdjustmentToShellPosted({
+    id: 'adjustment-posted-1',
+    number: 'RW-POSTED-1',
+    documentType: 'RW',
+    status: 'posted',
+    warehouseId: 'warehouse-rw',
+    reason: 'Stock correction',
+    items: [{ id: 'rw-line-posted-1', productId: 'prod-rw', productName: 'Adjusted product', qtyDelta: -2 }],
+  }, rwConfig);
+  assert.equal(postedAdjustmentModel.header.documentNumber, 'RW-POSTED-1');
+  assert.equal(postedAdjustmentModel.header.documentType, 'RW');
+  assert.equal(postedAdjustmentModel.rows[0].qtyDelta, '-2');
+
+  const postedCycleCountModel = mapCycleCountToShellPosted({
+    id: 'cc-posted-1',
+    number: 'CC-POSTED-1',
+    status: 'reconciled',
+    warehouseId: 'warehouse-cc',
+    items: [{ id: 'cc-line-posted-1', productId: 'prod-cc', productName: 'Counted product', systemQty: 3, qtyCounted: 4 }],
+  });
+  assert.equal(postedCycleCountModel.header.documentNumber, 'CC-POSTED-1');
+  assert.equal(postedCycleCountModel.header.status, 'reconciled');
+  assert.equal(postedCycleCountModel.rows[0].systemQty, '3');
+  assert.equal(postedCycleCountModel.rows[0].qtyCounted, '4');
+  assert.equal(postedCycleCountModel.rows[0].difference, '1');
 
   const wzQtyField = wzConfig.qtyField;
   const wzEmptyRow = createEmptyRow(wzConfig);
@@ -121,6 +208,7 @@ async function main() {
   assert.equal(wzDraftValidation.byRow['wz-row-1'].blocking.qty, 'Qty must be greater than 0');
 
   let capturedShipmentPayload = null;
+  let capturedShipmentCorrectionPayload = null;
   let shipCalls = 0;
   const shipmentAdapter = createShipmentShellAdapter({
     triggers: {
@@ -132,12 +220,17 @@ async function main() {
         shipCalls += 1;
         return { unwrap: async () => ({ id: 'should-not-ship' }) };
       },
+      createShipmentCorrection: (arg) => {
+        capturedShipmentCorrectionPayload = arg;
+        return { unwrap: async () => ({ id: 'shipment-correction-shell-1', status: 'shipped' }) };
+      },
     },
     permissions: { can: () => true },
   });
   assert.equal(shipmentAdapter.supports('save'), true);
   assert.equal(shipmentAdapter.supports('ship'), false);
   assert.equal(shipmentAdapter.supports('shipExisting'), true);
+  assert.equal(shipmentAdapter.supports('correct'), true);
   const shipmentResult = await shipmentAdapter.run('save', {
     header: {
       warehouseId: 'warehouse-wz-shell',
@@ -164,6 +257,23 @@ async function main() {
   assert.equal(shipmentResult.documentId, 'shipment-shell-1');
   assert.equal(shipmentResult.status, 'packing');
   assert.equal(shipCalls, 0);
+
+  const shipmentCorrectionResult = await shipmentAdapter.run('correct', {
+    id: 'shipment-posted-shell',
+    payload: {
+      reason: 'Runtime correction',
+      items: [{ originalItemId: 'wz-line-1', qty: 5 }],
+    },
+  });
+  assert.equal(shipmentCorrectionResult.ok, true);
+  assert.equal(shipmentCorrectionResult.documentId, 'shipment-correction-shell-1');
+  assert.deepEqual(capturedShipmentCorrectionPayload, {
+    id: 'shipment-posted-shell',
+    payload: {
+      reason: 'Runtime correction',
+      items: [{ originalItemId: 'wz-line-1', qty: 5 }],
+    },
+  });
 
   assert.deepEqual(shippedQtyByShipmentItem([
     { refItemId: 'wz-line-1', type: 'ship', qty: '1.25' },
@@ -560,6 +670,7 @@ async function main() {
   assert.equal(reconcileCycleCountCalls, 1);
 
   let capturedPayload = null;
+  let capturedCorrectionPayload = null;
   const draftCalls = [];
   const receiveCalls = [];
   const adapter = createReceiptShellAdapter({
@@ -597,6 +708,10 @@ async function main() {
       receiveReceiptLine: (arg) => {
         receiveCalls.push(arg);
         return { unwrap: async () => ({ id: arg.itemId, status: 'received' }) };
+      },
+      createReceiptCorrection: (arg) => {
+        capturedCorrectionPayload = arg;
+        return { unwrap: async () => ({ id: 'receipt-correction-shell-1', status: 'received' }) };
       },
     },
     permissions: { can: () => true },
@@ -805,6 +920,24 @@ async function main() {
       qty: 3,
       toLocationId: null,
       lotId: null,
+    },
+  });
+
+  const correctionResult = await adapter.run('correct', {
+    id: 'receipt-posted-shell',
+    payload: {
+      reason: 'Runtime correction',
+      items: [{ originalItemId: 'line-receive-1', qty: 5 }],
+    },
+  });
+  assert.equal(adapter.supports('correct'), true);
+  assert.equal(correctionResult.ok, true);
+  assert.equal(correctionResult.documentId, 'receipt-correction-shell-1');
+  assert.deepEqual(capturedCorrectionPayload, {
+    id: 'receipt-posted-shell',
+    payload: {
+      reason: 'Runtime correction',
+      items: [{ originalItemId: 'line-receive-1', qty: 5 }],
     },
   });
 

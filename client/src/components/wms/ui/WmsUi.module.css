@@ -1,6 +1,12 @@
 :global(:root) {
-  --wms-surface: var(--ui-surface-1);
-  --wms-surface-soft: color-mix(in srgb, var(--ui-surface-soft) 88%, transparent);
+  --wms-work-surface-bg: color-mix(in srgb, var(--ui-surface-1, rgba(15, 23, 42, 0.68)) 82%, rgba(2, 6, 23, 0.24));
+  --wms-work-surface-soft-bg: color-mix(in srgb, var(--ui-surface-soft, rgba(17, 24, 39, 0.6)) 76%, rgba(2, 6, 23, 0.18));
+  --wms-work-surface-border: color-mix(in srgb, var(--ui-border-soft, #334155) 78%, rgba(255, 255, 255, 0.12));
+  --wms-work-surface-shadow: 0 18px 42px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --wms-work-surface-blur: blur(14px) saturate(1.04);
+  --wms-work-surface-radius: 8px;
+  --wms-surface: var(--wms-work-surface-bg);
+  --wms-surface-soft: var(--wms-work-surface-soft-bg);
   --wms-border: var(--ui-border-soft);
   --wms-border-strong: color-mix(in srgb, var(--ui-border-focus) 58%, var(--ui-border-soft));
   --wms-text: var(--ui-text-1);
@@ -36,15 +42,21 @@
 }
 
 .surface_panel {
-  border: 1px solid var(--wms-border);
-  border-radius: 8px;
+  border: 1px solid var(--wms-work-surface-border);
+  border-radius: var(--wms-work-surface-radius);
   background: var(--wms-surface);
+  box-shadow: var(--wms-work-surface-shadow);
+  -webkit-backdrop-filter: var(--wms-work-surface-blur);
+  backdrop-filter: var(--wms-work-surface-blur);
 }
 
 .surface_soft {
-  border: 1px solid var(--wms-border);
-  border-radius: 8px;
+  border: 1px solid var(--wms-work-surface-border);
+  border-radius: var(--wms-work-surface-radius);
   background: var(--wms-surface-soft);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  -webkit-backdrop-filter: var(--wms-work-surface-blur);
+  backdrop-filter: var(--wms-work-surface-blur);
 }
 
 .surface_toolbar,
@@ -206,6 +218,8 @@
   border: 1px solid var(--wms-border);
   border-radius: 8px;
   background: var(--wms-surface-soft);
+  -webkit-backdrop-filter: var(--wms-work-surface-blur);
+  backdrop-filter: var(--wms-work-surface-blur);
 }
 
 .stateCompact {

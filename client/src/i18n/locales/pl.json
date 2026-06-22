@@ -292,7 +292,7 @@
     "wmsNavDocuments": "Dokumenty",
     "wmsNavInventory": "Magazyn",
     "wmsNavPicking": "Kompletacja",
-    "wmsNavSetup": "Konfiguracja"
+    "wmsNavSetup": "Ustawienia"
   },
   "oms": {
     "stub": "Ta strona jest zaplanowana na kolejny etap.",
@@ -470,6 +470,287 @@
       "warehouseLevelStock": "Stan na poziomie magazynu",
       "warehouseLevelHint": "Nie wybrano lokalizacji; dokument użyje stanu na poziomie magazynu."
     },
+    "locationMode": {
+      "simple": {
+        "label": "Tryb prosty",
+        "description": "Zarządzanie lokalizacjami jest wyłączone. Używany jest stan na poziomie magazynu."
+      },
+      "advanced": {
+        "label": "Tryb zaawansowany",
+        "description": "Zarządzanie lokalizacjami jest aktywne dla tego magazynu."
+      }
+    },
+    "picks": {
+      "title": "Kompletacja",
+      "subtitle": "Przestrzeń wykonawcza magazynu dla fal, zadań i kompletacji skanerem.",
+      "loading": "Ładowanie kompletacji",
+      "noReadPermission": "Nie masz uprawnień do przeglądania fal i zadań kompletacji.",
+      "scanModeButton": "Tryb skanowania",
+      "controlsLabel": "Kontrolki kompletacji",
+      "viewsLabel": "Widoki kompletacji",
+      "tabs": {
+        "waves": "Fale",
+        "tasks": "Zadania",
+        "my": "Moje zadania"
+      },
+      "filters": {
+        "warehouse": "Magazyn",
+        "status": "Status",
+        "searchPlaceholder": "Szukaj fali, zadania, dokumentu, osoby"
+      },
+      "fallbacks": {
+        "wave": "Fala",
+        "task": "Zadanie",
+        "waveWithId": "Fala {{id}}",
+        "taskWithId": "Zadanie {{id}}"
+      },
+      "errors": {
+        "requestFailed": "Żądanie nie powiodło się",
+        "loadFailed": "Nie udało się załadować danych kompletacji"
+      },
+      "myUnavailable": {
+        "title": "Moje zadania nie są jeszcze dostępne",
+        "description": "Aktualne API kompletacji nie udostępnia filtrowania po przypisanym użytkowniku. Użyj zakładki zadań i filtrów statusu."
+      },
+      "empty": {
+        "wavesTitle": "Brak fal kompletacji",
+        "tasksTitle": "Brak zadań kompletacji",
+        "description": "Brak wierszy dla wybranego magazynu, statusu lub wyszukiwania."
+      },
+      "table": {
+        "wave": "Fala",
+        "tasks": "Zadania",
+        "document": "Dokument",
+        "products": "Produkty",
+        "status": "Status",
+        "assignee": "Przypisany",
+        "created": "Utworzono"
+      },
+      "detail": {
+        "emptyTitle": "Wybierz falę lub zadanie",
+        "emptyDescription": "Otwórz wiersz, aby zobaczyć dokument źródłowy, postęp, produkty i status.",
+        "waveDetail": "Szczegóły fali",
+        "taskDetail": "Szczegóły zadania",
+        "close": "Zamknij panel szczegółów",
+        "sourceDocument": "Dokument źródłowy",
+        "status": "Status",
+        "assignee": "Przypisany",
+        "created": "Utworzono",
+        "progress": "Postęp",
+        "products": "Produkty",
+        "noProductsTitle": "Brak szczegółów produktów",
+        "noProductsDescription": "Aktualne API kompletacji nie udostępnia wierszy produktów dla tego elementu."
+      },
+      "scan": {
+        "title": "Tryb skanowania",
+        "pickingQueue": "Kolejka kompletacji",
+        "advancedDescription": "Powierzchnia kompletacji gotowa na skaner z kontekstem lokalizacji. Wykonanie pozostaje tylko do odczytu, dopóki backend nie obsłuży zadań.",
+        "simpleDescription": "Powierzchnia kompletacji gotowa na skaner dla stanu na poziomie magazynu. Wykonanie pozostaje tylko do odczytu, dopóki backend nie obsłuży zadań.",
+        "close": "Zamknij tryb skanowania",
+        "ready": "Gotowe",
+        "progress": "Postęp",
+        "notAvailable": "niedostępny",
+        "largeInput": "Duże pole skanowania",
+        "advancedPlaceholder": "Skanuj lokalizację / produkt / kod zadania",
+        "simplePlaceholder": "Skanuj produkt / kod zadania",
+        "currentTask": "Bieżące zadanie",
+        "selectScope": "Wybierz falę lub zadanie, aby ustawić kontekst skanowania.",
+        "recentScans": "Ostatnie skany",
+        "noScansYet": "Brak skanów"
+      }
+    },
+    "setupSettings": {
+      "eyebrow": "Polityka firmy",
+      "title": "Ustawienia magazynu",
+      "description": "Ustawienia magazynu są ustawieniami firmy.",
+      "longDescription": "Zarządzaj magazynami, dokumentami, kosztem własnym i numeracją w ustawieniach firmy.",
+      "nativeDescription": "Skonfiguruj zachowanie magazynu używane przez dokumenty WMS i wycenę zapasu.",
+      "openCta": "Otwórz ustawienia magazynu",
+      "groups": {
+        "behavior": "Zachowanie magazynu"
+      },
+      "groupDescriptions": {
+        "behavior": "Wartości domyślne używane przy tworzeniu dokumentów WMS."
+      },
+      "costMethodReadonly": "Konfigurowane przez bieżący mechanizm wyceny.",
+      "categories": {
+        "defaultWarehouse": "Domyślny magazyn",
+        "defaultDocumentType": "Domyślny typ dokumentu",
+        "inventoryCostMethod": "Metoda wyceny zapasu",
+        "fifoOpeningBalance": "Bilans otwarcia FIFO",
+        "documentNumbering": "Numeracja dokumentów"
+      },
+      "categoryDescriptions": {
+        "defaultWarehouse": "Domyślny magazyn używany w przepływach dokumentów WMS.",
+        "defaultDocumentType": "Domyślne zachowanie dokumentów magazynowych na poziomie firmy.",
+        "inventoryCostMethod": "Polityka wyceny zapasu używana w kosztach i raportach.",
+        "fifoOpeningBalance": "Inicjalizacja bilansu otwarcia dla metody FIFO.",
+        "documentNumbering": "Reguły numeracji dokumentów magazynowych."
+      }
+    },
+    "shell": {
+      "requiredLabel": "{{label}} *",
+      "sections": {
+        "header": "Nagłówek"
+      },
+      "modes": {
+        "create": "tworzenie",
+        "draft": "szkic",
+        "posted": "zaksięgowany",
+        "ship": "wydanie",
+        "execute": "wykonanie",
+        "post": "księgowanie",
+        "reconcile": "uzgodnienie"
+      },
+      "subtitles": {
+        "create": "WMS Shell MVP - {{badge}} tylko tworzenie",
+        "draft": "WMS Shell MVP - {{badge}} edycja szkicu",
+        "posted": "WMS Shell - {{badge}} podgląd zaksięgowanego dokumentu",
+        "ship": "WMS Shell MVP - {{badge}} wydanie istniejącego dokumentu",
+        "execute": "WMS Shell MVP - {{badge}} wykonanie istniejącego dokumentu",
+        "post": "WMS Shell MVP - {{badge}} księgowanie istniejącego dokumentu",
+        "reconcile": "WMS Shell MVP - {{badge}} uzgodnienie istniejącego dokumentu"
+      },
+      "placeholders": {
+        "selectWarehouse": "Wybierz magazyn",
+        "selectSourceWarehouse": "Wybierz magazyn źródłowy",
+        "selectTargetWarehouse": "Wybierz magazyn docelowy",
+        "warehouseLevelStock": "Stan na poziomie magazynu",
+        "sourceWarehouseLevelStock": "Stan magazynu źródłowego",
+        "targetWarehouseLevelStock": "Stan magazynu docelowego",
+        "enterReason": "Wpisz powód"
+      },
+      "deferred": {
+        "receive": "Przyjęcie odroczone",
+        "ship": "Wydanie odroczone",
+        "execute": "Wykonanie odroczone",
+        "post": "Księgowanie odroczone",
+        "reconcile": "Uzgodnienie odroczone"
+      },
+      "operations": {
+        "receive": {
+          "label": "Przyjmij wszystko",
+          "progress": "Przyjmowanie...",
+          "error": "Nie udało się przyjąć PZ.",
+          "empty": "Brak pozostałych wierszy do przyjęcia.",
+          "notice": "Przyjęcie wykonane. Otwieramy aktualny widok dokumentu..."
+        },
+        "ship": {
+          "label": "Wydaj wszystko",
+          "progress": "Wydawanie...",
+          "error": "Nie udało się wydać WZ.",
+          "empty": "Brak pozostałych wierszy do wydania.",
+          "notice": "Wydanie wykonane. Otwieramy aktualny widok dokumentu..."
+        },
+        "execute": {
+          "label": "Wykonaj wszystko",
+          "progress": "Wykonywanie...",
+          "error": "Nie udało się wykonać przesunięcia.",
+          "empty": "Brak pozostałych wierszy do wykonania.",
+          "notice": "Przesunięcie wykonane. Otwieramy aktualny widok dokumentu..."
+        },
+        "post": {
+          "label": "Zaksięguj",
+          "progress": "Księgowanie...",
+          "error": "Nie udało się zaksięgować korekty.",
+          "notice": "Korekta zaksięgowana. Otwieramy aktualny widok dokumentu..."
+        },
+        "reconcile": {
+          "label": "Uzgodnij",
+          "progress": "Uzgadnianie...",
+          "error": "Nie udało się uzgodnić inwentaryzacji.",
+          "notice": "Inwentaryzacja uzgodniona. Otwieramy aktualny widok dokumentu..."
+        }
+      },
+      "warnings": {
+        "receive": "Przyjęcie utworzy ruchy magazynowe. Najpierw zapisz szkic.",
+        "ship": "Wydaj wszystko utworzy ruchy magazynowe dla pozostałych zapisanych wierszy.",
+        "execute": "Wykonaj wszystko utworzy ruchy magazynowe dla pozostałych zapisanych wierszy.",
+        "post": "Księgowanie zastosuje istniejącą korektę w szkicu.",
+        "reconcile": "Uzgodnienie zastosuje różnice i może utworzyć korekty RW/PW."
+      },
+      "confirm": {
+        "title": "Potwierdź operację"
+      },
+      "keyboard": {
+        "enterCreate": "Enter zatwierdza ilość i przenosi fokus do następnego wiersza",
+        "enterDraft": "Enter zatwierdza ilość i wraca do skanera"
+      },
+      "actions": {
+        "backToDocuments": "Wróć do dokumentów",
+        "openSource": "Otwórz dokument źródłowy"
+      },
+      "posted": {
+        "readOnlyHint": "Zaksięgowany dokument tylko do odczytu",
+        "expected": "Oczekiwano",
+        "received": "Przyjęto",
+        "remaining": "Pozostało",
+        "totalCost": "Wartość",
+        "movements": "Ruchy",
+        "movementsCount": "Ruchy: {{count}}",
+        "noItems": "Nie znaleziono pozycji zaksięgowanego dokumentu."
+      },
+      "scanner": {
+        "quickAdd": "Skaner / szybkie dodanie",
+        "largeInput": "Duże pole skanowania",
+        "placeholder": "Zeskanuj kod kreskowy / SKU / EAN",
+        "enterResolves": "Enter wybiera",
+        "escClears": "Esc czyści",
+        "scanMode": "Tryb skanowania",
+        "scanned": "Zeskanowano {{title}}",
+        "readyToScanDocument": "Gotowe do skanowania do bieżącego dokumentu.",
+        "closeScanMode": "Zamknij tryb skanowania",
+        "lastFound": "Ostatnio znaleziono: {{title}}",
+        "chooseMultiple": "Wybierz spośród wielu dopasowań",
+        "matches": "Dopasowania",
+        "matchesCount": "Dopasowania: {{count}}",
+        "multipleMatches": "Wiele dopasowań",
+        "scanPrompt": "Zeskanuj kod kreskowy, SKU lub EAN.",
+        "lastScans": "Ostatnie skany",
+        "noScansYet": "Brak skanów",
+        "status": {
+          "ready": "Gotowe",
+          "scanning": "Skanowanie",
+          "found": "Znaleziono",
+          "multiple": "Wiele",
+          "unknown": "Nieznany"
+        }
+      },
+      "rows": {
+        "lines": "Wiersze",
+        "trailingEmpty": "Nowy wiersz jest gotowy",
+        "manualRows": "Wiersze ręczne",
+        "emptyRow": "Nowy wiersz",
+        "readyRow": "Gotowe",
+        "persistedRow": "Zapisano",
+        "removeRow": "Usuń wiersz"
+      },
+      "product": {
+        "placeholder": "Zacznij wpisywać produkt / SKU / EAN",
+        "searching": "Szukam...",
+        "searchFailed": "Wyszukiwanie nie powiodło się",
+        "noProducts": "Nie znaleziono produktów",
+        "unnamed": "Produkt",
+        "noSku": "Brak SKU",
+        "stock": "Stan",
+        "cost": "Koszt"
+      },
+      "hints": {
+        "dateReadOnly": "Data jest tylko do odczytu w tym trybie."
+      },
+      "errors": {
+        "rowsRequired": "Dodaj co najmniej jeden wiersz produktu przed zapisem.",
+        "saveUnavailable": "Zapis nie jest dostępny dla tego dokumentu.",
+        "saveDraftFailed": "Nie udało się zapisać szkicu.",
+        "reloadDraftFailed": "Nie udało się przeładować szkicu PZ.",
+        "documentIdRequired": "ID dokumentu jest wymagane.",
+        "updateHeaderFailed": "Nie udało się zaktualizować nagłówka PZ.",
+        "removeLineFailed": "Nie udało się usunąć wiersza PZ.",
+        "updateLineFailed": "Nie udało się zaktualizować wiersza PZ.",
+        "addLineFailed": "Nie udało się dodać wiersza PZ.",
+        "operationUnavailable": "{{operation}} nie jest dostępna dla tego dokumentu."
+      }
+    },
     "create": {
       "subtitleReceipt": "Utwórz przyjęcie i opcjonalnie przyjmij pozycje",
       "subtitleAdjustment": "Utwórz korektę RW/PW i opcjonalnie zaksięguj",
@@ -517,6 +798,7 @@
       "loading": "Przygotowywanie widoku do druku...",
       "notFound": "Nie znaleziono dokumentu",
       "backToDetail": "Wróć do szczegółów",
+      "pzDocumentType": "PZ / Przyjęcie magazynowe",
       "date": "Data",
       "status": "Status",
       "warehouse": "Magazyn",
@@ -541,13 +823,20 @@
       "qtyTotal": "Ilość łącznie",
       "qtyProcessed": "Ilość przetworzona",
       "qtyRemaining": "Pozostała ilość",
-      "order": "Zamówienie"
+      "order": "Zamówienie",
+      "warningCount": "Ostrzeżenia",
+      "blockingCount": "Blokujące"
     },
     "columns": {
       "product": "Produkt",
       "variant": "Wariant",
       "qty": "Ilość",
-      "progress": "Przetworzono"
+      "progress": "Przetworzono",
+      "sku": "SKU",
+      "status": "Status",
+      "unitCost": "Koszt jednostkowy",
+      "currency": "Waluta",
+      "available": "Dostępne"
     },
     "history": {
       "empty": "Brak ruchów magazynowych",
@@ -579,13 +868,16 @@
         "RW": "RW",
         "PW": "PW",
         "PZK": "PZK",
-        "WZK": "WZK"
+        "WZK": "WZK",
+        "CC": "CC"
       },
       "createTypes": {
         "PZ": "Przyjęcie PZ",
         "MM": "Przesunięcie MM",
         "RW": "Rozchód RW",
-        "PW": "Przyjęcie wewnętrzne PW"
+        "PW": "Przyjęcie wewnętrzne PW",
+        "WZ": "Wydanie WZ",
+        "CC": "Inwentaryzacja CC"
       },
       "columns": {
         "type": "Typ",
@@ -594,7 +886,99 @@
         "status": "Status",
         "warehouse": "Magazyn",
         "itemsCount": "Wiersze",
-        "totalQty": "Ilość"
+        "totalQty": "Ilość",
+        "technicalId": "ID techniczne",
+        "createdAt": "Utworzono",
+        "sourceWarehouse": "Magazyn źródłowy",
+        "targetWarehouse": "Magazyn docelowy",
+        "documentRelation": "Relacja",
+        "parentTechnicalId": "ID techniczne nadrzędne",
+        "correctedByTechnicalId": "ID techniczne korekty"
+      },
+      "navigation": {
+        "groups": {
+          "warehouseDocuments": "Dokumenty magazynowe",
+          "byType": "Według typu"
+        },
+        "views": {
+          "all": "Wszystkie dokumenty",
+          "drafts": "Szkice",
+          "needsAction": "Wymagają działania",
+          "postedToday": "Zaksięgowane dziś"
+        },
+        "types": {
+          "PZ": "PZ — Przyjęcia",
+          "WZ": "WZ — Wydania",
+          "MM": "MM — Przesunięcia",
+          "RW": "RW — Rozchody",
+          "PW": "PW — Przyjęcia wew.",
+          "CC": "CC — Inwentaryzacje"
+        }
+      },
+      "workspace": {
+        "subtitle": "Obszar roboczy dokumentów magazynowych",
+        "typePicker": "Typ dokumentu",
+        "createType": "Utwórz {{type}}",
+        "active": {
+          "type": "Typ: {{type}}",
+          "view": "Widok: {{view}}"
+        },
+        "titles": {
+          "all": "Wszystkie dokumenty",
+          "drafts": "Szkice dokumentów",
+          "needs-action": "Wymagają działania",
+          "posted-today": "Zaksięgowane dziś",
+          "PZ": "Przyjęcia PZ",
+          "WZ": "Wydania WZ",
+          "MM": "Przesunięcia MM",
+          "RW": "Rozchody RW",
+          "PW": "Przyjęcia wewnętrzne PW",
+          "CC": "Inwentaryzacje CC"
+        },
+        "filters": {
+          "warehouse": "Magazyn",
+          "allWarehouses": "Wszystkie magazyny",
+          "search": "Szukaj dokumentów",
+          "type": "Typ",
+          "allTypes": "Wszystkie typy",
+          "status": "Status"
+        },
+        "typeDescriptions": {
+          "PZ": "Przyjęcia",
+          "WZ": "Wydania",
+          "MM": "Przesunięcia",
+          "RW": "Rozchody",
+          "PW": "Przyjęcia wewnętrzne",
+          "CC": "Inwentaryzacje"
+        },
+        "loading": "Ładowanie dokumentów",
+        "errorTitle": "Nie udało się załadować dokumentów",
+        "emptyTitle": "Nie znaleziono dokumentów",
+        "emptyDescription": "Zmień wyszukiwanie lub filtry albo utwórz nowy dokument WMS.",
+        "resetColumns": "Resetuj kolumny",
+        "columnsMenu": "Kolumny",
+        "visibleColumns": "Widoczne: {{count}}",
+        "requiredColumn": "Wymagana",
+        "showAllColumns": "Pokaż wszystkie",
+        "columnGroups": {
+          "core": "Podstawowe",
+          "operational": "Dodatkowe",
+          "context": "Kontekstowe",
+          "technical": "Techniczne"
+        },
+        "mmOnly": "Tylko MM",
+        "correctionsOnly": "Tylko korekty",
+        "mayBeEmpty": "Może być puste dla niektórych typów dokumentów",
+        "technicalColumnHelp": "Pole techniczne dla wsparcia/debugowania",
+        "showTechnicalColumns": "Pokaż pola techniczne",
+        "hideTechnicalColumns": "Ukryj pola techniczne",
+        "dragColumn": "Przeciągnij, aby zmienić kolejność kolumny",
+        "resizeColumn": "Zmień szerokość kolumny"
+      },
+      "mmGuard": {
+        "title": "Przesunięcie wymaga co najmniej 2 magazynów",
+        "description": "Utwórz drugi magazyn, aby przesuwać towary między magazynami",
+        "openWarehouses": "Otwórz magazyny"
       }
     },
     "receipts": {
@@ -634,6 +1018,13 @@
         "priceWarnings": {
           "noSuggestedPrice": "Brak sugerowanej ceny zakupu",
           "currencyMismatch": "Sugerowana waluta różni się od waluty pozycji"
+        },
+        "details": {
+          "cost": "Koszt",
+          "putAway": "Odłożenie",
+          "lot": "Partia",
+          "serials": "Numery seryjne",
+          "receiveNow": "Przyjmij teraz"
         }
       }
     },
@@ -826,9 +1217,23 @@
     },
     "locations": {
       "title": "Lokalizacje",
-      "search": "Szukaj po kodzie...",
+      "search": "Szukaj po kodzie, magazynie lub typie...",
       "empty": "Nie znaleziono lokalizacji",
+      "emptyForWarehouse": "Brak lokalizacji dla wybranego magazynu",
+      "emptySearch": "Brak lokalizacji pasujących do wyszukiwania lub filtrów.",
+      "emptyDescription": "Utwórz lokalizację, aby zacząć korzystać z przepływów magazynowych na poziomie lokalizacji.",
       "noReadPermission": "Nie masz uprawnień do przeglądania lokalizacji.",
+      "contextLabel": "Kontekst lokalizacji",
+      "currentWarehouse": "Aktualny magazyn",
+      "allWarehouses": "Wszystkie magazyny",
+      "contextSelected": "{{count}} lokalizacji w tym magazynie.",
+      "contextAll": "{{count}} lokalizacji we wszystkich magazynach.",
+      "summary": {
+        "locations": "Lokalizacje",
+        "active": "Aktywne",
+        "inactive": "Nieaktywne",
+        "filtered": "Widoczne"
+      },
       "actions": {
         "create": "Utwórz lokalizację",
         "edit": "Edytuj lokalizację"
@@ -841,6 +1246,23 @@
       },
       "placeholders": {
         "selectWarehouse": "Wybierz magazyn"
+      },
+      "typeHelper": "Używane w przepływach WMS i widoczności stanów na poziomie lokalizacji.",
+      "types": {
+        "inbound": "Przyjęcie",
+        "pick": "Kompletacja",
+        "bulk": "Składowanie masowe",
+        "buffer": "Bufor",
+        "staging": "Strefa przygotowania",
+        "outbound": "Wysyłka"
+      },
+      "typeDescriptions": {
+        "inbound": "Punkt wejścia dla przyjęcia i odkładania.",
+        "pick": "Lokalizacja kompletacji dla pracy wychodzącej.",
+        "bulk": "Obszar składowania masowego.",
+        "buffer": "Tymczasowy bufor między operacjami.",
+        "staging": "Strefa przygotowania przed wysyłką lub przesunięciem.",
+        "outbound": "Obszar wydań wychodzących."
       },
       "validation": {
         "required": "Magazyn, kod i typ są wymagane."

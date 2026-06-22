@@ -10,10 +10,12 @@
   z-index: 20;
   min-width: 12rem;
   padding: var(--space-2);
-  border: 1px solid var(--ui-border);
+  border: 1px solid var(--wms-work-surface-border, var(--ui-border));
   border-radius: var(--radius-lg);
-  background: var(--ui-surface);
-  box-shadow: var(--ui-shadow-lg);
+  background: var(--wms-work-surface-bg, var(--ui-surface));
+  box-shadow: var(--wms-work-surface-shadow, var(--ui-shadow-lg));
+  -webkit-backdrop-filter: var(--wms-work-surface-blur, blur(18px) saturate(1.08));
+  backdrop-filter: var(--wms-work-surface-blur, blur(18px) saturate(1.08));
 }
 
 .createMenuItem {

@@ -11,6 +11,7 @@ import {
 } from '../../../store/rtk/wmsDocumentsApi';
 import { ccConfig } from '../documentTypes';
 import { createCycleCountShellAdapter } from './createCycleCountShellAdapter';
+import { mapCycleCountToShellPosted } from './postedViewMappers';
 import WmsDocumentShell from './WmsDocumentShell';
 
 function asText(value) {
@@ -136,7 +137,11 @@ export default function CcReconcileShellPage({ fallback = null }) {
   }), [cycleCountQuery, permissions, reconcileCycleCount]);
 
   const status = asText(cycleCount?.status).toLowerCase();
-  const items = Array.isArray(cycleCount?.items) ? cycleCount.items : [];
+  const items = useMemo(
+    () => (Array.isArray(cycleCount?.items) ? cycleCount.items : []),
+    [cycleCount?.items]
+  );
+  const isPostedCycleCount = status === 'reconciled';
   const isReconcileCandidate = Boolean(cycleCount && status !== 'reconciled' && items.length);
   const firstItem = items[0] || null;
   const varianceSummary = useMemo(
@@ -152,6 +157,10 @@ export default function CcReconcileShellPage({ fallback = null }) {
   }), [cycleCount?.createdAt, cycleCount?.locationId, cycleCount?.status, firstItem?.locationId, warehouseId]);
 
   const initialRows = useMemo(() => items.map(mapCountItemToShellRow), [items]);
+  const postedModel = useMemo(
+    () => mapCycleCountToShellPosted(cycleCount || {}, inventoryItemsData?.items || []),
+    [cycleCount, inventoryItemsData?.items]
+  );
 
   const getOperationConfirm = () => {
     const warehouseLabel = formatWarehouseLabel(cycleCount?.warehouse) || warehouseId || '—';
@@ -173,7 +182,36 @@ export default function CcReconcileShellPage({ fallback = null }) {
     return <div style={{ padding: 24 }}>Loading cycle count...</div>;
   }
 
-  if (cycleCountQuery.isError || !isReconcileCandidate) {
+  if (cycleCountQuery.isError || !cycleCount) {
+    return fallback;
+  }
+
+  if (isPostedCycleCount) {
+    return (
+      <WmsDocumentShell
+        config={ccConfig}
+        mode="posted"
+        documentId={id}
+        adapter={adapter}
+        initialHeader={postedModel.header}
+        initialRows={postedModel.rows}
+        originalHeader={postedModel.header}
+        originalRows={postedModel.rows}
+        resetKey={`${id}:posted:${status}`}
+        warehouses={warehousesData?.items || []}
+        locations={locationsData?.items || []}
+        postedMeta={{
+          documentNumber: postedModel.header.documentNumber,
+          status: postedModel.header.status,
+        }}
+        printUrl={`/main/wms/cycle-counts/${id}/print`}
+        stockMoves={[]}
+        onCancel={() => navigate('/main/wms/documents?type=CC')}
+      />
+    );
+  }
+
+  if (!isReconcileCandidate) {
     return fallback;
   }
 

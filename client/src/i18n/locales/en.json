@@ -470,6 +470,287 @@
       "warehouseLevelStock": "Warehouse-level stock",
       "warehouseLevelHint": "No location selected; this document will use warehouse-level stock."
     },
+    "locationMode": {
+      "simple": {
+        "label": "Simple Mode",
+        "description": "Location management is disabled. Warehouse-level stock is used."
+      },
+      "advanced": {
+        "label": "Advanced Mode",
+        "description": "Location management is active for this warehouse."
+      }
+    },
+    "picks": {
+      "title": "Picking",
+      "subtitle": "Warehouse execution workspace for waves, tasks, and scanner-first picking.",
+      "loading": "Loading picking workspace",
+      "noReadPermission": "You do not have permission to view pick tasks and waves.",
+      "scanModeButton": "Scan Mode",
+      "controlsLabel": "Picking controls",
+      "viewsLabel": "Picking views",
+      "tabs": {
+        "waves": "Waves",
+        "tasks": "Tasks",
+        "my": "My Tasks"
+      },
+      "filters": {
+        "warehouse": "Warehouse",
+        "status": "Status",
+        "searchPlaceholder": "Search wave, task, document, assignee"
+      },
+      "fallbacks": {
+        "wave": "Wave",
+        "task": "Task",
+        "waveWithId": "Wave {{id}}",
+        "taskWithId": "Task {{id}}"
+      },
+      "errors": {
+        "requestFailed": "Request failed",
+        "loadFailed": "Failed to load picking data"
+      },
+      "myUnavailable": {
+        "title": "My Tasks are not available yet",
+        "description": "Current pick APIs do not expose assigned-user filtering. Use Tasks and status filters for now."
+      },
+      "empty": {
+        "wavesTitle": "No pick waves",
+        "tasksTitle": "No pick tasks",
+        "description": "No rows match the current warehouse, status, or search filters."
+      },
+      "table": {
+        "wave": "Wave",
+        "tasks": "Tasks",
+        "document": "Document",
+        "products": "Products",
+        "status": "Status",
+        "assignee": "Assignee",
+        "created": "Created"
+      },
+      "detail": {
+        "emptyTitle": "Select a wave or task",
+        "emptyDescription": "Open a row to inspect source document, progress, products, and status.",
+        "waveDetail": "Wave detail",
+        "taskDetail": "Task detail",
+        "close": "Close detail panel",
+        "sourceDocument": "Source document",
+        "status": "Status",
+        "assignee": "Assignee",
+        "created": "Created",
+        "progress": "Progress",
+        "products": "Products",
+        "noProductsTitle": "No product details",
+        "noProductsDescription": "Current pick API does not expose product rows for this item."
+      },
+      "scan": {
+        "title": "Scan mode",
+        "pickingQueue": "Picking queue",
+        "advancedDescription": "Scanner-ready picking surface with location context. Execution remains read-only until backend task support is available.",
+        "simpleDescription": "Scanner-ready picking surface for warehouse-level stock. Execution remains read-only until backend task support is available.",
+        "close": "Close scan mode",
+        "ready": "Ready",
+        "progress": "Progress",
+        "notAvailable": "not available",
+        "largeInput": "Large scan input",
+        "advancedPlaceholder": "Scan location / product / task code",
+        "simplePlaceholder": "Scan product / task code",
+        "currentTask": "Current task",
+        "selectScope": "Select a wave or task to scope scanning.",
+        "recentScans": "Recent scans",
+        "noScansYet": "No scans yet"
+      }
+    },
+    "setupSettings": {
+      "eyebrow": "Company-wide policy",
+      "title": "Warehouse Settings",
+      "description": "Warehouse settings are company settings.",
+      "longDescription": "Manage warehouses, documents, inventory costing, and numbering in company settings.",
+      "nativeDescription": "Configure the warehouse behavior used by WMS documents and stock costing.",
+      "openCta": "Open Warehouse Settings",
+      "groups": {
+        "behavior": "Warehouse behavior"
+      },
+      "groupDescriptions": {
+        "behavior": "Defaults used by WMS document creation flows."
+      },
+      "costMethodReadonly": "Configured by the current costing engine.",
+      "categories": {
+        "defaultWarehouse": "Default warehouse",
+        "defaultDocumentType": "Default document type",
+        "inventoryCostMethod": "Inventory costing method",
+        "fifoOpeningBalance": "FIFO opening balance",
+        "documentNumbering": "Document numbering"
+      },
+      "categoryDescriptions": {
+        "defaultWarehouse": "Default warehouse used by WMS document flows.",
+        "defaultDocumentType": "Company-wide default document behavior for warehouse documents.",
+        "inventoryCostMethod": "Inventory valuation policy used by costing reports and stock logic.",
+        "fifoOpeningBalance": "Opening balance initialization for FIFO costing.",
+        "documentNumbering": "Numbering rules for warehouse documents."
+      }
+    },
+    "shell": {
+      "requiredLabel": "{{label}} *",
+      "sections": {
+        "header": "Header"
+      },
+      "modes": {
+        "create": "create",
+        "draft": "draft",
+        "posted": "posted",
+        "ship": "ship",
+        "execute": "execute",
+        "post": "post",
+        "reconcile": "reconcile"
+      },
+      "subtitles": {
+        "create": "WMS Shell MVP - {{badge}} create only",
+        "draft": "WMS Shell MVP - {{badge}} draft edit",
+        "posted": "WMS Shell - {{badge}} posted read-only view",
+        "ship": "WMS Shell MVP - {{badge}} ship existing",
+        "execute": "WMS Shell MVP - {{badge}} execute existing",
+        "post": "WMS Shell MVP - {{badge}} post existing",
+        "reconcile": "WMS Shell MVP - {{badge}} reconcile existing"
+      },
+      "placeholders": {
+        "selectWarehouse": "Select warehouse",
+        "selectSourceWarehouse": "Select source warehouse",
+        "selectTargetWarehouse": "Select target warehouse",
+        "warehouseLevelStock": "Warehouse-level stock",
+        "sourceWarehouseLevelStock": "Source warehouse-level stock",
+        "targetWarehouseLevelStock": "Target warehouse-level stock",
+        "enterReason": "Enter reason"
+      },
+      "deferred": {
+        "receive": "Receive deferred",
+        "ship": "Ship deferred",
+        "execute": "Execute deferred",
+        "post": "Post deferred",
+        "reconcile": "Reconcile deferred"
+      },
+      "operations": {
+        "receive": {
+          "label": "Receive all",
+          "progress": "Receiving...",
+          "error": "Failed to receive receipt.",
+          "empty": "No remaining rows to receive.",
+          "notice": "Receipt was received. Opening the latest document view..."
+        },
+        "ship": {
+          "label": "Ship all",
+          "progress": "Shipping...",
+          "error": "Failed to ship shipment.",
+          "empty": "No remaining rows to ship.",
+          "notice": "Shipment was shipped. Opening the latest document view..."
+        },
+        "execute": {
+          "label": "Execute all",
+          "progress": "Executing...",
+          "error": "Failed to execute transfer.",
+          "empty": "No remaining rows to execute.",
+          "notice": "Transfer was executed. Opening the latest document view..."
+        },
+        "post": {
+          "label": "Post",
+          "progress": "Posting...",
+          "error": "Failed to post adjustment.",
+          "notice": "Adjustment was posted. Opening the latest document view..."
+        },
+        "reconcile": {
+          "label": "Reconcile",
+          "progress": "Reconciling...",
+          "error": "Failed to reconcile cycle count.",
+          "notice": "Cycle count was reconciled. Opening the latest document view..."
+        }
+      },
+      "warnings": {
+        "receive": "Receive will post stock movements. Save draft first.",
+        "ship": "Ship all will post stock movements for remaining persisted rows.",
+        "execute": "Execute all will post stock movements for remaining persisted rows.",
+        "post": "Post will apply the existing draft adjustment.",
+        "reconcile": "Reconcile will apply counted differences and may create RW/PW adjustments."
+      },
+      "confirm": {
+        "title": "Confirm operation"
+      },
+      "keyboard": {
+        "enterCreate": "Enter commits qty and focuses next row",
+        "enterDraft": "Enter commits qty and returns to scan"
+      },
+      "actions": {
+        "backToDocuments": "Back to Documents",
+        "openSource": "Open source document"
+      },
+      "posted": {
+        "readOnlyHint": "Read-only posted document view",
+        "expected": "Expected",
+        "received": "Received",
+        "remaining": "Remaining",
+        "totalCost": "Total cost",
+        "movements": "Movements",
+        "movementsCount": "{{count}} movements",
+        "noItems": "No posted items found."
+      },
+      "scanner": {
+        "quickAdd": "Scan / Quick add",
+        "largeInput": "Large scan input",
+        "placeholder": "Scan barcode / SKU / EAN",
+        "enterResolves": "Enter resolves",
+        "escClears": "Esc clears",
+        "scanMode": "Scan mode",
+        "scanned": "Scanned {{title}}",
+        "readyToScanDocument": "Ready to scan into the current document.",
+        "closeScanMode": "Close scan mode",
+        "lastFound": "Last found: {{title}}",
+        "chooseMultiple": "Choose from multiple matches",
+        "matches": "Matches",
+        "matchesCount": "{{count}} matches",
+        "multipleMatches": "Multiple matches",
+        "scanPrompt": "Scan a barcode, SKU, or EAN.",
+        "lastScans": "Last scans",
+        "noScansYet": "No scans yet",
+        "status": {
+          "ready": "Ready",
+          "scanning": "Scanning",
+          "found": "Found",
+          "multiple": "Multiple",
+          "unknown": "Unknown"
+        }
+      },
+      "rows": {
+        "lines": "Lines",
+        "trailingEmpty": "New row is ready",
+        "manualRows": "Manual rows",
+        "emptyRow": "New row",
+        "readyRow": "Ready",
+        "persistedRow": "Saved",
+        "removeRow": "Remove row"
+      },
+      "product": {
+        "placeholder": "Start typing product / SKU / EAN",
+        "searching": "Searching...",
+        "searchFailed": "Search failed",
+        "noProducts": "No products found",
+        "unnamed": "Product",
+        "noSku": "No SKU",
+        "stock": "Stock",
+        "cost": "Cost"
+      },
+      "hints": {
+        "dateReadOnly": "Date is read-only in this mode."
+      },
+      "errors": {
+        "rowsRequired": "Add at least one product row before saving.",
+        "saveUnavailable": "Save is not available for this document.",
+        "saveDraftFailed": "Failed to save draft.",
+        "reloadDraftFailed": "Failed to reload receipt draft.",
+        "documentIdRequired": "Document id is required.",
+        "updateHeaderFailed": "Failed to update receipt header.",
+        "removeLineFailed": "Failed to remove receipt line.",
+        "updateLineFailed": "Failed to update receipt line.",
+        "addLineFailed": "Failed to add receipt line.",
+        "operationUnavailable": "{{operation}} is not available for this document."
+      }
+    },
     "create": {
       "subtitleReceipt": "Create receipt and optionally receive lines",
       "subtitleAdjustment": "Create RW/PW adjustment and optionally post",
@@ -517,6 +798,7 @@
       "loading": "Preparing print view...",
       "notFound": "Document not found",
       "backToDetail": "Back to detail",
+      "pzDocumentType": "PZ / Przyjęcie / Receipt",
       "date": "Date",
       "status": "Status",
       "warehouse": "Warehouse",
@@ -541,13 +823,20 @@
       "qtyTotal": "Total qty",
       "qtyProcessed": "Processed qty",
       "qtyRemaining": "Remaining qty",
-      "order": "Order"
+      "order": "Order",
+      "warningCount": "Warnings",
+      "blockingCount": "Blocking"
     },
     "columns": {
       "product": "Product",
       "variant": "Variant",
       "qty": "Qty",
-      "progress": "Processed"
+      "progress": "Processed",
+      "sku": "SKU",
+      "status": "Status",
+      "unitCost": "Unit cost",
+      "currency": "Currency",
+      "available": "Available"
     },
     "history": {
       "empty": "No stock moves",
@@ -567,7 +856,7 @@
       "empty": "No warehouse documents",
       "open": "Open warehouse document",
       "actions": {
-        "create": "Create document"
+        "create": "Create Document"
       },
       "filters": {
         "type": "Type"
@@ -579,13 +868,16 @@
         "RW": "RW",
         "PW": "PW",
         "PZK": "PZK",
-        "WZK": "WZK"
+        "WZK": "WZK",
+        "CC": "CC"
       },
       "createTypes": {
         "PZ": "PZ receipt",
         "MM": "MM transfer",
-        "RW": "RW issue",
-        "PW": "PW internal receipt"
+        "RW": "RW write-off",
+        "PW": "PW internal receipt",
+        "WZ": "WZ shipment",
+        "CC": "CC cycle count"
       },
       "columns": {
         "type": "Type",
@@ -594,7 +886,99 @@
         "status": "Status",
         "warehouse": "Warehouse",
         "itemsCount": "Lines",
-        "totalQty": "Quantity"
+        "totalQty": "Quantity",
+        "technicalId": "Technical ID",
+        "createdAt": "Created",
+        "sourceWarehouse": "Source warehouse",
+        "targetWarehouse": "Target warehouse",
+        "documentRelation": "Relation",
+        "parentTechnicalId": "Parent technical ID",
+        "correctedByTechnicalId": "Corrected-by technical ID"
+      },
+      "navigation": {
+        "groups": {
+          "warehouseDocuments": "Warehouse documents",
+          "byType": "By type"
+        },
+        "views": {
+          "all": "All Documents",
+          "drafts": "Drafts",
+          "needsAction": "Needs Action",
+          "postedToday": "Posted Today"
+        },
+        "types": {
+          "PZ": "PZ — Receipts",
+          "WZ": "WZ — Shipments",
+          "MM": "MM — Transfers",
+          "RW": "RW — Write-offs",
+          "PW": "PW — Internal Receipts",
+          "CC": "CC — Cycle Counts"
+        }
+      },
+      "workspace": {
+        "subtitle": "Warehouse document workspace",
+        "typePicker": "Document type",
+        "createType": "Create {{type}}",
+        "active": {
+          "type": "Type: {{type}}",
+          "view": "View: {{view}}"
+        },
+        "titles": {
+          "all": "All Documents",
+          "drafts": "Draft Documents",
+          "needs-action": "Needs Action",
+          "posted-today": "Posted Today",
+          "PZ": "PZ Receipts",
+          "WZ": "WZ Shipments",
+          "MM": "MM Transfers",
+          "RW": "RW Write-offs",
+          "PW": "PW Internal Receipts",
+          "CC": "CC Cycle Counts"
+        },
+        "filters": {
+          "warehouse": "Warehouse",
+          "allWarehouses": "All warehouses",
+          "search": "Search documents",
+          "type": "Type",
+          "allTypes": "All types",
+          "status": "Status"
+        },
+        "typeDescriptions": {
+          "PZ": "Receipts",
+          "WZ": "Shipments",
+          "MM": "Transfers",
+          "RW": "Write-offs",
+          "PW": "Internal receipts",
+          "CC": "Cycle counts"
+        },
+        "loading": "Loading documents",
+        "errorTitle": "Failed to load documents",
+        "emptyTitle": "No documents found",
+        "emptyDescription": "Adjust search or filters, or create a new WMS document.",
+        "resetColumns": "Reset columns",
+        "columnsMenu": "Columns",
+        "visibleColumns": "Visible: {{count}}",
+        "requiredColumn": "Required",
+        "showAllColumns": "Show all",
+        "columnGroups": {
+          "core": "Core",
+          "operational": "Additional",
+          "context": "Context",
+          "technical": "Technical"
+        },
+        "mmOnly": "MM only",
+        "correctionsOnly": "Corrections only",
+        "mayBeEmpty": "May be empty for some document types",
+        "technicalColumnHelp": "Technical field for support/debug",
+        "showTechnicalColumns": "Show technical fields",
+        "hideTechnicalColumns": "Hide technical fields",
+        "dragColumn": "Drag to reorder column",
+        "resizeColumn": "Resize column"
+      },
+      "mmGuard": {
+        "title": "Transfer requires at least 2 warehouses",
+        "description": "Create a second warehouse to move goods between warehouses",
+        "openWarehouses": "Open warehouses"
       }
     },
     "receipts": {
@@ -634,6 +1018,13 @@
         "priceWarnings": {
           "noSuggestedPrice": "No suggested purchase price",
           "currencyMismatch": "Suggested currency differs from current line currency"
+        },
+        "details": {
+          "cost": "Cost",
+          "putAway": "Put-away",
+          "lot": "Lot",
+          "serials": "Serials",
+          "receiveNow": "Receive now"
         }
       }
     },
@@ -826,9 +1217,23 @@
     },
     "locations": {
       "title": "Locations",
-      "search": "Search by code...",
+      "search": "Search by code, warehouse or type...",
       "empty": "No locations found",
+      "emptyForWarehouse": "No locations for selected warehouse",
+      "emptySearch": "No locations match the current search or filters.",
+      "emptyDescription": "Create a location to start using location-level warehouse flows.",
       "noReadPermission": "You do not have permission to view locations.",
+      "contextLabel": "Location context",
+      "currentWarehouse": "Current warehouse",
+      "allWarehouses": "All warehouses",
+      "contextSelected": "{{count}} locations in this warehouse.",
+      "contextAll": "{{count}} locations across all warehouses.",
+      "summary": {
+        "locations": "Locations",
+        "active": "Active",
+        "inactive": "Inactive",
+        "filtered": "Visible"
+      },
       "actions": {
         "create": "Create location",
         "edit": "Edit location"
@@ -841,6 +1246,23 @@
       },
       "placeholders": {
         "selectWarehouse": "Select warehouse"
+      },
+      "typeHelper": "Used for WMS flows and location-level stock visibility.",
+      "types": {
+        "inbound": "Inbound",
+        "pick": "Pick",
+        "bulk": "Bulk",
+        "buffer": "Buffer",
+        "staging": "Staging",
+        "outbound": "Outbound"
+      },
+      "typeDescriptions": {
+        "inbound": "Receiving and put-away entry point.",
+        "pick": "Picking location for outbound work.",
+        "bulk": "Bulk storage area.",
+        "buffer": "Temporary buffer between operations.",
+        "staging": "Staging area before shipping or transfer.",
+        "outbound": "Outbound dispatch area."
       },
       "validation": {
         "required": "Warehouse, code and type are required."

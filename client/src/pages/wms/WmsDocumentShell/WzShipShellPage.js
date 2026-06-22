@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useMemo } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import useAclPermissions from '../../../hooks/useAclPermissions';
 import {
+  useCreateShipmentCorrectionMutation,
   useGetShipmentByIdQuery,
   useGetShipmentStockMovesQuery,
   useListLocationsQuery,
@@ -15,7 +16,9 @@ import {
   createShipmentShellAdapter,
   mergeShipmentRowsWithShippedQty,
 } from './createShipmentShellAdapter';
+import { mapShipmentToShellPosted } from './postedViewMappers';
 import WmsDocumentShell from './WmsDocumentShell';
+import WzParcelsSection from './WzParcelsSection';
 
 function asText(value) {
   if (value === undefined || value === null) return '';
@@ -42,9 +45,12 @@ function mapShipmentItemToShellRow(item = {}, index = 0) {
 
 export default function WzShipShellPage() {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const permissions = useAclPermissions();
   const [shipShipmentItem] = useShipShipmentItemMutation();
+  const [createShipmentCorrection] = useCreateShipmentCorrectionMutation();
+  const isCorrectionRoute = location.pathname.endsWith('/correction');
 
   const shipmentQuery = useGetShipmentByIdQuery(id, {
     skip: !id,
@@ -67,10 +73,16 @@ export default function WzShipShellPage() {
 
   const shipment = shipmentQuery.data || null;
   const status = asText(shipment?.status).toLowerCase();
+  const isPostedShipment = ['shipped', 'corrected', 'cancelled', 'canceled'].includes(status);
+  const isCorrectionEligible = Boolean(shipment)
+    && !shipment.parentDocumentId
+    && !shipment.correctedById
+    && status === 'shipped';
 
   const adapter = useMemo(() => createShipmentShellAdapter({
     triggers: {
       shipShipmentItem,
+      createShipmentCorrection,
       fetchShipmentById: async () => {
         const result = await shipmentQuery.refetch();
         return result.data;
@@ -81,7 +93,7 @@ export default function WzShipShellPage() {
       },
     },
     permissions,
-  }), [permissions, shipShipmentItem, shipmentHistoryQuery, shipmentQuery]);
+  }), [createShipmentCorrection, permissions, shipShipmentItem, shipmentHistoryQuery, shipmentQuery]);
 
   const historyItems = useMemo(() => (
     Array.isArray(shipmentHistoryQuery.data?.items) ? shipmentHistoryQuery.data.items : []
@@ -97,12 +109,84 @@ export default function WzShipShellPage() {
     fromLocationId: '',
     orderId: asText(shipment?.orderId),
   }), [shipment?.orderId, shipment?.warehouseId]);
+  const postedModel = useMemo(() => {
+    const items = Array.isArray(shipment?.items) ? shipment.items : [];
+    return mapShipmentToShellPosted({
+      ...(shipment || {}),
+      items: mergeShipmentRowsWithShippedQty(items, historyItems),
+    });
+  }, [historyItems, shipment]);
 
-  if (shipmentQuery.isLoading || shipmentQuery.isFetching) {
+  const onCorrectionSuccess = useCallback(async (result) => {
+    await shipmentQuery.refetch();
+    const correctionId = result?.documentId || result?.raw?.id;
+    if (correctionId) {
+      navigate(`/main/wms/shipments/${correctionId}`);
+      return;
+    }
+    navigate(`/main/wms/shipments/${id}`);
+  }, [id, navigate, shipmentQuery]);
+
+  if (shipmentQuery.isLoading || (shipmentQuery.isFetching && !shipment)) {
     return <div style={{ padding: 24 }}>Loading shipment...</div>;
   }
 
-  if (shipmentQuery.isError || !shipment || status !== 'packing') {
+  if (shipmentQuery.isError || !shipment) {
+    return <WarehouseDocumentDetailPage kind="shipment" />;
+  }
+
+  if (isCorrectionRoute && isCorrectionEligible) {
+    return (
+      <WmsDocumentShell
+        config={wzConfig}
+        mode="correction"
+        documentId={id}
+        adapter={adapter}
+        initialHeader={postedModel.header}
+        initialRows={postedModel.rows}
+        originalHeader={postedModel.header}
+        originalRows={postedModel.rows}
+        resetKey={`${id}:correction:${status}:${historyItems.length}:${shipment?.updatedAt || ''}`}
+        warehouses={warehousesData?.items || []}
+        locations={locationsData?.items || []}
+        postedMeta={{
+          documentNumber: postedModel.header.documentNumber,
+          status: postedModel.header.status,
+        }}
+        onSaveSuccess={onCorrectionSuccess}
+        onCancel={() => navigate(`/main/wms/shipments/${id}`)}
+      />
+    );
+  }
+
+  if (isPostedShipment) {
+    return (
+      <WmsDocumentShell
+        config={wzConfig}
+        mode="posted"
+        documentId={id}
+        adapter={adapter}
+        initialHeader={postedModel.header}
+        initialRows={postedModel.rows}
+        originalHeader={postedModel.header}
+        originalRows={postedModel.rows}
+        resetKey={`${id}:posted:${status}:${historyItems.length}`}
+        warehouses={warehousesData?.items || []}
+        locations={locationsData?.items || []}
+        postedMeta={{
+          documentNumber: postedModel.header.documentNumber,
+          status: postedModel.header.status,
+        }}
+        printUrl={`/main/wms/shipments/${id}/print`}
+        correctionUrl={isCorrectionEligible ? `/main/wms/shipments/${id}/correction` : ''}
+        stockMoves={historyItems}
+        postedExtraSections={<WzParcelsSection shipmentId={id} />}
+        onCancel={() => navigate('/main/wms/documents?type=WZ')}
+      />
+    );
+  }
+
+  if (status !== 'packing') {
     return <WarehouseDocumentDetailPage kind="shipment" />;
   }
 

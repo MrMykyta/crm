@@ -1,3 +1,5 @@
+import { WmsStatusChip } from '../../../wms/ui';
+
 function asText(value) {
   if (value === null || value === undefined) return '';
   return String(value).trim();
@@ -32,7 +34,14 @@ const WAREHOUSE_COLUMNS = [
   {
     key: 'isActive',
     width: 150,
-    render: (row, { t }) => activeLabel(row?.isActive, t),
+    render: (row, { t }) => {
+      const status = row?.isActive === false ? 'inactive' : 'active';
+      return (
+        <WmsStatusChip status={status} size="sm">
+          {activeLabel(row?.isActive, t)}
+        </WmsStatusChip>
+      );
+    },
     labelKey: 'wms.warehouses.columns.isActive',
     fallbackLabel: 'Status',
   },

@@ -4,6 +4,14 @@ const { withTx } = require('../../utils/tx');
 const Inventory = require('./inventoryService');
 const { PickWave, PickTask, Reservation } = require('../../models');
 
+const taskCompanyScopeInclude = (companyId) => ({
+  model: PickWave,
+  as: 'wave',
+  attributes: [],
+  required: true,
+  where: { companyId },
+});
+
 // createWave: создаёт новую запись и возвращает результат.
 module.exports.createWave = async (companyId, { warehouseId, reservations=[], reference }, outerTx=null) => {
   return await withTx(async (t) => {
@@ -11,7 +19,7 @@ module.exports.createWave = async (companyId, { warehouseId, reservations=[], re
     for (const rId of reservations) {
       const r = await Reservation.findOne({ where:{ companyId, id: rId }, transaction:t });
       if (!r || r.status !== 'reserved') continue;
-      await PickTask.create({ companyId, waveId: wave.id, reservationId: r.id, status:'open', qty: r.qty }, { transaction:t });
+      await PickTask.create({ waveId: wave.id, reservationId: r.id, status:'open', qty: r.qty }, { transaction:t });
     }
     return wave;
   }, outerTx);
@@ -20,7 +28,11 @@ module.exports.createWave = async (companyId, { warehouseId, reservations=[], re
 // completeTask: выполняет вспомогательную бизнес-логику сервиса.
 module.exports.completeTask = async (companyId, taskId, outerTx=null) => {
   return await withTx(async (t) => {
-    const task = await PickTask.findOne({ where:{ companyId, id: taskId }, include:[{ model: Reservation }], transaction:t });
+    const task = await PickTask.findOne({
+      where:{ id: taskId },
+      include:[taskCompanyScopeInclude(companyId), { model: Reservation }],
+      transaction:t,
+    });
     if (!task) return null;
     const r = task.reservation;
     await Inventory.applyMove(

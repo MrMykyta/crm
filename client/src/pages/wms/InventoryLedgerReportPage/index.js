@@ -99,7 +99,7 @@ function rowKey(row, index) {
   return row.id || `${row.refType || 'ref'}-${row.refId || 'id'}-${row.refItemId || 'item'}-${index}`;
 }
 
-export default function InventoryLedgerReportPage() {
+export default function InventoryLedgerReportPage({ embedded = false }) {
   const { t, i18n } = useTranslation();
   const [filters, setFilters] = useState({
     productId: '',
@@ -186,7 +186,7 @@ export default function InventoryLedgerReportPage() {
   };
 
   return (
-    <div className={s.page}>
+    <div className={`${s.page} ${embedded ? s.embedded : ''}`}>
       <header className={s.header}>
         <div>
           <h1 className={s.title}>{t('wms.inventoryLedger.title', 'Karta magazynowa')}</h1>

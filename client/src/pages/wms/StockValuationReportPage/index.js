@@ -49,7 +49,7 @@ function getErrorText(error, fallback) {
   return error?.data?.message || error?.data?.error || error?.error || error?.message || fallback;
 }
 
-export default function StockValuationReportPage() {
+export default function StockValuationReportPage({ embedded = false }) {
   const { t, i18n } = useTranslation();
   const [filters, setFilters] = useState({
     warehouseId: '',
@@ -106,7 +106,7 @@ export default function StockValuationReportPage() {
   };
 
   return (
-    <div className={s.page}>
+    <div className={`${s.page} ${embedded ? s.embedded : ''}`}>
       <header className={s.header}>
         <div>
           <h1 className={s.title}>{t('wms.stockValuation.title', 'Wartość magazynu')}</h1>

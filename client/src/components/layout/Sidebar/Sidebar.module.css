@@ -74,7 +74,7 @@
 .item{
   position: relative; display:flex; align-items:center;
   gap: var(--sb-gap); height: var(--sb-item-h); padding: 0 var(--sb-pad-x);
-  border-radius: 20px;
+  border-radius: 12px;
   text-decoration: none; color: var(--sidebar-text);
   border: 1px solid transparent;
   min-width: 0;            /* allow label to ellipsis instead of overflowing */
@@ -114,14 +114,11 @@
 
 /* активный — мягкая «pill» подсветка с лёгким glow вместо вертикальной полоски */
 .active{
-  background:
-    linear-gradient(135deg,
-      color-mix(in srgb, var(--primary-start) 22%, transparent),
-      color-mix(in srgb, var(--primary-end) 14%, transparent));
-  border-color: color-mix(in srgb, var(--primary-start) 28%, transparent);
+  background: color-mix(in srgb, var(--primary-start) 14%, var(--sidebar-bg));
+  border-color: color-mix(in srgb, var(--primary-start) 34%, transparent);
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--primary-start) 12%, transparent),
-    0 8px 24px -10px color-mix(in srgb, var(--primary-start) 55%, transparent);
+    inset 3px 0 0 color-mix(in srgb, var(--primary-start) 82%, var(--focus, #6aa8ff)),
+    inset 0 0 0 1px color-mix(in srgb, var(--primary-start) 10%, transparent);
 }
 
 .active .icon{
@@ -176,3 +173,118 @@
   border-radius: 999px; border: 2px solid transparent; background-clip: padding-box;
 }
 .nav:hover::-webkit-scrollbar-thumb{ background: color-mix(in srgb, var(--sidebar-text) 22%, transparent); }
+
+.navFlyout {
+  position: fixed;
+  z-index: 72;
+  width: 292px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--sidebar-text, #f3f4f6) 10%, transparent);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--sidebar-bg, #0f172a) 92%, transparent),
+      color-mix(in srgb, var(--sidebar-bg, #0f172a) 96%, transparent));
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.46),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  -webkit-backdrop-filter: blur(18px) saturate(1.18);
+  backdrop-filter: blur(18px) saturate(1.18);
+  overflow: auto;
+  opacity: 0;
+  transform: translateX(-10px) scale(0.98);
+  transform-origin: top left;
+  transition:
+    opacity 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.navFlyoutVisible {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.navFlyoutTitle {
+  padding: 2px 4px 4px;
+  color: color-mix(in srgb, var(--sidebar-text, #f3f4f6) 72%, transparent);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.navFlyoutGroups {
+  display: grid;
+  gap: 12px;
+}
+
+.navFlyoutGroup {
+  display: grid;
+  gap: 5px;
+}
+
+.navFlyoutGroupTitle {
+  padding: 0 4px;
+  color: color-mix(in srgb, var(--sidebar-text, #f3f4f6) 56%, transparent);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.navFlyoutList {
+  display: grid;
+  gap: 2px;
+}
+
+.navFlyoutItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--sidebar-text, #f3f4f6);
+  font-size: 13px;
+  font-weight: 560;
+  text-decoration: none;
+}
+
+.navFlyoutItem:hover,
+.navFlyoutItem:focus-visible {
+  background: color-mix(in srgb, var(--sidebar-text, #f3f4f6) 8%, transparent);
+  outline: none;
+}
+
+.navFlyoutItemActive {
+  border-color: color-mix(in srgb, var(--primary-start, #6366f1) 34%, transparent);
+  background: color-mix(in srgb, var(--primary-start, #6366f1) 14%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--primary-start, #6366f1) 84%, var(--focus, #6aa8ff));
+  font-weight: 700;
+}
+
+.navFlyoutItemDisabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.navFlyoutItemDisabled:hover {
+  background: transparent;
+}
+
+.navFlyoutItemDisabled small {
+  max-width: 130px;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--sidebar-text, #f3f4f6) 62%, transparent);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

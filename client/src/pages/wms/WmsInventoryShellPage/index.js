@@ -20,6 +20,16 @@ import {
   useListWarehousesQuery,
 } from '../../../store/rtk/wmsDocumentsApi';
 import { WMS_INVENTORY_TABS } from '../navigation/wmsUiNavigation';
+import InventoryLedgerReportPage from '../InventoryLedgerReportPage';
+import {
+  getWmsLocationMode,
+  getWmsLocationModeDescription,
+  getWmsLocationModeLabel,
+  isAdvancedLocationMode,
+} from '../locationsMode';
+import StockAsOfReportPage from '../StockAsOfReportPage';
+import StockTurnoverReportPage from '../StockTurnoverReportPage';
+import StockValuationReportPage from '../StockValuationReportPage';
 import {
   buildScopedInventoryQuery,
   filterInventoryRows,
@@ -38,6 +48,38 @@ const DRILL_TABS = [
   { key: 'serials', label: 'Serials' },
   { key: 'locations', label: 'Locations' },
 ];
+
+const REPORT_TABS = [
+  {
+    key: 'valuation',
+    label: 'Valuation',
+    description: 'Current FIFO stock value by product and warehouse.',
+    render: () => <StockValuationReportPage embedded />,
+  },
+  {
+    key: 'ledger',
+    label: 'Ledger',
+    description: 'Product movement ledger with running quantity and value.',
+    render: () => <InventoryLedgerReportPage embedded />,
+  },
+  {
+    key: 'as-of',
+    label: 'As-Of',
+    description: 'Historical stock snapshot at a selected date and time.',
+    render: () => <StockAsOfReportPage embedded />,
+  },
+  {
+    key: 'turnover',
+    label: 'Turnover',
+    description: 'Stock movement turnover over a selected period.',
+    render: () => <StockTurnoverReportPage embedded />,
+  },
+];
+
+function getInventoryReportTab(value) {
+  const normalized = String(value || '').toLowerCase();
+  return REPORT_TABS.some((tab) => tab.key === normalized) ? normalized : 'valuation';
+}
 
 function asText(value) {
   if (value === null || value === undefined) return '';
@@ -210,6 +252,32 @@ function InventoryToolbar({
   );
 }
 
+function InventoryReportsWorkspace({ activeReport }) {
+  const report = REPORT_TABS.find((tab) => tab.key === activeReport) || REPORT_TABS[0];
+
+  return (
+    <div className={s.reportsWorkspace}>
+      <div className={s.reportTabs} role="tablist" aria-label="Inventory report tabs">
+        {REPORT_TABS.map((tab) => (
+          <Link
+            key={tab.key}
+            to={`/main/wms/inventory?tab=reports&report=${tab.key}`}
+            className={`${s.reportTab} ${tab.key === report.key ? s.active : ''}`}
+            role="tab"
+            aria-selected={tab.key === report.key ? 'true' : 'false'}
+          >
+            <strong>{tab.label}</strong>
+            <span>{tab.description}</span>
+          </Link>
+        ))}
+      </div>
+      <div className={s.reportBody}>
+        {report.render()}
+      </div>
+    </div>
+  );
+}
+
 function DrillPanel({
   item,
   activeTab,
@@ -218,10 +286,13 @@ function DrillPanel({
   locale,
   navigate,
   queries,
+  locationMode,
 }) {
   if (!item) return null;
 
-  const selectedTab = DRILL_TABS.some((tab) => tab.key === activeTab) ? activeTab : 'movements';
+  const advancedLocations = isAdvancedLocationMode(locationMode);
+  const drillTabs = advancedLocations ? DRILL_TABS : DRILL_TABS.filter((tab) => tab.key !== 'locations');
+  const selectedTab = drillTabs.some((tab) => tab.key === activeTab) ? activeTab : 'movements';
   const query = queries[selectedTab];
   const loading = query?.isFetching && !query?.data;
   const error = query?.error;
@@ -336,7 +407,7 @@ function DrillPanel({
         </button>
       </div>
       <div className={s.drillTabs} role="tablist" aria-label="Item drill tabs">
-        {DRILL_TABS.map((tab) => (
+        {drillTabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
@@ -367,6 +438,7 @@ export default function WmsInventoryShellPage() {
   const [drillTab, setDrillTab] = useState('movements');
 
   const activeTab = getInventoryWorkspaceTab(searchParams.get('tab'));
+  const activeReport = getInventoryReportTab(searchParams.get('report'));
   const search = searchParams.get('search') || '';
   const warehouseId = searchParams.get('warehouseId') || '';
   const locale = i18n.language || 'en';
@@ -381,6 +453,13 @@ export default function WmsInventoryShellPage() {
   const locationsWarehouseId = activeTab === 'locations'
     ? warehouseId
     : selectedItem?.warehouseId || '';
+  const locationModeQuery = useListLocationsQuery({
+    page: 1,
+    limit: 200,
+    sort: 'code',
+    dir: 'ASC',
+    warehouseId: warehouseId || undefined,
+  });
 
   const balancesQuery = useGetStockBalancesQuery({
     warehouseId: warehouseId || undefined,
@@ -460,6 +539,16 @@ export default function WmsInventoryShellPage() {
     'type',
     'warehouseId',
   ]), [locationsQuery.data, search]);
+  const locationMode = useMemo(() => getWmsLocationMode({
+    locations: rowsFromListResponse(locationModeQuery.data),
+    warehouseId,
+  }), [locationModeQuery.data, warehouseId]);
+  const advancedLocations = isAdvancedLocationMode(locationMode);
+  const visibleInventoryTabs = useMemo(() => (
+    advancedLocations
+      ? WMS_INVENTORY_TABS
+      : WMS_INVENTORY_TABS.filter((tab) => tab.key !== 'locations')
+  ), [advancedLocations]);
 
   const retryActive = useCallback(() => {
     if (activeTab === 'balances') balancesQuery.refetch();
@@ -483,12 +572,7 @@ export default function WmsInventoryShellPage() {
 
   const renderActiveTab = () => {
     if (activeTab === 'reports') {
-      return (
-        <WmsEmptyState
-          title="Reports coming soon"
-          description="Inventory reports will live here when the final report workspace is ready."
-        />
-      );
+      return <InventoryReportsWorkspace activeReport={activeReport} />;
     }
 
     if (loading) return <WmsLoadingState title="Loading inventory" rows={7} />;
@@ -531,28 +615,31 @@ export default function WmsInventoryShellPage() {
     }
 
     if (activeTab === 'moves') {
+      const columns = [
+        { key: 'date', label: 'Date', render: (row) => formatDate(row.createdAt, locale) },
+        { key: 'type', label: 'Type', render: (row) => <WmsStatusChip status={row.type} size="sm" /> },
+        { key: 'product', label: 'Product', render: (row) => (
+          <InlineLinkButton onClick={row.productId ? () => navigate(`/main/products/${row.productId}`) : null}>
+            {productLabel(row)}
+          </InlineLinkButton>
+        ) },
+        ...(advancedLocations ? [
+          { key: 'from', label: 'From', render: (row) => locationLabel(row.fromLocation, row.fromLocationId) },
+          { key: 'to', label: 'To', render: (row) => locationLabel(row.toLocation, row.toLocationId) },
+        ] : []),
+        { key: 'qty', label: 'Qty', numeric: true, render: (row) => formatQty(row.qty, locale) },
+        { key: 'source', label: 'Document', render: (row) => {
+          const route = stockMoveSourceRoute(row);
+          return route ? <Link to={route} className={s.textLink}>{stockMoveSourceLabel(row)}</Link> : stockMoveSourceLabel(row);
+        } },
+      ];
       return (
         <DataTable
           rows={moves}
           rowKey={(row, index) => row.id || `move-${index}`}
           emptyTitle="No stock moves found"
           emptyDescription="Adjust warehouse or search filters."
-          columns={[
-            { key: 'date', label: 'Date', render: (row) => formatDate(row.createdAt, locale) },
-            { key: 'type', label: 'Type', render: (row) => <WmsStatusChip status={row.type} size="sm" /> },
-            { key: 'product', label: 'Product', render: (row) => (
-              <InlineLinkButton onClick={row.productId ? () => navigate(`/main/products/${row.productId}`) : null}>
-                {productLabel(row)}
-              </InlineLinkButton>
-            ) },
-            { key: 'from', label: 'From', render: (row) => locationLabel(row.fromLocation, row.fromLocationId) },
-            { key: 'to', label: 'To', render: (row) => locationLabel(row.toLocation, row.toLocationId) },
-            { key: 'qty', label: 'Qty', numeric: true, render: (row) => formatQty(row.qty, locale) },
-            { key: 'source', label: 'Document', render: (row) => {
-              const route = stockMoveSourceRoute(row);
-              return route ? <Link to={route} className={s.textLink}>{stockMoveSourceLabel(row)}</Link> : stockMoveSourceLabel(row);
-            } },
-          ]}
+          columns={columns}
         />
       );
     }
@@ -608,6 +695,15 @@ export default function WmsInventoryShellPage() {
       );
     }
 
+    if (activeTab === 'locations' && !advancedLocations) {
+      return (
+        <WmsEmptyState
+          title="Location management is disabled"
+          description="This warehouse uses warehouse-level stock, so location stock tables are hidden."
+        />
+      );
+    }
+
     if (!hasLocations(locations)) {
       return (
         <WmsEmptyState
@@ -642,6 +738,9 @@ export default function WmsInventoryShellPage() {
           <h1>Inventory</h1>
           <p>Balances, movements, reservations, lots, serials, locations and reports.</p>
         </div>
+        <div className={s.modePill} title={getWmsLocationModeDescription(locationMode)}>
+          {getWmsLocationModeLabel(locationMode)}
+        </div>
       </header>
 
       <InventoryToolbar
@@ -653,7 +752,7 @@ export default function WmsInventoryShellPage() {
       />
 
       <nav className={s.tabs} aria-label="Inventory tabs">
-        {WMS_INVENTORY_TABS.map((tab) => (
+        {visibleInventoryTabs.map((tab) => (
           <Link
             key={tab.key}
             to={tab.to}
@@ -683,6 +782,7 @@ export default function WmsInventoryShellPage() {
             serials: drillSerialsQuery,
             locations: locationsQuery,
           }}
+          locationMode={locationMode}
         />
       </div>
     </div>

@@ -175,6 +175,36 @@ function mapReceiptToShellDraft(receipt = {}, config = {}) {
   };
 }
 
+function mapReceiptToShellPosted(receipt = {}, config = {}) {
+  const items = Array.isArray(receipt.items) ? receipt.items : [];
+  return {
+    header: {
+      warehouseId: asText(receipt.warehouseId),
+      inboundLocationId: asText(receipt.inboundLocationId || receipt.locationId),
+      counterpartyId: asText(
+        receipt.counterparty?.name
+        || receipt.supplier?.name
+        || receipt.counterpartyName
+        || receipt.supplierName
+        || receipt.counterpartyId
+      ),
+      sourceRef: asText(
+        receipt.sourceRef
+        || receipt.sourceReference
+        || receipt.sourceDocumentNumber
+        || receipt.purchaseOrderNumber
+        || receipt.orderNumber
+        || receipt.source?.number
+        || receipt.order?.number
+      ),
+      issueDate: asText(receipt.issueDate || receipt.createdAt || '').slice(0, 10),
+      documentNumber: asText(receipt.number || receipt.documentNumber || receipt.code || receipt.id),
+      status: asText(receipt.status),
+    },
+    rows: items.map((item, index) => mapReceiptItemToPzRow(item, index, config)),
+  };
+}
+
 const rowControllerModel = {
   areDraftItemSnapshotsEqual,
   asNumber,
@@ -190,6 +220,7 @@ const rowControllerModel = {
   mapProductPickerRowToPzRowPatch,
   mapReceiptItemToPzRow,
   mapReceiptToShellDraft,
+  mapReceiptToShellPosted,
   normalizeProductPickerRows,
   normalizeRows,
   round4,
@@ -210,6 +241,7 @@ export {
   mapProductPickerRowToPzRowPatch,
   mapReceiptItemToPzRow,
   mapReceiptToShellDraft,
+  mapReceiptToShellPosted,
   normalizeProductPickerRows,
   normalizeRows,
   round4,

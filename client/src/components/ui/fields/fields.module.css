@@ -1,0 +1,355 @@
+/* ============================================================
+   ui/fields — единый слой form field компонентов (Phase 1).
+   Стили опираются на токены из styles/theme.css и styles/forms.css.
+   Базовый вид input/select/textarea задаётся ГЛОБАЛЬНО в forms.css —
+   здесь только оболочка поля, состояния и раскладка (без redesign).
+   CSS module only. Dark/light — через те же CSS variables.
+   ============================================================ */
+
+/* ---------- Оболочка поля ---------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-xs, 6px);
+  min-width: 0;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+/* ---------- Label ---------- */
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--label-text, var(--text-2));
+  font-size: var(--font-size-12);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.req {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ---------- Description (подсказка над контролом) ---------- */
+.description {
+  color: var(--text-3, var(--text-2));
+  font-size: var(--font-size-12);
+  line-height: var(--lh-comfy, 1.4);
+}
+
+/* ---------- Контрол + адорнменты ---------- */
+.controlWrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.controlWrap > :not(.adornLeft):not(.adornRight) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.adornLeft,
+.adornRight {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.adornLeft {
+  left: 12px;
+}
+
+.adornRight {
+  right: 12px;
+}
+
+/* у адорнмента-кнопки (clear) должны быть клики */
+.adornRight button,
+.adornLeft button {
+  pointer-events: auto;
+}
+
+.clearBtn,
+.adornBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px;
+  min-height: 0;
+  border-radius: 6px;
+  box-shadow: none;
+}
+.clearBtn:hover,
+.adornBtn:hover {
+  color: var(--text-1);
+  background: var(--ui-surface-hover);
+}
+.adornBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* текстовый префикс/суффикс (валюта, %, единицы) */
+.affix {
+  color: var(--text-2);
+  font-size: var(--font-size-13, var(--font-size-14));
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* отступ под иконку — descendant, чтобы перебить глобальный padding инпута */
+.field.hasLeftIcon .controlWrap input:not([type="checkbox"]):not([type="radio"]) {
+  padding-left: 38px;
+}
+.field.hasRightIcon .controlWrap input:not([type="checkbox"]):not([type="radio"]) {
+  padding-right: 38px;
+}
+
+/* ---------- Размеры (descendant перебивает глобальный input[type=...]) ---------- */
+.field[data-size="sm"] .controlWrap input:not([type="checkbox"]):not([type="radio"]),
+.field[data-size="sm"] .controlWrap textarea,
+.field[data-size="sm"] .controlWrap select {
+  min-height: var(--ui-control-height-sm);
+  padding-top: calc(var(--ui-control-padding-y) - 2px);
+  padding-bottom: calc(var(--ui-control-padding-y) - 2px);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-13, var(--font-size-14));
+}
+
+.field[data-size="lg"] .controlWrap input:not([type="checkbox"]):not([type="radio"]),
+.field[data-size="lg"] .controlWrap textarea,
+.field[data-size="lg"] .controlWrap select {
+  min-height: var(--ui-control-height-lg);
+  padding-top: calc(var(--ui-control-padding-y) + 3px);
+  padding-bottom: calc(var(--ui-control-padding-y) + 3px);
+  border-radius: var(--radius-lg);
+}
+
+/* ---------- Состояние ошибки (перебивает глобальный focus) ---------- */
+.field.invalid .controlWrap input:not([type="checkbox"]):not([type="radio"]),
+.field.invalid .controlWrap textarea,
+.field.invalid .controlWrap select {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-weak),
+    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+}
+
+.field.invalid .controlWrap input[type="checkbox"],
+.field.invalid .controlWrap input[type="radio"] {
+  outline: 2px solid var(--danger);
+  outline-offset: 1px;
+}
+
+/* ---------- Disabled / loading ---------- */
+.field[data-disabled="true"] .label {
+  opacity: 0.6;
+}
+
+.field[data-loading="true"] .controlWrap {
+  cursor: progress;
+}
+
+/* ---------- Helper / error / counter ---------- */
+.helpRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gap-sm, 10px);
+  min-height: 0;
+}
+
+.helper {
+  color: var(--text-2);
+  font-size: var(--font-size-12);
+  line-height: var(--lh-comfy, 1.4);
+}
+
+.error {
+  color: var(--danger);
+  font-size: var(--font-size-12);
+  line-height: var(--lh-comfy, 1.4);
+}
+
+.counter {
+  margin-left: auto;
+  color: var(--text-3, var(--text-2));
+  font-size: var(--font-size-12);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Checkbox / inline label ---------- */
+.checkboxLine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-sm, 10px);
+  cursor: pointer;
+  color: var(--text-1);
+  font-size: var(--font-size-14);
+  user-select: none;
+}
+.checkboxLine input[type="checkbox"],
+.checkboxLine input[type="radio"] {
+  flex: 0 0 auto;
+}
+.field[data-disabled="true"] .checkboxLine {
+  cursor: not-allowed;
+  opacity: 0.64;
+}
+
+/* ---------- File input ---------- */
+.fileInput {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: var(--ui-control-height-md);
+  padding: calc(var(--ui-control-padding-y) - 2px) var(--ui-control-padding-x);
+  border-radius: var(--radius-md);
+  background: var(--ui-field-bg);
+  border: 1px solid var(--ui-field-border);
+  color: var(--text-1);
+  font-size: var(--font-size-14);
+  cursor: pointer;
+}
+.fileInput:hover {
+  border-color: var(--ui-field-border-hover);
+  background: var(--ui-field-bg-hover);
+}
+.fileInput:focus {
+  outline: none;
+  border-color: var(--ui-field-border-focus);
+  box-shadow: var(--ui-focus-ring);
+}
+.fileInput:disabled {
+  opacity: 0.64;
+  cursor: not-allowed;
+}
+.fileInput::file-selector-button {
+  margin-right: 10px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--ui-border-soft);
+  background: var(--ui-surface-2);
+  color: var(--ui-text-1);
+  cursor: pointer;
+  font: inherit;
+}
+
+/* ---------- Spinner ---------- */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--text-2) 40%, transparent);
+  border-top-color: var(--accent);
+  animation: fieldSpin 0.7s linear infinite;
+}
+
+@keyframes fieldSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================
+   FieldsGrid — отзывчивая сетка форм
+   ============================================================ */
+.grid {
+  display: grid;
+  gap: var(--gap-md, 14px);
+  grid-template-columns: repeat(var(--fields-grid-cols, 2), minmax(0, 1fr));
+}
+
+/* на узких экранах — одна колонка */
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ============================================================
+   FormSection — секция формы
+   ============================================================ */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md, 14px);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gap-md, 14px);
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--text-1);
+  font-size: var(--font-size-15, var(--font-size-14));
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.sectionSub {
+  margin: 2px 0 0;
+  color: var(--text-2);
+  font-size: var(--font-size-12);
+  line-height: var(--lh-comfy, 1.4);
+}
+
+.sectionActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-sm, 10px);
+  flex: 0 0 auto;
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md, 14px);
+}
+
+.section.compact {
+  gap: var(--gap-sm, 10px);
+}
+.section.compact .sectionBody {
+  gap: var(--gap-sm, 10px);
+}
+
+/* ============================================================
+   FormActions — блок кнопок формы
+   ============================================================ */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm, 10px);
+  margin-top: var(--gap-sm, 10px);
+}
+.alignRight {
+  justify-content: flex-end;
+}
+.alignLeft {
+  justify-content: flex-start;
+}
+.alignBetween {
+  justify-content: space-between;
+}

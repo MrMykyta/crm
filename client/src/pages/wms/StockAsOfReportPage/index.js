@@ -78,7 +78,7 @@ function rowKey(row, groupBy) {
   ].join('-');
 }
 
-export default function StockAsOfReportPage() {
+export default function StockAsOfReportPage({ embedded = false }) {
   const { t, i18n } = useTranslation();
   const [filters, setFilters] = useState({
     asOf: currentLocalDateTime(),
@@ -150,7 +150,7 @@ export default function StockAsOfReportPage() {
   };
 
   return (
-    <div className={s.page}>
+    <div className={`${s.page} ${embedded ? s.embedded : ''}`}>
       <header className={s.header}>
         <div>
           <h1 className={s.title}>{t('wms.stockAsOf.title', 'Stan magazynu na dzień')}</h1>

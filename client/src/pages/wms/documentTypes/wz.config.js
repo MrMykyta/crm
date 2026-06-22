@@ -12,6 +12,7 @@ const wzConfig = {
       { key: 'fromLocationId', labelKey: 'wms.locationOptional.fromLabel', type: 'locationSelect', requiredFor: [], source: 'warehouseLocations', optionalHintKey: 'wms.locationOptional.warehouseLevelStock' },
       { key: 'counterpartyId', labelKey: 'wms.shipments.new.counterparty', type: 'counterpartySelect', requiredFor: [] },
       { key: 'orderId', labelKey: 'wms.shipments.new.order', type: 'orderSelect', requiredFor: [] },
+      { key: 'issueDate', labelKey: 'wms.fields.date', type: 'date', requiredFor: [] },
       { key: 'notes', labelKey: 'wms.shipments.new.notes', type: 'textarea', requiredFor: [], todo: 'Notes are visible in create UI but not persisted in the current shipment payload.' },
     ],
   },

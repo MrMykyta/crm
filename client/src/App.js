@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import { useEffect, lazy, Suspense } from "react";
 import { Provider, useSelector, useDispatch } from "react-redux";
 import store, { startRealtime } from "./store";
@@ -53,7 +53,7 @@ import DocumentCreatePage from "./pages/documents/DocumentCreatePage";
 import DocumentDetailsPage from "./pages/documents/DocumentDetailsPage";
 import DocumentsListPage from "./pages/documents/DocumentsListPage";
 import ComingSoonPage from "./components/common/ComingSoonPage/ComingSoonPage";
-import { isWmsUiDocumentsEnabled, isWmsUiNavEnabled } from "./config/featureFlags";
+import WarehousePrintPage from "./pages/wms/WarehousePrintPage";
 import {
   getWmsDocumentsLegacyRoute,
   getWmsInventoryLegacyRoute,
@@ -68,32 +68,18 @@ const InvoiceDetailPage = lazy(() => import('./pages/oms/Invoices/InvoiceDetailP
 const OrderEditorPage = lazy(() => import('./pages/oms/Orders/OrderEditorPage'));
 const OfferDetailPage = lazy(() => import('./pages/oms/Offers/OfferDetailPage'));
 const OfferEditorPage = lazy(() => import('./pages/oms/Offers/OfferEditorPage'));
-const WmsOverviewPage = lazy(() => import('./pages/wms/WmsOverviewPage'));
-const StockValuationReportPage = lazy(() => import('./pages/wms/StockValuationReportPage'));
-const StockTurnoverReportPage = lazy(() => import('./pages/wms/StockTurnoverReportPage'));
-const StockAsOfReportPage = lazy(() => import('./pages/wms/StockAsOfReportPage'));
-const InventoryLedgerReportPage = lazy(() => import('./pages/wms/InventoryLedgerReportPage'));
-const ReceiptsListPage = lazy(() => import('./pages/wms/ReceiptsListPage'));
-const TransfersListPage = lazy(() => import('./pages/wms/TransfersListPage'));
-const ShipmentsListPage = lazy(() => import('./pages/wms/ShipmentsListPage'));
 const ReceiptDetailPage = lazy(() => import('./pages/wms/ReceiptDetailPage'));
 const TransferDetailPage = lazy(() => import('./pages/wms/TransferDetailPage'));
 const ShipmentDetailPage = lazy(() => import('./pages/wms/ShipmentDetailPage'));
-const AdjustmentsListPage = lazy(() => import('./pages/wms/AdjustmentsListPage'));
 const AdjustmentDetailPage = lazy(() => import('./pages/wms/AdjustmentDetailPage'));
 const ReceiptCreatePage = lazy(() => import('./pages/wms/ReceiptCreatePage'));
 const AdjustmentCreatePage = lazy(() => import('./pages/wms/AdjustmentCreatePage'));
 const TransferCreatePage = lazy(() => import('./pages/wms/TransferCreatePage'));
-const CycleCountsListPage = lazy(() => import('./pages/wms/CycleCountsListPage'));
 const CycleCountCreatePage = lazy(() => import('./pages/wms/CycleCountCreatePage'));
 const CycleCountDetailPage = lazy(() => import('./pages/wms/CycleCountDetailPage'));
-const WarehousePrintPage = lazy(() => import('./pages/wms/WarehousePrintPage'));
 const WmsDocumentsPage = lazy(() => import('./pages/wms/WmsDocumentsPage'));
 const WmsInventoryShellPage = lazy(() => import('./pages/wms/WmsInventoryShellPage'));
 const WmsSetupShellPage = lazy(() => import('./pages/wms/WmsSetupShellPage'));
-const WarehousesPage = lazy(() => import('./pages/wms/WarehousesPage'));
-const LocationsPage = lazy(() => import('./pages/wms/LocationsPage'));
-const ParcelsPage = lazy(() => import('./pages/wms/ParcelsPage'));
 const PicksPage = lazy(() => import('./pages/wms/PicksPage'));
 const ShipmentCreatePage = lazy(() => import('./pages/wms/ShipmentCreatePage'));
 
@@ -103,17 +89,16 @@ const LazyPage = ({ children }) => (
   </Suspense>
 );
 
-const WmsNavRoute = ({ to, children }) => (
-  isWmsUiNavEnabled() ? <Navigate to={to} replace /> : children
-);
-
-const WmsDocumentsRoute = ({ to, children }) => (
-  isWmsUiNavEnabled() || isWmsUiDocumentsEnabled() ? <Navigate to={to} replace /> : children
-);
-
-const WmsCycleCountDocumentsRoute = ({ children }) => (
-  isWmsUiDocumentsEnabled() ? <Navigate to="/main/wms/documents?type=CC" replace /> : children
-);
+const WmsParcelsRoute = () => {
+  const [searchParams] = useSearchParams();
+  const shipmentId = searchParams.get('shipmentId');
+  return (
+    <Navigate
+      to={shipmentId ? `/main/wms/shipments/${shipmentId}` : '/main/wms/documents?type=WZ'}
+      replace
+    />
+  );
+};
 
 // ===== Protected
 const Protected = ({ children }) => {
@@ -266,42 +251,44 @@ function AppShell() {
           <Route path="pim/services" element={<ComingSoonPage titleKey="menu.services" fallbackTitle="Services" moduleName="pim.services" />} />
 
           {/* Workspace Views entry point — same page for all ?view= values. */}
-          <Route path="wms" element={<LazyPage><WmsNavRoute to="/main/wms/documents"><WmsOverviewPage /></WmsNavRoute></LazyPage>} />
+          <Route path="wms" element={<Navigate to="/main/wms/documents" replace />} />
           <Route path="wms/documents" element={<LazyPage><WmsDocumentsPage /></LazyPage>} />
           <Route path="wms/inventory" element={<LazyPage><WmsInventoryShellPage /></LazyPage>} />
           <Route path="wms/setup" element={<LazyPage><WmsSetupShellPage /></LazyPage>} />
           <Route path="wms/stock-balances" element={<Navigate to={getWmsInventoryLegacyRoute('balances')} replace />} />
           <Route path="wms/stock-moves" element={<Navigate to={getWmsInventoryLegacyRoute('stock-moves')} replace />} />
-          <Route path="wms/warehouses" element={<LazyPage><WmsNavRoute to={getWmsSetupLegacyRoute('warehouses')}><WarehousesPage /></WmsNavRoute></LazyPage>} />
-          <Route path="wms/locations" element={<LazyPage><WmsNavRoute to={getWmsSetupLegacyRoute('locations')}><LocationsPage /></WmsNavRoute></LazyPage>} />
+          <Route path="wms/warehouses" element={<Navigate to={getWmsSetupLegacyRoute('warehouses')} replace />} />
+          <Route path="wms/locations" element={<Navigate to={getWmsSetupLegacyRoute('locations')} replace />} />
           <Route path="wms/reservations" element={<Navigate to={getWmsInventoryLegacyRoute('reservations')} replace />} />
           <Route path="wms/lots" element={<Navigate to={getWmsInventoryLegacyRoute('lots')} replace />} />
           <Route path="wms/serials" element={<Navigate to={getWmsInventoryLegacyRoute('serials')} replace />} />
-          <Route path="wms/parcels" element={<LazyPage><ParcelsPage /></LazyPage>} />
+          <Route path="wms/parcels" element={<WmsParcelsRoute />} />
           <Route path="wms/picks" element={<LazyPage><PicksPage /></LazyPage>} />
-          <Route path="wms/reports/stock-valuation" element={<LazyPage><WmsNavRoute to={getWmsInventoryLegacyRoute('reports')}><StockValuationReportPage /></WmsNavRoute></LazyPage>} />
-          <Route path="wms/reports/stock-turnover" element={<LazyPage><StockTurnoverReportPage /></LazyPage>} />
-          <Route path="wms/reports/stock-as-of" element={<LazyPage><StockAsOfReportPage /></LazyPage>} />
-          <Route path="wms/reports/inventory-ledger" element={<LazyPage><InventoryLedgerReportPage /></LazyPage>} />
-          <Route path="wms/receipts" element={<LazyPage><WmsDocumentsRoute to={getWmsDocumentsLegacyRoute('receipts')}><ReceiptsListPage /></WmsDocumentsRoute></LazyPage>} />
+          <Route path="wms/reports/stock-valuation" element={<Navigate to="/main/wms/inventory?tab=reports&report=valuation" replace />} />
+          <Route path="wms/reports/stock-turnover" element={<Navigate to="/main/wms/inventory?tab=reports&report=turnover" replace />} />
+          <Route path="wms/reports/stock-as-of" element={<Navigate to="/main/wms/inventory?tab=reports&report=as-of" replace />} />
+          <Route path="wms/reports/inventory-ledger" element={<Navigate to="/main/wms/inventory?tab=reports&report=ledger" replace />} />
+          <Route path="wms/receipts" element={<Navigate to={getWmsDocumentsLegacyRoute('receipts')} replace />} />
           <Route path="wms/receipts/new" element={<LazyPage><ReceiptCreatePage /></LazyPage>} />
-          <Route path="wms/receipts/:id/print" element={<LazyPage><WarehousePrintPage kind="receipt" /></LazyPage>} />
+          <Route path="wms/receipts/:id/correction" element={<LazyPage><ReceiptDetailPage /></LazyPage>} />
+          <Route path="wms/receipts/:id/print" element={<WarehousePrintPage kind="receipt" />} />
           <Route path="wms/receipts/:id" element={<LazyPage><ReceiptDetailPage /></LazyPage>} />
-          <Route path="wms/transfers" element={<LazyPage><WmsDocumentsRoute to={getWmsDocumentsLegacyRoute('transfers')}><TransfersListPage /></WmsDocumentsRoute></LazyPage>} />
+          <Route path="wms/transfers" element={<Navigate to={getWmsDocumentsLegacyRoute('transfers')} replace />} />
           <Route path="wms/transfers/new" element={<LazyPage><TransferCreatePage /></LazyPage>} />
-          <Route path="wms/transfers/:id/print" element={<LazyPage><WarehousePrintPage kind="transfer" /></LazyPage>} />
+          <Route path="wms/transfers/:id/print" element={<WarehousePrintPage kind="transfer" />} />
           <Route path="wms/transfers/:id" element={<LazyPage><TransferDetailPage /></LazyPage>} />
-          <Route path="wms/shipments" element={<LazyPage><WmsDocumentsRoute to={getWmsDocumentsLegacyRoute('shipments')}><ShipmentsListPage /></WmsDocumentsRoute></LazyPage>} />
+          <Route path="wms/shipments" element={<Navigate to={getWmsDocumentsLegacyRoute('shipments')} replace />} />
           <Route path="wms/shipments/new" element={<LazyPage><ShipmentCreatePage /></LazyPage>} />
-          <Route path="wms/shipments/:id/print" element={<LazyPage><WarehousePrintPage kind="shipment" /></LazyPage>} />
+          <Route path="wms/shipments/:id/correction" element={<LazyPage><ShipmentDetailPage /></LazyPage>} />
+          <Route path="wms/shipments/:id/print" element={<WarehousePrintPage kind="shipment" />} />
           <Route path="wms/shipments/:id" element={<LazyPage><ShipmentDetailPage /></LazyPage>} />
-          <Route path="wms/adjustments" element={<LazyPage><WmsDocumentsRoute to={getWmsDocumentsLegacyRoute('adjustments')}><AdjustmentsListPage /></WmsDocumentsRoute></LazyPage>} />
+          <Route path="wms/adjustments" element={<Navigate to="/main/wms/documents" replace />} />
           <Route path="wms/adjustments/new" element={<LazyPage><AdjustmentCreatePage /></LazyPage>} />
-          <Route path="wms/adjustments/:id/print" element={<LazyPage><WarehousePrintPage kind="adjustment" /></LazyPage>} />
+          <Route path="wms/adjustments/:id/print" element={<WarehousePrintPage kind="adjustment" />} />
           <Route path="wms/adjustments/:id" element={<LazyPage><AdjustmentDetailPage /></LazyPage>} />
-          <Route path="wms/cycle-counts" element={<LazyPage><WmsCycleCountDocumentsRoute><CycleCountsListPage /></WmsCycleCountDocumentsRoute></LazyPage>} />
+          <Route path="wms/cycle-counts" element={<Navigate to="/main/wms/documents?type=CC" replace />} />
           <Route path="wms/cycle-counts/new" element={<LazyPage><CycleCountCreatePage /></LazyPage>} />
-          <Route path="wms/cycle-counts/:id/print" element={<LazyPage><WarehousePrintPage kind="cycleCount" /></LazyPage>} />
+          <Route path="wms/cycle-counts/:id/print" element={<WarehousePrintPage kind="cycleCount" />} />
           <Route path="wms/cycle-counts/:id" element={<LazyPage><CycleCountDetailPage /></LazyPage>} />
 
           <Route path="company-users" element={<CompanyUsers />} />

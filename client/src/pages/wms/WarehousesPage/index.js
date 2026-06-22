@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import AddButton from '../../../components/buttons/AddButton/AddButton';
 import FilterToolbar from '../../../components/filters/FilterToolbar';
 import ListPage from '../../../components/data/ListPage';
-import Modal from '../../../components/Modal';
 import { createWmsWarehousesColumns } from '../../../components/data/ListPage/columnSchemas/wmsWarehousesColumns';
 import useAclPermissions from '../../../hooks/useAclPermissions';
 import useGridPrefs from '../../../hooks/useGridPrefs';
@@ -12,6 +11,7 @@ import {
   useCreateWarehouseMutation,
   useUpdateWarehouseMutation,
 } from '../../../store/rtk/wmsDocumentsApi';
+import SetupSidePanel from '../SetupSidePanel';
 import s from '../WmsMasterDataPage.module.css';
 
 function emptyForm() {
@@ -85,6 +85,7 @@ export default function WarehousesPage() {
       else await createWarehouse(payload).unwrap();
       setModalOpen(false);
       setForm(emptyForm());
+      setErrorText('');
     } catch (error) {
       setErrorText(getErrorText(error, t('wms.warehouses.errors.save', 'Failed to save warehouse.')));
     }
@@ -124,88 +125,115 @@ export default function WarehousesPage() {
     );
   }
 
+  const closeEditor = () => {
+    if (saving) return;
+    setModalOpen(false);
+    setErrorText('');
+  };
+
+  const editorTitle = form.id
+    ? t('wms.warehouses.actions.edit', 'Edit warehouse')
+    : t('wms.warehouses.actions.create', 'Create warehouse');
+
+  const formContent = (
+    <>
+      <div className={s.formGrid}>
+        <label>
+          <span>{t('wms.fields.code', 'Code')}</span>
+          <input value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))} />
+        </label>
+        <label>
+          <span>{t('wms.fields.name', 'Name')}</span>
+          <input value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
+        </label>
+        <label className={s.checkboxRow}>
+          <input
+            type="checkbox"
+            checked={Boolean(form.isActive)}
+            onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))}
+          />
+          <span>{t('wms.fields.isActive', 'Active')}</span>
+        </label>
+      </div>
+      {errorText ? <div className={s.feedback}>{errorText}</div> : null}
+    </>
+  );
+
   return (
     <>
-      <ListPage
-        source="wmsWarehouses"
-        title={t('wms.warehouses.title', 'Warehouses')}
-        columns={columns}
-        defaultQuery={{ limit: 25, sort: 'code', dir: 'ASC' }}
-        emptyStateText={t('wms.warehouses.empty', 'No warehouses found')}
-        actions={canManage ? (
-          <AddButton onClick={openCreate}>{t('wms.warehouses.actions.create', 'Create warehouse')}</AddButton>
-        ) : null}
-        rowActions={canManage ? (row) => (
-          <div className={s.rowActions}>
-            <button type="button" className={s.actionButton} onClick={() => openEdit(row)}>
-              {t('common.edit', 'Edit')}
-            </button>
-            <button type="button" className={s.actionButton} onClick={() => toggleActive(row)}>
-              {row?.isActive === false
-                ? t('wms.actions.activate', 'Activate')
-                : t('wms.actions.deactivate', 'Deactivate')}
-            </button>
-          </div>
-        ) : null}
-        columnWidths={colWidths}
-        onColumnResize={onColumnResize}
-        columnOrder={colOrder}
-        onColumnOrderChange={onColumnOrderChange}
-        columnVisibility={colVisibility}
-        onColumnVisibilityChange={onColumnVisibilityChange}
-        savedViews={savedViews}
-        activeViewId={activeViewId}
-        onSavedViewsChange={onSavedViewsChange}
-        onActiveViewChange={onActiveViewChange}
-        onResetColumns={resetGridPrefs}
-        ToolbarComponent={(props) => (
-          <FilterToolbar
-            {...props}
-            controls={[{
-              type: 'search',
-              key: 'search',
-              placeholder: t('wms.warehouses.search', 'Search by code or name...'),
-              debounce: 350,
-            }]}
-          />
-        )}
-      />
-
-      <Modal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={form.id
-          ? t('wms.warehouses.actions.edit', 'Edit warehouse')
-          : t('wms.warehouses.actions.create', 'Create warehouse')}
-        footer={(
-          <div className={s.modalFooter}>
-            <Modal.Button onClick={() => setModalOpen(false)}>{t('common.cancel', 'Cancel')}</Modal.Button>
-            <Modal.Button variant="primary" onClick={saveWarehouse} disabled={saving}>
-              {saving ? t('common.saving', 'Saving...') : t('common.save', 'Save')}
-            </Modal.Button>
-          </div>
-        )}
+      <div className={[
+        s.setupCrudLayout,
+        canManage ? '' : s.setupCrudLayoutNoPanel,
+      ].filter(Boolean).join(' ')}
       >
-        <div className={s.formGrid}>
-          <label>
-            <span>{t('wms.fields.code', 'Code')}</span>
-            <input value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))} />
-          </label>
-          <label>
-            <span>{t('wms.fields.name', 'Name')}</span>
-            <input value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
-          </label>
-          <label className={s.checkboxRow}>
-            <input
-              type="checkbox"
-              checked={Boolean(form.isActive)}
-              onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))}
-            />
-            <span>{t('wms.fields.isActive', 'Active')}</span>
-          </label>
+        <div className={s.setupListPane}>
+          <ListPage
+            source="wmsWarehouses"
+            title={t('wms.warehouses.title', 'Warehouses')}
+            columns={columns}
+            defaultQuery={{ limit: 25, sort: 'code', dir: 'ASC' }}
+            emptyStateText={t('wms.warehouses.empty', 'No warehouses found')}
+            actions={canManage ? (
+              <AddButton onClick={openCreate}>{t('wms.warehouses.actions.create', 'Create warehouse')}</AddButton>
+            ) : null}
+            rowActions={canManage ? (row) => (
+              <div className={s.rowActions}>
+                <button type="button" className={s.actionButton} onClick={() => openEdit(row)}>
+                  {t('common.edit', 'Edit')}
+                </button>
+                <button type="button" className={s.actionButton} onClick={() => toggleActive(row)}>
+                  {row?.isActive === false
+                    ? t('wms.actions.activate', 'Activate')
+                    : t('wms.actions.deactivate', 'Deactivate')}
+                </button>
+              </div>
+            ) : null}
+            columnWidths={colWidths}
+            onColumnResize={onColumnResize}
+            columnOrder={colOrder}
+            onColumnOrderChange={onColumnOrderChange}
+            columnVisibility={colVisibility}
+            onColumnVisibilityChange={onColumnVisibilityChange}
+            savedViews={savedViews}
+            activeViewId={activeViewId}
+            onSavedViewsChange={onSavedViewsChange}
+            onActiveViewChange={onActiveViewChange}
+            onResetColumns={resetGridPrefs}
+            ToolbarComponent={(props) => (
+              <FilterToolbar
+                {...props}
+                controls={[{
+                  type: 'search',
+                  key: 'search',
+                  placeholder: t('wms.warehouses.search', 'Search by code or name...'),
+                  debounce: 350,
+                }]}
+              />
+            )}
+          />
         </div>
-        {errorText ? <div className={s.feedback}>{errorText}</div> : null}
-      </Modal>
+
+        {canManage ? (
+          <SetupSidePanel
+            open={modalOpen}
+            title={editorTitle}
+            subtitle={form.id
+              ? t('wms.warehouses.drawer.editSubtitle', 'Update the warehouse code, name or active state.')
+              : t('wms.warehouses.drawer.createSubtitle', 'Create a warehouse that can be used as the main WMS context.')}
+            onCancel={closeEditor}
+            onSave={saveWarehouse}
+            saving={saving}
+            saveLabel={t('common.save', 'Save')}
+            savingLabel={t('common.saving', 'Saving...')}
+            cancelLabel={t('common.cancel', 'Cancel')}
+            emptyTitle={t('wms.warehouses.drawer.emptyTitle', 'Warehouse editor')}
+            emptyText={t('wms.warehouses.drawer.emptyText', 'Create a warehouse or edit a row without leaving the setup list.')}
+          >
+            {formContent}
+          </SetupSidePanel>
+        ) : null}
+      </div>
+
     </>
   );
 }

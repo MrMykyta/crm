@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import useAclPermissions from '../../../hooks/useAclPermissions';
 import {
   useGetAdjustmentByIdQuery,
+  useGetAdjustmentStockMovesQuery,
   useListLocationsQuery,
   useListWarehousesQuery,
   usePostAdjustmentMutation,
@@ -11,6 +12,7 @@ import {
 import WarehouseDocumentDetailPage from '../WarehouseDocumentDetailPage';
 import { pwConfig, rwConfig } from '../documentTypes';
 import { createAdjustmentShellAdapter } from './createAdjustmentShellAdapter';
+import { mapAdjustmentToShellPosted } from './postedViewMappers';
 import WmsDocumentShell from './WmsDocumentShell';
 
 function asText(value) {
@@ -41,10 +43,15 @@ export default function AdjustmentPostShellPage() {
   const navigate = useNavigate();
   const permissions = useAclPermissions();
   const [postAdjustment] = usePostAdjustmentMutation();
+  const adjustmentHistoryArgs = useMemo(() => ({ id, page: 1, limit: 200 }), [id]);
 
   const adjustmentQuery = useGetAdjustmentByIdQuery(id, {
     skip: !id,
     refetchOnMountOrArgChange: true,
+  });
+  const adjustmentHistoryQuery = useGetAdjustmentStockMovesQuery(adjustmentHistoryArgs, {
+    skip: !id,
+    refetchOnMountOrArgChange: false,
   });
   const { data: warehousesData } = useListWarehousesQuery({
     limit: 200,
@@ -61,6 +68,7 @@ export default function AdjustmentPostShellPage() {
   const status = asText(adjustment?.status).toLowerCase();
   const documentType = asText(adjustment?.documentType).toUpperCase();
   const config = documentType === 'RW' ? rwConfig : pwConfig;
+  const isPostedAdjustment = status === 'posted';
 
   const adapter = useMemo(() => createAdjustmentShellAdapter({
     triggers: {
@@ -77,6 +85,10 @@ export default function AdjustmentPostShellPage() {
     const items = Array.isArray(adjustment?.items) ? adjustment.items : [];
     return items.map(mapAdjustmentItemToShellRow);
   }, [adjustment?.items]);
+
+  const historyItems = useMemo(() => (
+    Array.isArray(adjustmentHistoryQuery.data?.items) ? adjustmentHistoryQuery.data.items : []
+  ), [adjustmentHistoryQuery.data?.items]);
 
   const firstItem = Array.isArray(adjustment?.items) ? adjustment.items[0] : null;
   const initialHeader = useMemo(() => ({
@@ -95,11 +107,45 @@ export default function AdjustmentPostShellPage() {
     firstItem?.locationId,
   ]);
 
+  const postedModel = useMemo(
+    () => mapAdjustmentToShellPosted(adjustment || {}, config),
+    [adjustment, config]
+  );
+
   if (adjustmentQuery.isLoading || (adjustmentQuery.isFetching && !adjustment)) {
     return <div style={{ padding: 24 }}>Loading adjustment...</div>;
   }
 
-  if (adjustmentQuery.isError || !adjustment || status !== 'draft') {
+  if (adjustmentQuery.isError || !adjustment) {
+    return <WarehouseDocumentDetailPage kind="adjustment" />;
+  }
+
+  if (isPostedAdjustment) {
+    return (
+      <WmsDocumentShell
+        config={config}
+        mode="posted"
+        documentId={id}
+        adapter={adapter}
+        initialHeader={postedModel.header}
+        initialRows={postedModel.rows}
+        originalHeader={postedModel.header}
+        originalRows={postedModel.rows}
+        resetKey={`${id}:posted:${status}:${historyItems.length}`}
+        warehouses={warehousesData?.items || []}
+        locations={locationsData?.items || []}
+        postedMeta={{
+          documentNumber: postedModel.header.documentNumber,
+          status: postedModel.header.status,
+        }}
+        printUrl={`/main/wms/adjustments/${id}/print`}
+        stockMoves={historyItems}
+        onCancel={() => navigate(`/main/wms/documents?type=${config.type}`)}
+      />
+    );
+  }
+
+  if (status !== 'draft') {
     return <WarehouseDocumentDetailPage kind="adjustment" />;
   }
 

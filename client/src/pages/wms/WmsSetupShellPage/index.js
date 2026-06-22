@@ -1,26 +1,14 @@
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import LocationsPage from '../LocationsPage';
 import WarehousesPage from '../WarehousesPage';
 import WmsSectionTabs from '../navigation/WmsSectionTabs';
 import { WMS_SETUP_TABS, normalizeWmsTab } from '../navigation/wmsUiNavigation';
-import s from './WmsSetupShellPage.module.css';
-
-function SettingsPanel() {
-  return (
-    <div className={s.panel}>
-      <h2>Settings</h2>
-      <p>WMS settings are managed in the existing company settings page.</p>
-      <Link to="/main/company-settings/warehouse" className={s.link}>
-        Open WMS settings
-      </Link>
-    </div>
-  );
-}
+import WmsSettingsPanel from '../settings/WmsSettingsPanel';
 
 function renderTab(tab) {
   if (tab === 'locations') return <LocationsPage />;
-  if (tab === 'settings') return <SettingsPanel />;
+  if (tab === 'settings') return <WmsSettingsPanel />;
   return <WarehousesPage />;
 }
 

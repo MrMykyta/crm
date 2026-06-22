@@ -4,6 +4,11 @@
   min-width: 0;
   padding: 18px 20px 28px;
   color: var(--ui-text-1);
+  --wms-inv-surface: var(--wms-work-surface-bg, color-mix(in srgb, var(--ui-surface-1, #0f172a) 90%, #020617));
+  --wms-inv-surface-soft: var(--wms-work-surface-soft-bg, color-mix(in srgb, var(--ui-surface-2, #111827) 86%, #020617));
+  --wms-inv-border: var(--wms-work-surface-border, color-mix(in srgb, var(--ui-border-soft, #334155) 84%, rgba(255, 255, 255, 0.08)));
+  --wms-inv-shadow: var(--wms-work-surface-shadow, 0 22px 52px rgba(0, 0, 0, 0.32));
+  --wms-inv-blur: var(--wms-work-surface-blur, blur(18px) saturate(1.08));
 }
 
 .topbar {
@@ -28,11 +33,27 @@
   font-size: 13px;
 }
 
+.modePill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--wms-inv-border);
+  border-radius: 999px;
+  background: var(--wms-inv-surface-soft);
+  color: var(--ui-text-2);
+  font-size: 12px;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
 .controls {
   display: grid;
   grid-template-columns: minmax(220px, 290px) minmax(260px, 1fr) auto;
   gap: 8px;
   min-width: 0;
+  border-color: var(--wms-inv-border);
+  background: var(--wms-inv-surface-soft);
 }
 
 .selectBox,
@@ -43,9 +64,9 @@
   min-width: 0;
   min-height: 38px;
   gap: 8px;
-  border: 1px solid var(--ui-border-soft);
+  border: 1px solid var(--wms-inv-border);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--ui-surface-1) 88%, transparent);
+  background: color-mix(in srgb, var(--wms-inv-surface) 92%, transparent);
   color: var(--ui-text-2);
   padding: 0 10px;
   font-size: 12px;
@@ -87,9 +108,9 @@
   align-items: center;
   min-height: 32px;
   padding: 0 12px;
-  border: 1px solid var(--ui-border-soft);
+  border: 1px solid var(--wms-inv-border);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--ui-surface-1) 86%, transparent);
+  background: color-mix(in srgb, var(--wms-inv-surface) 90%, transparent);
   color: var(--ui-text-2);
   font-size: 13px;
   font-weight: 680;
@@ -128,6 +149,62 @@
 .drillPanel {
   min-width: 0;
   overflow: hidden;
+  border-color: var(--wms-inv-border);
+  background: var(--wms-inv-surface);
+  box-shadow: var(--wms-inv-shadow);
+  -webkit-backdrop-filter: var(--wms-inv-blur);
+  backdrop-filter: var(--wms-inv-blur);
+}
+
+.reportsWorkspace {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.reportTabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.reportTab {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  min-height: 72px;
+  align-content: start;
+  padding: 11px 12px;
+  border: 1px solid var(--wms-inv-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wms-inv-surface-soft) 88%, transparent);
+  color: var(--ui-text-2);
+  text-decoration: none;
+}
+
+.reportTab:hover,
+.reportTab:focus-visible {
+  border-color: var(--ui-border-focus);
+  color: var(--ui-text-1);
+  outline: none;
+}
+
+.reportTab strong {
+  color: var(--ui-text-1);
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.reportTab span {
+  color: var(--ui-text-2);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.reportBody {
+  min-width: 0;
 }
 
 .tableWrap {
@@ -139,14 +216,14 @@
   width: 100%;
   min-width: 760px;
   border-collapse: collapse;
-  background: color-mix(in srgb, var(--ui-surface-1) 86%, transparent);
+  background: color-mix(in srgb, var(--wms-inv-surface) 94%, transparent);
 }
 
 .table th,
 .table td {
   min-height: 34px;
   padding: 9px 12px;
-  border-bottom: 1px solid var(--ui-border-soft);
+  border-bottom: 1px solid var(--wms-inv-border);
   color: var(--ui-text-1);
   font-size: 13px;
   text-align: left;
@@ -157,7 +234,7 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background: color-mix(in srgb, var(--ui-surface-1) 94%, transparent);
+  background: color-mix(in srgb, var(--wms-inv-surface) 96%, #020617);
   color: var(--ui-text-2);
   font-size: 11px;
   font-weight: 760;
@@ -199,7 +276,7 @@
 .primaryCell span {
   min-width: 0;
   overflow: hidden;
-  color: var(--ui-text-3);
+  color: color-mix(in srgb, var(--ui-text-1) 74%, var(--ui-text-3));
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -267,9 +344,9 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid var(--ui-border-soft);
+  border: 1px solid var(--wms-inv-border);
   border-radius: 8px;
-  background: var(--ui-surface-1);
+  background: color-mix(in srgb, var(--wms-inv-surface) 92%, transparent);
   color: var(--ui-text-2);
   cursor: pointer;
 }
@@ -312,6 +389,10 @@
     grid-template-columns: 1fr;
   }
 
+  .reportTabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .filterHint {
     justify-content: flex-start;
     white-space: normal;
@@ -335,9 +416,22 @@
     font-size: 23px;
   }
 
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .tab {
     min-height: 30px;
     padding: 0 9px;
     font-size: 12px;
+  }
+
+  .reportsWorkspace {
+    padding: 10px;
+  }
+
+  .reportTabs {
+    grid-template-columns: 1fr;
   }
 }

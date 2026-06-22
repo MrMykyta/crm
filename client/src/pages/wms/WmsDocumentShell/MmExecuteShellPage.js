@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import useAclPermissions from '../../../hooks/useAclPermissions';
@@ -15,6 +15,7 @@ import {
   createTransferShellAdapter,
   mergeTransferRowsWithMovedQty,
 } from './createTransferShellAdapter';
+import { mapTransferToShellPosted } from './postedViewMappers';
 import WmsDocumentShell from './WmsDocumentShell';
 
 function asText(value) {
@@ -45,14 +46,15 @@ export default function MmExecuteShellPage() {
   const navigate = useNavigate();
   const permissions = useAclPermissions();
   const [executeTransferLine] = useExecuteTransferLineMutation();
+  const transferHistoryArgs = useMemo(() => ({ id, page: 1, limit: 200 }), [id]);
 
   const transferQuery = useGetTransferByIdQuery(id, {
     skip: !id,
-    refetchOnMountOrArgChange: true,
+    refetchOnMountOrArgChange: false,
   });
-  const transferHistoryQuery = useGetTransferStockMovesQuery({ id, page: 1, limit: 200 }, {
+  const transferHistoryQuery = useGetTransferStockMovesQuery(transferHistoryArgs, {
     skip: !id,
-    refetchOnMountOrArgChange: true,
+    refetchOnMountOrArgChange: false,
   });
   const { data: warehousesData } = useListWarehousesQuery({
     limit: 200,
@@ -67,21 +69,28 @@ export default function MmExecuteShellPage() {
 
   const transfer = transferQuery.data || null;
   const status = asText(transfer?.status).toLowerCase();
+  const isPostedTransfer = ['completed', 'received'].includes(status);
+  const refetchTransfer = transferQuery.refetch;
+  const refetchTransferHistory = transferHistoryQuery.refetch;
+
+  const fetchTransferById = useCallback(async () => {
+    const result = await refetchTransfer();
+    return result.data;
+  }, [refetchTransfer]);
+
+  const fetchTransferStockMoves = useCallback(async () => {
+    const result = await refetchTransferHistory();
+    return result.data;
+  }, [refetchTransferHistory]);
 
   const adapter = useMemo(() => createTransferShellAdapter({
     triggers: {
       executeTransferLine,
-      fetchTransferById: async () => {
-        const result = await transferQuery.refetch();
-        return result.data;
-      },
-      fetchTransferStockMoves: async () => {
-        const result = await transferHistoryQuery.refetch();
-        return result.data;
-      },
+      fetchTransferById,
+      fetchTransferStockMoves,
     },
     permissions,
-  }), [executeTransferLine, permissions, transferHistoryQuery, transferQuery]);
+  }), [executeTransferLine, fetchTransferById, fetchTransferStockMoves, permissions]);
 
   const historyItems = useMemo(() => (
     Array.isArray(transferHistoryQuery.data?.items) ? transferHistoryQuery.data.items : []
@@ -91,6 +100,14 @@ export default function MmExecuteShellPage() {
     const items = Array.isArray(transfer?.items) ? transfer.items : [];
     return mergeTransferRowsWithMovedQty(items, historyItems).map(mapTransferItemToShellRow);
   }, [historyItems, transfer?.items]);
+
+  const postedModel = useMemo(() => {
+    const items = Array.isArray(transfer?.items) ? transfer.items : [];
+    return mapTransferToShellPosted({
+      ...(transfer || {}),
+      items: mergeTransferRowsWithMovedQty(items, historyItems),
+    });
+  }, [historyItems, transfer]);
 
   const initialHeader = useMemo(() => ({
     fromWarehouseId: asText(transfer?.fromWarehouseId),
@@ -108,11 +125,40 @@ export default function MmExecuteShellPage() {
     transfer?.toWarehouseId,
   ]);
 
-  if (transferQuery.isLoading || transferQuery.isFetching) {
+  if (transferQuery.isLoading) {
     return <div style={{ padding: 24 }}>Loading transfer...</div>;
   }
 
-  if (transferQuery.isError || !transfer || status !== 'draft') {
+  if (transferQuery.isError || !transfer) {
+    return <WarehouseDocumentDetailPage kind="transfer" />;
+  }
+
+  if (isPostedTransfer) {
+    return (
+      <WmsDocumentShell
+        config={mmConfig}
+        mode="posted"
+        documentId={id}
+        adapter={adapter}
+        initialHeader={postedModel.header}
+        initialRows={postedModel.rows}
+        originalHeader={postedModel.header}
+        originalRows={postedModel.rows}
+        resetKey={`${id}:posted:${status}:${historyItems.length}`}
+        warehouses={warehousesData?.items || []}
+        locations={locationsData?.items || []}
+        postedMeta={{
+          documentNumber: postedModel.header.documentNumber,
+          status: postedModel.header.status,
+        }}
+        printUrl={`/main/wms/transfers/${id}/print`}
+        stockMoves={historyItems}
+        onCancel={() => navigate('/main/wms/documents?type=MM')}
+      />
+    );
+  }
+
+  if (status !== 'draft') {
     return <WarehouseDocumentDetailPage kind="transfer" />;
   }
 

@@ -1596,11 +1596,12 @@ export default function WarehouseDocumentDetailPage({ kind = 'receipt' }) {
   const receiptQuery = useGetReceiptByIdQuery(id, { skip: kind !== 'receipt' || !id, refetchOnMountOrArgChange: true });
   const transferQuery = useGetTransferByIdQuery(id, { skip: kind !== 'transfer' || !id, refetchOnMountOrArgChange: true });
   const shipmentQuery = useGetShipmentByIdQuery(id, { skip: kind !== 'shipment' || !id, refetchOnMountOrArgChange: true });
+  const historyQueryArgs = useMemo(() => ({ id, page: 1, limit: 200 }), [id]);
 
-  const adjustmentHistoryQuery = useGetAdjustmentStockMovesQuery({ id, page: 1, limit: 200 }, { skip: kind !== 'adjustment' || !id, refetchOnMountOrArgChange: true });
-  const receiptHistoryQuery = useGetReceiptStockMovesQuery({ id, page: 1, limit: 200 }, { skip: kind !== 'receipt' || !id, refetchOnMountOrArgChange: true });
-  const transferHistoryQuery = useGetTransferStockMovesQuery({ id, page: 1, limit: 200 }, { skip: kind !== 'transfer' || !id, refetchOnMountOrArgChange: true });
-  const shipmentHistoryQuery = useGetShipmentStockMovesQuery({ id, page: 1, limit: 200 }, { skip: kind !== 'shipment' || !id, refetchOnMountOrArgChange: true });
+  const adjustmentHistoryQuery = useGetAdjustmentStockMovesQuery(historyQueryArgs, { skip: kind !== 'adjustment' || !id, refetchOnMountOrArgChange: true });
+  const receiptHistoryQuery = useGetReceiptStockMovesQuery(historyQueryArgs, { skip: kind !== 'receipt' || !id, refetchOnMountOrArgChange: true });
+  const transferHistoryQuery = useGetTransferStockMovesQuery(historyQueryArgs, { skip: kind !== 'transfer' || !id, refetchOnMountOrArgChange: true });
+  const shipmentHistoryQuery = useGetShipmentStockMovesQuery(historyQueryArgs, { skip: kind !== 'shipment' || !id, refetchOnMountOrArgChange: true });
 
   const activeQuery = kind === 'adjustment' ? adjustmentQuery
     : kind === 'receipt' ? receiptQuery

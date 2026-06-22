@@ -19,6 +19,7 @@ const ACTIONS = {
   RECEIVE_EXISTING: 'receiveExisting',
   RECEIVE: 'receive',
   POST: 'post',
+  CORRECT: 'correct',
 };
 
 const PERMISSIONS = {
@@ -26,6 +27,7 @@ const PERMISSIONS = {
   CREATE: 'wms:document:create',
   UPDATE: 'wms:document:update',
   POST: 'wms:document:post',
+  CORRECT: 'wms:document:correct',
 };
 
 function invokeTrigger(trigger, arg) {
@@ -54,6 +56,7 @@ export function createReceiptShellAdapter({ triggers = {}, permissions } = {}) {
     ACTIONS.UPDATE_ITEM,
     ACTIONS.REMOVE_ITEM,
     ACTIONS.RECEIVE_EXISTING,
+    ACTIONS.CORRECT,
   ]);
 
   return {
@@ -71,6 +74,7 @@ export function createReceiptShellAdapter({ triggers = {}, permissions } = {}) {
         || action === ACTIONS.REMOVE_ITEM
       ) return PERMISSIONS.UPDATE;
       if (action === ACTIONS.RECEIVE_EXISTING || action === ACTIONS.RECEIVE || action === ACTIONS.POST) return PERMISSIONS.POST;
+      if (action === ACTIONS.CORRECT) return PERMISSIONS.CORRECT;
       return null;
     },
     async run(action, input = {}) {
@@ -188,6 +192,12 @@ export function createReceiptShellAdapter({ triggers = {}, permissions } = {}) {
           };
         }
 
+        if (action === ACTIONS.CORRECT) {
+          const payload = input.payload || input.lines || {};
+          const raw = await invokeTrigger(triggers.createReceiptCorrection, { id: input.id, payload });
+          return mapAdapterResult(raw, { status: raw?.status || 'corrected' });
+        }
+
         return {
           ok: false,
           warnings: [],
@@ -196,7 +206,9 @@ export function createReceiptShellAdapter({ triggers = {}, permissions } = {}) {
         };
       } catch (error) {
         return mapAdapterError(error, {
-          fallback: action === ACTIONS.RECEIVE_EXISTING
+          fallback: action === ACTIONS.CORRECT
+            ? 'Failed to create correction'
+            : action === ACTIONS.RECEIVE_EXISTING
             ? 'Failed to receive receipt'
             : action === ACTIONS.SAVE
               ? 'Failed to create receipt'
