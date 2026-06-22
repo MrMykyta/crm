@@ -1,4 +1,5 @@
 import styles from "./DocumentMetaForm.module.css";
+import { DateField, SelectField } from "../ui/fields";
 
 export default function DocumentMetaForm({
   value,
@@ -8,10 +9,10 @@ export default function DocumentMetaForm({
   onChange,
   disabled = false,
 }) {
-  const handleFieldChange = (field) => (event) => {
+  const setField = (field, nextValue) => {
     onChange?.({
       ...value,
-      [field]: event.target.value,
+      [field]: nextValue,
     });
   };
 
@@ -22,28 +23,27 @@ export default function DocumentMetaForm({
           Клиент
           {direction === "sale" ? " *" : ""}
         </span>
-        <select
+        <SelectField
           value={value.clientId}
-          onChange={handleFieldChange("clientId")}
-          className={styles.control}
+          onValueChange={(nextValue) => setField("clientId", nextValue)}
+          options={[
+            { value: "", label: "Выберите клиента" },
+            ...clients.map((client) => ({
+              value: client.id,
+              label: client.shortName || client.fullName || client.name || client.id,
+            })),
+          ]}
+          inputClassName={styles.control}
           disabled={isClientsLoading || disabled}
-        >
-          <option value="">Выберите клиента</option>
-          {clients.map((client) => (
-            <option key={client.id} value={client.id}>
-              {client.shortName || client.fullName || client.name || client.id}
-            </option>
-          ))}
-        </select>
+        />
       </label>
 
       <label className={styles.field}>
         <span className={styles.label}>Дата выставления *</span>
-        <input
-          type="date"
+        <DateField
           value={value.issueDate}
-          onChange={handleFieldChange("issueDate")}
-          className={styles.control}
+          onValueChange={(nextValue) => setField("issueDate", nextValue)}
+          inputClassName={styles.control}
           disabled={disabled}
         />
       </label>

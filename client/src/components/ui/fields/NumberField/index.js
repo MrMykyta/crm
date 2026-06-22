@@ -19,7 +19,7 @@ import { cx, toInputValue, buildDescribedBy } from "../fieldUtils";
  *   onValueChange?.(value)
  *   onChange?.(value, event)
  */
-export default function NumberField({
+const NumberField = React.forwardRef(function NumberField({
   name,
   id,
   label,
@@ -41,15 +41,36 @@ export default function NumberField({
   leftIcon = null,
   rightIcon = null,
   loading = false,
+  float = false,
+  isFilled,
+  isFocused = false,
   min,
   max,
   step,
   allowEmpty = true,
   emitAs = "string",
+  inputRef,
   ...rest
-}) {
+}, ref) {
   const fieldId = id || name;
   const strValue = toInputValue(value);
+
+  const setInputRef = React.useCallback(
+    (node) => {
+      if (typeof ref === "function") {
+        ref(node);
+      } else if (ref) {
+        ref.current = node;
+      }
+
+      if (typeof inputRef === "function") {
+        inputRef(node);
+      } else if (inputRef) {
+        inputRef.current = node;
+      }
+    },
+    [ref, inputRef]
+  );
 
   // computeEmit: приводит сырой ввод к контрактному значению.
   // Возвращает undefined как сигнал "не эмитить" (NaN guard).
@@ -93,9 +114,13 @@ export default function NumberField({
       size={size}
       leftIcon={leftIcon}
       rightIcon={rightIcon}
+      float={float}
+      isFilled={isFilled ?? strValue !== ""}
+      isFocused={isFocused}
       className={className}
     >
       <input
+        ref={setInputRef}
         id={fieldId}
         name={name}
         type="number"
@@ -117,4 +142,6 @@ export default function NumberField({
       />
     </FieldShell>
   );
-}
+});
+
+export default NumberField;

@@ -18,7 +18,7 @@ import {
 import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 
-import ThemedSelect from "../../../../../components/inputs/RadixSelect";
+import { ColorField, SelectField } from "../../../../../components/ui/fields";
 
 /* ===== helpers ===== */
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -285,11 +285,11 @@ const changeColor = (fid, sid, color) =>
                   <label className={s.ctrlLabel}>Этап</label>
 
                   <div style={{ minWidth: 220, maxWidth: 300 }}>
-                    <ThemedSelect
-                      className={s.select}
+                    <SelectField
+                      inputClassName={s.select}
                       value={selectedStage ? selectedStage.id : undefined}
                       options={f.stages.map(st => ({ value: st.id, label: st.name }))}
-                      onChange={(val) =>
+                      onValueChange={(val) =>
                         setSelectedStageByFunnel((m) => ({ ...m, [f.id]: val }))
                       }
                       placeholder="Выберите этап"
@@ -302,12 +302,12 @@ const changeColor = (fid, sid, color) =>
                       className={s.colorPreview}
                       style={{ background: selectedStage?.color || "#6cc657" }}
                     />
-                    <input
-                      type="color"
-                      className={s.colorInput}
+                    <ColorField
+                      inputClassName={s.colorInput}
+                      fullWidth={false}
                       value={selectedStage?.color || "#6cc657"}
-                      onChange={(e) =>
-                        selectedStage && changeColor(f.id, selectedStage.id, e.target.value)
+                      onValueChange={(value) =>
+                        selectedStage && changeColor(f.id, selectedStage.id, value)
                       }
                     />
                     <input

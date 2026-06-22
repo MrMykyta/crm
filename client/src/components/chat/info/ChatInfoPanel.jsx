@@ -20,7 +20,6 @@ import {
   setInfoPanelTab,
 } from "../../../store/slices/chatSlice";
 import { getAuthorInfo } from "../../../pages/Chat/utils/chatMessageUtils";
-import ImagePicker from "../../inputs/ImagePicker";
 import ChatInfoHeader from "./ChatInfoHeader";
 import ChatInfoTabs from "./ChatInfoTabs";
 import ParticipantsTab from "./tabs/ParticipantsTab";
@@ -109,6 +108,10 @@ export default function ChatInfoPanel({
   const defaultTab = isGroup ? "participants" : "profile";
   const panelRef = useRef(null);
   const [caretLeft, setCaretLeft] = useState(null);
+  const roomTitleRef = useRef("");
+  const roomAvatarUrlRef = useRef("");
+  roomTitleRef.current = room?.title || "";
+  roomAvatarUrlRef.current = room?.avatarUrl || "";
 
   // Signed URL source for group avatar (only when panel open).
   const avatarSource = isOpen
@@ -150,8 +153,8 @@ export default function ChatInfoPanel({
   useEffect(() => {
     if (!roomId) return;
     setIsEditing(false);
-    setTitleDraft(room?.title || "");
-    setAvatarDraftId(room?.avatarUrl || "");
+    setTitleDraft(roomTitleRef.current);
+    setAvatarDraftId(roomAvatarUrlRef.current);
     setViewerOpen(false);
     setViewerIndex(0);
   }, [roomId]);
@@ -645,4 +648,3 @@ export default function ChatInfoPanel({
     </>
   );
 }
-

@@ -10,7 +10,7 @@ import st from "./AppearanceForm.module.css";
 import { useUploadFileMutation } from "../../../../../store/rtk/filesApi";
 import { useTheme } from "../../../../../Providers/ThemeProvider";
 import { useSaveMyPreferencesMutation } from "../../../../../store/rtk/userApi";
-import ThemedSelect from "../../../../../components/inputs/RadixSelect";
+import { FileField, SelectField, SliderField, TextField } from "../../../../../components/ui/fields";
 
 const MAX_BG_MB = 5;
 
@@ -177,68 +177,58 @@ const handleSubmit = async (values, { setSubmitting }) => {
       {({ values, setFieldValue, isSubmitting, isValid }) => (
         <Form noValidate>
           <div className={page.grid}>
-            <div className={page.field}>
-              <label className={page.label}>
-                {t("settings.appearance.textSize", "Размер текста")}
-              </label>
-              <ThemedSelect
-                className={page.input}
-                value={values.textSize}
-                options={textSizeOptions}
-                size="sm"
-                onChange={(value) => {
-                  const next = String(value || "medium");
-                  setFieldValue("textSize", next);
-                  setAppearance({ textSize: next });
-                }}
-              />
-            </div>
+            <SelectField
+              name="textSize"
+              label={t("settings.appearance.textSize", "Размер текста")}
+              className={page.field}
+              value={values.textSize}
+              options={textSizeOptions}
+              size="sm"
+              onValueChange={(value) => {
+                const next = String(value || "medium");
+                setFieldValue("textSize", next);
+                setAppearance({ textSize: next });
+              }}
+            />
 
-            <div className={page.field}>
-              <label className={page.label}>
-                {t("settings.appearance.density", "Плотность интерфейса")}
-              </label>
-              <ThemedSelect
-                className={page.input}
-                value={values.density}
-                options={densityOptions}
-                size="sm"
-                onChange={(value) => {
-                  const next = String(value || "comfortable");
-                  setFieldValue("density", next);
-                  setAppearance({ density: next });
-                }}
-              />
-            </div>
+            <SelectField
+              name="density"
+              label={t("settings.appearance.density", "Плотность интерфейса")}
+              className={page.field}
+              value={values.density}
+              options={densityOptions}
+              size="sm"
+              onValueChange={(value) => {
+                const next = String(value || "comfortable");
+                setFieldValue("density", next);
+                setAppearance({ density: next });
+              }}
+            />
 
-            <div className={page.field}>
-              <label className={page.label}>
-                {t("settings.appearance.skin", "Стиль интерфейса")}
-              </label>
-              <ThemedSelect
-                className={page.input}
-                value={values.skin}
-                options={skinOptions}
-                size="sm"
-                onChange={(value) => {
-                  const next = ["v1", "v2", "v3"].includes(String(value)) ? String(value) : "v1";
-                  setFieldValue("skin", next);
-                  setAppearance({ skin: next });
-                }}
-              />
-            </div>
+            <SelectField
+              name="skin"
+              label={t("settings.appearance.skin", "Стиль интерфейса")}
+              className={page.field}
+              value={values.skin}
+              options={skinOptions}
+              size="sm"
+              onValueChange={(value) => {
+                const next = ["v1", "v2", "v3"].includes(String(value)) ? String(value) : "v1";
+                setFieldValue("skin", next);
+                setAppearance({ skin: next });
+              }}
+            />
 
             <div className={page.field}>
               <label className={page.label}>Шрифт: {values.fontScale}%</label>
-              <input
-                className={page.input}
-                type="range"
+              <SliderField
+                inputClassName={page.input}
                 min="70"
                 max="160"
                 step="5"
                 value={values.fontScale}
-                onChange={(e) => {
-                  const v = Number(e.target.value);
+                onValueChange={(raw) => {
+                  const v = Number(raw);
                   setFieldValue("fontScale", v);
                   setAppearance({ fontScale: v });
                 }}
@@ -249,11 +239,13 @@ const handleSubmit = async (values, { setSubmitting }) => {
               <label className={page.label}>Фон</label>
 
               <div className={st.row}>
-                <input
-                  className={`${page.input} ${st.urlInput}`}
+                <TextField
+                  name="urlDraft"
+                  className={st.urlInput}
+                  inputClassName={page.input}
                   placeholder="Вставьте URL и нажмите «Загрузить по URL»"
                   value={values.urlDraft}
-                  onChange={(e) => setFieldValue("urlDraft", e.target.value)}
+                  onValueChange={(value) => setFieldValue("urlDraft", value)}
                   disabled={uploading}
                 />
 
@@ -268,20 +260,22 @@ const handleSubmit = async (values, { setSubmitting }) => {
                   Загрузить по URL
                 </button>
 
-                <label className={`${page.primary} ${st.btnPrimary}`}>
+                <FileField
+                  id="appearanceBackgroundFile"
+                  name="backgroundFile"
+                  className={st.hiddenFileField}
+                  inputClassName={st.hiddenFileInput}
+                  accept="image/*"
+                  disabled={uploading}
+                  onFilesChange={(files, event) => {
+                    const f = files?.[0];
+                    if (f) uploadBG(f, setFieldValue);
+                    event.target.value = "";
+                  }}
+                />
+                <label className={`${page.primary} ${st.btnPrimary}`} htmlFor="appearanceBackgroundFile">
                   <ImageIcon size={16} style={{ marginRight: 6 }} />
                   {uploading ? "upload…" : "upload"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    hidden
-                    disabled={uploading}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) uploadBG(f, setFieldValue);
-                      e.target.value = "";
-                    }}
-                  />
                 </label>
               </div>
 
@@ -306,4 +300,3 @@ const handleSubmit = async (values, { setSubmitting }) => {
     </Formik>
   );
 }
-

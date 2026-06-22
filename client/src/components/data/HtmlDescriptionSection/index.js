@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import HTMLEditor from '../../inputs/HTMLEditor';
+import { HtmlEditorField } from '../../ui/fields';
 import { sanitizeHtml } from '../../../utils/sanitizeHtml';
 import s from './HtmlDescriptionSection.module.css';
 
@@ -127,9 +127,9 @@ const saveEdit = async () => {
       </div>
 
       {isEditing ? (
-        <HTMLEditor
+        <HtmlEditorField
           value={draft}
-          onChange={setDraft}
+          onValueChange={setDraft}
           placeholder={placeholder}
           minHeight={minHeight}
         />
@@ -150,4 +150,3 @@ const saveEdit = async () => {
     </section>
   );
 }
-

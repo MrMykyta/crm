@@ -13,6 +13,7 @@ import {
   formatNotificationTitle,
   formatNotificationBody,
 } from "../../../utils/notificationHelpers";
+import { SelectField } from "../../../components/ui/fields";
 
 import s from "./NotificationsPage.module.css";
 
@@ -82,7 +83,7 @@ export default function NotificationsPage() {
   const [markRead] = useMarkNotificationReadMutation();
   const [markAll] = useMarkAllNotificationsReadMutation();
 
-  const items = data?.items || [];
+  const items = useMemo(() => data?.items || [], [data?.items]);
   const unreadCount =
     typeof data?.unreadCount === "number"
       ? data.unreadCount
@@ -279,20 +280,19 @@ const renderGroupTitle = (key) => {
           </div>
 
           <div className={s.typeFilter}>
-            <select
-              className={s.typeSelect}
+            <SelectField
               value={typeFilter}
-              onChange={(e) => changeTypeFilter(e.target.value)}
-            >
-              <option value="all">
-                {t("notifications.typeAll", "Все типы")}
-              </option>
-              {entityTypeOptions.map((et) => (
-                <option key={et} value={et}>
-                  {mapEntityLabel(t, et)}
-                </option>
-              ))}
-            </select>
+              onValueChange={changeTypeFilter}
+              options={[
+                { value: "all", label: t("notifications.typeAll", "Все типы") },
+                ...entityTypeOptions.map((et) => ({
+                  value: et,
+                  label: mapEntityLabel(t, et),
+                })),
+              ]}
+              inputClassName={s.typeSelect}
+              fullWidth
+            />
           </div>
 
           {unreadCount > 0 && (

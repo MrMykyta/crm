@@ -13,6 +13,7 @@ import {
   useGetCompanyWarehouseDocumentSettingsQuery,
   useUpdateCompanyWarehouseDocumentSettingsMutation,
 } from "../../../../../store/rtk/companyWarehouseDocumentSettingsApi";
+import { CheckboxField, SelectField, TextField } from "../../../../../components/ui/fields";
 import WmsSettingsPanel from "../../../../wms/settings/WmsSettingsPanel";
 import s from "./WarehouseWmsSettings.module.css";
 
@@ -203,16 +204,18 @@ export default function WarehouseWmsSettings() {
         <div className={s.formGrid}>
           <label>
             <span>{t("companySettings.wms.fields.code", "Code")}</span>
-            <input value={warehouseForm.code} onChange={(event) => setWarehouseForm((prev) => ({ ...prev, code: event.target.value }))} />
+            <TextField value={warehouseForm.code} onValueChange={(value) => setWarehouseForm((prev) => ({ ...prev, code: value }))} />
           </label>
           <label>
             <span>{t("companySettings.wms.fields.name", "Name")}</span>
-            <input value={warehouseForm.name} onChange={(event) => setWarehouseForm((prev) => ({ ...prev, name: event.target.value }))} />
+            <TextField value={warehouseForm.name} onValueChange={(value) => setWarehouseForm((prev) => ({ ...prev, name: value }))} />
           </label>
-          <label className={s.checkboxRow}>
-            <input type="checkbox" checked={warehouseForm.isActive} onChange={(event) => setWarehouseForm((prev) => ({ ...prev, isActive: event.target.checked }))} />
-            <span>{t("companySettings.wms.fields.isActive", "Active")}</span>
-          </label>
+          <CheckboxField
+            className={s.checkboxRow}
+            checked={warehouseForm.isActive}
+            onValueChange={(checked) => setWarehouseForm((prev) => ({ ...prev, isActive: checked }))}
+            label={t("companySettings.wms.fields.isActive", "Active")}
+          />
         </div>
         <div className={s.actions}>
           <button type="button" className={s.primaryButton} onClick={saveWarehouse} disabled={warehouseSaving}>
@@ -269,20 +272,26 @@ export default function WarehouseWmsSettings() {
         <div className={s.formGrid}>
           <label>
             <span>{t("companySettings.wms.fields.warehouse", "Warehouse")}</span>
-            <select value={locationForm.warehouseId} onChange={(event) => setLocationForm((prev) => ({ ...prev, warehouseId: event.target.value }))}>
-              <option value="">{t("companySettings.wms.placeholders.selectWarehouse", "Select warehouse")}</option>
-              {warehouses.map((row) => <option key={row.id} value={row.id}>{warehouseLabel(row)}</option>)}
-            </select>
+            <SelectField
+              value={locationForm.warehouseId}
+              onValueChange={(value) => setLocationForm((prev) => ({ ...prev, warehouseId: value }))}
+              options={[
+                { value: "", label: t("companySettings.wms.placeholders.selectWarehouse", "Select warehouse") },
+                ...warehouses.map((row) => ({ value: row.id, label: warehouseLabel(row) })),
+              ]}
+            />
           </label>
           <label>
             <span>{t("companySettings.wms.fields.code", "Code")}</span>
-            <input value={locationForm.code} onChange={(event) => setLocationForm((prev) => ({ ...prev, code: event.target.value }))} />
+            <TextField value={locationForm.code} onValueChange={(value) => setLocationForm((prev) => ({ ...prev, code: value }))} />
           </label>
           <label>
             <span>{t("companySettings.wms.fields.type", "Type")}</span>
-            <select value={locationForm.type} onChange={(event) => setLocationForm((prev) => ({ ...prev, type: event.target.value }))}>
-              {LOCATION_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
-            </select>
+            <SelectField
+              value={locationForm.type}
+              onValueChange={(value) => setLocationForm((prev) => ({ ...prev, type: value }))}
+              options={LOCATION_TYPES.map((type) => ({ value: type, label: type }))}
+            />
           </label>
         </div>
         <div className={s.actions}>

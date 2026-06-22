@@ -10,6 +10,7 @@ import {
   isPaymentEnabledForType,
 } from './documentStatusConfig';
 import { DOCUMENT_VIEW_MODES } from './documentViewModes';
+import { DateField, NumberField, TextField } from '../ui/fields';
 import styles from './DocumentForm.module.css';
 
 function formatAmount(value) {
@@ -48,10 +49,6 @@ export default function DocumentForm({
 
   const isSplitMode = viewMode === DOCUMENT_VIEW_MODES.SPLIT;
   const isPreviewMode = viewMode === DOCUMENT_VIEW_MODES.PREVIEW;
-
-  const handlePaymentFieldChange = (field) => (event) => {
-    formState?.setPayment?.(field, event.target.value);
-  };
 
   const editorWorkspace = (
     <>
@@ -172,36 +169,34 @@ export default function DocumentForm({
           <div className={styles.paymentFields}>
             <label className={styles.sideField}>
               <span className={styles.sideFieldLabel}>Сумма оплаты</span>
-              <input
-                type="number"
+              <NumberField
+                emitAs="string"
                 min="0"
                 step="0.01"
                 max={formatAmount(formState.totals.totalGross)}
-                value={formState.payment.paidAmount}
-                onChange={handlePaymentFieldChange('paidAmount')}
-                className={styles.sideFieldControl}
+                value={formState.payment.paidAmount ?? ""}
+                onValueChange={(value) => formState?.setPayment?.('paidAmount', value)}
+                inputClassName={styles.sideFieldControl}
                 disabled={disabled}
               />
             </label>
 
             <label className={styles.sideField}>
               <span className={styles.sideFieldLabel}>Дата оплаты</span>
-              <input
-                type="date"
-                value={formState.payment.paymentDate}
-                onChange={handlePaymentFieldChange('paymentDate')}
-                className={styles.sideFieldControl}
+              <DateField
+                value={formState.payment.paymentDate ?? ""}
+                onValueChange={(value) => formState?.setPayment?.('paymentDate', value)}
+                inputClassName={styles.sideFieldControl}
                 disabled={disabled}
               />
             </label>
 
             <label className={styles.sideField}>
               <span className={styles.sideFieldLabel}>Способ оплаты</span>
-              <input
-                type="text"
-                value={formState.payment.paymentMethod}
-                onChange={handlePaymentFieldChange('paymentMethod')}
-                className={styles.sideFieldControl}
+              <TextField
+                value={formState.payment.paymentMethod ?? ""}
+                onValueChange={(value) => formState?.setPayment?.('paymentMethod', value)}
+                inputClassName={styles.sideFieldControl}
                 placeholder="Например: банковский перевод"
                 disabled={disabled}
               />

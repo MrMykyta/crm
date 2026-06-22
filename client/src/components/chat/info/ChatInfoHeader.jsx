@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import ImagePicker from "../../inputs/ImagePicker";
+import { ImageField, TextField } from "../../ui/fields";
 import s from "./ChatInfoPanel.module.css";
 
 // Компонент ChatInfoHeader: отвечает за отображение UI и обработку взаимодействий пользователя.
@@ -76,10 +76,10 @@ export default function ChatInfoHeader({
               </>
             ) : (
               <div className={s.infoEditRow}>
-                <input
-                  className={s.infoEditInput}
+                <TextField
+                  inputClassName={s.infoEditInput}
                   value={titleDraft}
-                  onChange={(e) => onTitleChange(e.target.value)}
+                  onValueChange={onTitleChange}
                   placeholder={t("chat.info.fields.groupName")}
                 />
               </div>
@@ -127,12 +127,12 @@ export default function ChatInfoHeader({
 
       {isEditing && (
         <div className={s.infoEditRow}>
-          <ImagePicker
+          <ImageField
             value={avatarUrl}
-            onChange={() => {}}
+            onValueChange={() => {}}
             uploader={avatarUploader}
             allowUrlInput={false}
-            label={t("chat.info.actions.edit")}
+            pickerLabel={t("chat.info.actions.edit")}
             disabled={isAvatarUploading}
           />
         </div>
@@ -140,4 +140,3 @@ export default function ChatInfoHeader({
     </div>
   );
 }
-

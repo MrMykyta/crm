@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { SearchField } from '../../../ui/fields';
 import s from './ColumnViewEditor.module.css';
 
 // Компонент ColumnViewEditor: отвечает за отображение UI и обработку взаимодействий пользователя.
@@ -130,11 +131,12 @@ export default function ColumnViewEditor({
           </div>
 
           <div className={s.searchWrap}>
-            <input
-              className={s.search}
+            <SearchField
+              inputClassName={s.search}
               value={searchValue}
-              onChange={(event) => onSearchChange?.(event.target.value)}
+              onValueChange={(value) => onSearchChange?.(value)}
               placeholder={labels.search}
+              fullWidth
             />
           </div>
 
@@ -210,4 +212,3 @@ export default function ColumnViewEditor({
     </>
   );
 }
-

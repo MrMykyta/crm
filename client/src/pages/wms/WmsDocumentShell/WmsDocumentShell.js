@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle2, Maximize2, ScanLine, X } from 'lucide-react';
-import ThemedSelect from '../../../components/inputs/RadixSelect';
+import { DateField, SelectField, TextareaField, TextField } from '../../../components/ui/fields';
 import { WmsStatusChip } from '../../../components/wms/ui';
 import RowControllerV0 from './RowControllerV0';
 import { computeSummary } from './summaryEngine';
@@ -734,79 +734,80 @@ export default function WmsDocumentShell({
     }
     if (field.type === 'documentTypeSelect') {
       return (
-        <label key={field.key} className="wmsShellField">
+        <div key={field.key} className="wmsShellField">
           <span>{label}</span>
-          <input
-            className="wmsShellInput"
+          <TextField
             value={value || field.fixedValue || ''}
             disabled
             readOnly
+            inputClassName="wmsShellInput"
           />
           {fieldErrors[field.key] ? <span className="wmsShellFieldError">{fieldErrors[field.key]}</span> : null}
-        </label>
+        </div>
       );
     }
     if (field.type === 'warehouseSelect') {
       return (
-        <label key={field.key} className="wmsShellField">
+        <div key={field.key} className="wmsShellField">
           <span>{label}</span>
-          <ThemedSelect
+          <SelectField
             value={value}
-            onChange={(nextValue) => setHeaderField(field.key, nextValue)}
+            onValueChange={(nextValue) => setHeaderField(field.key, nextValue)}
             options={warehouseOptions}
             placeholder={getHeaderFieldPlaceholder(field, t) || t('wms.shell.placeholders.selectWarehouse', 'Select warehouse')}
             disabled={disabled}
+            inputClassName="wmsShellInput"
           />
           {fieldErrors[field.key] ? <span className="wmsShellFieldError">{fieldErrors[field.key]}</span> : null}
-        </label>
+        </div>
       );
     }
     if (field.type === 'locationSelect') {
       const options = field.key === 'inboundLocationId' ? locationOptions : getLocationOptions(field.key);
       return (
-        <label key={field.key} className="wmsShellField">
+        <div key={field.key} className="wmsShellField">
           <span>{label}</span>
-          <ThemedSelect
+          <SelectField
             value={value}
-            onChange={(nextValue) => setHeaderField(field.key, nextValue)}
+            onValueChange={(nextValue) => setHeaderField(field.key, nextValue)}
             options={options}
             placeholder={getHeaderFieldPlaceholder(field, t) || t('wms.shell.placeholders.warehouseLevelStock', 'Warehouse-level stock')}
             disabled={disabled}
+            inputClassName="wmsShellInput"
           />
           {!value ? <span className="wmsShellHint">{getHeaderFieldPlaceholder(field, t) || t('wms.shell.placeholders.warehouseLevelStock', 'Warehouse-level stock')}</span> : null}
           {fieldErrors[field.key] ? <span className="wmsShellFieldError">{fieldErrors[field.key]}</span> : null}
-        </label>
+        </div>
       );
     }
     if (field.type === 'date') {
       return (
-        <label key={field.key} className="wmsShellField">
+        <div key={field.key} className="wmsShellField">
           <span>{label}</span>
-          <input
-            className="wmsShellInput"
-            type="date"
+          <DateField
             value={value}
-            onChange={(event) => setHeaderField(field.key, event.target.value)}
+            onValueChange={(nextValue) => setHeaderField(field.key, nextValue)}
             disabled={disabled || mode === 'draft'}
+            inputClassName="wmsShellInput"
           />
           {mode === 'draft' ? <span className="wmsShellHint">{t('wms.shell.hints.dateReadOnly', 'Date is read-only in this mode.')}</span> : null}
           {fieldErrors[field.key] ? <span className="wmsShellFieldError">{fieldErrors[field.key]}</span> : null}
-        </label>
+        </div>
       );
     }
     if (field.type === 'text') {
       return (
-        <label key={field.key} className="wmsShellField">
+        <div key={field.key} className="wmsShellField">
           <span>{label}</span>
-          <input
-            className="wmsShellInput"
+          <TextField
             value={value}
-            onChange={(event) => setHeaderField(field.key, event.target.value)}
+            onValueChange={(nextValue) => setHeaderField(field.key, nextValue)}
             placeholder={getHeaderFieldPlaceholder(field, t)}
             disabled={disabled}
+            inputClassName="wmsShellInput"
           />
           {fieldErrors[field.key] ? <span className="wmsShellFieldError">{fieldErrors[field.key]}</span> : null}
-        </label>
+        </div>
       );
     }
     return null;
@@ -1541,20 +1542,20 @@ export default function WmsDocumentShell({
             <h2>{t('wms.shell.sections.header', 'Header')}</h2>
             {visibleHeaderFields.map(renderHeaderField)}
             {isCorrectionMode ? (
-              <label className="wmsShellField wmsShellCorrectionReasonField">
+              <div className="wmsShellField wmsShellCorrectionReasonField">
                 <span>{t('wms.corrections.reason', 'Reason')}</span>
-                <textarea
-                  className="wmsShellInput wmsShellTextarea"
+                <TextareaField
                   value={correctionReason}
-                  onChange={(event) => {
-                    setCorrectionReason(event.target.value);
+                  onValueChange={(nextValue) => {
+                    setCorrectionReason(nextValue);
                     setCorrectionConfirm(false);
                   }}
                   placeholder={t('wms.corrections.reasonPlaceholder', 'Optional reason')}
                   rows={4}
                   disabled={isSaving || isReceiving}
+                  inputClassName="wmsShellInput wmsShellTextarea"
                 />
-              </label>
+              </div>
             ) : null}
             {!isReadonlyHeaderMode && !isAdvancedLocationMode(locationMode) ? (
               <div className="wmsShellSimpleModeNote">

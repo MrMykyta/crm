@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import s from './CounterpartyForm.module.css';
 import { getCountryOptions } from '../../../utils/countries';
-import ThemedSelect from '../../../components/inputs/RadixSelect';
+import { RadioGroupField, SelectField, TextareaField, TextField } from '../../../components/ui/fields';
 
 const TYPES = ['lead','client','partner','supplier','manufacturer'];
 const STATUSES = ['potential','active','inactive'];
@@ -186,6 +186,7 @@ const counter = (name) => {
     const val = values[name] ? String(values[name]) : '';
     return <span className={s.counter}>{val.length} / {max}</span>;
   };
+  const primaryContactIndex = contacts.findIndex((contact) => contact.isPrimary);
 
   return (
     <form id={id} className={s.form} onSubmit={handleSubmit}>
@@ -195,11 +196,11 @@ const counter = (name) => {
           <label className={s.label}>
             {t('crm.form.fields.shortName')}* {counter('shortName')}
           </label>
-          <input
+          <TextField
             data-autofocus
-            className={`${s.input} ${errors.shortName ? s.invalid : ''}`}
+            inputClassName={`${s.input} ${errors.shortName ? s.invalid : ''}`}
             value={values.shortName}
-            onChange={(e)=>set('shortName', e.target.value)}
+            onValueChange={(value)=>set('shortName', value)}
             maxLength={MAX.shortName}
             placeholder={t('crm.form.placeholders.shortName')}
             required
@@ -211,10 +212,10 @@ const counter = (name) => {
           <label className={s.label}>
             {t('crm.form.fields.fullName')}* {counter('fullName')}
           </label>
-          <input
-            className={`${s.input} ${errors.fullName ? s.invalid : ''}`}
+          <TextField
+            inputClassName={`${s.input} ${errors.fullName ? s.invalid : ''}`}
             value={values.fullName}
-            onChange={(e)=>set('fullName', e.target.value)}
+            onValueChange={(value)=>set('fullName', value)}
             maxLength={MAX.fullName}
             placeholder={t('crm.form.placeholders.fullName')}
             required
@@ -225,10 +226,10 @@ const counter = (name) => {
         {/* Тип/Статус */}
         <div className={s.field}>
           <label className={s.label}>{t('crm.form.fields.type')}</label>
-          <ThemedSelect
-            className={s.input}
+          <SelectField
+            inputClassName={s.input}
             value={values.type || undefined}
-            onChange={(val)=>!lockType && set('type', val)}
+            onValueChange={(val)=>!lockType && set('type', val)}
             options={allowedTypes.map(v => ({ value: v, label: t(`crm.enums.type.${v}`) }))}
             placeholder={t('common.select')}
             disabled={lockType}
@@ -238,10 +239,10 @@ const counter = (name) => {
 
         <div className={s.field}>
           <label className={s.label}>{t('crm.form.fields.status')}</label>
-          <ThemedSelect
-            className={s.input}
+          <SelectField
+            inputClassName={s.input}
             value={values.status || undefined}
-            onChange={(val)=>!lockStatus && set('status', val)}
+            onValueChange={(val)=>!lockStatus && set('status', val)}
             options={allowedStatuses.map(v => ({ value: v, label: t(`crm.enums.status.${v}`) }))}
             placeholder={t('common.select')}
             disabled={lockStatus}
@@ -254,10 +255,10 @@ const counter = (name) => {
           <label className={s.label}>
             {t('crm.form.fields.nip')} {counter('nip')}
           </label>
-          <input
-            className={`${s.input} ${errors.nip ? s.invalid : ''}`}
+          <TextField
+            inputClassName={`${s.input} ${errors.nip ? s.invalid : ''}`}
             value={values.nip}
-            onChange={(e)=>set('nip', e.target.value.replace(/[^\d]/g,''))}
+            onValueChange={(value)=>set('nip', value.replace(/[^\d]/g,''))}
             maxLength={MAX.nip}
             inputMode="numeric"
             placeholder={t('crm.form.placeholders.nip')}
@@ -269,10 +270,10 @@ const counter = (name) => {
           <label className={s.label}>
             {t('crm.form.fields.regon')} {counter('regon')}
           </label>
-          <input
-            className={`${s.input} ${errors.regon ? s.invalid : ''}`}
+          <TextField
+            inputClassName={`${s.input} ${errors.regon ? s.invalid : ''}`}
             value={values.regon}
-            onChange={(e)=>set('regon', e.target.value.replace(/[^\d]/g,''))}
+            onValueChange={(value)=>set('regon', value.replace(/[^\d]/g,''))}
             maxLength={MAX.regon}
             inputMode="numeric"
           />
@@ -283,10 +284,10 @@ const counter = (name) => {
           <label className={s.label}>
             {t('crm.form.fields.krs')} {counter('krs')}
           </label>
-          <input
-            className={`${s.input} ${errors.krs ? s.invalid : ''}`}
+          <TextField
+            inputClassName={`${s.input} ${errors.krs ? s.invalid : ''}`}
             value={values.krs}
-            onChange={(e)=>set('krs', e.target.value.replace(/[^\d]/g,''))}
+            onValueChange={(value)=>set('krs', value.replace(/[^\d]/g,''))}
             maxLength={MAX.krs}
             inputMode="numeric"
           />
@@ -297,10 +298,10 @@ const counter = (name) => {
           <label className={s.label}>
             {t('crm.form.fields.bdo')} {counter('bdo')}
           </label>
-          <input
-            className={`${s.input} ${errors.bdo ? s.invalid : ''}`}
+          <TextField
+            inputClassName={`${s.input} ${errors.bdo ? s.invalid : ''}`}
             value={values.bdo}
-            onChange={(e)=>set('bdo', e.target.value)}
+            onValueChange={(value)=>set('bdo', value)}
             maxLength={MAX.bdo}
           />
           {errors.bdo && <div className={s.err}>{errors.bdo}</div>}
@@ -309,10 +310,10 @@ const counter = (name) => {
         {/* Адрес */}
         <div className={s.field}>
           <label className={s.label}>{t('crm.form.fields.country')}</label>
-          <ThemedSelect
-            className={s.input}
+          <SelectField
+            inputClassName={s.input}
             value={values.country || undefined}
-            onChange={(val)=>set('country', val || '')}
+            onValueChange={(val)=>set('country', val || '')}
             options={countryOptions.map(c => ({ value: c.code, label: c.label }))}
             placeholder={t('common.none')}
             searchable
@@ -324,10 +325,10 @@ const counter = (name) => {
           <label className={s.label}>
             {t('crm.form.fields.city')} {counter('city')}
           </label>
-          <input
-            className={`${s.input} ${errors.city ? s.invalid : ''}`}
+          <TextField
+            inputClassName={`${s.input} ${errors.city ? s.invalid : ''}`}
             value={values.city}
-            onChange={(e)=>set('city', e.target.value)}
+            onValueChange={(value)=>set('city', value)}
             maxLength={MAX.city}
           />
           {errors.city && <div className={s.err}>{errors.city}</div>}
@@ -337,10 +338,10 @@ const counter = (name) => {
           <label className={s.label}>
             {t('crm.form.fields.postalCode')} {counter('postalCode')}
           </label>
-          <input
-            className={`${s.input} ${errors.postalCode ? s.invalid : ''}`}
+          <TextField
+            inputClassName={`${s.input} ${errors.postalCode ? s.invalid : ''}`}
             value={values.postalCode}
-            onChange={(e)=>set('postalCode', e.target.value)}
+            onValueChange={(value)=>set('postalCode', value)}
             maxLength={MAX.postalCode}
             placeholder={t('crm.form.placeholders.postalCode')}
           />
@@ -351,10 +352,10 @@ const counter = (name) => {
           <label className={s.label}>
             {t('crm.form.fields.street')} {counter('street')}
           </label>
-          <input
-            className={`${s.input} ${errors.street ? s.invalid : ''}`}
+          <TextField
+            inputClassName={`${s.input} ${errors.street ? s.invalid : ''}`}
             value={values.street}
-            onChange={(e)=>set('street', e.target.value)}
+            onValueChange={(value)=>set('street', value)}
             maxLength={MAX.street}
           />
           {errors.street && <div className={s.err}>{errors.street}</div>}
@@ -365,11 +366,11 @@ const counter = (name) => {
           <label className={s.label}>
             {t('crm.form.fields.description')} {counter('description')}
           </label>
-          <textarea
-            className={`${s.input} ${errors.description ? s.invalid : ''}`}
+          <TextareaField
+            inputClassName={`${s.input} ${errors.description ? s.invalid : ''}`}
             rows={4}
             value={values.description}
-            onChange={(e)=>set('description', e.target.value)}
+            onValueChange={(value)=>set('description', value)}
             maxLength={MAX.description}
           />
           {errors.description && <div className={s.err}>{errors.description}</div>}
@@ -393,10 +394,10 @@ const counter = (name) => {
           return (
             <div key={idx} className={s.contactRow}>
               <div style={{ minWidth: 160, maxWidth: 220 }}>
-                <ThemedSelect
-                  className={`${s.input} ${rowErr?.channel ? s.invalid : ''}`}
+                <SelectField
+                  inputClassName={`${s.input} ${rowErr?.channel ? s.invalid : ''}`}
                   value={c.channel || undefined}
-                  onChange={(val)=>updContact(idx, { channel: val })}
+                  onValueChange={(val)=>updContact(idx, { channel: val })}
                   options={CONTACT_CHANNELS.map(v => ({
                     value: v,
                     label: t(`crm.channels.${v}`),
@@ -406,22 +407,25 @@ const counter = (name) => {
                 />
               </div>
 
-              <input
-                className={`${s.input} ${rowErr?.value ? s.invalid : ''}`}
+              <TextField
+                inputClassName={`${s.input} ${rowErr?.value ? s.invalid : ''}`}
                 value={c.value}
-                onChange={(e)=>updContact(idx, { value: e.target.value })}
+                onValueChange={(value)=>updContact(idx, { value })}
                 placeholder={t('crm.form.placeholders.contactValue')}
               />
 
-              <label className={s.chkPrimary}>
-                <input
-                  type="radio"
-                  name="primaryContact"
-                  checked={!!c.isPrimary}
-                  onChange={()=>setPrimary(idx)}
-                />
-                <span>{t('crm.form.fields.primary')}</span>
-              </label>
+              <RadioGroupField
+                name="primaryContact"
+                value={primaryContactIndex >= 0 ? String(primaryContactIndex) : ''}
+                onValueChange={(value)=>setPrimary(Number(value))}
+                options={[
+                  {
+                    value: String(idx),
+                    label: t('crm.form.fields.primary'),
+                  },
+                ]}
+                className={s.chkPrimary}
+              />
 
               <button
                 type="button"

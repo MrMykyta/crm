@@ -32,6 +32,9 @@ export default function FileField({
   fullWidth = true,
   size = "md",
   loading = false,
+  float = false,
+  isFilled = false,
+  isFocused = false,
   onFilesChange,
   onValueChange,
   onChange,
@@ -66,6 +69,9 @@ export default function FileField({
       loading={loading}
       fullWidth={fullWidth}
       size={size}
+      float={float}
+      isFilled={isFilled}
+      isFocused={isFocused}
       className={className}
     >
       <input

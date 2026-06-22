@@ -33,8 +33,12 @@ export default function TextareaField({
   fullWidth = true,
   size = "md",
   loading = false,
+  float = false,
+  isFilled,
+  isFocused = false,
   rows = 4,
   maxLength,
+  counterMaxLength,
   showCounter = false,
   autoResize = false,
   ...rest
@@ -79,9 +83,12 @@ export default function TextareaField({
       loading={loading}
       fullWidth={fullWidth}
       size={size}
+      float={float}
+      isFilled={isFilled ?? strValue !== ""}
+      isFocused={isFocused}
       showCounter={showCounter}
       currentLength={strValue.length}
-      maxLength={maxLength}
+      maxLength={counterMaxLength ?? maxLength}
       className={className}
     >
       <textarea

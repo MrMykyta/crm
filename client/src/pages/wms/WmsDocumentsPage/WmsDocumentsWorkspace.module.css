@@ -152,10 +152,10 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
+  min-height: 38px;
   padding: 0 10px;
   border: 1px solid var(--wms-doc-border);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--wms-doc-surface) 92%, transparent);
   color: var(--ui-text-muted);
 }

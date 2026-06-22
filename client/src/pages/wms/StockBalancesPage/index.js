@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import ListPage from '../../../components/data/ListPage';
 import FilterToolbar from '../../../components/filters/FilterToolbar';
+import { CheckboxField } from '../../../components/ui/fields';
 import useGridPrefs from '../../../hooks/useGridPrefs';
 import { createStockBalancesColumns } from '../../../components/data/ListPage/columnSchemas/stockBalancesColumns';
 
@@ -71,7 +72,7 @@ export default function StockBalancesPage() {
               render: ({ query, onChange }) => {
                 const checked = query?.onlyPositive === true || query?.onlyPositive === 'true';
                 return (
-                  <label
+                  <div
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -80,11 +81,11 @@ export default function StockBalancesPage() {
                       fontSize: 13,
                     }}
                   >
-                    <input
-                      type="checkbox"
+                    <CheckboxField
                       checked={checked}
-                      onChange={(event) => {
-                        const next = event.target.checked;
+                      label={t('wms.stockBalances.onlyPositive', 'Tylko dodatnie')}
+                      fullWidth={false}
+                      onValueChange={(next) => {
                         onChange((q) => ({
                           ...q,
                           onlyPositive: next ? true : undefined,
@@ -92,8 +93,7 @@ export default function StockBalancesPage() {
                         }));
                       }}
                     />
-                    {t('wms.stockBalances.onlyPositive', 'Tylko dodatnie')}
-                  </label>
+                  </div>
                 );
               },
             },

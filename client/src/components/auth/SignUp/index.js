@@ -1,25 +1,31 @@
 // src/components/auth/SignUp/index.jsx
 import React, { useState } from 'react';
-import { Formik, Form, useField, ErrorMessage } from 'formik';
+import { Formik, Form, useField } from 'formik';
 import * as Yup from 'yup';
 import { useTranslation } from 'react-i18next';
 import EmailVerificationModal from '../EmailVerificationModal';
+import { TextField, EmailField, PasswordField } from '../../ui/fields';
 import s from '../../../styles/formGlass.module.css';
 import {
   useRegisterUserMutation,
   useResendVerificationMutation,
 } from '../../../store/rtk/authApi';
 
-// Компонент InputField: отвечает за отображение UI и обработку взаимодействий пользователя.
+// Компонент InputField: оборачивает Formik-поле в стандартизированный field-компонент.
+// dual-mode onChange: event пробрасывается в Formik (handleChange) → touched/errors работают 1:1.
 function InputField({ name, label, type = 'text', autoComplete }) {
-  const [field] = useField(name);
-  const filled = (field.value ?? '') !== '';
+  const [field, meta] = useField(name);
+  const Cmp = type === 'email' ? EmailField : type === 'password' ? PasswordField : TextField;
   return (
-    <div className={`${s.field} ${filled ? s.filled : ''}`}>
-      <input {...field} type={type} autoComplete={autoComplete} placeholder=" " />
-      <label>{label}</label>
-      <ErrorMessage name={name} component="div" className={s.err} />
-    </div>
+    <Cmp
+      name={name}
+      label={label}
+      autoComplete={autoComplete}
+      value={field.value}
+      onChange={(value, event) => field.onChange(event)}
+      onBlur={field.onBlur}
+      error={meta.touched && meta.error ? meta.error : undefined}
+    />
   );
 }
 

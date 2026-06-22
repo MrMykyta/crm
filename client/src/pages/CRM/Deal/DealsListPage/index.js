@@ -7,7 +7,14 @@ import FilterToolbar from '../../../../components/filters/FilterToolbar';
 import LinkCell from '../../../../components/cells/LinkCell';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import Modal from '../../../../components/Modal';
-import AutocompleteSelect from '../../../../components/shared/AutocompleteSelect';
+import {
+  AutocompleteField,
+  DateField,
+  NumberField,
+  SelectField,
+  TextareaField,
+  TextField,
+} from '../../../../components/ui/fields';
 import useGridPrefs from '../../../../hooks/useGridPrefs';
 import useOpenAsModal from '../../../../hooks/useOpenAsModal';
 import useCompanyMembersOptions from '../../../../hooks/useCompanyMembersOptions';
@@ -125,10 +132,10 @@ const submit = (e) => {
         <div className={s.label}>
           {t('deals.fields.title', 'Title')}
         </div>
-        <input
-          className={s.input}
+        <TextField
+          inputClassName={s.input}
           value={form.title}
-          onChange={(e) => set('title', e.target.value)}
+          onValueChange={(value) => set('title', value)}
           placeholder={t('deals.placeholders.title', 'Deal title')}
         />
       </div>
@@ -138,7 +145,7 @@ const submit = (e) => {
           <div className={s.label}>
             {t('deals.modal.new.counterpartyLabel', 'Counterparty')}
           </div>
-          <AutocompleteSelect
+          <AutocompleteField
             value={selectedCounterparty}
             inputValue={counterpartyTerm}
             onInputChange={(value) => {
@@ -149,10 +156,10 @@ const submit = (e) => {
               }
             }}
             options={lookupOptions}
-            onSelect={(opt) => {
+            onChange={(nextValue, opt) => {
               if (!opt) return;
               setSelectedCounterparty(opt);
-              set('counterpartyId', String(opt.id));
+              set('counterpartyId', String(nextValue || opt.id || ''));
               setCounterpartyTerm(opt.name || '');
               setError('');
             }}
@@ -170,7 +177,7 @@ const submit = (e) => {
               'No counterparties found'
             )}
             loading={Boolean(debouncedTerm) && lookupLoading}
-            getOptionPrimary={(opt) => opt?.name || String(opt?.id || '')}
+            getOptionLabel={(opt) => opt?.name || String(opt?.id || '')}
             getOptionSecondary={(opt) => {
               const parts = [];
               if (opt?.nip) parts.push(`${t('deals.common.nipLabel', 'NIP')}: ${opt.nip}`);
@@ -185,18 +192,15 @@ const submit = (e) => {
           <div className={s.label}>
             {t('deals.fields.owner', 'Owner')}
           </div>
-          <select
-            className={s.select}
+          <SelectField
+            inputClassName={s.select}
             value={form.responsibleId}
-            onChange={(e) => set('responsibleId', e.target.value)}
-          >
-            <option value="">
-              {t('deals.form.ownerUnassigned', 'Unassigned')}
-            </option>
-            {ownerOptions.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+            onValueChange={(value) => set('responsibleId', value)}
+            options={[
+              { value: '', label: t('deals.form.ownerUnassigned', 'Unassigned') },
+              ...ownerOptions,
+            ]}
+          />
         </div>
       </div>
 
@@ -205,12 +209,12 @@ const submit = (e) => {
           <div className={s.label}>
             {t('deals.fields.amount', 'Amount')}
           </div>
-          <input
-            className={s.input}
-            type="number"
+          <NumberField
+            inputClassName={s.input}
             step="0.01"
             value={form.value}
-            onChange={(e) => set('value', e.target.value)}
+            emitAs="string"
+            onValueChange={(value) => set('value', value)}
             placeholder="0.00"
           />
         </div>
@@ -218,10 +222,10 @@ const submit = (e) => {
           <div className={s.label}>
             {t('deals.fields.currency', 'Currency')}
           </div>
-          <input
-            className={s.input}
+          <TextField
+            inputClassName={s.input}
             value={form.currency}
-            onChange={(e) => set('currency', e.target.value)}
+            onValueChange={(value) => set('currency', value)}
             placeholder="PLN"
           />
         </div>
@@ -232,15 +236,12 @@ const submit = (e) => {
           <div className={s.label}>
             {t('deals.fields.status', 'Status')}
           </div>
-          <select
-            className={s.select}
+          <SelectField
+            inputClassName={s.select}
             value={form.status}
-            onChange={(e) => set('status', e.target.value)}
-          >
-            {statusOptions.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+            onValueChange={(value) => set('status', value)}
+            options={statusOptions}
+          />
         </div>
       </div>
 
@@ -248,10 +249,10 @@ const submit = (e) => {
         <div className={s.label}>
           {t('deals.fields.description', 'Description')}
         </div>
-        <textarea
-          className={s.textarea}
+        <TextareaField
+          inputClassName={s.textarea}
           value={form.description}
-          onChange={(e) => set('description', e.target.value)}
+          onValueChange={(value) => set('description', value)}
           placeholder={t('deals.placeholders.description', 'Optional description')}
         />
       </div>
@@ -465,25 +466,25 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
                                 // render: описывает рендер соответствующего блока UI.
 render: ({ query, onChange }) => (
                   <div className={s.dateRange}>
-                    <input
-                      className={s.dateInput}
-                      type="date"
+                    <DateField
+                      inputClassName={s.dateInput}
                       value={query.dateFrom || ''}
-                      onChange={(e) => onChange((q) => ({
+                      onValueChange={(value) => onChange((q) => ({
                         ...q,
-                        dateFrom: e.target.value || undefined,
+                        dateFrom: value || undefined,
                         page: 1,
                       }))}
+                      fullWidth={false}
                     />
-                    <input
-                      className={s.dateInput}
-                      type="date"
+                    <DateField
+                      inputClassName={s.dateInput}
                       value={query.dateTo || ''}
-                      onChange={(e) => onChange((q) => ({
+                      onValueChange={(value) => onChange((q) => ({
                         ...q,
-                        dateTo: e.target.value || undefined,
+                        dateTo: value || undefined,
                         page: 1,
                       }))}
+                      fullWidth={false}
                     />
                   </div>
                 ),
@@ -514,4 +515,3 @@ render: ({ query, onChange }) => (
     </>
   );
 }
-

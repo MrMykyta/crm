@@ -1,8 +1,9 @@
 // src/pages/UserSettingsPage/sections/SecurityForm.jsx
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import s from "../../UserSettingsPage.module.css";
 import { useTranslation } from "react-i18next";
+import { PasswordField } from "../../../../../components/ui/fields";
 
 // Компонент SecurityForm: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function SecurityForm({ onSave }) {
@@ -30,26 +31,47 @@ const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     <section className={s.section}>
       <h3>{t("settings.security.title")}</h3>
       <Formik initialValues={initial} validationSchema={schema} onSubmit={handleSubmit}>
-        {({ isSubmitting }) => (
+        {({ values, touched, errors, handleChange, handleBlur, isSubmitting }) => (
           <Form>
             <div className={s.grid}>
-              <div className={s.field}>
-                <label className={s.label}>{t("settings.security.current")}</label>
-                <Field className={s.input} name="current" type="password" />
-                <ErrorMessage name="current" component="div" className={s.err} />
-              </div>
+              <PasswordField
+                name="current"
+                label={t("settings.security.current")}
+                value={values.current}
+                onChange={(value, event) => handleChange(event)}
+                onBlur={handleBlur}
+                error={touched.current && errors.current}
+                disabled={isSubmitting}
+                autoComplete="current-password"
+                className={s.field}
+                inputClassName={s.input}
+              />
 
-              <div className={s.field}>
-                <label className={s.label}>{t("settings.security.new")}</label>
-                <Field className={s.input} name="next" type="password" />
-                <ErrorMessage name="next" component="div" className={s.err} />
-              </div>
+              <PasswordField
+                name="next"
+                label={t("settings.security.new")}
+                value={values.next}
+                onChange={(value, event) => handleChange(event)}
+                onBlur={handleBlur}
+                error={touched.next && errors.next}
+                disabled={isSubmitting}
+                autoComplete="new-password"
+                className={s.field}
+                inputClassName={s.input}
+              />
 
-              <div className={`${s.field} ${s.full}`}>
-                <label className={s.label}>{t("settings.security.confirm")}</label>
-                <Field className={s.input} name="confirm" type="password" />
-                <ErrorMessage name="confirm" component="div" className={s.err} />
-              </div>
+              <PasswordField
+                name="confirm"
+                label={t("settings.security.confirm")}
+                value={values.confirm}
+                onChange={(value, event) => handleChange(event)}
+                onBlur={handleBlur}
+                error={touched.confirm && errors.confirm}
+                disabled={isSubmitting}
+                autoComplete="new-password"
+                className={`${s.field} ${s.full}`}
+                inputClassName={s.input}
+              />
             </div>
 
             <div className={s.actions}>

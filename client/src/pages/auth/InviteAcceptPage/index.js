@@ -2,11 +2,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Formik, Form } from "formik";
 import * as Yup from "yup";
 
 import auth from "../../../styles/AuthPage.module.css";
 import s from "./InviteAccept.module.css";
+import { TextField, CheckboxField } from "../../../components/ui/fields";
 
 import {
   useCheckInvitationQuery,
@@ -164,7 +165,7 @@ export default function InviteAcceptPage() {
             }
           }}
         >
-          {({ isSubmitting, isValid }) => (
+          {({ isSubmitting, isValid, values, handleChange, handleBlur, touched, errors }) => (
             <Form className={s.form} noValidate>
               {checkData?.email && (
                 <div className={s.emailLine}>
@@ -174,72 +175,60 @@ export default function InviteAcceptPage() {
               )}
 
               <div className={s.grid2}>
-                <label className={s.label}>
-                  <span className={s.caption}>Имя</span>
-                  <Field className={s.input} name="firstName" placeholder="Иван" />
-                  <ErrorMessage
-                    name="firstName"
-                    component="div"
-                    className={s.fieldError}
-                  />
-                </label>
-                <label className={s.label}>
-                  <span className={s.caption}>Фамилия</span>
-                  <Field className={s.input} name="lastName" placeholder="Иванов" />
-                  <ErrorMessage
-                    name="lastName"
-                    component="div"
-                    className={s.fieldError}
-                  />
-                </label>
+                <TextField
+                  name="firstName"
+                  label="Имя"
+                  placeholder="Иван"
+                  value={values.firstName}
+                  onChange={(value, event) => handleChange(event)}
+                  onBlur={handleBlur}
+                  error={touched.firstName && errors.firstName ? errors.firstName : undefined}
+                />
+                <TextField
+                  name="lastName"
+                  label="Фамилия"
+                  placeholder="Иванов"
+                  value={values.lastName}
+                  onChange={(value, event) => handleChange(event)}
+                  onBlur={handleBlur}
+                  error={touched.lastName && errors.lastName ? errors.lastName : undefined}
+                />
               </div>
 
               {!userExists && (
                 <>
                   <div className={s.grid2}>
-                    <label className={s.label}>
-                      <span className={s.caption}>Пароль</span>
-                      <Field
-                        className={s.input}
-                        type={showPwd ? "text" : "password"}
-                        name="password"
-                        placeholder="Введите пароль"
-                        minLength={8}
-                        required
-                      />
-                      <ErrorMessage
-                        name="password"
-                        component="div"
-                        className={s.fieldError}
-                      />
-                    </label>
-
-                    <label className={s.label}>
-                      <span className={s.caption}>Подтверждение пароля</span>
-                      <Field
-                        className={s.input}
-                        type={showPwd ? "text" : "password"}
-                        name="confirm"
-                        placeholder="Повторите пароль"
-                        minLength={8}
-                        required
-                      />
-                      <ErrorMessage
-                        name="confirm"
-                        component="div"
-                        className={s.fieldError}
-                      />
-                    </label>
+                    <TextField
+                      name="password"
+                      label="Пароль"
+                      type={showPwd ? "text" : "password"}
+                      placeholder="Введите пароль"
+                      minLength={8}
+                      required
+                      value={values.password}
+                      onChange={(value, event) => handleChange(event)}
+                      onBlur={handleBlur}
+                      error={touched.password && errors.password ? errors.password : undefined}
+                    />
+                    <TextField
+                      name="confirm"
+                      label="Подтверждение пароля"
+                      type={showPwd ? "text" : "password"}
+                      placeholder="Повторите пароль"
+                      minLength={8}
+                      required
+                      value={values.confirm}
+                      onChange={(value, event) => handleChange(event)}
+                      onBlur={handleBlur}
+                      error={touched.confirm && errors.confirm ? errors.confirm : undefined}
+                    />
                   </div>
 
-                  <label className={s.checkboxLine}>
-                    <input
-                      type="checkbox"
-                      checked={showPwd}
-                      onChange={() => setShowPwd((v) => !v)}
-                    />
-                    <span>Показать пароль</span>
-                  </label>
+                  <CheckboxField
+                    label="Показать пароль"
+                    checked={showPwd}
+                    onValueChange={setShowPwd}
+                  />
                 </>
               )}
 

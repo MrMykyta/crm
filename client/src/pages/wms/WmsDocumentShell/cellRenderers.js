@@ -4,6 +4,7 @@ import {
   getDetailSectionForColumn,
   renderDetailSection,
 } from './detailSectionRenderers.js';
+import { NumberField, TextField } from '../../../components/ui/fields';
 import { WmsStatusChip } from '../../../components/wms/ui';
 import { asText, getQtyField, mapProductPickerRowToPzRowPatch } from './rowControllerModel.js';
 
@@ -164,16 +165,16 @@ function renderQtyCell({ column, config, disabled, qtyRefs, row, rowErrors, upda
   const field = resolveColumnField(column, config);
   return (
     <>
-      <input
+      <NumberField
         ref={(node) => { qtyRefs.current[row.localId] = node; }}
-        className="wmsShellInput wmsShellQtyInput"
-        type="number"
+        value={row[field] ?? ''}
+        emitAs="string"
         min="0"
         step="0.0001"
-        value={row[field]}
-        onChange={(event) => updateRow(row.localId, { [field]: event.target.value })}
+        onValueChange={(value) => updateRow(row.localId, { [field]: value })}
         onKeyDown={(event) => onCellKeyDown?.(event, row, column)}
         disabled={disabled}
+        inputClassName="wmsShellInput wmsShellQtyInput"
       />
       {rowErrors[field] ? <div className="wmsShellFieldError">{rowErrors[field]}</div> : null}
     </>
@@ -184,12 +185,12 @@ function renderTextInputCell({ column, disabled, row, rowWarnings, updateRow, on
   const field = column.key;
   return (
     <>
-      <input
-        className="wmsShellInput"
-        value={row[field]}
-        onChange={(event) => updateRow(row.localId, { [field]: event.target.value })}
+      <TextField
+        value={row[field] ?? ''}
+        onValueChange={(value) => updateRow(row.localId, { [field]: value })}
         onKeyDown={(event) => onCellKeyDown?.(event, row, column)}
         disabled={disabled}
+        inputClassName="wmsShellInput"
       />
       {rowWarnings[field] ? <div className="wmsShellFieldWarning">{rowWarnings[field]}</div> : null}
     </>
@@ -210,14 +211,14 @@ function renderNumberCell({ column, disabled, row, rowWarnings, updateRow, onCel
   const field = column.key;
   return (
     <>
-      <input
-        className={column.inputClassName || 'wmsShellInput'}
-        type="number"
+      <NumberField
+        value={row[field] ?? ''}
+        emitAs="string"
         step={column.step || '0.0001'}
-        value={row[field]}
-        onChange={(event) => updateRow(row.localId, { [field]: event.target.value })}
+        onValueChange={(value) => updateRow(row.localId, { [field]: value })}
         onKeyDown={(event) => onCellKeyDown?.(event, row, column)}
         disabled={disabled}
+        inputClassName={column.inputClassName || 'wmsShellInput'}
       />
       {rowWarnings[field] ? <div className="wmsShellFieldWarning">{rowWarnings[field]}</div> : null}
     </>
@@ -227,12 +228,12 @@ function renderNumberCell({ column, disabled, row, rowWarnings, updateRow, onCel
 function renderCurrencyCell({ column, disabled, row, updateRow, onCellKeyDown }) {
   const field = column.key;
   return (
-    <input
-      className={column.inputClassName || 'wmsShellInput'}
-      value={row[field]}
-      onChange={(event) => updateRow(row.localId, { [field]: event.target.value.toUpperCase() })}
+    <TextField
+      value={row[field] ?? ''}
+      onValueChange={(value) => updateRow(row.localId, { [field]: value.toUpperCase() })}
       onKeyDown={(event) => onCellKeyDown?.(event, row, column)}
       disabled={disabled}
+      inputClassName={column.inputClassName || 'wmsShellInput'}
     />
   );
 }

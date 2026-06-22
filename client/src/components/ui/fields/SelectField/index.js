@@ -31,15 +31,27 @@ export default function SelectField({
   helperText,
   description,
   className = "",
+  inputClassName = "",
   fullWidth = true,
   size = "md",
   loading = false,
+  float = false,
+  isFilled,
+  isFocused = false,
   clearable = false,
   valueType = "string",
+  searchable,
+  searchPlaceholder,
+  emptyLabel,
   ...rest
 }) {
   const fieldId = id || name;
   const stringValue = value === undefined || value === null ? "" : String(value);
+  const isSearchable = searchable ?? options.length > 24;
+  const disabledValues = React.useMemo(
+    () => new Set(options.filter((option) => option?.disabled).map((option) => String(option.value ?? ""))),
+    [options]
+  );
 
   const coerceOut = (next) => {
     if (valueType !== "number") return next;
@@ -49,6 +61,7 @@ export default function SelectField({
   };
 
   const emit = (next) => {
+    if (disabledValues.has(String(next ?? ""))) return;
     const out = coerceOut(next);
     onValueChange?.(out);
     onChange?.(out, null);
@@ -84,6 +97,9 @@ export default function SelectField({
       fullWidth={fullWidth}
       size={size}
       rightIcon={clearControl}
+      float={float}
+      isFilled={isFilled ?? stringValue !== ""}
+      isFocused={isFocused}
       className={className}
     >
       <ThemedSelect
@@ -92,7 +108,11 @@ export default function SelectField({
         onChange={emit}
         placeholder={placeholder}
         size={radixSize}
+        className={inputClassName}
         disabled={disabled || readOnly}
+        searchable={isSearchable}
+        searchPlaceholder={searchPlaceholder}
+        emptyLabel={emptyLabel}
         {...rest}
       />
     </FieldShell>

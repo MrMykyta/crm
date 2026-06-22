@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRequestPasswordResetMutation } from '../../../store/rtk/authApi';
+import { TextField } from '../../ui/fields';
 import styles from './ForgotPasswordModal.module.css';
 
 // Компонент ForgotPasswordModal: отвечает за отображение UI и обработку взаимодействий пользователя.
@@ -49,16 +50,15 @@ const submit = async (e) => {
         <p className={styles.subtitle}>{t('auth.forgotSubtitle', 'Enter your email and we will send a reset link.')}</p>
 
         <form onSubmit={submit} className={styles.form}>
-          <div className={styles.field}>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              placeholder=" "
-              required
-            />
-            <label>{t('common.email')}</label>
-          </div>
+          <TextField
+            className={styles.field}
+            label={t('common.email')}
+            value={email}
+            onValueChange={setEmail}
+            type="email"
+            placeholder=" "
+            required
+          />
 
           {status === 'ok' && <div className={styles.ok}>{t('auth.resetSent', 'Reset link sent. Please check your inbox.')}</div>}
           {status === 'error' && <div className={styles.err}>{t('auth.resetFailed', 'Failed to send reset email')}</div>}
@@ -78,4 +78,3 @@ const submit = async (e) => {
     </div>
   );
 }
-

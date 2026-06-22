@@ -3,8 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Printer } from 'lucide-react';
 
-import ThemedSelect from '../../../components/inputs/RadixSelect';
 import OmsProductPicker from '../../../components/oms/OmsProductPicker';
+import { NumberField, SelectField, TextField } from '../../../components/ui/fields';
 import {
   buildLookupMap,
   formatLocationLabel,
@@ -452,9 +452,9 @@ function LegacyCycleCountDetailPage() {
                   {draftItems.map((item) => (
                     <tr key={item.localId}>
                       <td>
-                        <ThemedSelect
+                        <SelectField
                           value={item.locationId}
-                          onChange={(value) => setDraftField(item.localId, 'locationId', value)}
+                          onValueChange={(value) => setDraftField(item.localId, 'locationId', value)}
                           options={locationOptions}
                           placeholder={warehouseLevelStockText(t)}
                         />
@@ -486,37 +486,37 @@ function LegacyCycleCountDetailPage() {
                         ) : null}
                       </td>
                       <td>
-                        <input
-                          className={s.input}
+                        <TextField
                           value={item.variantId}
-                          onChange={(event) => setDraftField(item.localId, 'variantId', event.target.value)}
+                          onValueChange={(value) => setDraftField(item.localId, 'variantId', value)}
                           placeholder={t('wms.cycleCounts.placeholders.variant', 'Variant ID')}
+                          inputClassName={s.input}
                         />
                       </td>
                       <td>
-                        <input
-                          className={s.input}
+                        <TextField
                           value={item.lotId}
-                          onChange={(event) => setDraftField(item.localId, 'lotId', event.target.value)}
+                          onValueChange={(value) => setDraftField(item.localId, 'lotId', value)}
                           placeholder={t('wms.cycleCounts.placeholders.lot', 'Lot ID')}
+                          inputClassName={s.input}
                         />
                       </td>
                       <td>
-                        <input
-                          className={s.input}
+                        <TextField
                           value={item.serialId}
-                          onChange={(event) => setDraftField(item.localId, 'serialId', event.target.value)}
+                          onValueChange={(value) => setDraftField(item.localId, 'serialId', value)}
                           placeholder={t('wms.cycleCounts.placeholders.serial', 'Serial ID')}
+                          inputClassName={s.input}
                         />
                       </td>
                       <td>
-                        <input
-                          className={s.input}
-                          type="number"
+                        <NumberField
+                          emitAs="string"
                           min="0"
                           step="0.0001"
                           value={item.qtyCounted}
-                          onChange={(event) => setDraftField(item.localId, 'qtyCounted', event.target.value)}
+                          onValueChange={(value) => setDraftField(item.localId, 'qtyCounted', value)}
+                          inputClassName={s.input}
                         />
                         {errors[`item:${item.localId}:qtyCounted`] ? (
                           <div className={s.fieldError}>{errors[`item:${item.localId}:qtyCounted`]}</div>

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import * as Lucide from 'lucide-react';
+import { TextField } from '../../ui/fields';
 import {
   useListWorkspaceViewsQuery,
   usePinWorkspaceViewMutation,
@@ -69,12 +70,12 @@ function ManageRow({ view, t, busy, onPin, onHide, onRename, onDelete }) {
         <Icon size={16} strokeWidth={1.8} className={s.rowIcon} />
         <div className={s.rowText}>
           {editing ? (
-            <input
-              className={s.renameInput}
+            <TextField
+              inputClassName={s.renameInput}
               value={draftName}
               autoFocus
               maxLength={120}
-              onChange={(e) => setDraftName(e.target.value)}
+              onValueChange={setDraftName}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') commitRename();
                 else if (e.key === 'Escape') cancelRename();

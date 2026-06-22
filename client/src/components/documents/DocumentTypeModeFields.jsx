@@ -1,4 +1,5 @@
 import { getDocumentTypeConfig } from "./documentTypeConfig";
+import { DateField, NumberField } from "../ui/fields";
 import styles from "./DocumentTypeModeFields.module.css";
 
 function normalizeIntInput(value) {
@@ -29,9 +30,7 @@ export default function DocumentTypeModeFields({
     return null;
   }
 
-  const handleChange = (field, parser) => (event) => {
-    const raw = event.target.value;
-    const nextValue = typeof parser === "function" ? parser(raw) : raw;
+  const setField = (field, nextValue) => {
     onChange?.({
       ...terms,
       [field]: nextValue,
@@ -50,33 +49,31 @@ export default function DocumentTypeModeFields({
           <div className={styles.fields}>
             <label className={styles.field}>
               <span className={styles.label}>Действует с</span>
-              <input
-                type="date"
+              <DateField
                 value={asValue(terms.validFrom)}
-                onChange={handleChange("validFrom")}
-                className={styles.control}
+                onValueChange={(value) => setField("validFrom", value)}
+                inputClassName={styles.control}
                 disabled={disabled}
               />
             </label>
 
             <label className={styles.field}>
               <span className={styles.label}>Действует до</span>
-              <input
-                type="date"
+              <DateField
                 value={asValue(terms.validTo)}
-                onChange={handleChange("validTo")}
-                className={styles.control}
+                onValueChange={(value) => setField("validTo", value)}
+                inputClassName={styles.control}
                 disabled={disabled}
               />
             </label>
 
             <label className={styles.field}>
               <span className={styles.label}>Срок (дней)</span>
-              <input
-                type="number"
+              <NumberField
+                emitAs="string"
                 value={asValue(terms.validDays)}
-                onChange={handleChange("validDays", normalizeIntInput)}
-                className={styles.control}
+                onValueChange={(raw) => setField("validDays", normalizeIntInput(raw))}
+                inputClassName={styles.control}
                 min="1"
                 step="1"
                 placeholder="Например: 14"
@@ -97,22 +94,21 @@ export default function DocumentTypeModeFields({
           <div className={styles.fields}>
             <label className={styles.field}>
               <span className={styles.label}>Оплатить до</span>
-              <input
-                type="date"
+              <DateField
                 value={asValue(terms.paymentDueDate)}
-                onChange={handleChange("paymentDueDate")}
-                className={styles.control}
+                onValueChange={(value) => setField("paymentDueDate", value)}
+                inputClassName={styles.control}
                 disabled={disabled}
               />
             </label>
 
             <label className={styles.field}>
               <span className={styles.label}>Срок оплаты (дней)</span>
-              <input
-                type="number"
+              <NumberField
+                emitAs="string"
                 value={asValue(terms.paymentDays)}
-                onChange={handleChange("paymentDays", normalizeIntInput)}
-                className={styles.control}
+                onValueChange={(raw) => setField("paymentDays", normalizeIntInput(raw))}
+                inputClassName={styles.control}
                 min="1"
                 step="1"
                 placeholder="Например: 7"

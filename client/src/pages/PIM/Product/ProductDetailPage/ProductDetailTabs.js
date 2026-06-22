@@ -4,7 +4,7 @@ import DataTable from '../../../../components/data/DataTable';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import Modal from '../../../../components/Modal';
 import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
-import ThemedSelect from '../../../../components/inputs/RadixSelect';
+import { SelectField } from '../../../../components/ui/fields';
 import HtmlDescriptionSection from '../../../../components/data/HtmlDescriptionSection';
 import { ProductPickerDemo } from '../../../../components/pim';
 import {
@@ -1706,7 +1706,7 @@ function VariantsTab({ productId, product }) {
             </label>
             <label className={s.field}>
               <span className={s.label}>Ед. изм.</span>
-              <ThemedSelect
+              <SelectField
                 value={form.uomId || ''}
                 onChange={(value) => setForm((prev) => ({ ...prev, uomId: value || '' }))}
                 options={uomOptions}
@@ -2166,7 +2166,7 @@ function SuppliersPurchaseTab({ productId, product }) {
           <div className={s.grid2}>
             <label className={s.field}>
               <span className={s.label}>Поставщик</span>
-              <ThemedSelect
+              <SelectField
                 value={form.supplierId}
                 onChange={(value) => setForm((prev) => ({ ...prev, supplierId: value }))}
                 options={supplierOptions}
@@ -2174,7 +2174,7 @@ function SuppliersPurchaseTab({ productId, product }) {
             </label>
             <label className={s.field}>
               <span className={s.label}>Область / вариант</span>
-              <ThemedSelect
+              <SelectField
                 value={form.variantId}
                 onChange={(value) => setForm((prev) => ({ ...prev, variantId: value || '' }))}
                 options={variantOptions}
@@ -2559,7 +2559,7 @@ render: (row) => formatQuantity(row.minQty || 1, { symbol: row.unit, precision: 
         <form id="product-price-form" className={s.modalForm} onSubmit={submit}>
           <label className={s.field}>
             <span className={s.label}>Тип цены</span>
-            <ThemedSelect
+            <SelectField
               value={form.type}
               onChange={(value) => setForm((prev) => ({ ...prev, type: value }))}
               options={[
@@ -2572,7 +2572,7 @@ render: (row) => formatQuantity(row.minQty || 1, { symbol: row.unit, precision: 
           {form.type === 'purchase' ? (
             <label className={s.field}>
               <span className={s.label}>Поставщик</span>
-              <ThemedSelect
+              <SelectField
                 value={form.supplierId}
                 onChange={(value) => setForm((prev) => ({ ...prev, supplierId: value }))}
                 options={supplierOptions}
@@ -2582,7 +2582,7 @@ render: (row) => formatQuantity(row.minQty || 1, { symbol: row.unit, precision: 
             <>
               <label className={s.field}>
                 <span className={s.label}>Группа продаж</span>
-                <ThemedSelect
+                <SelectField
                   value={form.priceListId}
                   onChange={(value) => setForm((prev) => ({ ...prev, priceListId: value }))}
                   options={priceListOptions}
@@ -2862,7 +2862,7 @@ const onDelete = async (item) => {
         </div>
       </div>
       <div className={s.sectionToolbar}>
-        <ThemedSelect
+        <SelectField
           className={s.unitControl}
           value={sortMode}
           onChange={(next) => setSortMode(next || 'key-asc')}
@@ -2945,7 +2945,7 @@ render: (row) => formatDateTime(row.updatedAt) },
           </label>
           <label className={s.field}>
             <span className={s.label}>Тип</span>
-            <ThemedSelect
+            <SelectField
               value={form.valueType}
               onChange={(next) => setForm((prev) => ({ ...prev, valueType: next || 'text' }))}
               options={[
@@ -3002,7 +3002,7 @@ render: (row) => formatDateTime(row.updatedAt) },
               </label>
               <label className={s.field}>
                 <span className={s.label}>Значение</span>
-                <ThemedSelect
+                <SelectField
                   value={form.selectValue}
                   onChange={(next) => setForm((prev) => ({ ...prev, selectValue: next || '' }))}
                   options={selectOptions}
@@ -3118,7 +3118,7 @@ const onDimensionInput = (fieldName, nextText) => {
       <div className={s.sectionToolbar}>
         <label className={s.unitControl}>
           <span className={s.label}>Ед. веса</span>
-          <ThemedSelect
+          <SelectField
             value={weightUnit}
             onChange={(next) => setWeightUnit(next || 'kg')}
             options={[
@@ -3130,7 +3130,7 @@ const onDimensionInput = (fieldName, nextText) => {
         </label>
         <label className={s.unitControl}>
           <span className={s.label}>Ед. размеров</span>
-          <ThemedSelect
+          <SelectField
             value={dimensionUnit}
             onChange={(next) => setDimensionUnit(next || 'mm')}
             options={[

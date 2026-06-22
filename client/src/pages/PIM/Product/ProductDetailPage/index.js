@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import EntityDetailPage from '../../../_scaffold/EntityDetailPage';
 import Modal from '../../../../components/Modal';
 import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
-import ThemedSelect from '../../../../components/inputs/RadixSelect';
+import { SelectField } from '../../../../components/ui/fields';
 import {
   productEntitySchema,
   toApiProduct,
@@ -1689,9 +1689,9 @@ onClearOption: async (selectedOption) => {
           </div>
           <label className={s.field}>
             <span className={s.label}>Перенести в</span>
-            <ThemedSelect
+            <SelectField
               value={mergeState?.targetId || ''}
-              onChange={(value) => setMergeState((prev) => (prev ? { ...prev, targetId: value, error: '' } : prev))}
+              onValueChange={(value) => setMergeState((prev) => (prev ? { ...prev, targetId: value, error: '' } : prev))}
               options={[{ value: '', label: 'Выберите целевую сущность' }, ...managerTargetOptions]}
             />
           </label>

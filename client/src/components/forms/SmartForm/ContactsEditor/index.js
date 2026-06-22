@@ -1,13 +1,16 @@
 // src/components/forms/SmartForm/parts/ContactsEditor.jsx
+import React from "react";
 import { useTranslation } from "react-i18next";
 import s from "../SmartForm.module.css";
-import ThemedSelect from "../../../inputs/RadixSelect";
+import { SelectField, TextField } from "../../../ui/fields";
 
 const CHANNELS = ["email", "phone", "website", "telegram", "whatsapp", "linkedin"];
 
 // Компонент ContactsEditor: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ContactsEditor({ value = [], onChange }) {
   const { t } = useTranslation();
+  const primaryId = React.useId();
+  const primaryName = `primaryContact-${primaryId.replace(/:/g, "")}`;
 
     // add: добавляет элемент в локальное состояние компонента.
 const add = () =>
@@ -48,26 +51,26 @@ const setPrimary = (i) =>
       {value.map((c, i) => (
         <div key={i} className={s.contactRow}>
           <div style={{ minWidth: 180 }}>
-            <ThemedSelect
-              className={s.input}
+            <SelectField
               value={c.channel || "email"}
               options={channelOptions}
-              onChange={(next) => upd(i, { channel: next })}
+              onValueChange={(next) => upd(i, { channel: next })}
               placeholder={t("common.select")}
+              fullWidth
             />
           </div>
 
-          <input
-            className={s.input}
-            value={c.value}
-            onChange={(e) => upd(i, { value: e.target.value })}
+          <TextField
+            value={c.value || ""}
+            onValueChange={(next) => upd(i, { value: next })}
             placeholder={t("crm.form.placeholders.contactValue")}
+            fullWidth
           />
 
           <label className={s.chkLine}>
             <input
               type="radio"
-              name="primaryContact"
+              name={primaryName}
               checked={!!c.isPrimary}
               onChange={() => setPrimary(i)}
             />

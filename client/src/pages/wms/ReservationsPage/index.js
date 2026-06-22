@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import FilterToolbar from '../../../components/filters/FilterToolbar';
 import ListPage from '../../../components/data/ListPage';
 import { createWmsReservationsColumns } from '../../../components/data/ListPage/columnSchemas/wmsReservationsColumns';
+import { SearchField } from '../../../components/ui/fields';
 import useAclPermissions from '../../../hooks/useAclPermissions';
 import useGridPrefs from '../../../hooks/useGridPrefs';
 import s from '../WmsMasterDataPage.module.css';
@@ -20,11 +21,11 @@ function setFilter(onChange, key, value) {
 
 function TextFilter({ query, onChange, fieldKey, placeholder }) {
   return (
-    <input
-      className={s.filterInput}
+    <SearchField
       value={query?.[fieldKey] || ''}
       placeholder={placeholder}
-      onChange={(event) => setFilter(onChange, fieldKey, event.target.value)}
+      onValueChange={(value) => setFilter(onChange, fieldKey, value)}
+      inputClassName={s.filterInput}
     />
   );
 }

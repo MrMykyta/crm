@@ -109,7 +109,7 @@
   min-height: 38px;
   gap: 8px;
   border: 1px solid var(--ui-border-soft);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--ui-surface-1) 88%, transparent);
   color: var(--ui-text-2);
   padding: 0 10px;

@@ -19,6 +19,7 @@ import {
   WmsStatusChip,
   WmsSurface,
 } from '../../../components/wms/ui';
+import { SearchField, SelectField, TextField } from '../../../components/ui/fields';
 import s from './PicksPage.module.css';
 import {
   useListLocationsQuery,
@@ -293,9 +294,9 @@ function ScanMode({ open, current, recentScans, scanQuery, onScanQueryChange, on
 
         <label className={s.largeScanField}>
           <span>{t('wms.picks.scan.largeInput', 'Large scan input')}</span>
-          <input
+          <TextField
             value={scanQuery}
-            onChange={(event) => onScanQueryChange(event.target.value)}
+            onValueChange={onScanQueryChange}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
                 event.preventDefault();
@@ -482,31 +483,37 @@ export default function PicksPage() {
       <WmsSurface as="section" variant="soft" padding="sm" className={s.controls} aria-label={t('wms.picks.controlsLabel', 'Picking controls')}>
         <label className={s.controlBox}>
           <span>{t('wms.picks.filters.warehouse', 'Warehouse')}</span>
-          <select value={warehouseId} onChange={(event) => setWarehouseId(event.target.value)}>
-            <option value="">{t('common.all', 'All')}</option>
-            {warehouses.map((row) => (
-              <option key={row.id} value={row.id}>{getWarehouseLabel(row)}</option>
-            ))}
-          </select>
+          <SelectField
+            value={warehouseId}
+            onValueChange={setWarehouseId}
+            options={[
+              { value: '', label: t('common.all', 'All') },
+              ...warehouses.map((row) => ({
+                value: row.id,
+                label: getWarehouseLabel(row),
+              })),
+            ]}
+          />
         </label>
         <label className={s.searchBox}>
           <Search size={15} aria-hidden="true" />
-          <input
+          <SearchField
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onValueChange={setSearch}
             placeholder={t('wms.picks.filters.searchPlaceholder', 'Search wave, task, document, assignee')}
           />
         </label>
         <label className={s.controlBox}>
           <Filter size={15} aria-hidden="true" />
           <span>{t('wms.picks.filters.status', 'Status')}</span>
-          <select value={status} onChange={(event) => setStatus(event.target.value)}>
-            {statusOptions.map((value) => (
-              <option key={value || 'all'} value={value}>
-                {value ? t(`statuses.${value}`, value) : t('common.all', 'All')}
-              </option>
-            ))}
-          </select>
+          <SelectField
+            value={status}
+            onValueChange={setStatus}
+            options={statusOptions.map((value) => ({
+              value,
+              label: value ? t(`statuses.${value}`, value) : t('common.all', 'All'),
+            }))}
+          />
         </label>
       </WmsSurface>
 

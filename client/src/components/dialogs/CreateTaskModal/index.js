@@ -2,8 +2,14 @@ import { useState, useMemo } from "react";
 import Modal from "../../Modal";
 import s from "../../../pages/styles/CrmUsers.module.css";
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from "../../../config/taskOptions";
-import ThemedSelect from "../../inputs/RadixSelect"; // ← новый селект
-import DateTimePicker from "../../inputs/DateTimePicker";
+import {
+  CheckboxField,
+  DateField,
+  DateTimeField,
+  SelectField,
+  TextField,
+  TextareaField,
+} from "../../ui/fields";
 
 // Компонент CreateTaskModal: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CreateTaskModal({ onSubmit, onClose, currentUser }) {
@@ -117,109 +123,99 @@ const submit = async (e) => {
   return (
     <Modal open title="Создать задачу" size="md" onClose={busy ? undefined : onClose} footer={footer}>
       <form className={s.form} onSubmit={submit} noValidate>
-        <label className={s.label}>
-          Название задачи *
-          <input
-            className={`${s.input} ${titleError ? s.inputError : ""}`}
-            type="text"
-            placeholder="Например: Перезвонить клиенту"
-            value={form.title}
-            onChange={(e) => change("title", e.target.value)}
-            onBlur={(e) => validateTitle(e.target.value)}
-            autoFocus
-            required
-            disabled={busy}
-          />
-          {titleError && <div className={s.fieldError}>{titleError}</div>}
-        </label>
+        <TextField
+          className={s.label}
+          inputClassName={s.input}
+          label="Название задачи"
+          placeholder="Например: Перезвонить клиенту"
+          value={form.title}
+          onValueChange={(value) => change("title", value)}
+          onBlur={(e) => validateTitle(e.target.value)}
+          error={titleError}
+          autoFocus
+          required
+          disabled={busy}
+        />
 
-        <label className={s.label}>
-          Описание *
-          <textarea
-            className={`${s.input} ${descError ? s.inputError : ""}`}
-            rows={4}
-            placeholder="Коротко о задаче…"
-            value={form.description}
-            onChange={(e) => change("description", e.target.value)}
-            onBlur={(e) => validateDesc(e.target.value)}
-            required
-            disabled={busy}
-          />
-          {descError && <div className={s.fieldError}>{descError}</div>}
-        </label>
+        <TextareaField
+          className={s.label}
+          inputClassName={s.input}
+          label="Описание"
+          rows={4}
+          placeholder="Коротко о задаче…"
+          value={form.description}
+          onValueChange={(value) => change("description", value)}
+          onBlur={(e) => validateDesc(e.target.value)}
+          error={descError}
+          required
+          disabled={busy}
+        />
 
         <div className={s.row2}>
-          <label className={s.label}>
-            Приоритет
-            <ThemedSelect
-              className={s.select}
-              value={form.priority}
-              options={PRIORITY_OPTIONS}
-              onChange={(val) => change("priority", Number(val))}
-              placeholder="Выбрать приоритет"
-              size="md"
-              disabled={busy}
-            />
-          </label>
+          <SelectField
+            className={s.label}
+            inputClassName={s.select}
+            label="Приоритет"
+            value={form.priority}
+            options={PRIORITY_OPTIONS}
+            onValueChange={(val) => change("priority", Number(val))}
+            placeholder="Выбрать приоритет"
+            size="md"
+            disabled={busy}
+          />
 
-          <label className={s.label}>
-            Статус
-            <ThemedSelect
-              className={s.select}
-              value={form.status}
-              options={STATUS_OPTIONS}
-              onChange={(val) => change("status", String(val))}
-              placeholder="Выбрать статус"
-              size="md"
-              disabled={busy}
-            />
-          </label>
+          <SelectField
+            className={s.label}
+            inputClassName={s.select}
+            label="Статус"
+            value={form.status}
+            options={STATUS_OPTIONS}
+            onValueChange={(val) => change("status", String(val))}
+            placeholder="Выбрать статус"
+            size="md"
+            disabled={busy}
+          />
         </div>
 
-        <label className={s.label}>
-          Дедлайн (по дню)
-          <DateTimePicker
-            className={s.input}
-            value={form.dueDate}
-            onChange={(nextValue) => change("dueDate", nextValue)}
-            disabled={busy}
-            withTime={false}
-          />
-        </label>
+        <DateField
+          className={s.label}
+          inputClassName={s.input}
+          label="Дедлайн (по дню)"
+          value={form.dueDate}
+          onValueChange={(nextValue) => change("dueDate", nextValue)}
+          disabled={busy}
+        />
 
         <div className={s.row3}>
-          <label className={s.label}>
-            Исполнитель (userId) — опц.
-            <input
-              className={s.input}
-              placeholder="UUID пользователя"
-              value={form.assigneeId}
-              onChange={(e) => change("assigneeId", e.target.value)}
-              disabled={busy}
-            />
-          </label>
+          <TextField
+            className={s.label}
+            inputClassName={s.input}
+            label="Исполнитель (userId) — опц."
+            placeholder="UUID пользователя"
+            value={form.assigneeId}
+            onValueChange={(value) => change("assigneeId", value)}
+            disabled={busy}
+          />
 
-          <label className={s.label}>
-            Клиент (counterpartyId) — опц.
-            <input
-              className={s.input}
-              placeholder="UUID контрагента"
-              value={form.counterpartyId}
-              onChange={(e) => change("counterpartyId", e.target.value)}
-              disabled={busy}
-            />
-          </label>
+          <TextField
+            className={s.label}
+            inputClassName={s.input}
+            label="Клиент (counterpartyId) — опц."
+            placeholder="UUID контрагента"
+            value={form.counterpartyId}
+            onValueChange={(value) => change("counterpartyId", value)}
+            disabled={busy}
+          />
 
-          <label className={s.label}>
-            Сделка (dealId) — опц.
-            <input
-              className={s.input}
-              placeholder="UUID сделки"
-              value={form.dealId}
-              onChange={(e) => change("dealId", e.target.value)}
-              disabled={busy}
-            />
-          </label>
+          <TextField
+            className={s.label}
+            inputClassName={s.input}
+            label="Сделка (dealId) — опц."
+            placeholder="UUID сделки"
+            value={form.dealId}
+            onValueChange={(value) => change("dealId", value)}
+            disabled={busy}
+          />
         </div>
 
         {/* Планирование (опционально) */}
@@ -235,49 +231,43 @@ const submit = async (e) => {
 
           {form.planOpen && (
             <div className={s.box}>
-              <label className={s.checkbox}>
-                <input
-                  type="checkbox"
-                  checked={!!form.isAllDay}
-                  onChange={(e) => change("isAllDay", e.target.checked)}
-                  disabled={busy}
-                />
-                Весь день
-              </label>
+              <CheckboxField
+                className={s.checkbox}
+                label="Весь день"
+                checked={!!form.isAllDay}
+                onValueChange={(checked) => change("isAllDay", checked)}
+                disabled={busy}
+              />
 
               {form.isAllDay ? (
-                <label className={s.label}>
-                  Дата события (eventDate)
-                  <DateTimePicker
-                    className={s.input}
-                    value={form.eventDate}
-                    onChange={(nextValue) => change("eventDate", nextValue)}
-                    disabled={busy}
-                    withTime={false}
-                  />
-                </label>
+                <DateField
+                  className={s.label}
+                  inputClassName={s.input}
+                  label="Дата события (eventDate)"
+                  value={form.eventDate}
+                  onValueChange={(nextValue) => change("eventDate", nextValue)}
+                  disabled={busy}
+                />
               ) : (
                 <>
-                  <label className={s.label}>
-                    Начало (startAt)
-                    <DateTimePicker
-                      className={s.input}
-                      value={form.startAt}
-                      onChange={(nextValue) => change("startAt", nextValue)}
-                      disabled={busy}
-                      withTime
-                    />
-                  </label>
-                  <label className={s.label}>
-                    Конец (endAt)
-                    <DateTimePicker
-                      className={s.input}
-                      value={form.endAt}
-                      onChange={(nextValue) => change("endAt", nextValue)}
-                      disabled={busy}
-                      withTime
-                    />
-                  </label>
+                  <DateTimeField
+                    className={s.label}
+                    inputClassName={s.input}
+                    label="Начало (startAt)"
+                    value={form.startAt}
+                    onValueChange={(nextValue) => change("startAt", nextValue)}
+                    disabled={busy}
+                    withTime
+                  />
+                  <DateTimeField
+                    className={s.label}
+                    inputClassName={s.input}
+                    label="Конец (endAt)"
+                    value={form.endAt}
+                    onValueChange={(nextValue) => change("endAt", nextValue)}
+                    disabled={busy}
+                    withTime
+                  />
                 </>
               )}
             </div>
@@ -289,4 +279,3 @@ const submit = async (e) => {
     </Modal>
   );
 }
-

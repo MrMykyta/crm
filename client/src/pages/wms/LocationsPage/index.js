@@ -6,6 +6,7 @@ import FilterToolbar from '../../../components/filters/FilterToolbar';
 import ListPage from '../../../components/data/ListPage';
 import { WmsEmptyState } from '../../../components/wms/ui';
 import { createWmsLocationsColumns } from '../../../components/data/ListPage/columnSchemas/wmsLocationsColumns';
+import { SelectField, TextField } from '../../../components/ui/fields';
 import useAclPermissions from '../../../hooks/useAclPermissions';
 import useGridPrefs from '../../../hooks/useGridPrefs';
 import {
@@ -274,29 +275,32 @@ export default function LocationsPage() {
       <div className={s.formGrid}>
         <label>
           <span>{t('wms.fields.warehouse', 'Warehouse')}</span>
-          <select
+          <SelectField
             value={form.warehouseId}
-            onChange={(event) => setForm((prev) => ({ ...prev, warehouseId: event.target.value }))}
-          >
-            <option value="">{t('wms.locations.placeholders.selectWarehouse', 'Select warehouse')}</option>
-            {warehouses.map((row) => (
-              <option key={row.id} value={row.id}>{warehouseLabel(row)}</option>
-            ))}
-          </select>
+            onValueChange={(value) => setForm((prev) => ({ ...prev, warehouseId: value }))}
+            options={[
+              { value: '', label: t('wms.locations.placeholders.selectWarehouse', 'Select warehouse') },
+              ...warehouses.map((row) => ({ value: row.id, label: warehouseLabel(row) })),
+            ]}
+          />
         </label>
         <label>
           <span>{t('wms.fields.code', 'Code')}</span>
-          <input value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))} />
+          <TextField
+            value={form.code || ''}
+            onValueChange={(value) => setForm((prev) => ({ ...prev, code: value }))}
+          />
         </label>
         <label className={s.fieldStack}>
           <span>{t('wms.fields.type', 'Type')}</span>
-          <select value={form.type} onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value }))}>
-            {LOCATION_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {getTypeLabel(type)}
-              </option>
-            ))}
-          </select>
+          <SelectField
+            value={form.type}
+            onValueChange={(value) => setForm((prev) => ({ ...prev, type: value }))}
+            options={LOCATION_TYPES.map((type) => ({
+              value: type,
+              label: getTypeLabel(type),
+            }))}
+          />
           <span className={s.fieldHint}>
             {getTypeDescription(form.type)
               || t('wms.locations.typeHelper', 'Used for WMS flows and location-level stock visibility.')}

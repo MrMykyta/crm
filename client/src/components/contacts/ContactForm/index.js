@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import AutocompleteSelect from '../../shared/AutocompleteSelect';
+import { AutocompleteField, CheckboxField, TextField } from '../../ui/fields';
 import { useGetCounterpartyLookupQuery } from '../../../store/rtk/counterpartyApi';
 import s from './ContactForm.module.css';
 
@@ -141,15 +141,15 @@ const submit = async (e) => {
         <div className={`${s.field} ${s.span12}`}>
           <div className={s.label}>{t('contacts.fields.counterparty', 'Контрагент')}</div>
           {fixedCounterpartyId ? (
-            <input
-              className={s.input}
+            <TextField
+              inputClassName={s.input}
               value={fixedCounterpartyName || selectedCounterpartyLabel || fixedCounterpartyId}
               disabled
               readOnly
             />
           ) : (
             <>
-              <AutocompleteSelect
+              <AutocompleteField
                 value={selectedCounterparty}
                 inputValue={counterpartySearch}
                 onInputChange={(value) => {
@@ -169,7 +169,7 @@ const submit = async (e) => {
                   setErrors((prev) => ({ ...prev, counterpartyId: undefined }));
                 }}
                 placeholder={t('contacts.placeholders.counterparty', 'Начните вводить название...')}
-                hint={t('contacts.hints.counterparty', 'Начните вводить название контрагента')}
+                helperText={t('contacts.hints.counterparty', 'Начните вводить название контрагента')}
                 searchingLabel={t('contacts.hints.searching', 'Поиск...')}
                 emptyLabel={t('contacts.hints.empty', 'Ничего не найдено')}
                 loading={Boolean(counterpartySearchDebounced) && counterpartyLoading}
@@ -188,10 +188,10 @@ const submit = async (e) => {
 
         <div className={`${s.field} ${s.span6}`}>
           <div className={s.label}>{t('contacts.fields.firstName', 'Имя')}*</div>
-          <input
-            className={s.input}
+          <TextField
+            inputClassName={s.input}
             value={values.firstName}
-            onChange={(e) => set('firstName', e.target.value)}
+            onValueChange={(value) => set('firstName', value)}
             placeholder={t('contacts.placeholders.firstName', 'Имя')}
           />
           {errors.firstName ? <div className={s.error}>{errors.firstName}</div> : null}
@@ -199,64 +199,62 @@ const submit = async (e) => {
 
         <div className={`${s.field} ${s.span6}`}>
           <div className={s.label}>{t('contacts.fields.lastName', 'Фамилия')}</div>
-          <input
-            className={s.input}
+          <TextField
+            inputClassName={s.input}
             value={values.lastName}
-            onChange={(e) => set('lastName', e.target.value)}
+            onValueChange={(value) => set('lastName', value)}
             placeholder={t('contacts.placeholders.lastName', 'Фамилия')}
           />
         </div>
 
         <div className={`${s.field} ${s.span6}`}>
           <div className={s.label}>{t('contacts.fields.position', 'Должность')}</div>
-          <input
-            className={s.input}
+          <TextField
+            inputClassName={s.input}
             value={values.position}
-            onChange={(e) => set('position', e.target.value)}
+            onValueChange={(value) => set('position', value)}
             placeholder={t('contacts.placeholders.position', 'Должность')}
           />
         </div>
 
         <div className={`${s.field} ${s.span6}`}>
           <div className={s.label}>{t('contacts.fields.department', 'Отдел')}</div>
-          <input
-            className={s.input}
+          <TextField
+            inputClassName={s.input}
             value={values.department}
-            onChange={(e) => set('department', e.target.value)}
+            onValueChange={(value) => set('department', value)}
             placeholder={t('contacts.placeholders.department', 'Отдел')}
           />
         </div>
 
         <div className={`${s.field} ${s.span6}`}>
           <div className={s.label}>{t('contacts.fields.phone', 'Телефон')}</div>
-          <input
-            className={s.input}
+          <TextField
+            inputClassName={s.input}
             value={values.phone}
-            onChange={(e) => set('phone', e.target.value)}
+            onValueChange={(value) => set('phone', value)}
             placeholder={t('contacts.placeholders.phone', '+48 ...')}
           />
         </div>
 
         <div className={`${s.field} ${s.span6}`}>
           <div className={s.label}>{t('contacts.fields.email', 'Email')}</div>
-          <input
-            className={s.input}
+          <TextField
+            inputClassName={s.input}
             type="email"
             value={values.email}
-            onChange={(e) => set('email', e.target.value)}
+            onValueChange={(value) => set('email', value)}
             placeholder={t('contacts.placeholders.email', 'name@example.com')}
           />
           {errors.email ? <div className={s.error}>{errors.email}</div> : null}
         </div>
 
-        <label className={`${s.field} ${s.span12} ${s.checkboxLine}`}>
-          <input
-            type="checkbox"
-            checked={Boolean(values.isMain)}
-            onChange={(e) => set('isMain', e.target.checked)}
-          />
-          <span>{t('contacts.fields.isMain', 'Основной контакт')}</span>
-        </label>
+        <CheckboxField
+          className={`${s.field} ${s.span12} ${s.checkboxLine}`}
+          checked={Boolean(values.isMain)}
+          onValueChange={(checked) => set('isMain', checked)}
+          label={t('contacts.fields.isMain', 'Основной контакт')}
+        />
       </div>
 
       {withButtons ? (
@@ -274,4 +272,3 @@ const submit = async (e) => {
     </form>
   );
 }
-

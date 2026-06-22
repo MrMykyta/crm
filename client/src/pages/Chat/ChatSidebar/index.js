@@ -6,6 +6,7 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
+import { SearchField } from "../../../components/ui/fields";
 import { useListCompanyUsersQuery } from "../../../store/rtk/companyUsersApi";
 import { setActiveRoom } from "../../../store/slices/chatSlice";
 import {
@@ -317,12 +318,11 @@ const onKey = (e) => {
       <div className={s.headerSearchWrap}>
         <div className={s.searchInputWrap}>
           <Search size={16} className={s.searchIcon} />
-          <input
-            type="text"
-            className={s.searchInputHeader}
+          <SearchField
+            inputClassName={s.searchInputHeader}
             placeholder={t("chat.sidebar.searchPlaceholder")}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onValueChange={setSearch}
           />
         </div>
       </div>
@@ -366,4 +366,3 @@ const onKey = (e) => {
     </div>
   );
 }
-

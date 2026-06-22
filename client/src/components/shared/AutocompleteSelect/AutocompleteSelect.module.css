@@ -5,13 +5,24 @@
 
 .input {
   width: 100%;
-  min-height: 40px;
-  padding: 9px 36px 9px 12px;
-  border-radius: 12px;
+  min-height: var(--ui-control-height-md);
+  padding: var(--ui-control-padding-y) 36px var(--ui-control-padding-y) var(--ui-control-padding-x);
+  border-radius: var(--radius-md);
   border: 1px solid var(--ui-field-border);
   background: var(--ui-field-bg);
-  color: var(--ui-text-1);
+  color: var(--text-1);
+  font-size: var(--font-size-14);
+  line-height: var(--lh-normal);
   transition: border-color .14s ease, box-shadow .14s ease, background .14s ease;
+}
+
+.wrap .input {
+  border-radius: var(--radius-md);
+  background: var(--ui-field-bg);
+  color: var(--text-1);
+  border-color: var(--ui-field-border);
+  font-size: var(--font-size-14);
+  line-height: var(--lh-normal);
 }
 
 .input::placeholder {

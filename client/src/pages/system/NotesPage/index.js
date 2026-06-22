@@ -11,8 +11,12 @@ import ListPage from '../../../components/data/ListPage';
 import FilterToolbar from '../../../components/filters/FilterToolbar';
 import Modal from '../../../components/Modal';
 import AddButton from '../../../components/buttons/AddButton/AddButton';
-import AutocompleteSelect from '../../../components/shared/AutocompleteSelect';
-import ThemedSelect from '../../../components/inputs/RadixSelect';
+import {
+  AutocompleteField,
+  CheckboxField,
+  SelectField,
+  TextareaField,
+} from '../../../components/ui/fields';
 import useGridPrefs from '../../../hooks/useGridPrefs';
 import {
   useCreateNoteMutation,
@@ -184,24 +188,23 @@ function NoteForm({
   return (
     <form id="notes-form" className={s.form} onSubmit={onSubmit}>
       <div className={s.row2}>
-        <label className={s.field}>
-          <span className={s.label}>{t('notes.fields.ownerType')}</span>
-          <ThemedSelect
-            className={s.select}
-            value={values.ownerType}
-            onChange={(value) => onChange('ownerType', value)}
-            options={[
-              { value: '', label: t('notes.placeholders.ownerType') },
-              ...ownerTypeOptions,
-            ]}
-            placeholder={t('notes.placeholders.ownerType')}
-            size="md"
-          />
-        </label>
+        <SelectField
+          className={s.field}
+          inputClassName={s.select}
+          label={t('notes.fields.ownerType')}
+          value={values.ownerType}
+          onValueChange={(value) => onChange('ownerType', value)}
+          options={[
+            { value: '', label: t('notes.placeholders.ownerType') },
+            ...ownerTypeOptions,
+          ]}
+          placeholder={t('notes.placeholders.ownerType')}
+          size="md"
+        />
 
-        <label className={s.field}>
-          <span className={s.label}>{t('notes.fields.owner')}</span>
-          <AutocompleteSelect
+        <div className={s.field}>
+          <AutocompleteField
+            label={t('notes.fields.owner')}
             value={selectedOwner}
             inputValue={ownerSearch}
             onInputChange={onOwnerSearchChange}
@@ -229,45 +232,41 @@ function NoteForm({
               {t('notes.fields.selectedId')}: {values.ownerId}
             </span>
           ) : null}
-        </label>
+        </div>
       </div>
 
       <div className={s.row2}>
-        <label className={s.field}>
-          <span className={s.label}>{t('notes.fields.visibility')}</span>
-          <ThemedSelect
-            className={s.select}
-            value={values.visibility}
-            onChange={(value) => onChange('visibility', value)}
-            options={[
-              { value: 'company', label: t('notes.visibility.company') },
-              { value: 'private', label: t('notes.visibility.private') },
-            ]}
-            placeholder={t('notes.fields.visibility')}
-            size="md"
-          />
-        </label>
+        <SelectField
+          className={s.field}
+          inputClassName={s.select}
+          label={t('notes.fields.visibility')}
+          value={values.visibility}
+          onValueChange={(value) => onChange('visibility', value)}
+          options={[
+            { value: 'company', label: t('notes.visibility.company') },
+            { value: 'private', label: t('notes.visibility.private') },
+          ]}
+          placeholder={t('notes.fields.visibility')}
+          size="md"
+        />
 
-        <label className={s.checkboxField}>
-          <input
-            type="checkbox"
-            checked={Boolean(values.pinned)}
-            onChange={(e) => onChange('pinned', e.target.checked)}
-          />
-          <span>{t('notes.fields.pinned')}</span>
-        </label>
+        <CheckboxField
+          className={s.checkboxField}
+          label={t('notes.fields.pinned')}
+          checked={Boolean(values.pinned)}
+          onValueChange={(checked) => onChange('pinned', checked)}
+        />
       </div>
 
-      <label className={s.field}>
-        <span className={s.label}>{t('notes.fields.content')}</span>
-        <textarea
-          className={s.textarea}
-          value={values.content}
-          onChange={(e) => onChange('content', e.target.value)}
-          rows={8}
-          placeholder={t('notes.placeholders.content')}
-        />
-      </label>
+      <TextareaField
+        className={s.field}
+        inputClassName={s.textarea}
+        label={t('notes.fields.content')}
+        value={values.content}
+        onValueChange={(value) => onChange('content', value)}
+        rows={8}
+        placeholder={t('notes.placeholders.content')}
+      />
 
       {error && <div className={s.error}>{error}</div>}
     </form>
@@ -630,11 +629,11 @@ render: (row) => {
               <div className={s.contentSurface}>
                 {isQuickEditing ? (
                   <div className={s.quickEditWrap}>
-                    <textarea
-                      className={s.quickEditTextarea}
+                    <TextareaField
+                      inputClassName={s.quickEditTextarea}
                       value={quickEditValue}
                       rows={5}
-                      onChange={(e) => setQuickEditValue(e.target.value)}
+                      onValueChange={setQuickEditValue}
                     />
                     {quickEditError ? <div className={s.quickEditError}>{quickEditError}</div> : null}
                     <div className={s.quickEditActions}>
@@ -850,13 +849,14 @@ render: (row) => formatDate(row.updatedAt, i18n.language),
                 type: 'custom',
                                 // render: описывает рендер соответствующего блока UI.
 render: ({ query, onChange }) => (
-                  <ThemedSelect
+                  <SelectField
                     className={s.toolbarSelect}
+                    inputClassName={s.select}
                     value={query.ownerType || ''}
                     options={ownerTypeFilterOptions}
                     placeholder={t('notes.fields.ownerType')}
                     size="sm"
-                    onChange={(value) => {
+                    onValueChange={(value) => {
                       const nextType = String(value || '');
                       setToolbarOwnerType(nextType);
                       setToolbarSelectedOwner(null);
@@ -876,7 +876,7 @@ render: ({ query, onChange }) => (
                 type: 'custom',
                                 // render: описывает рендер соответствующего блока UI.
 render: ({ onChange }) => (
-                  <AutocompleteSelect
+                  <AutocompleteField
                     className={s.toolbarOwner}
                     value={toolbarSelectedOwner}
                     inputValue={toolbarOwnerSearch}
@@ -969,4 +969,3 @@ render: ({ onChange }) => (
     </>
   );
 }
-

@@ -13,7 +13,7 @@ import { cx, toInputValue, buildDescribedBy } from "../fieldUtils";
  *
  * value === undefined/null безопасно приводится к "".
  */
-export default function TextField({
+const TextField = React.forwardRef(function TextField({
   name,
   id,
   type = "text",
@@ -36,16 +36,38 @@ export default function TextField({
   leftIcon = null,
   rightIcon = null,
   loading = false,
+  float = false,
+  isFilled,
+  isFocused = false,
   maxLength,
+  counterMaxLength,
   showCounter = false,
   transform,
   upper = false,
   autoComplete,
   inputMode,
+  inputRef,
   ...rest
-}) {
+}, ref) {
   const fieldId = id || name;
   const strValue = toInputValue(value);
+
+  const setInputRef = React.useCallback(
+    (node) => {
+      if (typeof ref === "function") {
+        ref(node);
+      } else if (ref) {
+        ref.current = node;
+      }
+
+      if (typeof inputRef === "function") {
+        inputRef(node);
+      } else if (inputRef) {
+        inputRef.current = node;
+      }
+    },
+    [ref, inputRef]
+  );
 
   const applyTransform = (raw) => {
     let next = raw;
@@ -81,12 +103,16 @@ export default function TextField({
       size={size}
       leftIcon={leftIcon}
       rightIcon={rightIcon}
+      float={float}
+      isFilled={isFilled ?? strValue !== ""}
+      isFocused={isFocused}
       showCounter={showCounter}
       currentLength={strValue.length}
-      maxLength={maxLength}
+      maxLength={counterMaxLength ?? maxLength}
       className={className}
     >
       <input
+        ref={setInputRef}
         id={fieldId}
         name={name}
         type={type}
@@ -107,4 +133,6 @@ export default function TextField({
       />
     </FieldShell>
   );
-}
+});
+
+export default TextField;

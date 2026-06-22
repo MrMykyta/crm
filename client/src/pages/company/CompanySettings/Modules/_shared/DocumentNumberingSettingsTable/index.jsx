@@ -5,6 +5,7 @@ import {
   getNumberingTokenExamples,
   getNumberingTokenHintLines,
 } from "../numberPatternUtils";
+import { TextField } from "../../../../../../components/ui/fields";
 import s from "./DocumentNumberingSettingsTable.module.css";
 
 export default function DocumentNumberingSettingsTable({
@@ -175,10 +176,10 @@ export default function DocumentNumberingSettingsTable({
                   <td>{row.label || row.typeKey}</td>
                   <td>
                     <div className={s.patternCell}>
-                      <input
-                        className={`${s.patternInput} ${rowError ? s.patternInputError : ""}`}
+                      <TextField
+                        inputClassName={`${s.patternInput} ${rowError ? s.patternInputError : ""}`}
                         value={row.numberPattern || ""}
-                        onChange={(event) => setPattern(row.typeKey, event.target.value)}
+                        onValueChange={(value) => setPattern(row.typeKey, value)}
                         maxLength={80}
                         disabled={disabled}
                       />

@@ -2,6 +2,7 @@
 // Search bar for message search with navigation between matches.
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { SearchField } from "../../../../components/ui/fields";
 import s from "../../ChatPage.module.css";
 
 // Компонент ChatSearchBar: отвечает за отображение UI и обработку взаимодействий пользователя.
@@ -22,12 +23,11 @@ export default function ChatSearchBar({
 
   return (
     <div className={s.chatSearchBar}>
-      <input
-        className={s.chatSearchInput}
-        type="text"
+      <SearchField
+        inputClassName={s.chatSearchInput}
         placeholder={t("chat.search.placeholder")}
         value={query}
-        onChange={onChange}
+        onChange={(value, event) => onChange?.(event)}
       />
 
       <div className={s.chatSearchCounter}>
@@ -62,4 +62,3 @@ export default function ChatSearchBar({
     </div>
   );
 }
-

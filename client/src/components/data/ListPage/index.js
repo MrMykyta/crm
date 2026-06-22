@@ -12,7 +12,7 @@ import DataTable from '../DataTable';
 import DefaultToolbar from '../../filters/FilterToolbar';
 import Modal from '../../Modal';
 import s from './ListPage.module.css';
-import ThemedSelect from '../../inputs/RadixSelect';
+import { SelectField, TextField } from '../../ui/fields';
 import ColumnViewEditor from './ColumnViewEditor';
 import { DEFAULT_GRID_VIEW_ID } from '../../../hooks/useGridPrefs';
 
@@ -1337,13 +1337,14 @@ const onEscape = (event) => {
           <div className={s.toolbarCenter}>
             {enableSavedViews ? (
               <div className={s.viewsControls}>
-                <ThemedSelect
-                  className={s.viewSelect}
+                <SelectField
                   size="sm"
                   value={effectiveActiveViewId}
                   options={viewOptions}
-                  onChange={(value) => updateActiveView(String(value || DEFAULT_GRID_VIEW_ID))}
+                  onValueChange={(value) => updateActiveView(String(value || DEFAULT_GRID_VIEW_ID))}
                   placeholder={t('list.views.select', 'Выбрать представление')}
+                  inputClassName={s.viewSelect}
+                  fullWidth={false}
                 />
                 <div className={s.viewMenuWrap} data-view-menu-wrap="1">
                   <button
@@ -1451,13 +1452,14 @@ const onEscape = (event) => {
             </span>
 
             <label className={s.perPage} aria-label={t('list.perPageAria') || 'На странице'}>
-              <ThemedSelect
-                className={s.pageSize}
+              <SelectField
                 value={query.limit}
-                onChange={(val) => setLimit(Number(val))}
+                onValueChange={(val) => setLimit(Number(val))}
                 options={limitOptions}
                 placeholder="стр."
                 size="sm"
+                inputClassName={s.pageSize}
+                fullWidth={false}
               />
               <span className={s.muted}>стр.</span>
             </label>
@@ -1540,12 +1542,12 @@ const onEscape = (event) => {
             <label className={s.viewEditorLabel} htmlFor="list-view-name">
               {t('list.views.name', 'Название представления')}
             </label>
-            <input
+            <TextField
               id="list-view-name"
-              className={s.viewEditorInput}
+              inputClassName={s.viewEditorInput}
               value={viewNameDraft}
-              onChange={(event) => {
-                setViewNameDraft(event.target.value);
+              onValueChange={(value) => {
+                setViewNameDraft(value);
                 if (viewError) setViewError('');
               }}
               placeholder={t('list.views.namePlaceholder', 'Например: Сделки недели')}

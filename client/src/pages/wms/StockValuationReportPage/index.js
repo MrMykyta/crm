@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useListProductsQuery } from '../../../store/rtk/productsApi';
 import { useListWarehousesQuery } from '../../../store/rtk/wmsDocumentsApi';
 import { useGetStockValuationReportQuery } from '../../../store/rtk/wmsReportsApi';
+import { SearchField, SelectField, TextField } from '../../../components/ui/fields';
 import s from './StockValuationReportPage.module.css';
 
 const GROUP_BY_OPTIONS = [
@@ -123,42 +124,48 @@ export default function StockValuationReportPage({ embedded = false }) {
         <div className={s.filtersGrid}>
           <label className={s.field}>
             <span>{t('wms.stockValuation.filters.warehouse', 'Warehouse')}</span>
-            <select value={filters.warehouseId} onChange={(event) => updateFilter('warehouseId', event.target.value)}>
-              <option value="">{t('common.all', 'All')}</option>
-              {warehouses.map((warehouse) => (
-                <option key={warehouse.id} value={warehouse.id}>
-                  {[warehouse.code, warehouse.name].filter(Boolean).join(' · ') || warehouse.id}
-                </option>
-              ))}
-            </select>
+            <SelectField
+              value={filters.warehouseId}
+              onValueChange={(value) => updateFilter('warehouseId', value)}
+              options={[
+                { value: '', label: t('common.all', 'All') },
+                ...warehouses.map((warehouse) => ({
+                  value: warehouse.id,
+                  label: [warehouse.code, warehouse.name].filter(Boolean).join(' · ') || warehouse.id,
+                })),
+              ]}
+            />
           </label>
 
           <label className={s.field}>
             <span>{t('wms.stockValuation.filters.productSearch', 'Product search')}</span>
-            <input
+            <SearchField
               value={productSearch}
-              onChange={(event) => setProductSearch(event.target.value)}
+              onValueChange={setProductSearch}
               placeholder={t('wms.stockValuation.filters.productSearchPlaceholder', 'Search product name or SKU...')}
             />
           </label>
 
           <label className={s.field}>
             <span>{t('wms.stockValuation.filters.product', 'Product')}</span>
-            <select value={filters.productId} onChange={(event) => updateFilter('productId', event.target.value)}>
-              <option value="">{isFetchingProducts ? t('common.loading', 'Loading...') : t('common.all', 'All')}</option>
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {[product.name, product.sku].filter(Boolean).join(' · ') || product.id}
-                </option>
-              ))}
-            </select>
+            <SelectField
+              value={filters.productId}
+              onValueChange={(value) => updateFilter('productId', value)}
+              options={[
+                { value: '', label: isFetchingProducts ? t('common.loading', 'Loading...') : t('common.all', 'All') },
+                ...products.map((product) => ({
+                  value: product.id,
+                  label: [product.name, product.sku].filter(Boolean).join(' · ') || product.id,
+                })),
+              ]}
+            />
           </label>
 
           <label className={s.field}>
             <span>{t('wms.stockValuation.filters.currency', 'Currency')}</span>
-            <input
+            <TextField
               value={filters.currency}
-              onChange={(event) => updateFilter('currency', event.target.value.toUpperCase().slice(0, 3))}
+              onValueChange={(value) => updateFilter('currency', value.toUpperCase().slice(0, 3))}
               placeholder="PLN"
               maxLength={3}
             />
@@ -166,13 +173,14 @@ export default function StockValuationReportPage({ embedded = false }) {
 
           <label className={s.field}>
             <span>{t('wms.stockValuation.filters.groupBy', 'Group by')}</span>
-            <select value={filters.groupBy} onChange={(event) => updateFilter('groupBy', event.target.value)}>
-              {GROUP_BY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {t(option.labelKey, option.fallback)}
-                </option>
-              ))}
-            </select>
+            <SelectField
+              value={filters.groupBy}
+              onValueChange={(value) => updateFilter('groupBy', value)}
+              options={GROUP_BY_OPTIONS.map((option) => ({
+                value: option.value,
+                label: t(option.labelKey, option.fallback),
+              }))}
+            />
           </label>
 
           <label className={`${s.field} ${s.disabledField}`}>

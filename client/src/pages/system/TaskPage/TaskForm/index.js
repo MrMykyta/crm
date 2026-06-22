@@ -1,10 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import MultiSelectDropdown from '../../../../components/inputs/MultiSelectDropdown';
-import PriorityInput from '../../../../components/inputs/PriorityInput';
-import ThemedSelect from '../../../../components/inputs/RadixSelect';
-import AutocompleteSelect from '../../../../components/shared/AutocompleteSelect';
-import DateTimePicker from '../../../../components/inputs/DateTimePicker';
+import {
+  AutocompleteField,
+  CheckboxField,
+  DateTimeField,
+  MultiSelectField,
+  PriorityField,
+  SelectField,
+  TextField,
+  TextareaField,
+} from '../../../../components/ui/fields';
 import { useGetCounterpartyLookupQuery } from '../../../../store/rtk/counterpartyApi';
 import { useGetContactsQuery } from '../../../../store/rtk/contactsApi';
 import { toApiTask, toFormTask } from '../../../../schemas/task.schema';
@@ -209,16 +214,16 @@ const handleWithTimeToggle = (nextHasTime) => {
             {label}
           </label>
         </div>
-        <DateTimePicker
+        <DateTimeField
           id={`${formId}-${fieldName}`}
-          className={st.control}
+          inputClassName={st.control}
           value={raw}
           withTime={hasTime}
           allowTimeToggle
           onWithTimeChange={handleWithTimeToggle}
           timeToggleLabel={t('crm.task.fields.withTime', 'Со временем')}
           locale={locale}
-          onChange={(nextValue) => set(fieldName, nextValue)}
+          onValueChange={(nextValue) => set(fieldName, nextValue)}
           placeholder={hasTime ? 'дд.мм.гггг чч:мм' : 'дд.мм.гггг'}
         />
       </div>
@@ -235,11 +240,11 @@ const handleWithTimeToggle = (nextHasTime) => {
             </label>
             {counter('title')}
           </div>
-          <input
+          <TextField
             id={`${formId}-title`}
-            className={st.control}
+            inputClassName={st.control}
             value={values.title}
-            onChange={(e) => set('title', e.target.value)}
+            onValueChange={(v) => set('title', v)}
             maxLength={MAX.title}
             placeholder={t('crm.task.placeholders.title', 'Например: Перезвонить клиенту')}
             required
@@ -253,12 +258,12 @@ const handleWithTimeToggle = (nextHasTime) => {
             </label>
             {counter('description')}
           </div>
-          <textarea
+          <TextareaField
             id={`${formId}-description`}
-            className={`${st.control} ${st.textarea}`}
+            inputClassName={`${st.control} ${st.textarea}`}
             rows={7}
             value={values.description || ''}
-            onChange={(e) => set('description', e.target.value)}
+            onValueChange={(v) => set('description', v)}
             maxLength={MAX.description}
             placeholder={t('crm.task.placeholders.description', 'Кратко опишите задачу')}
           />
@@ -268,11 +273,11 @@ const handleWithTimeToggle = (nextHasTime) => {
           <label className={st.label} htmlFor={`${formId}-category`}>
             {t('crm.task.fields.category', 'Категория')}
           </label>
-          <input
+          <TextField
             id={`${formId}-category`}
-            className={st.control}
+            inputClassName={st.control}
             value={values.category || ''}
-            onChange={(e) => set('category', e.target.value)}
+            onValueChange={(v) => set('category', v)}
             maxLength={MAX.category}
             placeholder={t('crm.task.placeholders.category', 'Напр.: Звонок, Встреча')}
           />
@@ -280,10 +285,10 @@ const handleWithTimeToggle = (nextHasTime) => {
 
         <div className={`${st.field} ${st.span3}`}>
           <label className={st.label}>{t('crm.task.fields.status', 'Статус')}</label>
-          <ThemedSelect
-            className={st.control}
+          <SelectField
+            inputClassName={st.control}
             value={values.status || undefined}
-            onChange={(val) => set('status', val)}
+            onValueChange={(val) => set('status', val)}
             options={TASK_STATUS.map((v) => ({
               value: v,
               label: t(`crm.task.enums.status.${v}`, v),
@@ -294,10 +299,10 @@ const handleWithTimeToggle = (nextHasTime) => {
 
         <div className={`${st.field} ${st.span3}`}>
           <label className={st.label}>{t('crm.task.fields.priority', 'Приоритет')}</label>
-          <PriorityInput
-            className={st.priorityControl}
+          <PriorityField
+            inputClassName={st.priorityControl}
             value={values.priority}
-            onChange={(n) => set('priority', n)}
+            onValueChange={(n) => set('priority', n)}
           />
         </div>
 
@@ -308,29 +313,29 @@ const handleWithTimeToggle = (nextHasTime) => {
 
         <div className={`${st.field} ${st.span6}`}>
           <label className={st.label}>{t('crm.task.fields.assignees', 'Назначенные работники')}</label>
-          <MultiSelectDropdown
-            className={st.control}
+          <MultiSelectField
+            inputClassName={st.control}
             options={userOptions}
-            value={values.assigneeIds}
-            onChange={(next) => set('assigneeIds', next)}
+            value={Array.isArray(values.assigneeIds) ? values.assigneeIds : []}
+            onValueChange={(next) => set('assigneeIds', next)}
             placeholder={t('common.noneSelected', 'Не выбрано')}
           />
         </div>
 
         <div className={`${st.field} ${st.span6}`}>
           <label className={st.label}>{t('crm.task.fields.watchers', 'Наблюдатели')}</label>
-          <MultiSelectDropdown
-            className={st.control}
+          <MultiSelectField
+            inputClassName={st.control}
             options={watcherOptions}
-            value={values.watcherIds}
-            onChange={(next) => set('watcherIds', next)}
+            value={Array.isArray(values.watcherIds) ? values.watcherIds : []}
+            onValueChange={(next) => set('watcherIds', next)}
             placeholder={t('common.noneSelected', 'Не выбрано')}
           />
         </div>
 
         <div className={`${st.field} ${st.span12}`}>
           <label className={st.label}>{t('crm.task.fields.counterparty', 'Клиент')}</label>
-          <AutocompleteSelect
+          <AutocompleteField
             value={selectedCounterparty}
             inputValue={counterpartySearch}
             onInputChange={(text) => {
@@ -371,7 +376,7 @@ const handleWithTimeToggle = (nextHasTime) => {
 
         <div className={`${st.field} ${st.span12}`}>
           <label className={st.label}>{t('crm.task.fields.contacts', 'Контактные лица')}</label>
-          <AutocompleteSelect
+          <AutocompleteField
             value={null}
             inputValue={contactSearch}
             onInputChange={setContactSearch}
@@ -431,10 +436,10 @@ const handleWithTimeToggle = (nextHasTime) => {
 
         <div className={`${st.field} ${st.span12}`}>
           <label className={st.switchLine}>
-            <input
-              type="checkbox"
+            <CheckboxField
               checked={!!values.statusAggregate}
-              onChange={(e) => set('statusAggregate', e.target.checked)}
+              onValueChange={(v) => set('statusAggregate', v)}
+              fullWidth={false}
             />
             <span>{t('crm.task.fields.statusAggregate', 'Рассчитывать общий статус по исполнителям')}</span>
           </label>

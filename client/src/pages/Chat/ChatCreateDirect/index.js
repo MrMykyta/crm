@@ -7,6 +7,7 @@ import {
   useGetOrCreateDirectMutation,
   useCreateGroupMutation,
 } from '../../../store/rtk/chatApi';
+import { SearchField, TextField } from '../../../components/ui/fields';
 import { useListCompanyUsersQuery } from '../../../store/rtk/companyUsersApi';
 import s from '../ChatPage.module.css';
 
@@ -135,11 +136,11 @@ const handleCreateGroup = async () => {
 
       {/* SEARCH */}
       <div className={s.createSearch}>
-        <input
-          className={s.createSearchInput}
+        <SearchField
+          inputClassName={s.createSearchInput}
           placeholder={placeholder}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onValueChange={setQuery}
         />
       </div>
 
@@ -207,11 +208,11 @@ const handleCreateGroup = async () => {
       {/* FOOTER ДЛЯ ГРУППЫ */}
       {isGroup && (
         <div className={s.createFooter}>
-          <input
-            className={s.groupTitleInput}
+          <TextField
+            inputClassName={s.groupTitleInput}
             placeholder={t('chat.create.groupNamePlaceholder')}
             value={groupTitle}
-            onChange={(e) => setGroupTitle(e.target.value)}
+            onValueChange={setGroupTitle}
           />
           <button
             type="button"
@@ -230,4 +231,3 @@ const handleCreateGroup = async () => {
     </div>
   );
 }
-

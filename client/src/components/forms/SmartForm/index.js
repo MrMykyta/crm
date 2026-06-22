@@ -1,9 +1,6 @@
 import React from "react";
 import s from "./SmartForm.module.css";
-import MultiSelectDropdown from "../../inputs/MultiSelectDropdown";
-import ThemedSelect from "../../inputs/RadixSelect";
-import AutocompleteSelect from "../../shared/AutocompleteSelect";
-import DateTimePicker from "../../inputs/DateTimePicker";
+import { AutocompleteField, CheckboxField, DateField, DateTimeField, MultiSelectField, SelectField, TextField, TextareaField } from "../../ui/fields";
 
 /**
  * SmartForm — универсальный рендерер полей (4-колоночная сетка).
@@ -219,12 +216,18 @@ const cellSpan = (f) => {
         // CHECKBOX
         if (f.type === "checkbox") {
           return (
-            <div key={f.name} {...wrapProps} className={s.field}>
-              <label className={s.chkLine}>
-                <input type="checkbox" checked={!!v} onChange={(e) => set(f.name, e.target.checked)} disabled={disabled} />
-                <span>{t(f.label)}</span>
-              </label>
-              {err && <div className={s.err}>{err}</div>}
+            <div key={f.name} {...wrapProps}>
+              <CheckboxField
+                name={f.name}
+                label={t(f.label)}
+                checked={!!v}
+                onChange={(value) => set(f.name, value)}
+                disabled={disabled}
+                required={Boolean(f.required)}
+                error={err}
+                className={s.field}
+                inputClassName={s.chkInput}
+              />
             </div>
           );
         }
@@ -250,26 +253,25 @@ const handleWithTimeToggle = (nextHasTime) => {
           };
 
           return (
-            <div key={f.name} {...wrapProps} className={s.field}>
-              <div className={s.labelRow}>
-                <label className={s.label}>{t(f.label)}</label>
-              </div>
-
-              <DateTimePicker
-                id={f.name}
-                className={`${s.input} ${err ? s.invalid : ""}`}
+            <div key={f.name} {...wrapProps}>
+              <DateTimeField
+                name={f.name}
+                label={t(f.label)}
                 value={valueText}
                 withTime={hasTime}
                 allowTimeToggle={Boolean(hasTimeField)}
                 onWithTimeChange={handleWithTimeToggle}
                 timeToggleLabel={t("crm.task.fields.withTime", "Со временем")}
-                onChange={(nextValue) => set(f.name, nextValue)}
+                onChange={(value) => set(f.name, value)}
                 disabled={disabled}
+                error={err}
+                helperText={f.hint ? t(f.hint) : undefined}
+                float={!!f.float}
+                className={s.field}
+                inputClassName={s.input}
                 locale={locale}
                 placeholder={hasTime ? "дд.мм.гггг чч:мм" : "дд.мм.гггг"}
               />
-              <div className={s.helpRow}>{f.hint && <span className={s.hint}>{t(f.hint)}</span>}</div>
-              {err && <div className={s.err}>{err}</div>}
             </div>
           );
         }
@@ -278,27 +280,31 @@ const handleWithTimeToggle = (nextHasTime) => {
         if (f.type === "dropdown-multiselect" || f.type === "multiselect") {
           const opts = normalizeOptions(f);
           const valueArray = Array.isArray(v) ? v.map(String) : [];
-          const hasValue = valueArray.length > 0 || !!dropdownOpenMap[f.name];
 
           return (
-            <div key={f.name} {...wrapProps} className={s.field}>
-              <div className={`${s.floatWrap} ${hasValue ? s.isFilled : ""}`}>
-                <MultiSelectDropdown
-                  options={opts}
-                  value={valueArray}
-                  onChange={(arr) => set(f.name, arr)}
-                  placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : "Не выбрано"}
-                  maxPreview={f.maxPreview ?? 3}
-                  disabled={disabled}
-                  className="asInput"
-                  onOpenChange={(isOpen) =>
-                    setDropdownOpenMap((prev) => ({ ...prev, [f.name]: !!isOpen }))
-                  }
-                />
-                {f.float && <label className={s.floatLabel}>{t(f.label)}</label>}
-              </div>
-              <div className={s.helpRow}>{f.hint && <span className={s.hint}>{t(f.hint)}</span>}</div>
-              {err && <div className={s.err}>{err}</div>}
+            <div key={f.name} {...wrapProps}>
+              <MultiSelectField
+                name={f.name}
+                label={t(f.label)}
+                value={valueArray}
+                options={opts}
+                onValueChange={(nextArray) => set(f.name, nextArray)}
+                placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : "Не выбрано"}
+                maxPreview={f.maxPreview ?? 3}
+                disabled={disabled}
+                required={Boolean(f.required)}
+                error={err}
+                helperText={f.hint ? t(f.hint) : undefined}
+                float={!!f.float}
+                isFocused={!!dropdownOpenMap[f.name]}
+                inputClassName="asInput"
+                className={s.field}
+                selectAllLabel={f.selectAllLabel ? t(f.selectAllLabel) : undefined}
+                clearLabel={f.clearLabel ? t(f.clearLabel) : undefined}
+                onOpenChange={(isOpen) =>
+                  setDropdownOpenMap((prev) => ({ ...prev, [f.name]: !!isOpen }))
+                }
+              />
             </div>
           );
         }
@@ -306,28 +312,31 @@ const handleWithTimeToggle = (nextHasTime) => {
         if (f.type === "dropdown-select-search") {
           const opts = normalizeOptions(f);
           const current = Array.isArray(v) ? String(v[0] || "") : String(v || "");
-          const hasValue = !!current || !!dropdownOpenMap[f.name];
 
           return (
-            <div key={f.name} {...wrapProps} className={s.field}>
-              <div className={`${s.floatWrap} ${hasValue ? s.isFilled : ""}`}>
-                <MultiSelectDropdown
-                  options={opts}
-                  value={current ? [current] : []}
-                  onChange={(arr) => set(f.name, Array.isArray(arr) ? String(arr[0] || "") : "")}
-                  placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : "Не выбрано"}
-                  disabled={disabled}
-                  className="asInput"
-                  filterable
-                  single
-                  onOpenChange={(isOpen) =>
-                    setDropdownOpenMap((prev) => ({ ...prev, [f.name]: !!isOpen }))
-                  }
-                />
-                {f.float && <label className={s.floatLabel}>{t(f.label)}</label>}
-              </div>
-              <div className={s.helpRow}>{f.hint && <span className={s.hint}>{t(f.hint)}</span>}</div>
-              {err && <div className={s.err}>{err}</div>}
+            <div key={f.name} {...wrapProps}>
+              <MultiSelectField
+                name={f.name}
+                label={t(f.label)}
+                value={current}
+                options={opts}
+                onValueChange={(nextValue) => set(f.name, nextValue || "")}
+                placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : "Не выбрано"}
+                disabled={disabled}
+                required={Boolean(f.required)}
+                error={err}
+                helperText={f.hint ? t(f.hint) : undefined}
+                float={!!f.float}
+                isFocused={!!dropdownOpenMap[f.name]}
+                inputClassName="asInput"
+                className={s.field}
+                filterable
+                single
+                clearLabel={f.clearLabel ? t(f.clearLabel) : undefined}
+                onOpenChange={(isOpen) =>
+                  setDropdownOpenMap((prev) => ({ ...prev, [f.name]: !!isOpen }))
+                }
+              />
             </div>
           );
         }
@@ -479,133 +488,77 @@ const runReplace = () => {
           const showInlineOpenAction = Boolean(f.inlineOpenAction && selected && typeof f.onOpenSelected === "function");
           const menuOpen = Boolean(selectedMenuOpenMap[f.name]);
           const selectedLabel = String(selected?.label || selected?.name || "");
+          const handleInputChange = (nextText) => {
+            setAutocompleteQueries((prev) => ({ ...prev, [f.name]: nextText }));
+            if (autocompleteLocalErrors[f.name]) {
+              setAutocompleteLocalErrors((prev) => ({ ...prev, [f.name]: "" }));
+            }
+            if (typeof f.onSearchChange === "function") {
+              f.onSearchChange(nextText);
+            }
+            if (selected && String(nextText || "").trim() !== String(selected.label || "").trim()) {
+              set(f.name, "");
+            }
+          };
+
+          const handleAutocompleteChange = (nextValue, opt) => {
+            if (!opt) return;
+            set(f.name, String(nextValue || ""));
+            setAutocompleteQueries((prev) => ({ ...prev, [f.name]: opt.name || "" }));
+          };
 
           return (
             <div key={f.name} {...wrapProps} className={s.field}>
-              {f.float ? (
-                <div className={`${s.floatWrap} ${hasDisplayValue ? s.isFilled : ""}`}>
-                  <div className={s.autoInlineRow}>
-                    <AutocompleteSelect
-                      value={selected ? { id: selected.value, name: selected.label } : null}
-                      inputValue={query}
-                      onInputChange={(nextText) => {
-                        setAutocompleteQueries((prev) => ({ ...prev, [f.name]: nextText }));
-                        if (autocompleteLocalErrors[f.name]) {
-                          setAutocompleteLocalErrors((prev) => ({ ...prev, [f.name]: "" }));
-                        }
-                        if (typeof f.onSearchChange === "function") {
-                          f.onSearchChange(nextText);
-                        }
-                        if (selected && String(nextText || "").trim() !== String(selected.label || "").trim()) {
-                          set(f.name, "");
-                        }
-                      }}
-                      options={acOptions}
-                      onSelect={(opt) => {
-                        if (!opt) return;
-                        set(f.name, String(opt.id));
-                        setAutocompleteQueries((prev) => ({ ...prev, [f.name]: opt.name || "" }));
-                      }}
-                      placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : t("common.select")}
-                      hint={t("crm.task.messages.typeToSearch", "Начните вводить название")}
-                      searchingLabel={t("crm.task.messages.searching", "Поиск...")}
-                      emptyLabel={t("crm.task.messages.empty", "Ничего не найдено")}
-                      loading={Boolean(f.loading)}
-                      disabled={disabled}
-                      inputClassName={s.input}
-                      opaque
-                      showCreateAction={allowCreate}
-                      createActionLabel={
-                        typeof f.createActionLabel === "function"
-                          ? f.createActionLabel(String(query || "").trim())
-                          : `Создать «${String(query || "").trim()}»`
-                      }
-                      createActionLoading={createBusy}
-                      onCreateAction={runCreate}
-                      canDeleteOption={(opt) => (typeof f.canDeleteOption === "function" ? f.canDeleteOption(opt) : false)}
-                      onDeleteOption={runDelete}
-                      deletingOptionKey={autocompleteDeleteBusy[f.name] || null}
-                      canEditOption={(opt) => (typeof f.canEditOption === "function" ? f.canEditOption(opt) : false)}
-                      onEditOption={runEdit}
-                      editingOptionKey={autocompleteEditBusy[f.name] || null}
-                    />
-                    {showInlineOpenAction ? (
-                      <button
-                        type="button"
-                        className={s.inlineOpenBtn}
-                        onClick={() => f.onOpenSelected({ selected, values, field: f })}
-                        aria-label={t("common.open", "Открыть")}
-                        title={t("common.open", "Открыть")}
-                      >
-                        ↗
-                      </button>
-                    ) : null}
-                  </div>
-                  <label className={s.floatLabel}>{t(f.label)}</label>
-                </div>
-              ) : (
-                <>
-                  <label className={s.label}>{t(f.label)}</label>
-                  <div className={s.autoInlineRow}>
-                    <AutocompleteSelect
-                      value={selected ? { id: selected.value, name: selected.label } : null}
-                      inputValue={query}
-                      onInputChange={(nextText) => {
-                        setAutocompleteQueries((prev) => ({ ...prev, [f.name]: nextText }));
-                        if (autocompleteLocalErrors[f.name]) {
-                          setAutocompleteLocalErrors((prev) => ({ ...prev, [f.name]: "" }));
-                        }
-                        if (typeof f.onSearchChange === "function") {
-                          f.onSearchChange(nextText);
-                        }
-                        if (selected && String(nextText || "").trim() !== String(selected.label || "").trim()) {
-                          set(f.name, "");
-                        }
-                      }}
-                      options={acOptions}
-                      onSelect={(opt) => {
-                        if (!opt) return;
-                        set(f.name, String(opt.id));
-                        setAutocompleteQueries((prev) => ({ ...prev, [f.name]: opt.name || "" }));
-                      }}
-                      placeholder={f.placeholder ? t(f.placeholder) : t("common.select")}
-                      hint={t("crm.task.messages.typeToSearch", "Начните вводить название")}
-                      searchingLabel={t("crm.task.messages.searching", "Поиск...")}
-                      emptyLabel={t("crm.task.messages.empty", "Ничего не найдено")}
-                      loading={Boolean(f.loading)}
-                      disabled={disabled}
-                      inputClassName={s.input}
-                      opaque
-                      showCreateAction={allowCreate}
-                      createActionLabel={
-                        typeof f.createActionLabel === "function"
-                          ? f.createActionLabel(String(query || "").trim())
-                          : `Создать «${String(query || "").trim()}»`
-                      }
-                      createActionLoading={createBusy}
-                      onCreateAction={runCreate}
-                      canDeleteOption={(opt) => (typeof f.canDeleteOption === "function" ? f.canDeleteOption(opt) : false)}
-                      onDeleteOption={runDelete}
-                      deletingOptionKey={autocompleteDeleteBusy[f.name] || null}
-                      canEditOption={(opt) => (typeof f.canEditOption === "function" ? f.canEditOption(opt) : false)}
-                      onEditOption={runEdit}
-                      editingOptionKey={autocompleteEditBusy[f.name] || null}
-                    />
-                    {showInlineOpenAction ? (
-                      <button
-                        type="button"
-                        className={s.inlineOpenBtn}
-                        onClick={() => f.onOpenSelected({ selected, values, field: f })}
-                        aria-label={t("common.open", "Открыть")}
-                        title={t("common.open", "Открыть")}
-                      >
-                        ↗
-                      </button>
-                    ) : null}
-                  </div>
-                </>
-              )}
-              {(err || localErr) && <div className={s.err}>{err || localErr}</div>}
+              <div className={s.autoInlineRow}>
+                <AutocompleteField
+                  name={f.name}
+                  label={t(f.label)}
+                  value={selected ? { id: selected.value, name: selected.label } : null}
+                  inputValue={query}
+                  onInputChange={handleInputChange}
+                  options={acOptions}
+                  onChange={handleAutocompleteChange}
+                  placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : t("common.select")}
+                  helperText={f.hint ? t(f.hint) : undefined}
+                  error={err || localErr}
+                  required={Boolean(f.required)}
+                  loading={Boolean(f.loading)}
+                  disabled={disabled}
+                  inputClassName={s.input}
+                  className={s.field}
+                  float={!!f.float}
+                  isFilled={hasDisplayValue}
+                  opaque
+                  hint={t("crm.task.messages.typeToSearch", "Начните вводить название")}
+                  searchingLabel={t("crm.task.messages.searching", "Поиск...")}
+                  emptyLabel={t("crm.task.messages.empty", "Ничего не найдено")}
+                  showCreateAction={allowCreate}
+                  createActionLabel={
+                    typeof f.createActionLabel === "function"
+                      ? f.createActionLabel(String(query || "").trim())
+                      : `Создать «${String(query || "").trim()}»`
+                  }
+                  createActionLoading={createBusy}
+                  onCreateOption={runCreate}
+                  canDeleteOption={(opt) => (typeof f.canDeleteOption === "function" ? f.canDeleteOption(opt) : false)}
+                  onDeleteOption={runDelete}
+                  deletingOptionKey={autocompleteDeleteBusy[f.name] || null}
+                  canEditOption={(opt) => (typeof f.canEditOption === "function" ? f.canEditOption(opt) : false)}
+                  onEditOption={runEdit}
+                  editingOptionKey={autocompleteEditBusy[f.name] || null}
+                />
+                {showInlineOpenAction ? (
+                  <button
+                    type="button"
+                    className={s.inlineOpenBtn}
+                    onClick={() => f.onOpenSelected({ selected, values, field: f })}
+                    aria-label={t("common.open", "Открыть")}
+                    title={t("common.open", "Открыть")}
+                  >
+                    ↗
+                  </button>
+                ) : null}
+              </div>
               {useMenuActions ? (
                 <div className={s.refMenuWrap} data-ref-menu-wrap="1">
                   <div className={s.refSelectedMeta}>
@@ -735,162 +688,140 @@ const runReplace = () => {
         if (f.type === "dropdown-select" || (f.type === "select" && !f.multiple)) {
           const opts = normalizeOptions(f);
           const current = Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
-          const hasValue = !!current;
 
           return (
-            <div key={f.name} {...wrapProps} className={s.field}>
-              {f.float ? (
-                <div className={`${s.floatWrap} ${hasValue ? s.isFilled : ""}`}>
-                  <ThemedSelect
-                    options={opts}
-                    value={current || ""}
-                    onChange={(next) => set(f.name, next)}
-                    placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : t("common.select")}
-                    disabled={disabled}
-                    className="asInput"
-                  />
-                  <label className={s.floatLabel}>{t(f.label)}</label>
-                </div>
-              ) : (
-                <>
-                  <label className={s.label}>{t(f.label)}</label>
-                  <ThemedSelect
-                    options={opts}
-                    value={current || ""}
-                    onChange={(next) => set(f.name, next)}
-                    placeholder={f.placeholder ? t(f.placeholder) : t("common.select")}
-                    disabled={disabled}
-                  />
-                </>
-              )}
-              <div className={s.helpRow}>{f.hint && <span className={s.hint}>{t(f.hint)}</span>}</div>
-              {err && <div className={s.err}>{err}</div>}
+            <div key={f.name} {...wrapProps}>
+              <SelectField
+                name={f.name}
+                label={t(f.label)}
+                value={current || ""}
+                options={opts}
+                onValueChange={(next) => set(f.name, next)}
+                placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : t("common.select")}
+                disabled={disabled}
+                required={Boolean(f.required)}
+                error={err}
+                helperText={f.hint ? t(f.hint) : undefined}
+                float={!!f.float}
+                className={s.field}
+                inputClassName={f.float ? "asInput" : ""}
+              />
             </div>
           );
         }
 
-        // SELECT multiple → MultiSelectDropdown
+        // SELECT multiple → MultiSelectField
         if (f.type === "select" && f.multiple) {
           const opts = normalizeOptions(f);
           const valueArray = Array.isArray(v) ? v.map(String) : v ? [String(v)] : [];
-          const hasValue = valueArray.length > 0 || !!dropdownOpenMap[f.name];
 
           return (
-            <div key={f.name} {...wrapProps} className={s.field}>
-              <div className={`${s.floatWrap} ${hasValue ? s.isFilled : ""}`}>
-                <MultiSelectDropdown
-                  options={opts}
-                  value={valueArray}
-                  onChange={(arr) => set(f.name, arr)}
-                  placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : "Не выбрано"}
-                  maxPreview={f.maxPreview ?? 3}
-                  disabled={isDisabled(f)}
-                  className="asInput"
-                  onOpenChange={(isOpen) =>
-                    setDropdownOpenMap((prev) => ({ ...prev, [f.name]: !!isOpen }))
-                  }
-                />
-                {f.float && <label className={s.floatLabel} htmlFor={f.name}>{t(f.label)}</label>}
-              </div>
-              <div className={s.helpRow}>
-                {f.hint && <span className={s.hint}>{t(f.hint)}</span>}
-                {cnt && <span className={s.counter}>{cnt}</span>}
-              </div>
-              {err && <div className={s.err}>{err}</div>}
+            <div key={f.name} {...wrapProps}>
+              <MultiSelectField
+                name={f.name}
+                label={t(f.label)}
+                value={valueArray}
+                options={opts}
+                onValueChange={(nextArray) => set(f.name, nextArray)}
+                placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : "Не выбрано"}
+                maxPreview={f.maxPreview ?? 3}
+                disabled={disabled}
+                required={Boolean(f.required)}
+                error={err}
+                helperText={f.hint ? t(f.hint) : undefined}
+                showCounter={Boolean(cnt)}
+                currentLength={typeof v === "string" ? v.length : valueArray.length}
+                counterMaxLength={f.max}
+                float={!!f.float}
+                isFocused={!!dropdownOpenMap[f.name]}
+                inputClassName="asInput"
+                className={s.field}
+                selectAllLabel={f.selectAllLabel ? t(f.selectAllLabel) : undefined}
+                clearLabel={f.clearLabel ? t(f.clearLabel) : undefined}
+                onOpenChange={(isOpen) =>
+                  setDropdownOpenMap((prev) => ({ ...prev, [f.name]: !!isOpen }))
+                }
+              />
             </div>
           );
         }
 
         // TEXTAREA
         if (f.type === "textarea") {
+          const valueText = typeof v === "string" ? v : String(v ?? "");
           return (
-            <div key={f.name} {...wrapProps} className={s.field}>
-              <div className={s.floatWrap}>
-                <textarea
-                  id={f.name}
-                  name={f.name}
-                  className={`${s.input} ${err ? s.invalid : ""} ${f.float ? s.float : ""}`}
-                  value={v}
-                  onChange={(e) => set(f.name, e.target.value)}
-                  rows={f.rows || 4}
-                  disabled={disabled}
-                />
-                {f.float && <label className={s.floatLabel} htmlFor={f.name}>{t(f.label)}</label>}
-              </div>
-              <div className={s.helpRow}>{f.hint && <span className={s.hint}>{t(f.hint)}</span>}</div>
-              {err && <div className={s.err}>{err}</div>}
+            <div key={f.name} {...wrapProps}>
+              <TextareaField
+                name={f.name}
+                label={t(f.label)}
+                value={valueText}
+                onChange={(value) => set(f.name, value)}
+                rows={f.rows || 4}
+                disabled={disabled}
+                required={Boolean(f.required)}
+                placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : undefined}
+                error={err}
+                helperText={f.hint ? t(f.hint) : undefined}
+                showCounter={Boolean(cnt)}
+                counterMaxLength={f.max}
+                float={!!f.float}
+                className={s.field}
+                inputClassName={s.input}
+              />
             </div>
           );
         }
 
         if (f.type === "date" || f.type === "datetime") {
-          const hasValue = Boolean(String(v || "").trim());
           const withTime = f.type === "datetime";
+          const DateControl = withTime ? DateTimeField : DateField;
           return (
-            <div key={f.name} {...wrapProps} className={s.field}>
-              {f.float ? (
-                <div className={`${s.floatWrap} ${hasValue ? s.isFilled : ""}`}>
-                  <DateTimePicker
-                    id={f.name}
-                    value={String(v || "")}
-                    withTime={withTime}
-                    className={`${s.input} ${err ? s.invalid : ""}`}
-                    onChange={(nextValue) => set(f.name, nextValue)}
-                    disabled={disabled}
-                    placeholder={f.float ? " " : (f.placeholder ? t(f.placeholder) : undefined)}
-                  />
-                  <label className={s.floatLabel} htmlFor={f.name}>{t(f.label)}</label>
-                </div>
-              ) : (
-                <>
-                  <label className={s.label}>{t(f.label)}</label>
-                  <DateTimePicker
-                    id={f.name}
-                    value={String(v || "")}
-                    withTime={withTime}
-                    className={`${s.input} ${err ? s.invalid : ""}`}
-                    onChange={(nextValue) => set(f.name, nextValue)}
-                    disabled={disabled}
-                    placeholder={f.placeholder ? t(f.placeholder) : undefined}
-                  />
-                </>
-              )}
-              <div className={s.helpRow}>
-                {f.hint && <span className={s.hint}>{t(f.hint)}</span>}
-                {cnt && <span className={s.counter}>{cnt}</span>}
-              </div>
-              {err && <div className={s.err}>{err}</div>}
+            <div key={f.name} {...wrapProps}>
+              <DateControl
+                name={f.name}
+                label={t(f.label)}
+                value={String(v || "")}
+                withTime={withTime}
+                onChange={(value) => set(f.name, value)}
+                disabled={disabled}
+                error={err}
+                helperText={f.hint ? t(f.hint) : undefined}
+                float={!!f.float}
+                className={s.field}
+                inputClassName={s.input}
+                placeholder={f.float ? " " : (f.placeholder ? t(f.placeholder) : undefined)}
+              />
             </div>
           );
         }
 
         // INPUT (text/date/datetime)
         const inputType = mapInputType(f.type);
+        const valueText = typeof v === "string" ? v : String(v ?? "");
         return (
-          <div key={f.name} {...wrapProps} className={s.field}>
-            <div className={s.floatWrap}>
-              <input
-                id={f.name}
-                name={f.name}
-                className={`${s.input} ${err ? s.invalid : ""} ${f.float ? s.float : ""}`}
-                type={inputType}
-                value={v}
-                onChange={(e) => set(f.name, e.target.value)}
-                disabled={disabled}
-                placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : undefined}
-                {...(f.inputMode ? { inputMode: f.inputMode } : {})}
-              />
-              {f.float && <label className={s.floatLabel} htmlFor={f.name}>{t(f.label)}</label>}
-            </div>
-            <div className={s.helpRow}>
-              {f.hint && <span className={s.hint}>{t(f.hint)}</span>}
-              {cnt && <span className={s.counter}>{cnt}</span>}
-            </div>
-            {err && <div className={s.err}>{err}</div>}
+          <div key={f.name} {...wrapProps}>
+            <TextField
+              name={f.name}
+              label={t(f.label)}
+              type={inputType}
+              value={valueText}
+              onChange={(value) => set(f.name, value)}
+              disabled={disabled}
+              required={Boolean(f.required)}
+              placeholder={f.float ? " " : f.placeholder ? t(f.placeholder) : undefined}
+              inputMode={f.inputMode}
+              autoComplete={f.autoComplete}
+              error={err}
+              helperText={f.hint ? t(f.hint) : undefined}
+              showCounter={Boolean(cnt)}
+              counterMaxLength={f.max}
+              float={!!f.float}
+              className={s.field}
+              inputClassName={s.input}
+            />
           </div>
         );
       })}
     </div>
   );
 }
-

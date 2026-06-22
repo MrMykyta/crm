@@ -1,11 +1,11 @@
 // src/components/company/CompanySetup/index.jsx
 import React from 'react';
-import { Formik, Form, useField, ErrorMessage } from 'formik';
+import { Formik, Form, useField } from 'formik';
 import * as Yup from 'yup';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import s from '../../../styles/formGlass.module.css';
-import ThemedSelect from '../../../components/inputs/RadixSelect';
+import { TextField, SelectField } from '../../ui/fields';
 
 import {
   useCreateCompanyMutation,
@@ -16,11 +16,12 @@ import {
   useAddMyContactMutation,
 } from '../../../store/rtk/userApi';
 
-// Компонент FieldBlock: отвечает за отображение UI и обработку взаимодействий пользователя.
+// Компонент FieldBlock: оборачивает Formik-поле в стандартизированный field-компонент.
+// dual-mode onChange: для текстовых полей event пробрасывается в Formik (handleChange);
+// для select используем helpers.setValue (нативного события нет). Логика/опции сохранены 1:1.
 function FieldBlock({ as, name, label, children, ...props }) {
   const [field, meta, helpers] = useField(name);
-  const isFilled = (field.value ?? '') !== '';
-  const hasError = meta.touched && !!meta.error;
+  const error = meta.touched && meta.error ? meta.error : undefined;
 
   if (as === 'select') {
     const options = React.Children.toArray(children).map((child) => ({
@@ -28,26 +29,29 @@ function FieldBlock({ as, name, label, children, ...props }) {
       label: child.props.children,
     }));
     return (
-      <div className={`${s.field} ${isFilled ? s.filled : ''} ${hasError ? s.error : ''}`}>
-        <label>{label}</label>
-        <ThemedSelect
-          value={field.value}
-          onChange={(val) => helpers.setValue(val)}
-          options={options}
-          placeholder="—"
-          size="md"
-        />
-        <ErrorMessage name={name} component="div" className={s.err} />
-      </div>
+      <SelectField
+        name={name}
+        label={label}
+        value={field.value}
+        onValueChange={(val) => helpers.setValue(val)}
+        options={options}
+        placeholder="—"
+        size="md"
+        error={error}
+      />
     );
   }
 
   return (
-    <div className={`${s.field} ${isFilled ? s.filled : ''} ${hasError ? s.error : ''}`}>
-      <input {...field} {...props} placeholder=" " />
-      <label>{label}</label>
-      <ErrorMessage name={name} component="div" className={s.err} />
-    </div>
+    <TextField
+      name={name}
+      label={label}
+      value={field.value}
+      onChange={(value, event) => field.onChange(event)}
+      onBlur={field.onBlur}
+      error={error}
+      {...props}
+    />
   );
 }
 

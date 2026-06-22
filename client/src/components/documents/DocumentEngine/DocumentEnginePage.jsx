@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import ConfirmDialog from '../../dialogs/ConfirmDialog';
 import StatusBadge from '../../shared/StatusBadge';
+import { DateField, SelectField, TextareaField, TextField } from '../../ui/fields';
 import DocumentViewModeSwitch from '../DocumentViewModeSwitch';
 // Source of truth: reuse the EXISTING Documents-module visual layer (DocumentDetailsPage
 // / DocumentForm / DocumentItemsTable). No new visual style is introduced here.
@@ -82,32 +83,48 @@ function EngineView({
   };
 
   const renderControl = (field) => {
-    const onChange = (event) => field.onChange?.(event.target.value);
     if (field.type === 'select') {
       return (
-        <select className={formStyles.sideFieldControl} value={field.value ?? ''} onChange={onChange}>
-          {(field.options || []).map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+        <SelectField
+          inputClassName={formStyles.sideFieldControl}
+          value={field.value ?? ''}
+          onValueChange={(value) => field.onChange?.(value)}
+          options={field.options || []}
+          placeholder={field.placeholder}
+          disabled={field.disabled}
+        />
       );
     }
     if (field.type === 'textarea') {
       return (
-        <textarea
-          className={formStyles.sideFieldControl}
+        <TextareaField
+          inputClassName={formStyles.sideFieldControl}
           style={{ minHeight: 76, height: 'auto', paddingTop: 6, paddingBottom: 6, resize: 'vertical' }}
           value={field.value ?? ''}
-          onChange={onChange}
+          onValueChange={(value) => field.onChange?.(value)}
+          placeholder={field.placeholder}
+          disabled={field.disabled}
+        />
+      );
+    }
+    if (field.type === 'date') {
+      return (
+        <DateField
+          inputClassName={formStyles.sideFieldControl}
+          value={field.value ?? ''}
+          onValueChange={(value) => field.onChange?.(value)}
+          placeholder={field.placeholder}
+          disabled={field.disabled}
         />
       );
     }
     return (
-      <input
-        className={formStyles.sideFieldControl}
-        type={field.type === 'date' ? 'date' : 'text'}
+      <TextField
+        inputClassName={formStyles.sideFieldControl}
         value={field.value ?? ''}
-        onChange={onChange}
+        onValueChange={(value) => field.onChange?.(value)}
+        placeholder={field.placeholder}
+        disabled={field.disabled}
       />
     );
   };

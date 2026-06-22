@@ -49,9 +49,55 @@
   min-width: 0;
 }
 
-.controlWrap > :not(.adornLeft):not(.adornRight) {
+.controlWrap > :not(.adornLeft):not(.adornRight):not(.floatLabel) {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: var(--ui-control-height-md);
+  padding: var(--ui-control-padding-y) var(--ui-control-padding-x);
+  border: 1px solid var(--ui-field-border);
+  border-radius: var(--radius-md);
+  background: var(--ui-field-bg);
+  color: var(--text-1);
+  font-size: var(--font-size-14);
+  font-weight: 400;
+  line-height: var(--lh-normal);
+  outline: none;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+  transition: border-color var(--tr-fast), box-shadow var(--tr-fast), background var(--tr-fast);
+}
+
+.input:hover {
+  border-color: var(--ui-field-border-hover);
+  background: var(--ui-field-bg-hover);
+}
+
+.input:focus,
+.input:focus-visible {
+  border-color: var(--ui-field-border-focus);
+  box-shadow: var(--ui-focus-ring), inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+}
+
+.input::placeholder {
+  color: var(--placeholder-text);
+  opacity: 1;
+}
+
+.input:disabled,
+.input:read-only {
+  opacity: 0.72;
+  cursor: not-allowed;
+  background: color-mix(in srgb, var(--ui-field-bg) 94%, transparent);
+}
+
+textarea.input {
+  min-height: 84px;
+  line-height: var(--lh-comfy, 1.4);
+  resize: vertical;
 }
 
 .adornLeft,
@@ -123,6 +169,78 @@
   padding-right: 38px;
 }
 
+/* ---------- Opt-in floating labels (for future SmartForm migration) ---------- */
+.floatField {
+  gap: var(--gap-xs, 6px);
+}
+
+.floatWrap {
+  position: relative;
+}
+
+.floatLabel {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  z-index: 2;
+  max-width: calc(100% - 24px);
+  padding: 0 4px;
+  color: var(--label-text, var(--text-2));
+  background: var(--ui-field-bg, var(--input-bg, var(--card-bg)));
+  border-radius: var(--radius-sm);
+  transform: translateY(-50%);
+  transform-origin: left center;
+  transition:
+    top var(--tr-fast, 0.15s ease),
+    transform var(--tr-fast, 0.15s ease),
+    color var(--tr-fast, 0.15s ease),
+    background var(--tr-fast, 0.15s ease);
+  pointer-events: none;
+}
+
+.floatLabel .label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.floatField.hasLeftIcon .floatLabel {
+  left: 38px;
+}
+
+.floatField .controlWrap input:not([type="checkbox"]):not([type="radio"]),
+.floatField .controlWrap textarea {
+  min-height: 42px;
+  padding-top: calc(var(--ui-control-padding-y) + 8px);
+  padding-bottom: calc(var(--ui-control-padding-y) - 2px);
+  line-height: 1.42;
+}
+
+.floatField .controlWrap [role="combobox"] {
+  min-height: 42px;
+  padding-top: calc(var(--ui-control-padding-y) + 8px);
+  padding-bottom: calc(var(--ui-control-padding-y) - 2px);
+  line-height: 1.42;
+}
+
+.floatWrap:focus-within .floatLabel,
+.floatWrap.floatFocused .floatLabel,
+.floatWrap.floatFilled .floatLabel {
+  top: 0;
+  color: var(--ui-field-border-focus, var(--focus));
+  transform: translateY(-50%) scale(0.88);
+}
+
+.floatField.invalid .floatLabel {
+  color: var(--danger);
+}
+
+.floatField[data-disabled="true"] .floatLabel,
+.floatField[data-readonly="true"] .floatLabel {
+  opacity: 0.72;
+}
+
 /* ---------- Размеры (descendant перебивает глобальный input[type=...]) ---------- */
 .field[data-size="sm"] .controlWrap input:not([type="checkbox"]):not([type="radio"]),
 .field[data-size="sm"] .controlWrap textarea,
@@ -134,6 +252,16 @@
   font-size: var(--font-size-13, var(--font-size-14));
 }
 
+.floatField[data-size="sm"] .floatLabel .label {
+  font-size: var(--font-size-12);
+}
+
+.floatField[data-size="sm"] .controlWrap input:not([type="checkbox"]):not([type="radio"]),
+.floatField[data-size="sm"] .controlWrap textarea {
+  padding-top: calc(var(--ui-control-padding-y) + 6px);
+  padding-bottom: calc(var(--ui-control-padding-y) - 3px);
+}
+
 .field[data-size="lg"] .controlWrap input:not([type="checkbox"]):not([type="radio"]),
 .field[data-size="lg"] .controlWrap textarea,
 .field[data-size="lg"] .controlWrap select {
@@ -141,6 +269,16 @@
   padding-top: calc(var(--ui-control-padding-y) + 3px);
   padding-bottom: calc(var(--ui-control-padding-y) + 3px);
   border-radius: var(--radius-lg);
+}
+
+.floatField[data-size="lg"] .floatLabel {
+  left: 14px;
+}
+
+.floatField[data-size="lg"] .controlWrap input:not([type="checkbox"]):not([type="radio"]),
+.floatField[data-size="lg"] .controlWrap textarea {
+  padding-top: calc(var(--ui-control-padding-y) + 10px);
+  padding-bottom: var(--ui-control-padding-y);
 }
 
 /* ---------- Состояние ошибки (перебивает глобальный focus) ---------- */
@@ -215,6 +353,68 @@
   opacity: 0.64;
 }
 
+/* ---------- Radio group ---------- */
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm, 10px);
+  min-width: 0;
+}
+
+.radioGroupHorizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.radioOption {
+  display: inline-grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "input label"
+    ". description";
+  align-items: start;
+  column-gap: var(--gap-sm, 10px);
+  row-gap: 2px;
+  min-width: 0;
+  color: var(--text-1);
+  cursor: pointer;
+  user-select: none;
+}
+
+.radioOptionDisabled {
+  cursor: not-allowed;
+  opacity: 0.64;
+}
+
+.radioInput {
+  grid-area: input;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.radioLabel {
+  grid-area: label;
+  min-width: 0;
+  font-size: var(--font-size-14);
+  line-height: var(--lh-tight, 1.25);
+  color: var(--text-1);
+}
+
+.radioDescription {
+  grid-area: description;
+  min-width: 0;
+  color: var(--text-2);
+  font-size: var(--font-size-12);
+  line-height: var(--lh-comfy, 1.4);
+}
+
+/* ---------- Priority input wrapper ---------- */
+.priorityControl {
+  width: 100%;
+  min-width: 0;
+}
+
 /* ---------- File input ---------- */
 .fileInput {
   width: 100%;
@@ -250,6 +450,70 @@
   color: var(--ui-text-1);
   cursor: pointer;
   font: inherit;
+}
+
+/* ---------- Specialized wrappers ---------- */
+.sliderControl {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm, 10px);
+  width: 100%;
+  min-width: 0;
+}
+
+.sliderInput {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.sliderInput:disabled {
+  cursor: not-allowed;
+  opacity: 0.64;
+}
+
+.sliderValue {
+  flex: 0 0 auto;
+  min-width: 42px;
+  color: var(--text-2);
+  font-size: var(--font-size-12);
+  line-height: var(--lh-tight, 1.25);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.colorInput {
+  width: 100%;
+  min-width: 64px;
+  min-height: var(--ui-control-height-md);
+  padding: 3px;
+  border: 1px solid var(--ui-field-border);
+  border-radius: var(--radius-md);
+  background: var(--ui-field-bg);
+  cursor: pointer;
+}
+
+.colorInput:hover {
+  border-color: var(--ui-field-border-hover);
+  background: var(--ui-field-bg-hover);
+}
+
+.colorInput:focus {
+  outline: none;
+  border-color: var(--ui-field-border-focus);
+  box-shadow: var(--ui-focus-ring);
+}
+
+.colorInput:disabled {
+  cursor: not-allowed;
+  opacity: 0.64;
+}
+
+.editorField,
+.imageField {
+  width: 100%;
+  min-width: 0;
 }
 
 /* ---------- Spinner ---------- */

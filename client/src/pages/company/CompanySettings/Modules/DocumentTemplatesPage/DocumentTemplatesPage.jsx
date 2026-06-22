@@ -8,6 +8,7 @@ import {
 import { deleteTemplate } from "../../../../../api/documentTemplates.api";
 import { resolveTemplateDocumentTypeKey } from "../_shared/templateRouteUtils";
 import StatusBadge from "../../../../../components/shared/StatusBadge";
+import { SelectField, TextField } from "../../../../../components/ui/fields";
 import s from "./DocumentTemplatesPage.module.css";
 
 const DOCUMENT_TYPE_OPTIONS = ["faktura_vat", "oferta", "zamowienie", "wz"];
@@ -222,26 +223,21 @@ export default function DocumentTemplatesPage() {
           <form className={s.createForm} onSubmit={onCreate}>
             <label className={s.field}>
               <span>Document Type</span>
-              <select
-                className={s.select}
+              <SelectField
+                inputClassName={s.select}
                 value={documentTypeKey}
-                onChange={(event) => setDocumentTypeKey(event.target.value)}
+                onValueChange={(value) => setDocumentTypeKey(value)}
                 disabled={isCreating}
-              >
-                {DOCUMENT_TYPE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+                options={DOCUMENT_TYPE_OPTIONS.map((option) => ({ value: option, label: option }))}
+              />
             </label>
 
             <label className={s.field}>
               <span>Template Name</span>
-              <input
-                className={s.input}
+              <TextField
+                inputClassName={s.input}
                 value={name}
-                onChange={(event) => setName(event.target.value)}
+                onValueChange={setName}
                 placeholder="e.g. Faktura VAT default"
                 disabled={isCreating}
               />

@@ -13,6 +13,7 @@ import {
   useGetCompanyWarehouseDocumentSettingsQuery,
   useUpdateCompanyWarehouseDocumentSettingsMutation,
 } from "../../../store/rtk/companyWarehouseDocumentSettingsApi";
+import { CheckboxField, SelectField } from "../../../components/ui/fields";
 import s from "./WmsSettingsPanel.module.css";
 
 function asText(value) {
@@ -247,32 +248,30 @@ export default function WmsSettingsPanel({ embedded = false }) {
         <div className={s.formGrid}>
           <label>
             <span>{t("companySettings.wms.defaultWarehouse", "Default warehouse")}</span>
-            <select
+            <SelectField
               value={form.defaultWarehouseId}
-              onChange={(event) => setForm((prev) => ({ ...prev, defaultWarehouseId: event.target.value }))}
+              onValueChange={(value) => setForm((prev) => ({ ...prev, defaultWarehouseId: value }))}
               disabled={isSavingSettings}
-            >
-              <option value="">{t("common.none", "-")}</option>
-              {activeWarehouses.map((row) => (
-                <option key={row.id} value={row.id}>
-                  {warehouseLabel(row)}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: t("common.none", "-") },
+                ...activeWarehouses.map((row) => ({
+                  value: row.id,
+                  label: warehouseLabel(row),
+                })),
+              ]}
+            />
           </label>
           <label>
             <span>{t("companySettings.documents.warehouse.fields.defaultType", "Default warehouse document type")}</span>
-            <select
+            <SelectField
               value={form.warehouseDefaultDocumentType}
-              onChange={(event) => setForm((prev) => ({ ...prev, warehouseDefaultDocumentType: event.target.value }))}
+              onValueChange={(value) => setForm((prev) => ({ ...prev, warehouseDefaultDocumentType: value }))}
               disabled={isSavingSettings || !enabledTypes.length}
-            >
-              {enabledTypes.map((row) => (
-                <option key={row.typeKey} value={row.typeKey}>
-                  {getWarehouseTypeLabel(row.typeKey, t)}
-                </option>
-              ))}
-            </select>
+              options={enabledTypes.map((row) => ({
+                value: row.typeKey,
+                label: getWarehouseTypeLabel(row.typeKey, t),
+              }))}
+            />
           </label>
           <div className={s.readonlyField}>
             <span>{t("companySettings.wms.settings.costMethod", "Cost method")}</span>
@@ -341,25 +340,19 @@ export default function WmsSettingsPanel({ embedded = false }) {
               disabled={initialized}
             />
           </label>
-          <label className={s.checkboxRow}>
-            <input
-              type="checkbox"
-              checked={costingForm.showAdvanced}
-              onChange={(event) => setCostingForm((prev) => ({ ...prev, showAdvanced: event.target.checked, force: event.target.checked ? prev.force : false }))}
-              disabled={initialized}
-            />
-            <span>{t("companySettings.wms.costing.showAdvanced", "Show advanced options")}</span>
-          </label>
+          <CheckboxField
+            checked={costingForm.showAdvanced}
+            onValueChange={(checked) => setCostingForm((prev) => ({ ...prev, showAdvanced: checked, force: checked ? prev.force : false }))}
+            disabled={initialized}
+            label={t("companySettings.wms.costing.showAdvanced", "Show advanced options")}
+          />
           {costingForm.showAdvanced ? (
-            <label className={s.checkboxRow}>
-              <input
-                type="checkbox"
-                checked={costingForm.force}
-                onChange={(event) => setCostingForm((prev) => ({ ...prev, force: event.target.checked }))}
-                disabled={initialized}
-              />
-              <span>{t("companySettings.wms.costing.force", "Force re-initialize if safe")}</span>
-            </label>
+            <CheckboxField
+              checked={costingForm.force}
+              onValueChange={(checked) => setCostingForm((prev) => ({ ...prev, force: checked }))}
+              disabled={initialized}
+              label={t("companySettings.wms.costing.force", "Force re-initialize if safe")}
+            />
           ) : null}
         </div>
 

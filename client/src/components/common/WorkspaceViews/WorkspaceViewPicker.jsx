@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import * as Lucide from 'lucide-react';
+import { SearchField } from '../../ui/fields';
 import {
   useListWorkspaceViewsQuery,
   useTouchWorkspaceViewMutation,
@@ -220,12 +221,12 @@ export default function WorkspaceViewPicker({
         <div className={s.dropdown} role="listbox">
           <div className={s.dropdownSearch}>
             <Lucide.Search size={14} strokeWidth={1.8} />
-            <input
-              type="search"
+            <SearchField
               value={dropdownFilter}
-              onChange={(e) => setDropdownFilter(e.target.value)}
+              onValueChange={setDropdownFilter}
               placeholder={t('workspaceViews.searchPlaceholder', 'Search views…')}
               autoFocus
+              fullWidth
             />
           </div>
           <div className={s.dropdownList}>

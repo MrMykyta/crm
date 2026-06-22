@@ -30,6 +30,9 @@ export default function FieldShell({
   currentLength = 0,
   maxLength,
   inlineLabel = false,
+  float = false,
+  isFilled = false,
+  isFocused = false,
   className = "",
   children,
 }) {
@@ -45,6 +48,7 @@ export default function FieldShell({
     s.field,
     fullWidth && s.fullWidth,
     hasError && s.invalid,
+    float && s.floatField,
     leftIcon && s.hasLeftIcon,
     rightIcon && s.hasRightIcon,
     className
@@ -65,6 +69,13 @@ export default function FieldShell({
     <span className={s.spinner} role="status" aria-hidden="true" />
   ) : (
     rightIcon
+  );
+
+  const controlClass = cx(
+    s.controlWrap,
+    float && s.floatWrap,
+    float && isFilled && s.floatFilled,
+    float && isFocused && s.floatFocused
   );
 
   return (
@@ -92,7 +103,7 @@ export default function FieldShell({
         </label>
       ) : (
         <>
-          {label ? (
+          {label && !float ? (
             <label className={s.labelRow} htmlFor={ids.controlId}>
               {labelNode}
             </label>
@@ -104,13 +115,18 @@ export default function FieldShell({
             </div>
           ) : null}
 
-          <div className={s.controlWrap}>
+          <div className={controlClass}>
             {leftIcon ? (
               <span className={s.adornLeft} aria-hidden="true">
                 {leftIcon}
               </span>
             ) : null}
             {children}
+            {label && float ? (
+              <label className={s.floatLabel} htmlFor={ids.controlId}>
+                {labelNode}
+              </label>
+            ) : null}
             {rightAdornment ? (
               <span className={s.adornRight}>{rightAdornment}</span>
             ) : null}

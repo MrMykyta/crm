@@ -24,12 +24,29 @@ export default function ThemedSelect({
   size = 'md',
   className = '',
   disabled = false,
+  searchable = false,
+  searchPlaceholder = 'Поиск…',
+  emptyLabel = 'Ничего не найдено',
 }) {
   const internalValue = value === '' ? EMPTY_TOKEN : String(value);
   const triggerRef = React.useRef(null);
+  const searchRef = React.useRef(null);
   const [collisionBoundary, setCollisionBoundary] = React.useState(null);
   const [open, setOpen] = React.useState(false);
   const [contentSide, setContentSide] = React.useState('bottom');
+  const [query, setQuery] = React.useState('');
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleOptions = React.useMemo(() => {
+    if (!searchable || !normalizedQuery) return options;
+    return options.filter((option) => {
+      const label = String(option?.label ?? '');
+      const optionValue = String(option?.value ?? '');
+      return (
+        label.toLowerCase().includes(normalizedQuery)
+        || optionValue.toLowerCase().includes(normalizedQuery)
+      );
+    });
+  }, [normalizedQuery, options, searchable]);
 
   // Определяет границу dropdown и сторону открытия (вверх/вниз)
   // по доступному месту в текущей видимой области.
@@ -72,6 +89,12 @@ export default function ThemedSelect({
     };
   }, [open, resolveBoundary]);
 
+  React.useEffect(() => {
+    if (!open || !searchable) return undefined;
+    const timer = window.setTimeout(() => searchRef.current?.focus(), 0);
+    return () => window.clearTimeout(timer);
+  }, [open, searchable]);
+
   // Нормализует "пустое" значение из Radix-токена обратно в обычную пустую строку.
   const handleChange = (v) => {
     const out = v === EMPTY_TOKEN ? '' : v;
@@ -85,7 +108,11 @@ export default function ThemedSelect({
       disabled={disabled}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen);
-        if (nextOpen) resolveBoundary();
+        if (nextOpen) {
+          resolveBoundary();
+        } else {
+          setQuery('');
+        }
       }}
     >
       <Select.Trigger
@@ -108,16 +135,40 @@ export default function ThemedSelect({
           collisionPadding={8}
           collisionBoundary={collisionBoundary ? [collisionBoundary] : undefined}
         >
+          {searchable ? (
+            <div className={s.searchRow}>
+              <input
+                ref={searchRef}
+                className={s.searchInput}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Escape') event.stopPropagation();
+                }}
+                onPointerDown={(event) => event.stopPropagation()}
+                placeholder={searchPlaceholder}
+                autoComplete="off"
+              />
+            </div>
+          ) : null}
           <Select.Viewport className={s.viewport}>
-            {options.map((o) => {
+            {visibleOptions.map((o) => {
               const itemVal = o.value === '' ? EMPTY_TOKEN : String(o.value);
               return (
-                <Select.Item key={itemVal} value={itemVal} className={s.item}>
+                <Select.Item
+                  key={itemVal}
+                  value={itemVal}
+                  className={s.item}
+                  disabled={Boolean(o.disabled)}
+                >
                   <Select.ItemText>{o.label}</Select.ItemText>
                   <Select.ItemIndicator className={s.check}>✓</Select.ItemIndicator>
                 </Select.Item>
               );
             })}
+            {searchable && visibleOptions.length === 0 ? (
+              <div className={s.emptyState}>{emptyLabel}</div>
+            ) : null}
           </Select.Viewport>
         </Select.Content>
       </Select.Portal>

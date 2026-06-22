@@ -25,6 +25,7 @@ import {
 } from "../../../../../store/rtk/documentTemplateSettingsApi";
 import { useGetCompanyQuery } from "../../../../../store/rtk/companyApi";
 import { useListCounterpartiesQuery } from "../../../../../store/rtk/counterpartyApi";
+import { CheckboxField, SelectField, TextField } from "../../../../../components/ui/fields";
 import s from "./DocumentTemplateSettings.module.css";
 
 const TYPE_LABELS = DOCUMENT_TYPE_OPTIONS.reduce((acc, option) => {
@@ -245,28 +246,23 @@ export default function DocumentTemplateSettings() {
 
           <div className={s.section}>
             <p className={s.sectionLabel}>Preset шаблона</p>
-            <select
-              className={s.select}
+            <SelectField
+              inputClassName={s.select}
               value={activeRow.templatePreset}
-              onChange={(event) => onPresetChange(event.target.value)}
-            >
-              {activePresets.map((preset) => (
-                <option key={preset.key} value={preset.key}>
-                  {preset.label}
-                </option>
-              ))}
-            </select>
+              onValueChange={(value) => onPresetChange(value)}
+              options={activePresets.map((preset) => ({ value: preset.key, label: preset.label }))}
+            />
             <p className={s.helper}>{activePresetConfig?.category || "preset"}</p>
           </div>
 
           <div className={s.section}>
             <p className={s.sectionLabel}>Заголовок документа (override)</p>
-            <input
+            <TextField
               type="text"
-              className={s.input}
+              inputClassName={s.input}
               value={activeRow.documentTitleOverride}
               maxLength={MAX_TITLE_OVERRIDE_LENGTH}
-              onChange={(event) => onRowChange({ documentTitleOverride: event.target.value })}
+              onValueChange={(value) => onRowChange({ documentTitleOverride: value })}
               placeholder={`Например: ${TYPE_LABELS[activeType] || activeType}`}
             />
             <p className={s.helper}>
@@ -276,31 +272,28 @@ export default function DocumentTemplateSettings() {
 
           <div className={s.section}>
             <p className={s.sectionLabel}>Плотность layout</p>
-            <select
-              className={s.select}
+            <SelectField
+              inputClassName={s.select}
               value={activeRow.layoutDensity}
-              onChange={(event) => onRowChange({ layoutDensity: event.target.value })}
-            >
-              {TEMPLATE_LAYOUT_DENSITIES.map((density) => (
-                <option key={density} value={density}>
-                  {DENSITY_LABELS[density]}
-                </option>
-              ))}
-            </select>
+              onValueChange={(value) => onRowChange({ layoutDensity: value })}
+              options={TEMPLATE_LAYOUT_DENSITIES.map((density) => ({
+                value: density,
+                label: DENSITY_LABELS[density],
+              }))}
+            />
           </div>
 
           <details className={s.section} open>
             <summary className={s.sectionSummary}>Видимость блоков</summary>
             <div className={s.toggles}>
               {TEMPLATE_BLOCK_TOGGLE_FIELDS.map((fieldName) => (
-                <label key={`${activeType}-${fieldName}`} className={s.toggleRow}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(activeRow[fieldName])}
-                    onChange={(event) => onRowChange({ [fieldName]: event.target.checked })}
-                  />
-                  <span>{TOGGLE_LABELS[fieldName] || fieldName}</span>
-                </label>
+                <CheckboxField
+                  key={`${activeType}-${fieldName}`}
+                  className={s.toggleRow}
+                  checked={Boolean(activeRow[fieldName])}
+                  onValueChange={(checked) => onRowChange({ [fieldName]: checked })}
+                  label={TOGGLE_LABELS[fieldName] || fieldName}
+                />
               ))}
             </div>
           </details>
@@ -309,14 +302,13 @@ export default function DocumentTemplateSettings() {
             <summary className={s.sectionSummary}>Поля продавца</summary>
             <div className={s.toggles}>
               {TEMPLATE_SELLER_FIELD_TOGGLE_FIELDS.map((fieldName) => (
-                <label key={`${activeType}-${fieldName}`} className={s.toggleRow}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(activeRow[fieldName])}
-                    onChange={(event) => onRowChange({ [fieldName]: event.target.checked })}
-                  />
-                  <span>{TOGGLE_LABELS[fieldName] || fieldName}</span>
-                </label>
+                <CheckboxField
+                  key={`${activeType}-${fieldName}`}
+                  className={s.toggleRow}
+                  checked={Boolean(activeRow[fieldName])}
+                  onValueChange={(checked) => onRowChange({ [fieldName]: checked })}
+                  label={TOGGLE_LABELS[fieldName] || fieldName}
+                />
               ))}
             </div>
           </details>
@@ -325,14 +317,13 @@ export default function DocumentTemplateSettings() {
             <summary className={s.sectionSummary}>Поля покупателя</summary>
             <div className={s.toggles}>
               {TEMPLATE_BUYER_FIELD_TOGGLE_FIELDS.map((fieldName) => (
-                <label key={`${activeType}-${fieldName}`} className={s.toggleRow}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(activeRow[fieldName])}
-                    onChange={(event) => onRowChange({ [fieldName]: event.target.checked })}
-                  />
-                  <span>{TOGGLE_LABELS[fieldName] || fieldName}</span>
-                </label>
+                <CheckboxField
+                  key={`${activeType}-${fieldName}`}
+                  className={s.toggleRow}
+                  checked={Boolean(activeRow[fieldName])}
+                  onValueChange={(checked) => onRowChange({ [fieldName]: checked })}
+                  label={TOGGLE_LABELS[fieldName] || fieldName}
+                />
               ))}
             </div>
           </details>

@@ -1,6 +1,7 @@
 // src/components/Calendar/components/EventModal.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { CheckboxField, TextField, TimeField } from "../../../../components/ui/fields";
 import s from "../CalendarPage.module.css";
 
 const COLORS = [
@@ -87,20 +88,20 @@ const handleSave = () => {
       {/* поле: название */}
       <div className={s.eventModalSection}>
         <label className={s.eventLabel}>Название</label>
-        <input
-          className={s.eventInput}
+        <TextField
+          inputClassName={s.eventInput}
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onValueChange={setTitle}
         />
       </div>
 
       {/* поле: место */}
       <div className={s.eventModalSection}>
         <label className={s.eventLabel}>Место / адрес</label>
-        <input
-          className={s.eventInput}
+        <TextField
+          inputClassName={s.eventInput}
           value={location}
-          onChange={(e) => setLocation(e.target.value)}
+          onValueChange={setLocation}
           placeholder="Добавить место или видеовызов"
         />
       </div>
@@ -110,30 +111,31 @@ const handleSave = () => {
         <label className={s.eventLabel}>Дата и время</label>
         <div className={s.eventDateRow}>
           <div className={s.eventDateText}>{dateStr}</div>
-          <label className={s.eventCheckbox}>
-            <input
-              type="checkbox"
-              checked={allDay}
-              onChange={(e) => setAllDay(e.target.checked)}
-            />
-            Весь день
-          </label>
+          <CheckboxField
+            className={s.eventCheckbox}
+            label="Весь день"
+            checked={allDay}
+            onValueChange={setAllDay}
+            fullWidth={false}
+          />
         </div>
         {!allDay && (
           <div className={s.timeRow}>
-            <input
-              type="time"
-              className={s.eventInput}
-              value={start}
-              onChange={(e) => setStart(e.target.value)}
-            />
+            <div style={{ flex: "1 1 0", minWidth: 0 }}>
+              <TimeField
+                inputClassName={s.eventInput}
+                value={start}
+                onValueChange={setStart}
+              />
+            </div>
             <span className={s.timeSep}>—</span>
-            <input
-              type="time"
-              className={s.eventInput}
-              value={end}
-              onChange={(e) => setEnd(e.target.value)}
-            />
+            <div style={{ flex: "1 1 0", minWidth: 0 }}>
+              <TimeField
+                inputClassName={s.eventInput}
+                value={end}
+                onValueChange={setEnd}
+              />
+            </div>
           </div>
         )}
       </div>

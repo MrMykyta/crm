@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import AddButton from '../../../components/buttons/AddButton/AddButton';
+import { SearchField, SelectField } from '../../../components/ui/fields';
 import {
   WmsEmptyState,
   WmsErrorState,
@@ -439,54 +440,53 @@ export default function WmsDocumentsWorkspace() {
         <label className={s.filterBox}>
           <Warehouse size={16} aria-hidden="true" />
           <span>{t('wms.documents.workspace.filters.warehouse', 'Warehouse')}</span>
-          <select
+          <SelectField
             value={selectedWarehouseId}
-            onChange={(event) => setParam(searchParams, navigate, 'warehouseId', event.target.value)}
-          >
-            <option value="">{t('wms.documents.workspace.filters.allWarehouses', 'All warehouses')}</option>
-            {warehouses.map((warehouse) => (
-              <option key={warehouse.id} value={warehouse.id}>
-                {getWarehouseLabel(warehouse)}
-              </option>
-            ))}
-          </select>
+            onValueChange={(value) => setParam(searchParams, navigate, 'warehouseId', value)}
+            options={[
+              { value: '', label: t('wms.documents.workspace.filters.allWarehouses', 'All warehouses') },
+              ...warehouses.map((warehouse) => ({
+                value: warehouse.id,
+                label: getWarehouseLabel(warehouse),
+              })),
+            ]}
+          />
         </label>
         <label className={s.searchBox}>
           <Search size={16} aria-hidden="true" />
-          <input
+          <SearchField
             value={search}
             placeholder={t('wms.documents.workspace.filters.search', 'Search documents')}
-            onChange={(event) => setParam(searchParams, navigate, 'search', event.target.value)}
+            onValueChange={(value) => setParam(searchParams, navigate, 'search', value)}
           />
         </label>
         <label className={s.filterBox}>
           <SlidersHorizontal size={16} aria-hidden="true" />
           <span>{t('wms.documents.workspace.filters.type', 'Type')}</span>
-          <select
+          <SelectField
             value={selectedType}
-            onChange={(event) => setTypeParam(searchParams, navigate, event.target.value)}
-          >
-            <option value="">{t('wms.documents.workspace.filters.allTypes', 'All types')}</option>
-            {WMS_DOCUMENT_TYPES.map((type) => (
-              <option key={type} value={type} disabled={!!disabledTypes[type]}>
-                {t(`wms.documents.types.${type}`, type)}
-              </option>
-            ))}
-          </select>
+            onValueChange={(value) => setTypeParam(searchParams, navigate, value)}
+            options={[
+              { value: '', label: t('wms.documents.workspace.filters.allTypes', 'All types') },
+              ...WMS_DOCUMENT_TYPES.map((type) => ({
+                value: type,
+                label: t(`wms.documents.types.${type}`, type),
+                disabled: Boolean(disabledTypes[type]),
+              })),
+            ]}
+          />
         </label>
         <label className={s.filterBox}>
           <SlidersHorizontal size={16} aria-hidden="true" />
           <span>{t('wms.documents.workspace.filters.status', 'Status')}</span>
-          <select
+          <SelectField
             value={selectedStatus}
-            onChange={(event) => setParam(searchParams, navigate, 'status', event.target.value)}
-          >
-            {STATUS_FILTERS.map((status) => (
-              <option key={status || 'all'} value={status}>
-                {status ? t(`statuses.${status}`, status) : t('common.all', 'All')}
-              </option>
-            ))}
-          </select>
+            onValueChange={(value) => setParam(searchParams, navigate, 'status', value)}
+            options={STATUS_FILTERS.map((status) => ({
+              value: status,
+              label: status ? t(`statuses.${status}`, status) : t('common.all', 'All'),
+            }))}
+          />
         </label>
         <button type="button" className={s.resetColumnsButton} onClick={resetColumns}>
           <RefreshCcw size={14} aria-hidden="true" />

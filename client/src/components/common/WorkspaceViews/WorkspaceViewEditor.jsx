@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import * as Lucide from 'lucide-react';
+import { TextareaField, TextField } from '../../ui/fields';
 import { useCreateWorkspaceViewMutation } from '../../../store/rtk/workspaceViewsApi';
 import { describeFilterClauses } from '../../../utils/workspaceViewsWmsDocumentsFilter';
 import s from './WorkspaceViewEditor.module.css';
@@ -126,13 +127,13 @@ export default function WorkspaceViewEditor({
               {t('workspaceViews.editor.name', 'View name')}
               <span className={s.required} aria-hidden="true">*</span>
             </span>
-            <input
+            <TextField
               type="text"
-              className={s.input}
+              inputClassName={s.input}
               value={name}
               maxLength={NAME_MAX}
               placeholder={t('workspaceViews.editor.namePlaceholder', 'e.g. WZ Łódź posted')}
-              onChange={(e) => setName(e.target.value)}
+              onValueChange={setName}
               autoFocus
               required
             />
@@ -141,13 +142,13 @@ export default function WorkspaceViewEditor({
 
           <label className={s.field}>
             <span className={s.fieldLabel}>{t('workspaceViews.editor.description', 'Description')}</span>
-            <textarea
-              className={`${s.input} ${s.textarea}`}
+            <TextareaField
+              inputClassName={`${s.input} ${s.textarea}`}
               value={description}
               maxLength={DESCRIPTION_MAX}
               rows={2}
               placeholder={t('workspaceViews.editor.descriptionPlaceholder', 'Optional notes for yourself')}
-              onChange={(e) => setDescription(e.target.value)}
+              onValueChange={setDescription}
             />
           </label>
 

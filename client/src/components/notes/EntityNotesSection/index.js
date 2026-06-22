@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import AddButton from '../../buttons/AddButton/AddButton';
+import { CheckboxField, SearchField, SelectField, TextareaField, TextField } from '../../ui/fields';
 import {
   useGetNotesQuery,
   useCreateNoteMutation,
@@ -282,63 +283,48 @@ const canManage = (note) => String(note?.author?.id || '') === String(currentUse
       </div>
 
       <div className={s.filters}>
-        <input
-          className={s.input}
+        <SearchField
+          inputClassName={s.input}
           value={query.search}
           placeholder="Поиск по тексту"
-          onChange={(e) => setQuery((prev) => ({ ...prev, page: 1, search: e.target.value }))}
+          onValueChange={(value) => setQuery((prev) => ({ ...prev, page: 1, search: value }))}
         />
 
         {!fixedOwner && (
           <>
-            <select
-              className={s.select}
+            <SelectField
+              inputClassName={s.select}
               value={query.ownerType}
-              onChange={(e) =>
-                setQuery((prev) => ({ ...prev, page: 1, ownerType: e.target.value, ownerId: '' }))
+              onValueChange={(value) =>
+                setQuery((prev) => ({ ...prev, page: 1, ownerType: value, ownerId: '' }))
               }
-            >
-              {OWNER_TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value || 'all'} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              options={OWNER_TYPE_OPTIONS}
+            />
 
-            <input
-              className={s.input}
+            <TextField
+              inputClassName={s.input}
               value={query.ownerId}
               placeholder="ownerId"
-              onChange={(e) =>
-                setQuery((prev) => ({ ...prev, page: 1, ownerId: String(e.target.value || '').trim() }))
+              onValueChange={(value) =>
+                setQuery((prev) => ({ ...prev, page: 1, ownerId: String(value || '').trim() }))
               }
             />
           </>
         )}
 
-        <select
-          className={s.select}
+        <SelectField
+          inputClassName={s.select}
           value={query.visibility}
-          onChange={(e) => setQuery((prev) => ({ ...prev, page: 1, visibility: e.target.value }))}
-        >
-          {VISIBILITY_OPTIONS.map((opt) => (
-            <option key={opt.value || 'all'} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          onValueChange={(value) => setQuery((prev) => ({ ...prev, page: 1, visibility: value }))}
+          options={VISIBILITY_OPTIONS}
+        />
 
-        <select
-          className={s.select}
+        <SelectField
+          inputClassName={s.select}
           value={query.pinned}
-          onChange={(e) => setQuery((prev) => ({ ...prev, page: 1, pinned: e.target.value }))}
-        >
-          {PINNED_OPTIONS.map((opt) => (
-            <option key={opt.value || 'all'} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          onValueChange={(value) => setQuery((prev) => ({ ...prev, page: 1, pinned: value }))}
+          options={PINNED_OPTIONS}
+        />
       </div>
 
       {errorText && <div className={s.error}>{String(errorText)}</div>}
@@ -430,26 +416,21 @@ const canManage = (note) => String(note?.author?.id || '') === String(currentUse
             <div className={s.row2}>
               <label className={s.field}>
                 <span className={s.label}>ownerType</span>
-                <select
-                  className={s.select}
+                <SelectField
+                  inputClassName={s.select}
                   value={draft.ownerType}
-                  onChange={(e) => setDraft((prev) => ({ ...prev, ownerType: e.target.value }))}
-                >
-                  {OWNER_TYPE_OPTIONS.filter((opt) => opt.value).map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={(value) => setDraft((prev) => ({ ...prev, ownerType: value }))}
+                  options={OWNER_TYPE_OPTIONS.filter((opt) => opt.value)}
+                />
               </label>
 
               <label className={s.field}>
                 <span className={s.label}>ownerId</span>
-                <input
-                  className={s.input}
+                <TextField
+                  inputClassName={s.input}
                   value={draft.ownerId}
-                  onChange={(e) =>
-                    setDraft((prev) => ({ ...prev, ownerId: String(e.target.value || '').trim() }))
+                  onValueChange={(value) =>
+                    setDraft((prev) => ({ ...prev, ownerId: String(value || '').trim() }))
                   }
                 />
               </label>
@@ -460,34 +441,33 @@ const canManage = (note) => String(note?.author?.id || '') === String(currentUse
             <div className={s.row2}>
               <label className={s.field}>
                 <span className={s.label}>visibility</span>
-                <select
-                  className={s.select}
+                <SelectField
+                  inputClassName={s.select}
                   value={draft.visibility}
-                  onChange={(e) => setDraft((prev) => ({ ...prev, visibility: e.target.value }))}
-                >
-                  <option value="company">Company</option>
-                  <option value="private">Private</option>
-                </select>
+                  onValueChange={(value) => setDraft((prev) => ({ ...prev, visibility: value }))}
+                  options={[
+                    { value: 'company', label: 'Company' },
+                    { value: 'private', label: 'Private' },
+                  ]}
+                />
               </label>
 
-              <label className={s.checkboxRow}>
-                <input
-                  type="checkbox"
-                  checked={Boolean(draft.pinned)}
-                  onChange={(e) => setDraft((prev) => ({ ...prev, pinned: e.target.checked }))}
-                />
-                <span>Pinned</span>
-              </label>
+              <CheckboxField
+                className={s.checkboxRow}
+                checked={Boolean(draft.pinned)}
+                onValueChange={(checked) => setDraft((prev) => ({ ...prev, pinned: checked }))}
+                label="Pinned"
+              />
             </div>
           )}
 
           <label className={s.field}>
             <span className={s.label}>Текст заметки</span>
-            <textarea
-              className={s.textarea}
+            <TextareaField
+              inputClassName={s.textarea}
               rows={fixedOwner ? 5 : 8}
               value={draft.content}
-              onChange={(e) => setDraft((prev) => ({ ...prev, content: e.target.value }))}
+              onValueChange={(value) => setDraft((prev) => ({ ...prev, content: value }))}
               placeholder="Введите текст заметки"
             />
           </label>
@@ -507,4 +487,3 @@ const canManage = (note) => String(note?.author?.id || '') === String(currentUse
     </section>
   );
 }
-

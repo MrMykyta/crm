@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useGetProductQuery, useListProductsQuery } from '../../../store/rtk/productsApi';
 import { useListWarehousesQuery } from '../../../store/rtk/wmsDocumentsApi';
 import { useGetInventoryLedgerReportQuery } from '../../../store/rtk/wmsReportsApi';
+import { DateField, SearchField, SelectField, TextField } from '../../../components/ui/fields';
 import s from '../StockValuationReportPage/StockValuationReportPage.module.css';
 
 function todayIsoDate() {
@@ -203,78 +204,88 @@ export default function InventoryLedgerReportPage({ embedded = false }) {
         <div className={s.filtersGrid}>
           <label className={s.field}>
             <span>{t('wms.inventoryLedger.filters.productSearch', 'Product search')}</span>
-            <input
+            <SearchField
               value={productSearch}
-              onChange={(event) => setProductSearch(event.target.value)}
+              onValueChange={setProductSearch}
               placeholder={t('wms.inventoryLedger.filters.productSearchPlaceholder', 'Search product name or SKU...')}
             />
           </label>
 
           <label className={s.field}>
             <span>{t('wms.inventoryLedger.filters.product', 'Product')}</span>
-            <select value={filters.productId} onChange={(event) => updateFilter('productId', event.target.value)} required>
-              <option value="">{isFetchingProducts ? t('common.loading', 'Loading...') : t('wms.inventoryLedger.filters.selectProduct', 'Select product')}</option>
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {productLabel(product)}
-                </option>
-              ))}
-            </select>
+            <SelectField
+              value={filters.productId}
+              onValueChange={(value) => updateFilter('productId', value)}
+              options={[
+                {
+                  value: '',
+                  label: isFetchingProducts
+                    ? t('common.loading', 'Loading...')
+                    : t('wms.inventoryLedger.filters.selectProduct', 'Select product'),
+                },
+                ...products.map((product) => ({
+                  value: product.id,
+                  label: productLabel(product),
+                })),
+              ]}
+              required
+            />
           </label>
 
           <label className={s.field}>
             <span>{t('wms.inventoryLedger.filters.variant', 'Variant')}</span>
-            <select
+            <SelectField
               value={filters.variantId}
-              onChange={(event) => updateFilter('variantId', event.target.value)}
+              onValueChange={(value) => updateFilter('variantId', value)}
               disabled={!filters.productId || variants.length === 0}
-            >
-              <option value="">{t('common.all', 'All')}</option>
-              {variants.map((variant) => (
-                <option key={variant.id} value={variant.id}>
-                  {variantLabel(variant)}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: t('common.all', 'All') },
+                ...variants.map((variant) => ({
+                  value: variant.id,
+                  label: variantLabel(variant),
+                })),
+              ]}
+            />
           </label>
 
           <label className={s.field}>
             <span>{t('wms.inventoryLedger.filters.dateFrom', 'Date from')}</span>
-            <input
-              type="date"
+            <DateField
               value={filters.dateFrom}
-              onChange={(event) => updateFilter('dateFrom', event.target.value)}
+              onValueChange={(value) => updateFilter('dateFrom', value)}
               required
             />
           </label>
 
           <label className={s.field}>
             <span>{t('wms.inventoryLedger.filters.dateTo', 'Date to')}</span>
-            <input
-              type="date"
+            <DateField
               value={filters.dateTo}
-              onChange={(event) => updateFilter('dateTo', event.target.value)}
+              onValueChange={(value) => updateFilter('dateTo', value)}
               required
             />
           </label>
 
           <label className={s.field}>
             <span>{t('wms.inventoryLedger.filters.warehouse', 'Warehouse')}</span>
-            <select value={filters.warehouseId} onChange={(event) => updateFilter('warehouseId', event.target.value)}>
-              <option value="">{t('common.all', 'All')}</option>
-              {warehouses.map((warehouse) => (
-                <option key={warehouse.id} value={warehouse.id}>
-                  {[warehouse.code, warehouse.name].filter(Boolean).join(' · ') || warehouse.id}
-                </option>
-              ))}
-            </select>
+            <SelectField
+              value={filters.warehouseId}
+              onValueChange={(value) => updateFilter('warehouseId', value)}
+              options={[
+                { value: '', label: t('common.all', 'All') },
+                ...warehouses.map((warehouse) => ({
+                  value: warehouse.id,
+                  label: [warehouse.code, warehouse.name].filter(Boolean).join(' · ') || warehouse.id,
+                })),
+              ]}
+            />
           </label>
 
           <label className={s.field}>
             <span>{t('wms.inventoryLedger.filters.currency', 'Currency')}</span>
-            <input
+            <TextField
               value={filters.currency}
-              onChange={(event) => updateFilter('currency', event.target.value.toUpperCase().slice(0, 3))}
+              onValueChange={(value) => updateFilter('currency', value.toUpperCase().slice(0, 3))}
               placeholder="PLN"
               maxLength={3}
             />

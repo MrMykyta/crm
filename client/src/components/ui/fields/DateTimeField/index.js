@@ -30,6 +30,9 @@ export default function DateTimeField({
   fullWidth = true,
   size = "md",
   loading = false,
+  float = false,
+  isFilled,
+  isFocused = false,
   withTime = true,
   allowTimeToggle = false,
   onWithTimeChange,
@@ -57,6 +60,9 @@ export default function DateTimeField({
       loading={loading}
       fullWidth={fullWidth}
       size={size}
+      float={float}
+      isFilled={isFilled ?? (value !== undefined && value !== null && String(value) !== "")}
+      isFocused={isFocused}
       className={className}
     >
       <DateTimePicker

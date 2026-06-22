@@ -1,7 +1,7 @@
 // src/components/filters/FilterToolbar/index.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import s from './Toolbar.module.css';
-import ThemedSelect from '../../inputs/RadixSelect';
+import { SearchField, SelectField } from '../../ui/fields';
 
 // — утилиты нормализации
 const norm = (v) => (v ?? '').trim();
@@ -81,14 +81,16 @@ export default function FilterToolbar({
       case 'mode': {
         const opts = typeof c.options === 'function' ? c.options(mode) : c.options;
         return (
-          <ThemedSelect
+          <SelectField
             key={`m-${idx}`}
-            className={s.select}
+            className={s.selectField}
+            inputClassName={s.select}
             value={mode ?? ''}
             options={opts || []}
             placeholder={c.label || 'Режим'}
             size="sm"
-            onChange={(val) => onModeChange?.(val)}
+            fullWidth={false}
+            onValueChange={(val) => onModeChange?.(val)}
           />
         );
       }
@@ -96,12 +98,14 @@ export default function FilterToolbar({
       case 'search': {
         const ph = typeof c.placeholder === 'function' ? c.placeholder(mode) : c.placeholder;
         return (
-          <input
+          <SearchField
             key={`s-${idx}`}
-            className={s.input}
+            className={s.searchField}
+            inputClassName={s.input}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onValueChange={setSearch}
             placeholder={ph || 'Search…'}
+            fullWidth={false}
           />
         );
       }
@@ -110,14 +114,16 @@ export default function FilterToolbar({
         const opts = typeof c.options === 'function' ? c.options(mode) : c.options;
         const val = query?.[c.key] ?? '';
         return (
-          <ThemedSelect
+          <SelectField
             key={`f-${c.key}-${idx}`}
-            className={s.select}
+            className={s.selectField}
+            inputClassName={s.select}
             value={val}
             options={opts || []}
             placeholder={c.label || 'Выбор'}
             size="sm"
-            onChange={(v) => handleSelect(c.key, v, c.emptyAsUndefined !== false)}
+            fullWidth={false}
+            onValueChange={(v) => handleSelect(c.key, v, c.emptyAsUndefined !== false)}
           />
         );
       }
@@ -143,4 +149,3 @@ export default function FilterToolbar({
     </div>
   );
 }
-

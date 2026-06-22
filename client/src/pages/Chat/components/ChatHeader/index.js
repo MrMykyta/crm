@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSignedFileUrl } from "../../../../hooks/useSignedFileUrl";
+import { SearchField } from "../../../../components/ui/fields";
 import s from "../../ChatPage.module.css";
 
 // Компонент ChatHeader: отвечает за отображение UI и обработку взаимодействий пользователя.
@@ -44,12 +45,12 @@ export default function ChatHeader({
       {isSearchMode ? (
         <div className={s.chatHeaderSearch}>
           <span className={s.chatHeaderSearchIcon}>🔍</span>
-          <input
-            ref={searchInputRef}
-            className={s.chatHeaderSearchInput}
+          <SearchField
+            inputRef={searchInputRef}
+            inputClassName={s.chatHeaderSearchInput}
             placeholder={t("chat.search.placeholder")}
             value={searchQuery}
-            onChange={onSearchChange}
+            onChange={(value, event) => onSearchChange?.(event)}
             onKeyDown={(e) => {
               if (e.key !== "Enter") return;
               e.preventDefault();
@@ -113,7 +114,7 @@ export default function ChatHeader({
         >
           <div className={s.chatAvatar}>
             {avatarUrl ? (
-              <img src={avatarUrl} className={s.avatarImg} onError={onAvatarError} />
+              <img src={avatarUrl} className={s.avatarImg} alt="" onError={onAvatarError} />
             ) : (
               <span>{initials}</span>
             )}
@@ -149,4 +150,3 @@ export default function ChatHeader({
     </div>
   );
 }
-

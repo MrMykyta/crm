@@ -12,6 +12,7 @@ import {
   useRebuildDocumentNumberingSettingsMutation,
   useUpdateDocumentNumberingSettingMutation,
 } from "../../../../../store/rtk/documentNumberingSettingsApi";
+import { CheckboxField, SelectField, TextField } from "../../../../../components/ui/fields";
 import s from "./DocumentNumberingSettings.module.css";
 
 const ORDER_INDEX = DOCUMENT_NUMBERING_TYPE_ORDER.reduce((acc, documentType, index) => {
@@ -390,10 +391,10 @@ export default function DocumentNumberingSettings({
                     <p className={s.typeMeta}>{row.documentType}</p>
                   </td>
                   <td>
-                    <input
-                      className={`${s.input} ${row.patternError ? s.inputError : ""}`}
+                    <TextField
+                      inputClassName={`${s.input} ${row.patternError ? s.inputError : ""}`}
                       value={row.pattern}
-                      onChange={(event) => onPatternChange(row.documentType, event.target.value)}
+                      onValueChange={(value) => onPatternChange(row.documentType, value)}
                       maxLength={180}
                       spellCheck={false}
                       placeholder="FV/{YYYY}/{MM}/{SEQ:4}"
@@ -403,18 +404,13 @@ export default function DocumentNumberingSettings({
                     <div className={s.patternMetaRow}>
                       <label className={s.metaField}>
                         <span>Сброс</span>
-                        <select
-                          className={s.select}
+                        <SelectField
+                          inputClassName={s.select}
                           value={row.resetPolicy}
-                          onChange={(event) => onResetPolicyChange(row.documentType, event.target.value)}
+                          onValueChange={(value) => onResetPolicyChange(row.documentType, value)}
                           disabled={busy}
-                        >
-                          {RESET_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
+                          options={RESET_OPTIONS}
+                        />
                       </label>
                     </div>
                     {row.patternError ? <p className={s.rowError}>{row.patternError}</p> : null}
@@ -429,15 +425,13 @@ export default function DocumentNumberingSettings({
                     </div>
                   </td>
                   <td>
-                    <label className={s.switch}>
-                      <input
-                        type="checkbox"
-                        checked={Boolean(row.enabled)}
-                        onChange={(event) => onEnabledChange(row.documentType, event.target.checked)}
-                        disabled={busy}
-                      />
-                      <span>{row.enabled ? "ON" : "OFF"}</span>
-                    </label>
+                    <CheckboxField
+                      className={s.switch}
+                      checked={Boolean(row.enabled)}
+                      onValueChange={(checked) => onEnabledChange(row.documentType, checked)}
+                      disabled={busy}
+                      label={row.enabled ? "ON" : "OFF"}
+                    />
                   </td>
                 </tr>
               ))}
@@ -448,4 +442,3 @@ export default function DocumentNumberingSettings({
     </div>
   );
 }
-

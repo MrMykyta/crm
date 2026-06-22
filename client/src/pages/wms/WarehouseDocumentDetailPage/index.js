@@ -6,6 +6,7 @@ import DocumentEnginePage, { WMS_DOCUMENT_ADAPTERS } from '../../../components/d
 import s from '../../oms/OmsReadOnlyDetail.module.css';
 import Modal from '../../../components/Modal';
 import { ProductPicker } from '../../../components/pim';
+import { CheckboxField, NumberField, SelectField, TextareaField, TextField } from '../../../components/ui/fields';
 import {
   useCreateReceiptCorrectionMutation,
   useCreateShipmentCorrectionMutation,
@@ -579,23 +580,23 @@ function ReceiptDraftDetailsRow({
               <div className={s.draftDetailsFields}>
                 <label className={s.draftDetailsField}>
                   <span>{t('wms.columns.unitCost', 'Unit cost')}</span>
-                  <input
-                    className={`${s.draftControl} ${s.draftNumberControl}`}
-                    type="number"
+                  <NumberField
+                    value={row.unitCost ?? ''}
+                    emitAs="string"
                     min="0"
                     step="0.0001"
-                    value={row.unitCost}
                     disabled={effectiveDisabled}
-                    onChange={(event) => onRowChange(row.localId, 'unitCost', event.target.value)}
+                    onValueChange={(value) => onRowChange(row.localId, 'unitCost', value)}
+                    inputClassName={`${s.draftControl} ${s.draftNumberControl}`}
                   />
                 </label>
                 <label className={s.draftDetailsField}>
                   <span>{t('wms.columns.currency', 'Currency')}</span>
-                  <input
-                    className={s.draftControl}
-                    value={row.currency}
+                  <TextField
+                    value={row.currency || ''}
                     disabled={effectiveDisabled}
-                    onChange={(event) => onRowChange(row.localId, 'currency', event.target.value)}
+                    onValueChange={(value) => onRowChange(row.localId, 'currency', value.toUpperCase())}
+                    inputClassName={s.draftControl}
                   />
                 </label>
               </div>
@@ -612,16 +613,18 @@ function ReceiptDraftDetailsRow({
               </div>
               <label className={s.draftDetailsField}>
                 <span>{t('wms.locationOptional.inboundLabel', 'Inbound location optional')}</span>
-                <select className={s.select} value={inboundLocationId || ''} disabled>
-                  <option value="">
-                    {warehouseLevelStockText(t)}
-                  </option>
-                  {(locations || []).map((location) => (
-                    <option key={location.id} value={location.id}>
-                      {formatLocationLabel(location, lookups.locationsById)}
-                    </option>
-                  ))}
-                </select>
+                <SelectField
+                  value={inboundLocationId || ''}
+                  disabled
+                  options={[
+                    { value: '', label: warehouseLevelStockText(t) },
+                    ...(locations || []).map((location) => ({
+                      value: location.id,
+                      label: formatLocationLabel(location, lookups.locationsById),
+                    })),
+                  ]}
+                  inputClassName={s.select}
+                />
               </label>
               <span className={s.draftDetailsMuted}>
                 {inboundLocation
@@ -642,17 +645,17 @@ function ReceiptDraftDetailsRow({
                 </div>
                 <label className={s.draftDetailsField}>
                   <span>{t('wms.receipts.draftEdit.lot.inputLabel', 'Lot number')}</span>
-                  <input
-                    className={s.draftControl}
-                    value={row.lotNumber}
+                  <TextField
+                    value={row.lotNumber || ''}
                     disabled={effectiveDisabled}
-                    onChange={(event) => onRowChange(row.localId, 'lotNumber', event.target.value)}
+                    onValueChange={(value) => onRowChange(row.localId, 'lotNumber', value)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') {
                         event.preventDefault();
                         event.stopPropagation();
                       }
                     }}
+                    inputClassName={s.draftControl}
                   />
                 </label>
                 {validation.warnings.lotNumber ? (
@@ -919,35 +922,35 @@ function ReceiptDraftEditor({
       <div className={s.draftGrid}>
         <label className={s.fieldStack}>
           <span className={s.fieldLabel}>{t('wms.fields.warehouse', 'Warehouse')}</span>
-          <select
-            className={s.select}
+          <SelectField
             value={header.warehouseId}
             disabled={effectiveDisabled}
-            onChange={(event) => onHeaderChange('warehouseId', event.target.value)}
-          >
-            <option value="">{t('wms.create.selectWarehouse', 'Select warehouse')}</option>
-            {warehouses.map((warehouse) => (
-              <option key={warehouse.id} value={warehouse.id}>
-                {formatWarehouseLabel(warehouse, lookups.warehousesById)}
-              </option>
-            ))}
-          </select>
+            onValueChange={(value) => onHeaderChange('warehouseId', value)}
+            options={[
+              { value: '', label: t('wms.create.selectWarehouse', 'Select warehouse') },
+              ...warehouses.map((warehouse) => ({
+                value: warehouse.id,
+                label: formatWarehouseLabel(warehouse, lookups.warehousesById),
+              })),
+            ]}
+            inputClassName={s.select}
+          />
         </label>
         <label className={s.fieldStack}>
           <span className={s.fieldLabel}>{t('wms.locationOptional.inboundLabel', 'Inbound location optional')}</span>
-          <select
-            className={s.select}
+          <SelectField
             value={header.inboundLocationId}
             disabled={effectiveDisabled}
-            onChange={(event) => onHeaderChange('inboundLocationId', event.target.value)}
-          >
-            <option value="">{warehouseLevelStockText(t)}</option>
-            {scopedLocations.map((location) => (
-              <option key={location.id} value={location.id}>
-                {formatLocationLabel(location, lookups.locationsById)}
-              </option>
-            ))}
-          </select>
+            onValueChange={(value) => onHeaderChange('inboundLocationId', value)}
+            options={[
+              { value: '', label: warehouseLevelStockText(t) },
+              ...scopedLocations.map((location) => ({
+                value: location.id,
+                label: formatLocationLabel(location, lookups.locationsById),
+              })),
+            ]}
+            inputClassName={s.select}
+          />
           {!asText(header.inboundLocationId) ? (
             <span className={s.draftDetailsMuted}>{warehouseLevelHint(t)}</span>
           ) : null}
@@ -971,14 +974,13 @@ function ReceiptDraftEditor({
       <div className={s.draftScanBar}>
         <label className={s.draftScanField}>
           <span className={s.fieldLabel}>{t('wms.receipts.draftEdit.scan.label', 'Scan / Quick add')}</span>
-          <input
+          <TextField
             ref={scanInputRef}
-            className={s.draftScanInput}
             value={scanQuery}
             disabled={effectiveDisabled}
             placeholder={t('wms.receipts.draftEdit.scan.placeholder', 'Scan barcode / SKU / EAN')}
-            onChange={(event) => {
-              setScanQuery(event.target.value);
+            onValueChange={(value) => {
+              setScanQuery(value);
               setScanError('');
               setScanResults([]);
             }}
@@ -992,6 +994,7 @@ function ReceiptDraftEditor({
               }
             }}
             autoComplete="off"
+            inputClassName={s.draftScanInput}
           />
         </label>
         <div className={s.draftScanMeta}>
@@ -1065,12 +1068,12 @@ function ReceiptDraftEditor({
             <thead>
               <tr>
                 <th className={s.checkboxCell}>
-                  <input
-                    type="checkbox"
+                  <CheckboxField
                     checked={allRowsSelected}
                     disabled={effectiveDisabled || !activeRows.length}
-                    onChange={toggleAllRows}
+                    onValueChange={() => toggleAllRows()}
                     aria-label={t('wms.receipts.draftEdit.selectAll', 'Select all lines')}
+                    fullWidth={false}
                   />
                 </th>
                 <th>{t('wms.columns.product', 'Product')}</th>
@@ -1103,12 +1106,12 @@ function ReceiptDraftEditor({
                       data-row-expanded={isExpanded ? 'true' : 'false'}
                     >
                       <td className={s.checkboxCell}>
-                        <input
-                          type="checkbox"
+                        <CheckboxField
                           checked={selectedRowIds.includes(row.localId)}
                           disabled={effectiveDisabled || isEmptyRow}
-                          onChange={() => toggleRow(row.localId)}
+                          onValueChange={() => toggleRow(row.localId)}
                           aria-label={t('wms.receipts.draftEdit.selectLine', 'Select line')}
+                          fullWidth={false}
                         />
                       </td>
                       <td>
@@ -1139,12 +1142,12 @@ function ReceiptDraftEditor({
                         </div>
                       </td>
                       <td>
-                        <input
-                          className={s.draftControl}
-                          value={row.lotNumber}
+                        <TextField
+                          value={row.lotNumber || ''}
                           disabled={effectiveDisabled}
                           ref={(node) => setFieldRef(row.localId, 'lotNumber', node)}
-                          onChange={(event) => onRowChange(row.localId, 'lotNumber', event.target.value)}
+                          onValueChange={(value) => onRowChange(row.localId, 'lotNumber', value)}
+                          inputClassName={s.draftControl}
                         />
                         {lotBadge ? (
                           <div className={s.draftCellMeta}>
@@ -1153,25 +1156,24 @@ function ReceiptDraftEditor({
                         ) : null}
                       </td>
                       <td>
-                        <input
-                          className={s.draftControl}
-                          value={row.serialNumber}
+                        <TextField
+                          value={row.serialNumber || ''}
                           disabled={effectiveDisabled}
                           ref={(node) => setFieldRef(row.localId, 'serialNumber', node)}
-                          onChange={(event) => onRowChange(row.localId, 'serialNumber', event.target.value)}
+                          onValueChange={(value) => onRowChange(row.localId, 'serialNumber', value)}
+                          inputClassName={s.draftControl}
                         />
                       </td>
                       <td>
-                        <input
-                          className={`${s.draftControl} ${s.draftNumberControl}`}
-                          type="number"
+                        <NumberField
+                          value={row.qtyExpected ?? ''}
+                          emitAs="string"
                           min="0.0001"
                           step="0.0001"
-                          value={row.qtyExpected}
                           disabled={effectiveDisabled}
                           ref={(node) => setFieldRef(row.localId, 'qtyExpected', node)}
                           onFocus={() => onRowChange(row.localId, 'rowState', RECEIPT_ROW_STATE.QTY_EDITING)}
-                          onChange={(event) => onRowChange(row.localId, 'qtyExpected', event.target.value)}
+                          onValueChange={(value) => onRowChange(row.localId, 'qtyExpected', value)}
                           onKeyDown={(event) => {
                             if (event.key === 'Enter') {
                               event.preventDefault();
@@ -1185,20 +1187,20 @@ function ReceiptDraftEditor({
                               moveGridFocus(row.localId, 'qtyExpected', -1);
                             }
                           }}
+                          inputClassName={`${s.draftControl} ${s.draftNumberControl}`}
                         />
                         {validation.errors.qtyExpected ? <span className={s.draftFieldError}>{validation.errors.qtyExpected}</span> : null}
                       </td>
                       <td>
                         <div className={s.draftPriceCell}>
-                          <input
-                            className={`${s.draftControl} ${s.draftNumberControl}`}
-                            type="number"
+                          <NumberField
+                            value={row.unitCost ?? ''}
+                            emitAs="string"
                             min="0"
                             step="0.0001"
-                            value={row.unitCost}
                             disabled={effectiveDisabled}
                             ref={(node) => setFieldRef(row.localId, 'unitCost', node)}
-                            onChange={(event) => onRowChange(row.localId, 'unitCost', event.target.value)}
+                            onValueChange={(value) => onRowChange(row.localId, 'unitCost', value)}
                             onKeyDown={(event) => {
                               if (event.key === 'Tab') {
                                 event.preventDefault();
@@ -1209,6 +1211,7 @@ function ReceiptDraftEditor({
                                 moveGridFocus(row.localId, 'unitCost', -1);
                               }
                             }}
+                            inputClassName={`${s.draftControl} ${s.draftNumberControl}`}
                           />
                           {priceSourceText ? <span className={s.draftPriceBadge}>{priceSourceText}</span> : null}
                           {priceWarnings.map((warning) => (
@@ -1217,12 +1220,11 @@ function ReceiptDraftEditor({
                         </div>
                       </td>
                       <td>
-                        <input
-                          className={s.draftControl}
-                          value={row.currency}
+                        <TextField
+                          value={row.currency || ''}
                           disabled={effectiveDisabled}
                           ref={(node) => setFieldRef(row.localId, 'currency', node)}
-                          onChange={(event) => onRowChange(row.localId, 'currency', event.target.value)}
+                          onValueChange={(value) => onRowChange(row.localId, 'currency', value.toUpperCase())}
                           onKeyDown={(event) => {
                             if (event.key === 'Enter') {
                               event.preventDefault();
@@ -1236,6 +1238,7 @@ function ReceiptDraftEditor({
                               moveGridFocus(row.localId, 'currency', -1);
                             }
                           }}
+                          inputClassName={s.draftControl}
                         />
                       </td>
                       <td className={s.textRight}>
@@ -1365,20 +1368,20 @@ function ShipShipmentModal({ open, title, items, locations, selectedLocationId, 
         <label className={s.fieldLabel} htmlFor="wms-ship-from-location">
           {t('wms.locationOptional.fromLabel', 'Source location optional')}
         </label>
-        <select
+        <SelectField
           id="wms-ship-from-location"
-          className={s.select}
           value={selectedLocationId}
-          onChange={(event) => onLocationChange(event.target.value)}
+          onValueChange={onLocationChange}
           disabled={isSubmitting}
-        >
-          <option value="">{warehouseLevelStockText(t)}</option>
-          {locations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {formatLocationLabel(location, lookups.locationsById)}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: '', label: warehouseLevelStockText(t) },
+            ...locations.map((location) => ({
+              value: location.id,
+              label: formatLocationLabel(location, lookups.locationsById),
+            })),
+          ]}
+          inputClassName={s.select}
+        />
         {!selectedLocationId ? (
           <p className={s.empty}>{warehouseLevelHint(t)}</p>
         ) : null}
@@ -1502,14 +1505,14 @@ function CorrectionModal({ open, onClose, onSubmit, document, kind, locale, t, i
         </p>
         {error ? <div className={s.errorBox}>{error}</div> : null}
         <label className={s.fieldLabel} htmlFor="wms-correction-reason">{t('wms.corrections.reason', 'Reason')}</label>
-        <textarea
+        <TextareaField
           id="wms-correction-reason"
-          className={s.textarea}
           value={reason}
-          onChange={(event) => setReason(event.target.value)}
+          onValueChange={setReason}
           disabled={isSubmitting}
           placeholder={t('wms.corrections.reasonPlaceholder', 'Optional reason')}
           rows={3}
+          inputClassName={s.textarea}
         />
         {!selectableItems.length ? (
           <p className={s.empty}>{t('wms.corrections.noLines', 'No lines available for correction')}</p>
@@ -1528,12 +1531,12 @@ function CorrectionModal({ open, onClose, onSubmit, document, kind, locale, t, i
                 {selectableItems.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <input
-                        type="checkbox"
+                      <CheckboxField
                         checked={selectedIds.includes(item.id)}
-                        onChange={() => toggleLine(item.id)}
+                        onValueChange={() => toggleLine(item.id)}
                         disabled={isSubmitting}
                         aria-label={t('wms.corrections.selectLine', 'Select line')}
+                        fullWidth={false}
                       />
                     </td>
                     <td>{itemName(item, lookups)}</td>

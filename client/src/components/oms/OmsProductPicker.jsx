@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Modal from '../Modal';
+import { SearchField } from '../ui/fields';
 import { useListProductsQuery } from '../../store/rtk/productsApi';
 import {
   getAvailabilitySnapshot,
@@ -82,10 +83,10 @@ export default function OmsProductPicker({
     >
       <div className={s.shell}>
         <div className={s.searchRow}>
-          <input
-            className={s.searchInput}
+          <SearchField
+            inputClassName={s.searchInput}
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onValueChange={setSearch}
             placeholder="Search by name or SKU"
           />
         </div>

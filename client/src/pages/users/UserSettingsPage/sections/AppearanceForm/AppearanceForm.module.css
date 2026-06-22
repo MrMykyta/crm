@@ -1,4 +1,5 @@
 .row {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -27,6 +28,23 @@
   min-height: 40px;
   min-width: 160px;
   white-space: nowrap;
+}
+
+.hiddenFileField {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.hiddenFileInput {
+  width: 1px;
+  min-height: 1px;
+  padding: 0;
+  border: 0;
 }
 
 /* Подсказки / ошибки */

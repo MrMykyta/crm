@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import ThemedSelect from "../../../../../components/inputs/RadixSelect";
+import { SelectField } from "../../../../../components/ui/fields";
 import {
   useGetCompanyWarehouseDocumentSettingsQuery,
   useUpdateCompanyWarehouseDocumentSettingsMutation,
@@ -479,10 +479,10 @@ export default function WarehouseDocumentSettings() {
         <div className={s.field}>
           <label className={s.label}>{t("companySettings.documents.warehouse.fields.defaultType")}</label>
           <div className={s.selectWrap}>
-            <ThemedSelect
+            <SelectField
               value={form.warehouseDefaultDocumentType}
               options={defaultTypeOptions}
-              onChange={(value) => setField("warehouseDefaultDocumentType", value)}
+              onValueChange={(value) => setField("warehouseDefaultDocumentType", value)}
               placeholder={t("companySettings.documents.common.selectDocumentType")}
               disabled={isSaving}
             />

@@ -1,8 +1,9 @@
 // src/pages/UserSettingsPage/sections/ProfileForm.jsx
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import s from "../../UserSettingsPage.module.css";
 import { useTranslation } from "react-i18next";
+import { EmailField, TextField } from "../../../../../components/ui/fields";
 
 // Компонент ProfileForm: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ProfileForm({ user, onSave }) {
@@ -31,26 +32,47 @@ const handleSubmit = async (values, { setSubmitting }) => {
     <section className={s.section}>
       <h3>{t("settings.profile.title")}</h3>
       <Formik initialValues={initial} validationSchema={schema} onSubmit={handleSubmit} enableReinitialize>
-        {({ isSubmitting }) => (
+        {({ values, touched, errors, handleChange, handleBlur, isSubmitting }) => (
           <Form>
             <div className={s.grid}>
-              <div className={s.field}>
-                <label className={s.label}>{t("settings.profile.firstName")}</label>
-                <Field className={s.input} name="firstName" placeholder={t("settings.profile.firstNamePH")} />
-                <ErrorMessage name="firstName" component="div" className={s.err} />
-              </div>
+              <TextField
+                name="firstName"
+                label={t("settings.profile.firstName")}
+                value={values.firstName}
+                onChange={(value, event) => handleChange(event)}
+                onBlur={handleBlur}
+                placeholder={t("settings.profile.firstNamePH")}
+                error={touched.firstName && errors.firstName}
+                disabled={isSubmitting}
+                className={s.field}
+                inputClassName={s.input}
+              />
 
-              <div className={s.field}>
-                <label className={s.label}>{t("settings.profile.lastName")}</label>
-                <Field className={s.input} name="lastName" placeholder={t("settings.profile.lastNamePH")} />
-                <ErrorMessage name="lastName" component="div" className={s.err} />
-              </div>
+              <TextField
+                name="lastName"
+                label={t("settings.profile.lastName")}
+                value={values.lastName}
+                onChange={(value, event) => handleChange(event)}
+                onBlur={handleBlur}
+                placeholder={t("settings.profile.lastNamePH")}
+                error={touched.lastName && errors.lastName}
+                disabled={isSubmitting}
+                className={s.field}
+                inputClassName={s.input}
+              />
 
-              <div className={`${s.field} ${s.full}`}>
-                <label className={s.label}>{t("common.email")}</label>
-                <Field className={s.input} type="email" name="email" placeholder="email@example.com" />
-                <ErrorMessage name="email" component="div" className={s.err} />
-              </div>
+              <EmailField
+                name="email"
+                label={t("common.email")}
+                value={values.email}
+                onChange={(value, event) => handleChange(event)}
+                onBlur={handleBlur}
+                placeholder="email@example.com"
+                error={touched.email && errors.email}
+                disabled={isSubmitting}
+                className={`${s.field} ${s.full}`}
+                inputClassName={s.input}
+              />
             </div>
 
             <div className={s.actions}>

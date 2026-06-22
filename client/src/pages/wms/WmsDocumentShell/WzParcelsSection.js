@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { NumberField, TextField } from '../../../components/ui/fields';
 import { WmsEmptyState, WmsErrorState, WmsLoadingState } from '../../../components/wms/ui/WmsState';
 import {
   useCreateParcelMutation,
@@ -225,44 +226,45 @@ export default function WzParcelsSection({ shipmentId }) {
 
             <label className="wmsShellField">
               <span>{t('wms.parcels.columns.trackingNumber', 'Tracking number')}</span>
-              <input
-                className="wmsShellInput"
+              <TextField
                 value={form.trackingNumber}
-                onChange={(event) => setField('trackingNumber', event.target.value)}
+                onValueChange={(value) => setField('trackingNumber', value)}
                 disabled={isSaving}
                 autoComplete="off"
+                inputClassName="wmsShellInput"
               />
             </label>
             <label className="wmsShellField">
               <span>{t('wms.parcels.columns.carrier', 'Carrier')}</span>
-              <input
-                className="wmsShellInput"
+              <TextField
                 value={form.carrier}
-                onChange={(event) => setField('carrier', event.target.value)}
+                onValueChange={(value) => setField('carrier', value)}
                 disabled={isSaving}
                 autoComplete="off"
+                inputClassName="wmsShellInput"
               />
             </label>
             <label className="wmsShellField">
               <span>{t('wms.parcels.columns.weight', 'Weight')}</span>
-              <input
-                className="wmsShellInput wmsShellQtyInput"
+              <NumberField
+                emitAs="string"
                 value={form.weight}
-                onChange={(event) => setField('weight', event.target.value)}
+                onValueChange={(value) => setField('weight', value)}
                 disabled={isSaving}
                 inputMode="decimal"
                 autoComplete="off"
+                inputClassName="wmsShellInput wmsShellQtyInput"
               />
             </label>
             <label className="wmsShellField">
               <span>{t('wms.parcels.columns.dimensions', 'Dimensions')}</span>
-              <input
-                className="wmsShellInput"
+              <TextField
                 value={form.dims}
-                onChange={(event) => setField('dims', event.target.value)}
+                onValueChange={(value) => setField('dims', value)}
                 disabled={isSaving}
                 placeholder={t('wms.parcels.dimensionsPlaceholder', 'e.g. 30 x 20 x 10')}
                 autoComplete="off"
+                inputClassName="wmsShellInput"
               />
             </label>
 

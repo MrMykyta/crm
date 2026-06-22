@@ -46,6 +46,9 @@ export default function AutocompleteField({
   inputClassName = "",
   fullWidth = true,
   size = "md",
+  float = false,
+  isFilled,
+  isFocused = false,
   clearable = false,
   // алиасы единого API → нативный контракт AutocompleteSelect
   getOptionLabel,
@@ -102,6 +105,9 @@ export default function AutocompleteField({
       fullWidth={fullWidth}
       size={size}
       rightIcon={clearControl}
+      float={float}
+      isFilled={isFilled ?? hasDisplayValue}
+      isFocused={isFocused}
       className={className}
     >
       <AutocompleteSelect

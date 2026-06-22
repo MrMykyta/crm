@@ -4,9 +4,9 @@ import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities';
 import { useTranslation } from 'react-i18next';
 
-import ThemedSelect from '../../inputs/RadixSelect';
 import OmsProductPicker from '../../oms/OmsProductPicker';
 import EmptyState from '../../shared/EmptyState';
+import { NumberField, SelectField, TextField } from '../../ui/fields';
 import {
   getAvailabilitySnapshot,
   getLineTypeLabel,
@@ -117,11 +117,11 @@ export default function LineItemsEditor({
         ) : null}
       </td>
       <td>
-        <input
-          className={s.input}
-          value={item.name}
+        <TextField
+          inputClassName={s.input}
+          value={item.name || ''}
           disabled={readonly}
-          onChange={(event) => setItemField(item.localId, 'name', event.target.value)}
+          onValueChange={(value) => setItemField(item.localId, 'name', value)}
           placeholder={item.productId
             ? t('documents.lines.productNamePlaceholder')
             : t('documents.lines.customNamePlaceholder')}
@@ -138,62 +138,63 @@ export default function LineItemsEditor({
         </div>
       </td>
       <td>
-        <input
-          className={s.input}
-          type="number"
+        <NumberField
+          inputClassName={s.input}
+          emitAs="string"
           min="0"
           step="0.001"
-          value={item.qty}
+          value={item.qty ?? ''}
           disabled={readonly}
-          onChange={(event) => setItemField(item.localId, 'qty', event.target.value)}
+          onValueChange={(value) => setItemField(item.localId, 'qty', value)}
         />
         {errors[`item:${item.localId}:qty`]
           ? <div className={s.fieldError}>{errors[`item:${item.localId}:qty`]}</div>
           : null}
       </td>
       <td>
-        <input
-          className={s.input}
-          type="number"
+        <NumberField
+          inputClassName={s.input}
+          emitAs="string"
           min="0"
           step="0.01"
-          value={item.priceNet}
+          value={item.priceNet ?? ''}
           disabled={readonly}
-          onChange={(event) => setItemField(item.localId, 'priceNet', event.target.value)}
+          onValueChange={(value) => setItemField(item.localId, 'priceNet', value)}
         />
         {errors[`item:${item.localId}:priceNet`]
           ? <div className={s.fieldError}>{errors[`item:${item.localId}:priceNet`]}</div>
           : null}
       </td>
       <td>
-        <input
-          className={s.input}
-          type="number"
+        <NumberField
+          inputClassName={s.input}
+          emitAs="string"
           min="0"
           step="0.01"
-          value={item.taxRate}
+          value={item.taxRate ?? ''}
           disabled={readonly}
-          onChange={(event) => setItemField(item.localId, 'taxRate', event.target.value)}
+          onValueChange={(value) => setItemField(item.localId, 'taxRate', value)}
         />
       </td>
       <td>
-        <ThemedSelect
-          value={item.discountType}
-          onChange={(value) => setItemField(item.localId, 'discountType', value)}
+        <SelectField
+          value={item.discountType || ''}
+          onValueChange={(value) => setItemField(item.localId, 'discountType', value)}
           options={discountTypeOptions}
           placeholder={t('documents.lines.discountType')}
+          inputClassName={s.input}
           disabled={readonly}
         />
       </td>
       <td>
-        <input
-          className={s.input}
-          type="number"
+        <NumberField
+          inputClassName={s.input}
+          emitAs="string"
           min="0"
           step="0.01"
-          value={item.discountValue}
+          value={item.discountValue ?? ''}
           disabled={readonly}
-          onChange={(event) => setItemField(item.localId, 'discountValue', event.target.value)}
+          onValueChange={(value) => setItemField(item.localId, 'discountValue', value)}
         />
       </td>
       <td>

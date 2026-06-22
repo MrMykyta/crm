@@ -1,7 +1,7 @@
 // src/components/modals/InviteUserModal/index.jsx
 import { useEffect, useRef, useState, useMemo } from "react";
 import Modal from "../../Modal";
-import RadixSelect from "../../../components/inputs/RadixSelect";
+import { SelectField, TextField } from "../../../components/ui/fields";
 import s from "../../../pages/styles/CrmUsers.module.css";
 import { useLazyLookupUserByEmailQuery } from "../../../store/rtk/userApi";
 
@@ -152,13 +152,13 @@ const submit = async (e) => {
         <form className={s.form} onSubmit={submit} noValidate>
           <label className={s.label}>
             E-mail
-            <input
-              className={`${s.input} ${emailError ? s.inputError : ""}`}
+            <TextField
+              inputClassName={`${s.input} ${emailError ? s.inputError : ""}`}
               type="email"
               placeholder="user@company.com"
               value={form.email}
-              onChange={(e) => change("email", e.target.value)}
-              onBlur={(e) => validateEmail(e.target.value)}
+              onValueChange={(value) => change("email", value)}
+              onBlur={(event) => validateEmail(event.target.value)}
               autoFocus
               required
               disabled={sending}
@@ -169,20 +169,20 @@ const submit = async (e) => {
           <div className={s.row2}>
             <label className={s.label}>
               Имя
-              <input
-                className={s.input}
+              <TextField
+                inputClassName={s.input}
                 value={form.firstName}
-                onChange={(e) => change("firstName", e.target.value)}
+                onValueChange={(value) => change("firstName", value)}
                 disabled={formDisabled}
                 readOnly={exists}
               />
             </label>
             <label className={s.label}>
               Фамилия
-              <input
-                className={s.input}
+              <TextField
+                inputClassName={s.input}
                 value={form.lastName}
-                onChange={(e) => change("lastName", e.target.value)}
+                onValueChange={(value) => change("lastName", value)}
                 disabled={formDisabled}
                 readOnly={exists}
               />
@@ -191,11 +191,11 @@ const submit = async (e) => {
 
           <label className={s.label}>
             Роль
-            <RadixSelect
-              className={s.select}
+            <SelectField
+              inputClassName={s.select}
               value={form.role}
               options={roles}
-              onChange={(role) => change("role", role)}
+              onValueChange={(role) => change("role", role)}
               disabled={formDisabled}
             />
           </label>

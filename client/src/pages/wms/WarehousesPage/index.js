@@ -5,6 +5,7 @@ import AddButton from '../../../components/buttons/AddButton/AddButton';
 import FilterToolbar from '../../../components/filters/FilterToolbar';
 import ListPage from '../../../components/data/ListPage';
 import { createWmsWarehousesColumns } from '../../../components/data/ListPage/columnSchemas/wmsWarehousesColumns';
+import { CheckboxField, TextField } from '../../../components/ui/fields';
 import useAclPermissions from '../../../hooks/useAclPermissions';
 import useGridPrefs from '../../../hooks/useGridPrefs';
 import {
@@ -140,20 +141,24 @@ export default function WarehousesPage() {
       <div className={s.formGrid}>
         <label>
           <span>{t('wms.fields.code', 'Code')}</span>
-          <input value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))} />
+          <TextField
+            value={form.code || ''}
+            onValueChange={(value) => setForm((prev) => ({ ...prev, code: value }))}
+          />
         </label>
         <label>
           <span>{t('wms.fields.name', 'Name')}</span>
-          <input value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
-        </label>
-        <label className={s.checkboxRow}>
-          <input
-            type="checkbox"
-            checked={Boolean(form.isActive)}
-            onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))}
+          <TextField
+            value={form.name || ''}
+            onValueChange={(value) => setForm((prev) => ({ ...prev, name: value }))}
           />
-          <span>{t('wms.fields.isActive', 'Active')}</span>
         </label>
+        <CheckboxField
+          className={s.checkboxRow}
+          label={t('wms.fields.isActive', 'Active')}
+          checked={Boolean(form.isActive)}
+          onValueChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))}
+        />
       </div>
       {errorText ? <div className={s.feedback}>{errorText}</div> : null}
     </>

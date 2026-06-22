@@ -5,13 +5,31 @@
 
 .input {
   width: 100%;
-  min-height: 40px;
-  height: 40px;
+  min-height: var(--ui-control-height-md);
   cursor: pointer;
   padding-right: 44px !important;
-  font-size: var(--font-size-13);
-  font-weight: 500;
-  letter-spacing: .005em;
+  padding-top: var(--ui-control-padding-y);
+  padding-bottom: var(--ui-control-padding-y);
+  font-size: var(--font-size-14);
+  font-weight: 400;
+  letter-spacing: 0;
+  border-radius: var(--radius-md);
+  border-color: var(--ui-field-border);
+  background: var(--ui-field-bg);
+  color: var(--text-1);
+  line-height: var(--lh-normal);
+}
+
+.input.input {
+  min-height: var(--ui-control-height-md);
+  padding-top: var(--ui-control-padding-y);
+  padding-bottom: var(--ui-control-padding-y);
+  border-radius: var(--radius-md);
+  border-color: var(--ui-field-border);
+  background: var(--ui-field-bg);
+  color: var(--text-1);
+  font-size: var(--font-size-14);
+  line-height: var(--lh-normal);
 }
 
 .input::placeholder {
@@ -21,7 +39,8 @@
 .toggleBtn {
   position: absolute;
   right: 8px;
-  top: 6px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 26px;
   height: 26px;
   border-radius: 8px;

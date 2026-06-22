@@ -26,6 +26,34 @@
 }
 
 /* Общие контролы */
+.searchField,
+.selectField {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.searchField {
+  min-width: 16.25rem;
+  flex: 1 1 20rem;
+  max-width: 35rem;
+}
+
+.selectField {
+  min-width: 9.5rem;
+}
+
+.searchField .input {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  flex: 1 1 auto;
+}
+
+.selectField .select {
+  width: 100%;
+  min-width: 0;
+}
+
 .input, .select{
   min-height: var(--ui-control-height-md);
   box-sizing:border-box;
@@ -84,6 +112,8 @@
 /* Мобильная укладка */
 @media (max-width: 860px){
   .toolbar{ gap: var(--space-2); padding: var(--space-2) var(--space-3); }
+  .searchField{ min-width: 12.5rem; flex: 1 1 12.5rem; max-width: none; }
   .input{ min-width: 12.5rem; flex: 1 1 12.5rem; max-width: none; }
+  .selectField{ min-width: 8.75rem; }
   .select{ min-width: 8.75rem; }
 }

@@ -10,6 +10,7 @@ import {
   WmsStatusChip,
   WmsSurface,
 } from '../../../components/wms/ui';
+import { SearchField, SelectField } from '../../../components/ui/fields';
 import { useGetStockBalancesQuery } from '../../../store/rtk/stockBalancesApi';
 import {
   useListLocationsQuery,
@@ -224,24 +225,24 @@ function InventoryToolbar({
       <label className={s.selectBox}>
         <Warehouse size={16} aria-hidden="true" />
         <span>Warehouse</span>
-        <select
+        <SelectField
           value={warehouseId}
-          onChange={(event) => updateParam(searchParams, navigate, 'warehouseId', event.target.value)}
-        >
-          <option value="">All warehouses</option>
-          {warehouses.map((warehouse) => (
-            <option key={warehouse.id} value={warehouse.id}>
-              {getWarehouseLabel(warehouse)}
-            </option>
-          ))}
-        </select>
+          onValueChange={(value) => updateParam(searchParams, navigate, 'warehouseId', value)}
+          options={[
+            { value: '', label: 'All warehouses' },
+            ...warehouses.map((warehouse) => ({
+              value: warehouse.id,
+              label: getWarehouseLabel(warehouse),
+            })),
+          ]}
+        />
       </label>
       <label className={s.searchBox}>
         <Search size={16} aria-hidden="true" />
-        <input
+        <SearchField
           value={search}
           placeholder="Search inventory"
-          onChange={(event) => updateParam(searchParams, navigate, 'search', event.target.value)}
+          onValueChange={(value) => updateParam(searchParams, navigate, 'search', value)}
         />
       </label>
       <div className={s.filterHint}>

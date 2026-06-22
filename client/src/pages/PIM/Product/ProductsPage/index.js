@@ -15,7 +15,7 @@ import {
   useListBrandsLookupQuery,
   useListCategoriesLookupQuery,
 } from '../../../../store/rtk/productsApi';
-import AutocompleteSelect from '../../../../components/shared/AutocompleteSelect';
+import { AutocompleteField, TextField } from '../../../../components/ui/fields';
 import s from './ProductsPage.module.css';
 
 const defaultCreate = {
@@ -359,17 +359,17 @@ const onSubmitCreate = async (event) => {
         <form id="product-create-form" className={s.form} onSubmit={onSubmitCreate}>
           <label className={s.field}>
             <span className={s.label}>Название*</span>
-            <input
-              className={s.input}
+            <TextField
+              inputClassName={s.input}
               value={createForm.name}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, name: e.target.value }))}
+              onValueChange={(value) => setCreateForm((prev) => ({ ...prev, name: value }))}
               placeholder="Например: iPhone 15 Pro Max"
             />
           </label>
 
           <label className={s.field}>
             <span className={s.label}>Категория</span>
-            <AutocompleteSelect
+            <AutocompleteField
               value={selectedCategoryOption}
               inputValue={categorySearch}
               onInputChange={(next) => {
@@ -399,7 +399,7 @@ const onSubmitCreate = async (event) => {
 
           <label className={s.field}>
             <span className={s.label}>Производитель</span>
-            <AutocompleteSelect
+            <AutocompleteField
               value={selectedBrandOption}
               inputValue={brandSearch}
               onInputChange={(next) => {
@@ -429,10 +429,10 @@ const onSubmitCreate = async (event) => {
 
           <label className={s.field}>
             <span className={s.label}>SKU</span>
-            <input
-              className={s.input}
+            <TextField
+              inputClassName={s.input}
               value={createForm.sku}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, sku: e.target.value }))}
+              onValueChange={(value) => setCreateForm((prev) => ({ ...prev, sku: value }))}
               placeholder="Артикул"
             />
           </label>
@@ -444,4 +444,3 @@ const onSubmitCreate = async (event) => {
     </>
   );
 }
-

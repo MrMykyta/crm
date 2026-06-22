@@ -1,4 +1,5 @@
 import styles from "./DocumentItemsTable.module.css";
+import { NumberField, TextField } from "../ui/fields";
 
 function formatAmount(value) {
   const n = Number(value);
@@ -46,54 +47,52 @@ export default function DocumentItemsTable({
             {items.map((item) => (
               <tr key={item.localId} className={styles.row}>
                 <td>
-                  <input
-                    type="text"
-                    value={item.name}
-                    onChange={(e) => onItemChange(item.localId, "name", e.target.value)}
-                    className={styles.input}
+                  <TextField
+                    value={item.name || ""}
+                    onValueChange={(value) => onItemChange(item.localId, "name", value)}
+                    inputClassName={styles.input}
                     placeholder="Название позиции"
                     disabled={disabled}
                   />
                 </td>
                 <td>
-                  <input
-                    type="number"
-                    value={item.quantity}
+                  <NumberField
+                    emitAs="string"
+                    value={item.quantity ?? ""}
                     step="0.001"
                     min="0"
-                    onChange={(e) => onItemChange(item.localId, "quantity", e.target.value)}
-                    className={styles.input}
+                    onValueChange={(value) => onItemChange(item.localId, "quantity", value)}
+                    inputClassName={styles.input}
                     disabled={disabled}
                   />
                 </td>
                 <td>
-                  <input
-                    type="text"
-                    value={item.unit}
-                    onChange={(e) => onItemChange(item.localId, "unit", e.target.value)}
-                    className={styles.input}
+                  <TextField
+                    value={item.unit || ""}
+                    onValueChange={(value) => onItemChange(item.localId, "unit", value)}
+                    inputClassName={styles.input}
                     disabled={disabled}
                   />
                 </td>
                 <td>
-                  <input
-                    type="number"
-                    value={item.unitNet}
+                  <NumberField
+                    emitAs="string"
+                    value={item.unitNet ?? ""}
                     step="0.01"
                     min="0"
-                    onChange={(e) => onItemChange(item.localId, "unitNet", e.target.value)}
-                    className={styles.input}
+                    onValueChange={(value) => onItemChange(item.localId, "unitNet", value)}
+                    inputClassName={styles.input}
                     disabled={disabled}
                   />
                 </td>
                 <td>
-                  <input
-                    type="number"
-                    value={item.vatRate}
+                  <NumberField
+                    emitAs="string"
+                    value={item.vatRate ?? ""}
                     step="0.01"
                     min="0"
-                    onChange={(e) => onItemChange(item.localId, "vatRate", e.target.value)}
-                    className={styles.input}
+                    onValueChange={(value) => onItemChange(item.localId, "vatRate", value)}
+                    inputClassName={styles.input}
                     disabled={disabled}
                   />
                 </td>

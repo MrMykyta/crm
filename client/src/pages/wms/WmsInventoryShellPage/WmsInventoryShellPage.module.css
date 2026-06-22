@@ -65,7 +65,7 @@
   min-height: 38px;
   gap: 8px;
   border: 1px solid var(--wms-inv-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--wms-inv-surface) 92%, transparent);
   color: var(--ui-text-2);
   padding: 0 10px;

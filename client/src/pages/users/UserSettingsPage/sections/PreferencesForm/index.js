@@ -3,7 +3,7 @@ import React from "react";
 import { Formik, Form } from "formik";
 import s from "../../UserSettingsPage.module.css";
 import { useTranslation } from "react-i18next";
-import ThemedSelect from "../../../../../components/inputs/RadixSelect";
+import { SelectField } from "../../../../../components/ui/fields";
 
 // Компонент PreferencesForm: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function PreferencesForm({ initial, onSave }) {
@@ -28,35 +28,29 @@ export default function PreferencesForm({ initial, onSave }) {
         <Form>
           <div className={s.grid}>
             {/* Язык интерфейса */}
-            <div className={s.field}>
-              <label className={s.label}>
-                {t("settings.preferences.language")}
-              </label>
-              <ThemedSelect
-                className={s.input}
-                value={values.language || i18n.language}
-                options={languageOptions}
-                onChange={async (val) => {
-                  setFieldValue("language", val);
-                  await i18n.changeLanguage(val); // применяем сразу
-                }}
-                placeholder={t("common.select")}
-              />
-            </div>
+            <SelectField
+              name="language"
+              label={t("settings.preferences.language")}
+              className={s.field}
+              value={values.language || i18n.language}
+              options={languageOptions}
+              onValueChange={async (val) => {
+                setFieldValue("language", val);
+                await i18n.changeLanguage(val); // применяем сразу
+              }}
+              placeholder={t("common.select")}
+            />
 
             {/* Тема оформления */}
-            <div className={s.field}>
-              <label className={s.label}>
-                {t("settings.preferences.theme")}
-              </label>
-              <ThemedSelect
-                className={s.input}
-                value={values.themeMode || "system"}
-                options={themeOptions}
-                onChange={(val) => setFieldValue("themeMode", val)}
-                placeholder={t("common.select")}
-              />
-            </div>
+            <SelectField
+              name="themeMode"
+              label={t("settings.preferences.theme")}
+              className={s.field}
+              value={values.themeMode || "system"}
+              options={themeOptions}
+              onValueChange={(val) => setFieldValue("themeMode", val)}
+              placeholder={t("common.select")}
+            />
           </div>
 
           <div className={s.actions}>

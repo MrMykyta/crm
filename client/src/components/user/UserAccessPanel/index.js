@@ -1,6 +1,7 @@
 // src/components/user/UserAccessPanel/index.jsx
 import { useEffect, useMemo, useState } from 'react';
 import Switch from '../../inputs/Switch';
+import { SearchField } from '../../ui/fields';
 import s from './UserAccessPanel.module.css';
 
 import {
@@ -10,7 +11,6 @@ import {
   useRemoveRoleFromUserMutation,
   useAllowPermForUserMutation,
   useDenyPermForUserMutation,
-  useClearPermOverrideMutation, // на будущее (не используем прямо сейчас)
 } from '../../../store/rtk/aclApi';
 
 // Компонент Accordion: отвечает за отображение UI и обработку взаимодействий пользователя.
@@ -43,7 +43,6 @@ export default function UserAccessPanel({ userId }) {
   const [removeRoleFromUser] = useRemoveRoleFromUserMutation();
   const [allowPermForUser]  = useAllowPermForUserMutation();
   const [denyPermForUser]   = useDenyPermForUserMutation();
-  const [clearPermOverride] = useClearPermOverrideMutation(); // не используется в UI, но оставлен
 
   const loading = rolesLoading || summaryLoading;
 
@@ -70,16 +69,6 @@ const hasRole = (roleId) => Array.isArray(summary?.roles) && summary.roles.some(
 const toggleRole = async (role) => {
     const active = hasRole(role.id);
 
-    // оптимистичное обновление
-    const prev = summary;
-    const next = prev ? {
-      ...prev,
-      roles: active ? prev.roles.filter(r => String(r.id) !== String(role.id))
-                    : [...prev.roles, role],
-    } : prev;
-
-    // локально патчим
-    // тут можно useState для summary, но summary — из RTK. Без локального set оставим только refetch ниже.
     try {
       if (active) await removeRoleFromUser({ userId, roleId: role.id }).unwrap();
       else        await assignRoleToUser({ userId, roleId: role.id }).unwrap();
@@ -106,13 +95,6 @@ const toggleRole = async (role) => {
       .sort((a,b)=>a.cat.localeCompare(b.cat));
   }, [summary, qPerm]);
 
-    // patchPermLocal: вспомогательная логика компонента.
-const patchPermLocal = (permId, patch) => {
-    // так как summary управляется RTK Query, лучше не мутировать напрямую.
-    // В простоте — ничего локально не патчим, а показываем оптимизм через элемент Switch.
-    // Но если хочешь — можно хранить локальную карту overrides по id.
-  };
-
     // togglePerm: переключает состояние компонента.
 const togglePerm = async (p, nextChecked) => {
     try {
@@ -135,11 +117,11 @@ const togglePerm = async (p, nextChecked) => {
       <div className={s.block}>
         <div className={s.blockHead}>
           <div className={s.blockTitle}>Роли пользователя</div>
-          <input
-            className={s.input}
+          <SearchField
+            inputClassName={s.input}
             placeholder="Поиск по ролям…"
             value={qRole}
-            onChange={(e)=>setQRole(e.target.value)}
+            onValueChange={setQRole}
           />
         </div>
         <div className={s.roles}>
@@ -163,11 +145,11 @@ const togglePerm = async (p, nextChecked) => {
       <div className={s.block}>
         <div className={s.blockHead}>
           <div className={s.blockTitle}>Пермишены (эффективные)</div>
-          <input
-            className={s.input}
+          <SearchField
+            inputClassName={s.input}
             placeholder="Фильтр по пермишенам…"
             value={qPerm}
-            onChange={(e)=>setQPerm(e.target.value)}
+            onValueChange={setQPerm}
           />
         </div>
 

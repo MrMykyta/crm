@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useTopbarOptional } from "../../../Providers/TopbarProvider";
 import DebugBadge from "../../debug/DebugBadge";
+import { SearchField } from "../../ui/fields";
 import styles from "./Topbar.module.css";
 
 import UserMenu from "../UserMenu";
@@ -48,6 +49,7 @@ export default function Topbar({
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
   const rawAvatarUrl = user?.avatarUrl || readCssVarUrl("--user-avatar-url");
   const { url: avatarUrl, onError: onAvatarError } = useSignedFileUrl(rawAvatarUrl);
@@ -169,7 +171,7 @@ const handler = (evt) => {
 
   useEffect(() => {
     refetchNotifs();
-  }, []);
+  }, [refetchNotifs]);
 
   // закрыть меню при клике вне
   useEffect(() => {
@@ -305,11 +307,15 @@ const h = (e) => {
       </div>
 
       <div className={styles.searchWrap}>
-        <input
-          ref={inputRef}
-          className={styles.search}
+        <SearchField
+          inputRef={inputRef}
+          inputClassName={styles.search}
+          value={searchValue}
           placeholder={t("topbar.searchPlaceholder") + " (Ctrl/⌘K)"}
-          onChange={(e) => onSearch?.(e.target.value)}
+          onValueChange={(value) => {
+            setSearchValue(value);
+            onSearch?.(value);
+          }}
         />
 
         <button className={styles.searchBtn}>
@@ -379,4 +385,3 @@ const h = (e) => {
     </header>
   );
 }
-

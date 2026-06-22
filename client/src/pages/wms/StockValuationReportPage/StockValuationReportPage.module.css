@@ -60,12 +60,14 @@
 
 .field input,
 .field select {
-  border: 1px solid var(--card-brd);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
-  color: var(--text);
-  padding: 9px 10px;
-  font-size: var(--fs-sm);
+  min-height: var(--ui-control-height-md);
+  border: 1px solid var(--ui-field-border);
+  border-radius: var(--radius-md);
+  background: var(--ui-field-bg);
+  color: var(--text-1);
+  padding: var(--ui-control-padding-y) var(--ui-control-padding-x);
+  font-size: var(--font-size-14);
+  line-height: var(--lh-normal);
 }
 
 .disabledField {

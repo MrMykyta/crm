@@ -13,6 +13,7 @@ import { getDocumentStatusLabel } from "../../components/documents/documentStatu
 import { getAllowedDocumentConversionTargets } from "../../components/documents/documentConversionConfig";
 import { useConvertDocumentMutation, useGetDocumentRenderTemplateQuery } from "../../store/rtk/documentsApi";
 import DocumentTemplateRenderer from "../../features/documentTemplateRenderer";
+import { SelectField } from "../../components/ui/fields";
 import styles from "./DocumentEditorPage.module.css";
 
 const SPLIT_MODE_MIN_WIDTH = 1240;
@@ -384,21 +385,19 @@ export default function DocumentDetailsPage() {
                 <div className={styles.convertActionBlock}>
                   <p className={styles.convertLabel}>Создать на основе</p>
                   <div className={styles.convertControls}>
-                    <select
+                    <SelectField
                       value={resolvedConversionTargetType}
-                      onChange={(event) => {
-                        setConversionTargetType(event.target.value);
+                      onValueChange={(value) => {
+                        setConversionTargetType(value);
                         setConversionError("");
                       }}
-                      className={styles.convertSelect}
+                      inputClassName={styles.convertSelect}
                       disabled={isBusy}
-                    >
-                      {conversionTargets.map((target) => (
-                        <option key={target.targetType} value={target.targetType}>
-                          {target.actionLabel}
-                        </option>
-                      ))}
-                    </select>
+                      options={conversionTargets.map((target) => ({
+                        value: target.targetType,
+                        label: target.actionLabel,
+                      }))}
+                    />
                     <button
                       type="button"
                       className={styles.convertButton}

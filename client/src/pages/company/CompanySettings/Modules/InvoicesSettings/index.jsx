@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import ThemedSelect from "../../../../../components/inputs/RadixSelect";
-import HTMLEditor from "../../../../../components/inputs/HTMLEditor";
+import { HtmlEditorField, SelectField } from "../../../../../components/ui/fields";
 import {
   useGetCompanyInvoiceSettingsQuery,
   useUpdateCompanyInvoiceSettingsMutation,
@@ -611,10 +610,10 @@ export default function InvoicesSettings() {
           <div className={s.field}>
             <label className={s.label}>{t("companySettings.documents.invoices.fields.defaultType")}</label>
             <div className={s.selectWrap}>
-              <ThemedSelect
+              <SelectField
                 value={form.invoiceDefaultType}
                 options={defaultTypeOptions}
-                onChange={(value) => setField("invoiceDefaultType", value)}
+                onValueChange={(value) => setField("invoiceDefaultType", value)}
                 placeholder={t("companySettings.documents.common.selectInvoiceType")}
                 disabled={isSaving}
               />
@@ -624,10 +623,10 @@ export default function InvoicesSettings() {
           <div className={s.field}>
             <label className={s.label}>{t("companySettings.documents.invoices.fields.defaultPaymentMethod")}</label>
             <div className={s.selectWrap}>
-              <ThemedSelect
+              <SelectField
                 value={form.invoiceDefaultPaymentMethod}
                 options={paymentMethodOptions}
-                onChange={(value) => setField("invoiceDefaultPaymentMethod", value)}
+                onValueChange={(value) => setField("invoiceDefaultPaymentMethod", value)}
                 placeholder={t("companySettings.documents.common.selectPaymentMethod")}
                 disabled={isSaving}
               />
@@ -637,10 +636,10 @@ export default function InvoicesSettings() {
           <div className={s.field}>
             <label className={s.label}>{t("companySettings.documents.invoices.fields.defaultPaymentTerm")}</label>
             <div className={s.selectWrap}>
-              <ThemedSelect
+              <SelectField
                 value={String(form.invoiceDefaultPaymentTermDays)}
                 options={paymentTermOptions}
-                onChange={(value) => setField("invoiceDefaultPaymentTermDays", Number(value || 30))}
+                onValueChange={(value) => setField("invoiceDefaultPaymentTermDays", Number(value || 30))}
                 placeholder={t("companySettings.documents.common.selectPaymentTerm")}
                 disabled={isSaving}
               />
@@ -650,10 +649,10 @@ export default function InvoicesSettings() {
           <div className={s.field}>
             <label className={s.label}>{t("companySettings.documents.invoices.fields.defaultCurrency")}</label>
             <div className={s.selectWrap}>
-              <ThemedSelect
+              <SelectField
                 value={form.invoiceDefaultCurrency}
                 options={CURRENCY_OPTIONS}
-                onChange={(value) => setField("invoiceDefaultCurrency", value)}
+                onValueChange={(value) => setField("invoiceDefaultCurrency", value)}
                 placeholder={t("companySettings.documents.common.selectCurrency")}
                 disabled={isSaving}
               />
@@ -663,10 +662,10 @@ export default function InvoicesSettings() {
           <div className={s.field}>
             <label className={s.label}>{t("companySettings.documents.invoices.fields.stockUpdateMode")}</label>
             <div className={s.selectWrap}>
-              <ThemedSelect
+              <SelectField
                 value={form.invoiceStockUpdateMode}
                 options={stockUpdateOptions}
-                onChange={(value) => setField("invoiceStockUpdateMode", value)}
+                onValueChange={(value) => setField("invoiceStockUpdateMode", value)}
                 placeholder={t("companySettings.documents.common.selectStockMode")}
                 disabled={isSaving}
               />
@@ -676,10 +675,10 @@ export default function InvoicesSettings() {
           <div className={s.field}>
             <label className={s.label}>{t("companySettings.documents.invoices.fields.annotation")}</label>
             <div className={s.selectWrap}>
-              <ThemedSelect
+              <SelectField
                 value={form.invoiceAnnotationMode}
                 options={annotationOptions}
-                onChange={(value) => setField("invoiceAnnotationMode", value)}
+                onValueChange={(value) => setField("invoiceAnnotationMode", value)}
                 placeholder={t("companySettings.documents.common.selectAnnotationMode")}
                 disabled={isSaving}
               />
@@ -690,9 +689,9 @@ export default function InvoicesSettings() {
         {isTemplateMode ? (
           <div className={s.field}>
             <label className={s.label}>{t("companySettings.documents.common.annotationTemplateLabel")}</label>
-            <HTMLEditor
+            <HtmlEditorField
               value={form.invoiceAnnotationTemplateHtml || ""}
-              onChange={(value) => setField("invoiceAnnotationTemplateHtml", value || null)}
+              onValueChange={(value) => setField("invoiceAnnotationTemplateHtml", value || null)}
               placeholder={t("companySettings.documents.invoices.annotationTemplatePlaceholder")}
               minHeight={170}
               toolbarPreset="annotation"

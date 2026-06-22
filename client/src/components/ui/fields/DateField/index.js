@@ -29,6 +29,9 @@ export default function DateField({
   fullWidth = true,
   size = "md",
   loading = false,
+  float = false,
+  isFilled,
+  isFocused = false,
   locale,
   ...rest
 }) {
@@ -52,6 +55,9 @@ export default function DateField({
       loading={loading}
       fullWidth={fullWidth}
       size={size}
+      float={float}
+      isFilled={isFilled ?? (value !== undefined && value !== null && String(value) !== "")}
+      isFocused={isFocused}
       className={className}
     >
       <DateTimePicker
