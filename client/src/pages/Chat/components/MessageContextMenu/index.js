@@ -258,17 +258,19 @@ const handle = (cb) => () => {
             </button>
           )}
 
-          <button
-            type="button"
-            className={s.ctxMenuItem}
-            onClick={handle(onPin)}
-          >
-            <span className={s.ctxMenuIcon}>
-              {isPinned ? <PinOff size={18} /> : <Pin size={18} />}
-            </span>
-            <span className={s.ctxMenuItemLabel}>{pinLabel}</span>
-            <span className={s.ctxMenuItemSlot} />
-          </button>
+          {onPin ? (
+            <button
+              type="button"
+              className={s.ctxMenuItem}
+              onClick={handle(onPin)}
+            >
+              <span className={s.ctxMenuIcon}>
+                {isPinned ? <PinOff size={18} /> : <Pin size={18} />}
+              </span>
+              <span className={s.ctxMenuItemLabel}>{pinLabel}</span>
+              <span className={s.ctxMenuItemSlot} />
+            </button>
+          ) : null}
 
           {canForward && (
             <button
@@ -335,4 +337,3 @@ const handle = (cb) => () => {
 
   return createPortal(menuNode, portalRoot || document.body);
 }
-

@@ -19,6 +19,7 @@ import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 
 import { ColorField, SelectField } from "../../../../../components/ui/fields";
+import useAclPermissions from "../../../../../hooks/useAclPermissions";
 
 /* ===== helpers ===== */
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -63,6 +64,8 @@ function SortableStep({ id, index, total, name, color, onRename }) {
 
 /* ===== страница ===== */
 export default function CompanyDeals() {
+  const { can } = useAclPermissions();
+  const canUpdateSettings = can("company:settings:update");
   const [funnels, setFunnels] = useState([
     {
       id: "f-1",
@@ -101,6 +104,7 @@ export default function CompanyDeals() {
 
     // addFunnel: добавляет элемент в локальное состояние компонента.
 const addFunnel = () => {
+    if (!canUpdateSettings) return;
     const n = funnels.length + 1;
     const newFunnel = {
       id: `f-${Date.now()}`,
@@ -117,18 +121,25 @@ const addFunnel = () => {
   };
 
     // deleteFunnel: удаляет сущность в рамках UI-компонента.
-const deleteFunnel = (fid) => setFunnels(fs => fs.filter(f => f.id !== fid));
+const deleteFunnel = (fid) => {
+  if (!canUpdateSettings) return;
+  setFunnels(fs => fs.filter(f => f.id !== fid));
+};
     // addStage: добавляет элемент в локальное состояние компонента.
-const addStage = (fid) => setFunnels(fs => fs.map(f => {
+const addStage = (fid) => {
+  if (!canUpdateSettings) return;
+  setFunnels(fs => fs.map(f => {
     if (f.id !== fid) return f;
     const idx = f.stages.length + 1;
     return { ...f, stages: [...f.stages, { id: uid(), name: `Этап ${idx}`, color: "#8fdb60" }] };
   }));
+};
     // toggleExpanded: переключает состояние компонента.
 const toggleExpanded = (fid) => setFunnels(fs => fs.map(f => f.id === fid ? { ...f, expanded: !f.expanded } : f));
 
     // handleDragEnd: обработчик пользовательского действия.
 const handleDragEnd = (fid) => (e) => {
+    if (!canUpdateSettings) return;
     const { active, over } = e;
     if (!over || active.id === over.id) return;
     setFunnels(fs => fs.map(f => {
@@ -142,7 +153,10 @@ const handleDragEnd = (fid) => (e) => {
   };
 
     // startRenameFunnel: вспомогательная логика компонента.
-const startRenameFunnel = (fid) => setEditingFunnelId(fid);
+const startRenameFunnel = (fid) => {
+  if (!canUpdateSettings) return;
+  setEditingFunnelId(fid);
+};
     // commitRenameFunnel: вспомогательная логика компонента.
 const commitRenameFunnel = (fid, value, fallback) => {
     const name = (value ?? "").trim() || fallback;
@@ -151,7 +165,10 @@ const commitRenameFunnel = (fid, value, fallback) => {
   };
 
     // startRenameStage: вспомогательная логика компонента.
-const startRenameStage = (fid, sid) => setEditingStageKey(`${fid}:${sid}`);
+const startRenameStage = (fid, sid) => {
+  if (!canUpdateSettings) return;
+  setEditingStageKey(`${fid}:${sid}`);
+};
     // commitRenameStage: вспомогательная логика компонента.
 const commitRenameStage = (fid, sid, value, fallback) => {
     const name = (value ?? "").trim() || fallback;
@@ -164,7 +181,7 @@ const commitRenameStage = (fid, sid, value, fallback) => {
 
     // changeColor: вспомогательная логика компонента.
 const changeColor = (fid, sid, color) =>
-    setFunnels(fs =>
+    canUpdateSettings && setFunnels(fs =>
       fs.map(f => f.id !== fid ? f : ({
         ...f,
         stages: f.stages.map(s => s.id === sid ? { ...s, color } : s)
@@ -174,7 +191,7 @@ const changeColor = (fid, sid, color) =>
   return (
     <div className={s.wrap}>
       <div className={s.toolbar}>
-        <button className={s.primary} onClick={addFunnel}>+ Добавить воронку продаж</button>
+        {canUpdateSettings ? <button className={s.primary} onClick={addFunnel}>+ Добавить воронку продаж</button> : null}
       </div>
 
       <div className={s.list}>
@@ -198,6 +215,7 @@ const changeColor = (fid, sid, color) =>
                       if (e.key === "Enter") e.currentTarget.blur();
                       if (e.key === "Escape") setEditingFunnelId(null);
                     }}
+                    disabled={!canUpdateSettings}
                   />
                 ) : (
                   <h3 className={s.title} onDoubleClick={() => startRenameFunnel(f.id)}>
@@ -206,8 +224,8 @@ const changeColor = (fid, sid, color) =>
                 )}
 
                 <div className={s.headBtns}>
-                  <button className={s.addStageInRow} onClick={() => addStage(f.id)}>+ Этап</button>
-                  <button className={s.delFunnel} onClick={() => deleteFunnel(f.id)}>🗑 Удалить</button>
+                  {canUpdateSettings ? <button className={s.addStageInRow} onClick={() => addStage(f.id)}>+ Этап</button> : null}
+                  {canUpdateSettings ? <button className={s.delFunnel} onClick={() => deleteFunnel(f.id)}>🗑 Удалить</button> : null}
                 </div>
               </header>
 
@@ -249,6 +267,7 @@ const changeColor = (fid, sid, color) =>
                                   if (e.key === "Enter") e.currentTarget.blur();
                                   if (e.key === "Escape") setEditingStageKey(null);
                                 }}
+                                disabled={!canUpdateSettings}
                               />
                             </div>
                           );
@@ -309,6 +328,7 @@ const changeColor = (fid, sid, color) =>
                       onValueChange={(value) =>
                         selectedStage && changeColor(f.id, selectedStage.id, value)
                       }
+                      disabled={!canUpdateSettings}
                     />
                     <input
                       className={s.hex}
@@ -316,6 +336,7 @@ const changeColor = (fid, sid, color) =>
                       onChange={(e) =>
                         selectedStage && changeColor(f.id, selectedStage.id, e.target.value)
                       }
+                      disabled={!canUpdateSettings}
                     />
                   </div>
                 </div>

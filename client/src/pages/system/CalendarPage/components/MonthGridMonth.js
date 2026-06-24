@@ -4,7 +4,16 @@ import s from "../CalendarPage.module.css";
 import { isSameDay, toKey } from "./dateUtils";
 
 // Компонент MonthGridMonth: отвечает за отображение UI и обработку взаимодействий пользователя.
-export default function MonthGridMonth({ baseDate, today, onClickDay, onEventOpen }) {
+export default function MonthGridMonth({
+  baseDate,
+  today,
+  selectedDate,
+  onClickDay,
+  calendarItems = [],
+  onItemOpen,
+  onCreateFromDate,
+  locale = "en",
+}) {
   const year = baseDate.getFullYear();
   const month = baseDate.getMonth();
   const first = new Date(year, month, 1);
@@ -35,35 +44,15 @@ export default function MonthGridMonth({ baseDate, today, onClickDay, onEventOpe
     days.push({ date: d, outside: true });
   }
 
-  // demo-events
-  const fakeEvents = {
-    [toKey(new Date())]: [
-      {
-        id: "1",
-        title: "W – Prawo międzynarodowe cz. 1",
-        color: "red",
-        start: "11:45",
-        end: "13:15",
-        location: "ul. Narutowicza 59a",
-      },
-      {
-        id: "2",
-        title: "CK – Sojusze стратегiczne",
-        color: "violet",
-        start: "13:30",
-        end: "15:00",
-      },
-    ],
-  };
-
   return (
     <div className={s.monthGridMonth}>
       {days.map(({ date, outside }) => {
         const isToday = isSameDay(date, today);
+        const isSelected = selectedDate && isSameDay(date, selectedDate);
         const weekday = date.getDay();
         const isWeekend = weekday === 0 || weekday === 6;
         const isFirstOfMonth = date.getDate() === 1;
-        const events = fakeEvents[toKey(date)] || [];
+        const events = calendarItems.filter((item) => item.dateKey === toKey(date));
 
         return (
           <div
@@ -72,14 +61,16 @@ export default function MonthGridMonth({ baseDate, today, onClickDay, onEventOpe
               s.monthCell,
               outside ? s.monthCellOutside : "",
               isToday ? s.monthCellToday : "",
+              isSelected ? s.monthCellSelected : "",
               isWeekend ? s.monthCellWeekend : "",
             ].join(" ")}
             onClick={() => onClickDay && onClickDay(date)}
+            onDoubleClick={() => onCreateFromDate?.(date)}
           >
             <div className={s.monthCellHeader}>
               <span className={isFirstOfMonth ? s.monthCellOtherMonthTitle : s.monthCellDay}>
                 {isFirstOfMonth
-                  ? `1 ${date.toLocaleString("ru-RU", { month: "short" })}`
+                  ? `1 ${date.toLocaleString(locale, { month: "short" })}`
                   : date.getDate()}
               </span>
             </div>
@@ -88,29 +79,16 @@ export default function MonthGridMonth({ baseDate, today, onClickDay, onEventOpe
               {events.map((ev) => (
                 <div
                     key={ev.id}
-                    className={`${s.eventPill} ${
-                      ev.color === "red"
-                        ? s.eventRed
-                        : ev.color === "violet"
-                        ? s.eventViolet
-                        : ""
-                    }`}
-                    onDoubleClick={(e) => {
+                    className={[
+                      s.eventPill,
+                      s.taskPill,
+                      ev.completed ? s.taskPillCompleted : "",
+                      ev.overdue ? s.taskPillOverdue : "",
+                      ev.priority ? s[`taskPriority${ev.priority}`] || "" : "",
+                    ].join(" ")}
+                    onClick={(e) => {
                       e.stopPropagation();
-                      if (!onEventOpen) return;
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      onEventOpen(
-                        {
-                          ...ev,
-                          date: date.toISOString(),
-                          dateReadable: date.toLocaleDateString("ru-RU", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          }),
-                        },
-                        rect
-                      );
+                      onItemOpen?.(ev);
                     }}
                   >
                   {ev.title}

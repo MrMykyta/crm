@@ -7,6 +7,9 @@ import DetailTabs from "../../../../components/data/DetailTabs";
 import EntityNotesSection from "../../../../components/notes/EntityNotesSection";
 import DataTable from "../../../../components/data/DataTable";
 import AddButton from "../../../../components/buttons/AddButton/AddButton";
+import ConfirmDialog from "../../../../components/dialogs/ConfirmDialog";
+import useAclPermissions from "../../../../hooks/useAclPermissions";
+import HtmlDescriptionSection from "../../../../components/data/HtmlDescriptionSection";
 import {
   counterpartyEntitySchema,
   toFormCounterparty,
@@ -19,8 +22,10 @@ import CounterpartyContactsSection from "../../../../components/contacts/Counter
 import {
   useGetCounterpartyQuery,
   useListCounterpartiesQuery,
+  useRemoveCounterpartyMutation,
   useUpdateCounterpartyMutation,
 } from "../../../../store/rtk/counterpartyApi";
+import { useListDepartmentsQuery } from "../../../../store/rtk/departmentsApi";
 import { useListOrdersQuery } from "../../../../store/rtk/ordersApi";
 import { useListOffersQuery } from "../../../../store/rtk/offersApi";
 import s from "./CounterpartyDetailPage.module.css";
@@ -261,8 +266,32 @@ function CounterpartyOrdersTab({ counterpartyId }) {
 }
 
 // Компонент CounterpartyDetailTabs: отвечает за отображение UI и обработку взаимодействий пользователя.
-function CounterpartyDetailTabs({ tab, data, values, onChange }) {
+function CounterpartyDetailTabs({ tab, data, values, onChange, onSaveDescription }) {
   const counterpartyId = data?.id;
+
+  if (tab === "overview") {
+    const hasDescriptionField = Object.prototype.hasOwnProperty.call(values || {}, "description");
+    const descriptionHtml = hasDescriptionField
+      ? String(values?.description ?? "")
+      : String(data?.description ?? "");
+
+    return (
+      <HtmlDescriptionSection
+        title="Описание"
+        value={descriptionHtml}
+        editable={hasDescriptionField && typeof onSaveDescription === "function"}
+        onSave={async (nextHtml) => {
+          if (!hasDescriptionField || typeof onSaveDescription !== "function") return nextHtml;
+          const finalHtml = await onSaveDescription(nextHtml, values);
+          onChange?.("description", finalHtml);
+          return finalHtml;
+        }}
+        placeholder="Опишите сущность: ключевые детали, договоренности, условия…"
+        emptyText="Описание пока пустое. Нажмите «Редактировать», чтобы добавить HTML-описание."
+        minHeight={340}
+      />
+    );
+  }
 
   if (tab === "notes") {
     return (
@@ -289,9 +318,37 @@ function CounterpartyDetailTabs({ tab, data, values, onChange }) {
 export default function CounterpartyDetailPage() {
   const { id } = useParams();
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { can } = useAclPermissions();
+  const canUpdateCounterparty = can("counterparty:update");
+  const canDeleteCounterparty = can("counterparty:delete");
+  const canReadDepartments = can("department:read");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const { data: departmentsData } = useListDepartmentsQuery(
+    { includeArchived: true },
+    { skip: !canReadDepartments }
+  );
+  const departments = useMemo(
+    () => (Array.isArray(departmentsData) ? departmentsData : []),
+    [departmentsData]
+  );
+  const departmentOptions = useMemo(
+    () =>
+      departments
+        .filter((department) => department?.isActive !== false && !department?.deletedAt)
+        .map((department) => ({
+          value: String(department.id),
+          label: department.name || department.code || String(department.id),
+        })),
+    [departments]
+  );
   const schemaBuilder = useCallback(
-    (i18n) => counterpartyEntitySchema(i18n).filter((field) => field?.name !== "description"),
-    []
+    (i18n) =>
+      counterpartyEntitySchema(i18n, {
+        departmentOptions,
+        includeDepartmentField: canReadDepartments,
+      }).filter((field) => field?.name !== "description"),
+    [canReadDepartments, departmentOptions]
   );
   const tabs = useMemo(() => buildTabs(t), [t]);
 
@@ -319,6 +376,7 @@ export default function CounterpartyDetailPage() {
 
   const [updateCounterparty, { isLoading: saving }] =
     useUpdateCounterpartyMutation();
+  const [removeCounterparty, { isLoading: deleting }] = useRemoveCounterpartyMutation();
   const [contacts, setContacts] = useState([]);
 
   useEffect(() => {
@@ -346,39 +404,94 @@ const onChangeContacts = (list) => setContacts(list);
     [updateCounterparty]
   );
 
+  const saveDescription = useCallback(
+    async (nextHtml, currentValues = {}) => {
+      const payload = {
+        ...toApiCounterparty({
+          ...currentValues,
+          description: nextHtml,
+        }),
+        contacts: buildContactsPayload(contacts),
+      };
+      const saved = await save(id, payload);
+      return saved?.description ?? nextHtml ?? "";
+    },
+    [contacts, id, save]
+  );
+
   if (!base && fetchingDetail) return <Skeleton />;
   if (!base) return <Skeleton />;
 
   return (
-    <EntityDetailPage
-      id={id}
-      tabs={tabs}
-      tabsNamespace="crm.counterparty.detail"
-      schemaBuilder={schemaBuilder}
-      toForm={(d) => ({ ...toFormCounterparty(d), contacts: undefined })}
-      toApi={toApiCounterparty}
-      isSaving={saving}
-      buildPayload={(basePayload) => ({
-        ...basePayload,
-        contacts: buildContactsPayload(contacts),
-      })}
-      load={async () => base}
-      save={save}
-      storageKeyPrefix="counterparty"
-      autosave={{ debounceMs: 500 }}
-      saveOnExit={true}
-      clearDraftOnUnmount={true}
-      payloadDeps={[contacts]}
-      RightTabsComponent={CounterpartyDetailTabs}
-      leftExtras={
-        <>
-          <CounterpartyContactsSection
-            counterpartyId={id}
-            counterpartyName={base?.shortName || base?.fullName || ''}
+    <>
+      <EntityDetailPage
+        id={id}
+        tabs={tabs}
+        tabsNamespace="crm.counterparty.detail"
+        schemaBuilder={schemaBuilder}
+        toForm={(d) => ({ ...toFormCounterparty(d), contacts: undefined })}
+        toApi={toApiCounterparty}
+        isSaving={saving}
+        buildPayload={(basePayload) => ({
+          ...basePayload,
+          contacts: buildContactsPayload(contacts),
+        })}
+        load={async () => base}
+        save={save}
+        storageKeyPrefix="counterparty"
+        autosave={{ debounceMs: 500 }}
+        saveOnExit={true}
+        readOnly={!canUpdateCounterparty}
+        clearDraftOnUnmount={true}
+        payloadDeps={[contacts]}
+        RightTabsComponent={(props) => (
+          <CounterpartyDetailTabs
+            {...props}
+            onSaveDescription={saveDescription}
           />
-          <ContactsEditor value={contacts} onChange={onChangeContacts} />
-        </>
-      }
-    />
+        )}
+        leftTop={canDeleteCounterparty ? (
+          <div className={s.detailActions}>
+            <button
+              type="button"
+              className={`${s.detailActionBtn} ${s.detailActionDanger}`}
+              onClick={() => setDeleteOpen(true)}
+              disabled={deleting}
+            >
+              {deleting ? t("common.loading", "Загрузка...") : t("common.delete", "Удалить")}
+            </button>
+          </div>
+        ) : null}
+        leftExtras={
+          <>
+            <CounterpartyContactsSection
+              counterpartyId={id}
+              counterpartyName={base?.shortName || base?.fullName || ''}
+            />
+            {canUpdateCounterparty ? (
+              <ContactsEditor value={contacts} onChange={onChangeContacts} />
+            ) : null}
+          </>
+        }
+      />
+      <ConfirmDialog
+        open={deleteOpen}
+        title={t("crm.counterparties.confirmDeleteTitle", "Удалить контрагента?")}
+        text={t(
+          "crm.counterparties.confirmDeleteText",
+          "Контрагент будет удалён или архивирован согласно настройкам системы."
+        )}
+        okText={t("common.delete", "Удалить")}
+        cancelText={t("common.cancel", "Отмена")}
+        danger
+        loading={deleting}
+        onOk={async () => {
+          await removeCounterparty(id).unwrap();
+          setDeleteOpen(false);
+          navigate("/main/counterparties");
+        }}
+        onCancel={() => setDeleteOpen(false)}
+      />
+    </>
   );
 }

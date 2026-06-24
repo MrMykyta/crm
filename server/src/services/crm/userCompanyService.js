@@ -6,6 +6,7 @@ const { invalidate } = require('../../middleware/permissionResolver');
 const { Op, fn, col, where } = require('sequelize');
 const { parsePagination, packResult } = require('../../utils/pagination');
 const { assert, check, computeDeptScope } = require('../../acl');
+const departmentService = require('./depatmentService');
 
 // --- helpers ---
 
@@ -24,6 +25,13 @@ async function getRequesterDeptId(requesterId, companyId, tx) {
     transaction: tx,
   });
   return me?.departmentId || null;
+}
+
+function serviceError(status, message, code = 'MEMBER_UPDATE_ERROR') {
+  const err = new Error(message);
+  err.status = status;
+  err.code = code;
+  return err;
 }
 
 // --- LIST USERS (для ListPage) ---
@@ -157,6 +165,7 @@ getRequesterDept: async () => getRequesterDeptId(requesterId, companyId),
     lastName: uc.user?.lastName,
     role: uc.role,
     status: uc.status,
+    departmentId: uc.departmentId || null,
     department: uc.department ? { id: uc.department.id, name: uc.department.name } : null,
     isLead: uc.isLead,
     lastLoginAt: uc.user?.lastLoginAt,
@@ -362,12 +371,33 @@ exports.updateUserMembership = async (requesterId, companyId, userId, payload = 
     }
 
     // --- департамент и isLead ---
-    if (Object.prototype.hasOwnProperty.call(payload, 'departmentId')) {
+    const hasDepartmentPatch =
+      Object.prototype.hasOwnProperty.call(payload, 'departmentId') &&
+      typeof departmentId !== 'undefined';
+    const hasLeadPatch =
+      Object.prototype.hasOwnProperty.call(payload, 'isLead') &&
+      typeof isLead !== 'undefined';
+
+    if (hasDepartmentPatch) {
+      if (departmentId) {
+        await departmentService.assertActiveDepartment(companyId, departmentId, t);
+      }
       // company-wide — можно любую; dept-ограничение — уже проверено выше
       row.departmentId = departmentId || null;
+      if (!row.departmentId) {
+        row.isLead = false;
+      }
     }
-    if (Object.prototype.hasOwnProperty.call(payload, 'isLead')) {
-      row.isLead = !!isLead;
+    if (hasLeadPatch) {
+      if (isLead && !row.departmentId) {
+        if (hasDepartmentPatch && !departmentId) {
+          row.isLead = false;
+        } else {
+          throw serviceError(400, 'User cannot be department lead without department membership', 'DEPARTMENT_LEAD_REQUIRES_MEMBERSHIP');
+        }
+      } else {
+        row.isLead = !!isLead;
+      }
     }
 
     await row.save({ transaction: t });

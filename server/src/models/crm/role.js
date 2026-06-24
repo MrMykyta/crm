@@ -53,6 +53,22 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(64),
       allowNull: false
     },
+    slug: {
+      type: DataTypes.STRING(64),
+      allowNull: true
+    },
+    isSystem: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'is_system'
+    },
+    isDefault: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'is_default'
+    },
     description: {
       type: DataTypes.STRING(256),
       allowNull: true

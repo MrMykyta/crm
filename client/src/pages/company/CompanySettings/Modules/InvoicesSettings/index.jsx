@@ -22,6 +22,7 @@ import {
   buildTemplateNewRoute,
   resolveTemplateDocumentTypeKey,
 } from "../_shared/templateRouteUtils";
+import useAclPermissions from "../../../../../hooks/useAclPermissions";
 import s from "./InvoicesSettings.module.css";
 
 const TYPE_ORDER = ["invoice", "correction", "proforma", "advance", "advance_proforma", "wdt"];
@@ -266,6 +267,9 @@ function toComparable(form = DEFAULT_FORM) {
 export default function InvoicesSettings() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { can } = useAclPermissions();
+  const canUpdateSettings = can("company:settings:update");
+  const canManageTemplates = can("document:template:manage");
   const { data, isFetching, error, refetch } = useGetCompanyInvoiceSettingsQuery();
   const [updateSettings, { isLoading: isSaving }] = useUpdateCompanyInvoiceSettingsMutation();
 
@@ -471,6 +475,7 @@ export default function InvoicesSettings() {
   };
 
   const onSave = async () => {
+    if (!canUpdateSettings) return;
     setValidationError("");
     setSaveError("");
     setSaveSuccess("");
@@ -717,7 +722,7 @@ export default function InvoicesSettings() {
             type="button"
             className={s.primaryButton}
             onClick={onSave}
-            disabled={isSaving || !isDirty}
+            disabled={isSaving || !isDirty || !canUpdateSettings}
           >
             {isSaving
               ? t("companySettings.documents.common.saving")
@@ -736,7 +741,7 @@ export default function InvoicesSettings() {
         allowToggle
         allowDisableLast={false}
         onToggleRow={(typeKey) => toggleType(typeKey)}
-        disabled={isSaving}
+        disabled={isSaving || !canUpdateSettings}
         columns={{
           documentType: t("companySettings.documents.numbering.columns.documentType"),
           numberPattern: t("companySettings.documents.numbering.columns.numberPattern"),
@@ -754,10 +759,10 @@ export default function InvoicesSettings() {
         extraError={templateActionError}
         extraSuccess={templateActionSuccess}
         onRetry={refetchTemplates}
-        onAdd={onAddTemplate}
-        onEdit={onEditTemplate}
-        onDelete={onDeleteTemplate}
-        onSetDefault={onSetDefaultTemplate}
+        onAdd={canManageTemplates ? onAddTemplate : null}
+        onEdit={canManageTemplates ? onEditTemplate : null}
+        onDelete={canManageTemplates ? onDeleteTemplate : null}
+        onSetDefault={canManageTemplates ? onSetDefaultTemplate : null}
         settingDefaultTemplateId={isSettingDefault ? settingDefaultTemplateId : null}
         deletingTemplateId={deletingTemplateId}
         filterOptions={invoiceTemplateFilterOptions}

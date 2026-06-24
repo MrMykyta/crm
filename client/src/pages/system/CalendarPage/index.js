@@ -1,6 +1,9 @@
 // src/components/Calendar/CalendarPage.jsx
-import React, { useState, useRef, useLayoutEffect, useEffect } from "react";
+import React, { useMemo, useState, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import s from "./CalendarPage.module.css";
 
 import YearView from "./components/YearView";
@@ -8,7 +11,9 @@ import MonthView from "./components/MonthView";
 import WeekView from "./components/WeekView";
 import DayView from "./components/DayView";
 import MiniMonth from "./components/MiniMonth";
-import EventModal from "./components/EventModal";
+import CreateTaskModal from "../../../components/dialogs/CreateTaskModal";
+import { useCreateTaskMutation, useListTasksQuery } from "../../../store/rtk/tasksApi";
+import { toKey } from "./components/dateUtils";
 
 const VIEW = {
   DAY: "day",
@@ -16,6 +21,218 @@ const VIEW = {
   MONTH: "month",
   YEAR: "year",
 };
+
+const TASK_DONE_STATUSES = new Set(["done", "completed", "closed"]);
+const BASE_PRIORITY_OPTIONS = ["all", "high", "medium", "low"];
+
+function getDateLocale(language) {
+  const value = String(language || "en").toLowerCase();
+  if (value.startsWith("ru")) return "ru-RU";
+  if (value.startsWith("ua") || value.startsWith("uk")) return "uk-UA";
+  if (value.startsWith("pl")) return "pl-PL";
+  return "en-US";
+}
+
+function startOfDay(date) {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function endOfDay(date) {
+  const next = new Date(date);
+  next.setHours(23, 59, 59, 999);
+  return next;
+}
+
+function addDays(date, amount) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
+}
+
+function startOfWeek(date) {
+  const next = startOfDay(date);
+  const day = next.getDay();
+  const diff = (day + 6) % 7;
+  next.setDate(next.getDate() - diff);
+  return next;
+}
+
+function dateInputValue(date) {
+  return toKey(date);
+}
+
+function extractTasksList(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.rows)) return data.rows;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+}
+
+function formatTasksError(error) {
+  if (!error) return "";
+  const status = error.status ? `HTTP ${error.status}` : "";
+  const message =
+    error.data?.message ||
+    error.data?.error ||
+    error.error ||
+    error.message ||
+    "Unknown error";
+  return [status, message].filter(Boolean).join(": ");
+}
+
+function parseTaskDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  const raw = String(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const [year, month, day] = raw.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function hasDateTime(value) {
+  return Boolean(value && String(value).includes("T"));
+}
+
+function formatTime(date, locale = undefined) {
+  return date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+}
+
+function minutesFromDate(date) {
+  return date.getHours() * 60 + date.getMinutes();
+}
+
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function taskText(item) {
+  const task = item?.task || {};
+  return [
+    item?.title,
+    task.description,
+    task.counterparty?.shortName,
+    task.counterparty?.fullName,
+    task.counterparty?.name,
+    task.deal?.title,
+    task.deal?.name,
+  ].map(normalizeText).filter(Boolean).join(" ");
+}
+
+function getPriorityLevel(priority) {
+  const raw = String(priority || "").trim().toLowerCase();
+  if (["urgent", "high", "medium", "low"].includes(raw)) return raw;
+
+  const numeric = Number(priority);
+  if (!Number.isFinite(numeric)) return "medium";
+  if (numeric > 5) {
+    if (numeric >= 90) return "urgent";
+    if (numeric >= 60) return "high";
+    if (numeric >= 30) return "medium";
+    return "low";
+  }
+  if (numeric <= 1) return "urgent";
+  if (numeric <= 2) return "high";
+  if (numeric <= 3) return "medium";
+  return "low";
+}
+
+function formatPriorityLabel(t, priority) {
+  return t(`calendar.priority.${getPriorityLevel(priority)}`);
+}
+
+function userIdSetFromTask(task) {
+  const ids = new Set();
+  if (task?.assigneeId) ids.add(String(task.assigneeId));
+  if (Array.isArray(task?.assigneeIds)) task.assigneeIds.forEach((id) => ids.add(String(id)));
+  if (Array.isArray(task?.userParticipants)) {
+    task.userParticipants.forEach((user) => {
+      if (user?.id) ids.add(String(user.id));
+      if (user?.userId) ids.add(String(user.userId));
+    });
+  }
+  if (Array.isArray(task?.assignees)) {
+    task.assignees.forEach((user) => {
+      if (user?.id) ids.add(String(user.id));
+      if (user?.userId) ids.add(String(user.userId));
+    });
+  }
+  return ids;
+}
+
+function hasAssignableTaskData(task) {
+  return Boolean(
+    task?.assigneeId ||
+    (Array.isArray(task?.assigneeIds) && task.assigneeIds.length) ||
+    (Array.isArray(task?.userParticipants) && task.userParticipants.length) ||
+    (Array.isArray(task?.assignees) && task.assignees.length)
+  );
+}
+
+function getVisibleRange(view, cursor) {
+  if (view === VIEW.YEAR) {
+    return {
+      start: startOfDay(new Date(cursor.getFullYear(), 0, 1)),
+      end: endOfDay(new Date(cursor.getFullYear(), 11, 31)),
+    };
+  }
+  if (view === VIEW.MONTH) {
+    const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    const firstWeekday = (first.getDay() + 6) % 7;
+    const start = addDays(first, -firstWeekday);
+    return { start: startOfDay(start), end: endOfDay(addDays(start, 41)) };
+  }
+  if (view === VIEW.WEEK) {
+    const start = startOfWeek(cursor);
+    return { start, end: endOfDay(addDays(start, 6)) };
+  }
+  return { start: startOfDay(cursor), end: endOfDay(cursor) };
+}
+
+export function normalizeTaskToCalendarItem(task, locale) {
+  const dateSource = task?.startAt || task?.start || task?.endAt || task?.end || task?.plannedEndAt;
+  const date = parseTaskDate(dateSource);
+  if (!task?.id || !date) return null;
+
+  const completed = TASK_DONE_STATUSES.has(String(task.status || "").toLowerCase()) || Boolean(task.completedAt);
+  const overdue = !completed && endOfDay(date).getTime() < Date.now();
+  const hasTime = (
+    ((task.startAt || task.start) && task.startAtHasTime !== false && task.plannedStartHasTime !== false && hasDateTime(task.startAt || task.start)) ||
+    ((task.endAt || task.end) && task.endAtHasTime !== false && task.plannedEndHasTime !== false && hasDateTime(task.endAt || task.end))
+  );
+  const startDate = parseTaskDate(task.startAt || task.start) || date;
+  const endDate = parseTaskDate(task.endAt || task.end) || null;
+  const allDay = typeof task.allDay === "boolean" ? task.allDay : !hasTime;
+
+  return {
+    id: `task:${task.id}`,
+    taskId: task.id,
+    type: "task",
+    task,
+    title: task.title || "Untitled task",
+    date,
+    dateKey: toKey(date),
+    allDay,
+    start: !allDay ? formatTime(startDate, locale) : "",
+    end: !allDay && endDate ? formatTime(endDate, locale) : "",
+    startMinutes: !allDay ? minutesFromDate(startDate) : null,
+    endMinutes: !allDay && endDate ? minutesFromDate(endDate) : null,
+    priority: task.priority,
+    status: task.status,
+    completed,
+    overdue,
+  };
+}
+
+function isItemInRange(item, range) {
+  const time = item?.date?.getTime?.();
+  return Number.isFinite(time) && time >= range.start.getTime() && time <= range.end.getTime();
+}
 
 // Компонент IconCalendar: отвечает за отображение UI и обработку взаимодействий пользователя.
 const IconCalendar = () => (
@@ -67,21 +284,97 @@ const IconSearch = () => (
 
 // Компонент CalendarPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CalendarPage() {
+  const { t, i18n } = useTranslation();
+  const locale = getDateLocale(i18n.language);
+  const navigate = useNavigate();
+  const currentUser = useSelector((state) => state.auth?.currentUser || null);
   const [view, setView] = useState(VIEW.MONTH);
   const [cursor, setCursor] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [taskModal, setTaskModal] = useState(null);
+  const [filters, setFilters] = useState({
+    showCompleted: true,
+    overdueOnly: false,
+    priority: "all",
+    myTasksOnly: false,
+    search: "",
+  });
 
   // выпадающий список годов
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [yearDropdownPos, setYearDropdownPos] = useState({ top: 0, left: 0, width: 180 });
   const yearBtnRef = useRef(null);
+  const visibleRange = useMemo(() => getVisibleRange(view, cursor), [cursor, view]);
+  const tasksQuery = useMemo(() => ({
+    calendar: true,
+    from: visibleRange.start.toISOString(),
+    to: visibleRange.end.toISOString(),
+    sort: "startAt",
+    dir: "ASC",
+    page: 1,
+    limit: 200,
+  }), [visibleRange]);
+  const {
+    data: tasksData,
+    isLoading: tasksLoading,
+    isFetching: tasksFetching,
+    isError: tasksError,
+    error: tasksLoadError,
+  } = useListTasksQuery(tasksQuery);
+  const [createTask] = useCreateTaskMutation();
 
-  // модалка события
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [eventPos, setEventPos] = useState({ top: 120, left: 420 });
+  const rawTasks = useMemo(() => extractTasksList(tasksData), [tasksData]);
+  const myTasksAvailable = useMemo(
+    () => Boolean(currentUser?.id) && rawTasks.some(hasAssignableTaskData),
+    [currentUser?.id, rawTasks]
+  );
+
+  const calendarItems = useMemo(() => {
+    return rawTasks
+      .map((task) => normalizeTaskToCalendarItem(task, locale))
+      .filter(Boolean)
+      .filter((item) => isItemInRange(item, visibleRange));
+  }, [locale, rawTasks, visibleRange]);
+
+  const priorityOptions = useMemo(() => {
+    const hasUrgent = calendarItems.some((item) => getPriorityLevel(item.priority) === "urgent");
+    return hasUrgent ? ["all", "urgent", "high", "medium", "low"] : BASE_PRIORITY_OPTIONS;
+  }, [calendarItems]);
+
+  const filteredCalendarItems = useMemo(() => {
+    const search = normalizeText(filters.search);
+    const currentUserId = currentUser?.id ? String(currentUser.id) : "";
+    return calendarItems.filter((item) => {
+      if (!filters.showCompleted && item.completed) return false;
+      if (filters.overdueOnly && !item.overdue) return false;
+      if (filters.priority !== "all" && getPriorityLevel(item.priority) !== filters.priority) return false;
+      if (search && !taskText(item).includes(search)) return false;
+      if (filters.myTasksOnly && currentUserId) {
+        const ids = userIdSetFromTask(item.task);
+        if (!ids.has(currentUserId)) return false;
+      }
+      return true;
+    });
+  }, [calendarItems, currentUser?.id, filters]);
+
+  const selectedDayItems = useMemo(() => {
+    const key = toKey(selectedDate);
+    return filteredCalendarItems.filter((item) => item.dateKey === key);
+  }, [filteredCalendarItems, selectedDate]);
+
+  useEffect(() => {
+    if ((!myTasksAvailable && filters.myTasksOnly) || !priorityOptions.includes(filters.priority)) {
+      setFilters((prev) => ({
+        ...prev,
+        myTasksOnly: myTasksAvailable ? prev.myTasksOnly : false,
+        priority: priorityOptions.includes(prev.priority) ? prev.priority : "all",
+      }));
+    }
+  }, [filters.myTasksOnly, filters.priority, myTasksAvailable, priorityOptions]);
 
   const today = new Date();
   const yearNumber = cursor.getFullYear();
-  const monthLabel = cursor.toLocaleString("ru-RU", {
+  const monthLabel = cursor.toLocaleString(locale, {
     month: "long",
     year: "numeric",
   });
@@ -90,6 +383,7 @@ export default function CalendarPage() {
 const goToday = () => {
     const d = new Date();
     setCursor(d);
+    setSelectedDate(d);
     setView(VIEW.DAY);
   };
 
@@ -101,6 +395,15 @@ const shift = (dir) => {
     else if (view === VIEW.WEEK) base.setDate(base.getDate() + dir * 7);
     else base.setDate(base.getDate() + dir);
     setCursor(base);
+  };
+
+  const pickDate = (date) => {
+    setSelectedDate(date);
+    setCursor(date);
+  };
+
+  const updateFilter = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   // список годов вокруг текущего
@@ -131,45 +434,41 @@ const onClick = (e) => {
     return () => window.removeEventListener("mousedown", onClick);
   }, [yearPickerOpen]);
 
-  // открыть модалку события (месяц/неделя будут вызывать это)
-  const handleEventOpen = (eventData, rect, scrollableRef) => {
-    // 1) автоскролл (если неделя передала свой контейнер)
-    if (scrollableRef && scrollableRef.current) {
-      const wrap = scrollableRef.current;
-      const targetTop = rect.top + wrap.scrollTop - 120; // чуть выше
-      wrap.scrollTo({
-        top: targetTop < 0 ? 0 : targetTop,
-        behavior: "smooth",
-      });
-    }
-
-    // 2) автоопределение стороны
-    const margin = 16;
-    const modalWidth = 340; // можно чуть шире
-    const viewportW = window.innerWidth;
-    const rightSpace = viewportW - rect.right;
-    let left;
-
-    if (rightSpace > modalWidth + margin) {
-      // справа хватает
-      left = rect.right + margin;
-    } else if (rect.left - modalWidth - margin > 0) {
-      // слева хватает
-      left = rect.left - modalWidth - margin;
-    } else {
-      // ни слева, ни справа — прижмём к краю
-      left = viewportW - modalWidth - margin;
-    }
-
-    setSelectedEvent(eventData);
-    setEventPos({
-      top: rect.top + window.scrollY,
-      left: Math.max(12, left),
-    });
+  const openCreateTask = (date = cursor) => {
+    setTaskModal({ defaultDate: dateInputValue(date) });
   };
 
-    // handleEventClose: обработчик пользовательского действия.
-const handleEventClose = () => setSelectedEvent(null);
+  const closeCreateTask = () => setTaskModal(null);
+
+  const handleTaskOpen = (item) => {
+    const taskId = item?.taskId || item?.task?.id;
+    if (taskId) navigate(`/main/tasks/${encodeURIComponent(taskId)}`);
+  };
+
+  const handleCreateTask = async (payload) => {
+    await createTask(payload).unwrap();
+    closeCreateTask();
+  };
+
+  const tasksErrorText = formatTasksError(tasksLoadError);
+  const statusText = tasksLoading
+    ? t("calendar.state.loading")
+    : tasksError
+      ? `${t("calendar.state.loadError")}${tasksErrorText ? `: ${tasksErrorText}` : ""}`
+      : !filteredCalendarItems.length
+        ? t("calendar.state.emptyPeriod")
+        : "";
+  const selectedDateLabel = selectedDate.toLocaleDateString(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  const labels = {
+    allDay: t("calendar.task.allDay"),
+    allDayTasksOn: t("calendar.week.allDayTasksOn"),
+    close: t("common.close", "Close"),
+    noTasksForDay: t("calendar.state.noTasksForDay"),
+  };
 
   return (
     <div className={s.wrap}>
@@ -178,13 +477,13 @@ const handleEventClose = () => setSelectedEvent(null);
         {/* LEFT */}
         <div className={s.topbarLeft}>
           <div className={s.iconGroup}>
-            <button type="button" className={s.iconBtn} aria-label="calendar view">
+            <button type="button" className={s.iconBtn} aria-label={t("calendar.actions.calendarView")}>
               <IconCalendar />
             </button>
-            <button type="button" className={s.iconBtn} aria-label="inbox">
+            <button type="button" className={s.iconBtn} aria-label={t("calendar.actions.taskInbox")}>
               <IconInbox />
             </button>
-            <button type="button" className={s.iconBtn} aria-label="add event">
+            <button type="button" className={s.iconBtn} aria-label={t("calendar.actions.createTask")} onClick={() => openCreateTask(selectedDate)}>
               <IconPlus />
             </button>
           </div>
@@ -219,7 +518,7 @@ const handleEventClose = () => setSelectedEvent(null);
                   setYearPickerOpen(false);
                 }}
               >
-                День
+                {t("calendar.view.day")}
               </button>
             </div>
             <div className={`${s.segmentItem} ${view === VIEW.WEEK ? s.segmentItemActive : ""}`}>
@@ -229,7 +528,7 @@ const handleEventClose = () => setSelectedEvent(null);
                   setYearPickerOpen(false);
                 }}
               >
-                Неделя
+                {t("calendar.view.week")}
               </button>
             </div>
             <div className={`${s.segmentItem} ${view === VIEW.MONTH ? s.segmentItemActive : ""}`}>
@@ -239,7 +538,7 @@ const handleEventClose = () => setSelectedEvent(null);
                   setYearPickerOpen(false);
                 }}
               >
-                Месяц
+                {t("calendar.view.month")}
               </button>
             </div>
             <div className={`${s.segmentItem} ${view === VIEW.YEAR ? s.segmentItemActive : ""}`}>
@@ -249,7 +548,7 @@ const handleEventClose = () => setSelectedEvent(null);
                   // не закрываем dropdown
                 }}
               >
-                Год
+                {t("calendar.view.year")}
               </button>
             </div>
           </div>
@@ -258,21 +557,33 @@ const handleEventClose = () => setSelectedEvent(null);
         {/* RIGHT */}
         <div className={s.topbarRight}>
           <div className={s.nav}>
-            <button onClick={() => shift(-1)} aria-label="previous period" className={s.navBtn}>
+            <button onClick={() => shift(-1)} aria-label={t("calendar.actions.previousPeriod")} className={s.navBtn}>
               ‹
             </button>
             <button onClick={goToday} className={`${s.navBtn} ${s.todayBtn}`}>
-              Сегодня
+              {t("calendar.actions.today")}
             </button>
-            <button onClick={() => shift(1)} aria-label="next period" className={s.navBtn}>
+            <button onClick={() => shift(1)} aria-label={t("calendar.actions.nextPeriod")} className={s.navBtn}>
               ›
             </button>
           </div>
-          <button className={s.iconBtn} aria-label="search">
+          <label className={s.toolbarSearch} aria-label={t("calendar.filters.search")}>
             <IconSearch />
-          </button>
+            <input
+              value={filters.search}
+              onChange={(event) => updateFilter("search", event.target.value)}
+              placeholder={t("calendar.filters.searchPlaceholder")}
+            />
+          </label>
         </div>
       </div>
+
+      {statusText ? (
+        <div className={`${s.calendarState} ${tasksError ? s.calendarStateError : ""}`.trim()}>
+          {statusText}
+          {tasksFetching && !tasksLoading && !tasksError ? ` ${t("calendar.state.updating")}` : ""}
+        </div>
+      ) : null}
 
       {/* ===== PORTAL: YEAR DROPDOWN ===== */}
       {yearPickerOpen &&
@@ -305,40 +616,172 @@ const handleEventClose = () => setSelectedEvent(null);
         )}
 
       {/* ===== BODY ===== */}
-      <div className={view === VIEW.DAY ? s.bodyWithSide : s.bodyFull}>
+      <div className={s.bodyWithSide}>
         <div className={view === VIEW.YEAR ? `${s.main} ${s.mainYear}` : s.main}>
           {view === VIEW.YEAR && (
-            <YearView year={yearNumber} today={today} setCursor={setCursor} />
+            <YearView year={yearNumber} today={today} selectedDate={selectedDate} setCursor={pickDate} locale={locale} />
           )}
           {view === VIEW.MONTH && (
             <MonthView
               baseDate={cursor}
               today={today}
-              setCursor={setCursor}
-              onEventOpen={handleEventOpen}
+              selectedDate={selectedDate}
+              setCursor={pickDate}
+              calendarItems={filteredCalendarItems}
+              onItemOpen={handleTaskOpen}
+              onCreateFromDate={openCreateTask}
+              locale={locale}
             />
           )}
           {view === VIEW.WEEK && (
-            <WeekView baseDate={cursor} today={today} onEventOpen={handleEventOpen} />
+            <WeekView
+              baseDate={cursor}
+              today={today}
+              selectedDate={selectedDate}
+              calendarItems={filteredCalendarItems}
+              onItemOpen={handleTaskOpen}
+              onCreateFromDate={openCreateTask}
+              locale={locale}
+              labels={labels}
+            />
           )}
-          {view === VIEW.DAY && <DayView baseDate={cursor} today={today} />}
+          {view === VIEW.DAY && (
+            <DayView
+              baseDate={cursor}
+              today={today}
+              calendarItems={filteredCalendarItems}
+              onItemOpen={handleTaskOpen}
+              onCreateFromDate={openCreateTask}
+              locale={locale}
+              labels={labels}
+            />
+          )}
         </div>
 
-        {view === VIEW.DAY && (
-          <aside className={s.side}>
-            <MiniMonth date={cursor} today={today} onPick={setCursor} />
-          </aside>
-        )}
+        <aside className={s.side}>
+          <MiniMonth
+            date={cursor}
+            today={today}
+            selectedDate={selectedDate}
+            onPick={pickDate}
+            locale={locale}
+          />
+
+          <section className={s.sideCard}>
+            <div className={s.sideCardHeader}>
+              <div>
+                <div className={s.sideEyebrow}>{t("calendar.sidebar.filters")}</div>
+                <h3>{t("calendar.sidebar.tasks")}</h3>
+              </div>
+            </div>
+            <label className={s.sidebarSearch}>
+              <span>{t("calendar.filters.search")}</span>
+              <input
+                value={filters.search}
+                onChange={(event) => updateFilter("search", event.target.value)}
+                placeholder={t("calendar.filters.searchPlaceholder")}
+              />
+            </label>
+            <label className={s.filterCheck}>
+              <input
+                type="checkbox"
+                checked={filters.showCompleted}
+                onChange={(event) => updateFilter("showCompleted", event.target.checked)}
+              />
+              <span>{t("calendar.filters.showCompleted")}</span>
+            </label>
+            <label className={s.filterCheck}>
+              <input
+                type="checkbox"
+                checked={filters.overdueOnly}
+                onChange={(event) => updateFilter("overdueOnly", event.target.checked)}
+              />
+              <span>{t("calendar.filters.overdueOnly")}</span>
+            </label>
+            {myTasksAvailable ? (
+              <label className={s.filterCheck}>
+                <input
+                  type="checkbox"
+                  checked={filters.myTasksOnly}
+                  onChange={(event) => updateFilter("myTasksOnly", event.target.checked)}
+                />
+                <span>{t("calendar.filters.myTasksOnly")}</span>
+              </label>
+            ) : null}
+            <label className={s.sidebarSelect}>
+              <span>{t("calendar.filters.priority")}</span>
+              <select value={filters.priority} onChange={(event) => updateFilter("priority", event.target.value)}>
+                {priorityOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {t(`calendar.priority.${option}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </section>
+
+          <section className={s.sideCard}>
+            <div className={s.sideCardHeader}>
+              <div>
+                <div className={s.sideEyebrow}>{t("calendar.sidebar.selectedDay")}</div>
+                <h3>{selectedDateLabel.charAt(0).toUpperCase() + selectedDateLabel.slice(1)}</h3>
+              </div>
+              <span className={s.sideCount}>{selectedDayItems.length}</span>
+            </div>
+
+            {selectedDayItems.length ? (
+              <div className={s.sideTaskList}>
+                {selectedDayItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={[
+                      s.sideTask,
+                      item.completed ? s.sideTaskCompleted : "",
+                      item.overdue ? s.sideTaskOverdue : "",
+                    ].join(" ")}
+                    onClick={() => handleTaskOpen(item)}
+                  >
+                    <span className={s.sideTaskTitle}>{item.title}</span>
+                    <span className={s.sideTaskMeta}>
+                      {item.allDay ? t("calendar.task.allDay") : [item.start, item.end].filter(Boolean).join(" - ")}
+                    </span>
+                    <span className={s.sideTaskBadges}>
+                      <span className={s.priorityBadge}>{formatPriorityLabel(t, item.priority)}</span>
+                      <span className={item.completed ? s.statusDoneBadge : s.statusBadge}>
+                        {item.completed ? t("calendar.task.completed") : (item.status || t("calendar.task.active"))}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className={s.sideEmpty}>
+                <p>{t("calendar.state.noTasksForDay")}</p>
+                <button type="button" onClick={() => openCreateTask(selectedDate)}>
+                  {t("calendar.actions.createTask")}
+                </button>
+              </div>
+            )}
+          </section>
+        </aside>
       </div>
 
-      {/* ===== EVENT MODAL ===== */}
-      {selectedEvent && (
-        <EventModal
-          event={selectedEvent}
-          pos={eventPos}
-          onClose={handleEventClose}
+      {taskModal ? (
+        <CreateTaskModal
+          key={taskModal.defaultDate}
+          currentUser={currentUser}
+          initialValues={{
+            defaultDate: taskModal.defaultDate,
+            dueDate: taskModal.defaultDate,
+            eventDate: taskModal.defaultDate,
+            planOpen: true,
+            isAllDay: true,
+          }}
+          onClose={closeCreateTask}
+          onSubmit={handleCreateTask}
         />
-      )}
+      ) : null}
     </div>
   );
 }

@@ -18,12 +18,14 @@
   box-shadow: var(--ui-shadow-md);
   -webkit-backdrop-filter: blur(var(--glass-blur));
   backdrop-filter: blur(var(--glass-blur));
-  overflow: hidden;
+  overflow: visible;
   min-width: 0;
   max-width: 100%;
 }
 
 .toolbarShell {
+  position: relative;
+  z-index: 5;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
@@ -140,6 +142,7 @@
 
 .viewPanelWrap {
   position: relative;
+  z-index: 35;
 }
 
 .viewPanel {
@@ -292,6 +295,7 @@
 
 .tableRegion {
   position: relative;
+  z-index: 1;
   flex: 1 1 auto;
   min-height: 16rem;
   display: flex;

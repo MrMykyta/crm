@@ -35,7 +35,22 @@
   background: transparent; color:#cbd2ff; cursor:pointer;
 }
 .link {
-  background: none; border: none; color:#c6ceff; text-decoration: underline; cursor: pointer;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color:#e8ebff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .2s ease, background .2s ease, transform .08s ease;
 }
+
+.link:hover {
+  border-color: rgba(255,255,255,0.32);
+  background: rgba(255,255,255,0.1);
+}
+
+.link:active { transform: translateY(1px); }
 
 .hint { margin-top: 10px; color:#aab2d6; font-size: var(--font-size-13); opacity: .9; }

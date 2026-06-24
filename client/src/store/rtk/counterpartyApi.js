@@ -255,6 +255,7 @@ async onQueryStarted({ id, body }, { dispatch, queryFulfilled, getState }) {
 invalidatesTags: (_res, _err, { id }) => [
         { type: 'Counterparty', id },
         { type: 'Counterparty', id: 'LIST' },
+        { type: 'Department', id: 'SCOPE_READINESS' },
       ],
     }),
 
@@ -301,4 +302,3 @@ export const {
   useUpdateCounterpartyMutation,
   useRemoveCounterpartyMutation,
 } = counterpartyApi;
-

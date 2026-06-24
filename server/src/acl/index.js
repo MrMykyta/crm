@@ -1,6 +1,9 @@
 'use strict';
 
 const { getPermissionsAndRole } = require('../middleware/permissionResolver');
+const deptScope = require('./deptScope');
+const { computeAccessScope } = require('./computeAccessScope');
+const counterpartyAccessPredicate = require('./counterpartyAccessPredicate');
 
 // Приводит разные форматы permissions к Set:
 // - массив ['a', 'b']
@@ -73,7 +76,7 @@ async function checkOne({ user, companyId, base, ownCheck, deptCheck }) {
   }
 
   // ---- 3) :DEPT СКОУП ----
-  if (deptCheck && idx.allow.has(`${base}:dept`) && !idx.deny.has(`${base}:dept`)) {
+  if (deptScope.isDeptScopeEnabled() && deptCheck && idx.allow.has(`${base}:dept`) && !idx.deny.has(`${base}:dept`)) {
     const ok = await Promise.resolve(deptCheck());
     if (ok) return true;
   }
@@ -126,6 +129,15 @@ async function computeDeptScope({ user, companyId, base, getRequesterDept, throw
   const allowAll = await check({ user, companyId, required: base });
   if (allowAll) return { canAll: true, deptLimitId: null };
 
+  if (!deptScope.isDeptScopeEnabled()) {
+    if (throwIfDenied) {
+      const err = new Error('Forbidden');
+      err.status = 403;
+      throw err;
+    }
+    return { canAll: false, deptLimitId: null };
+  }
+
   const allowDept = await check({
     user, companyId, required: base,
     // Здесь нам важен сам факт наличия :dept права;
@@ -155,4 +167,13 @@ async function computeDeptScope({ user, companyId, base, getRequesterDept, throw
   return { canAll: false, deptLimitId: deptId };
 }
 
-module.exports = { makeIndex, resolveContext, check, assert, computeDeptScope };
+module.exports = {
+  makeIndex,
+  resolveContext,
+  check,
+  assert,
+  computeDeptScope,
+  computeAccessScope,
+  ...deptScope,
+  ...counterpartyAccessPredicate,
+};

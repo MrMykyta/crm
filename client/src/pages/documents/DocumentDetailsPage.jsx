@@ -14,6 +14,7 @@ import { getAllowedDocumentConversionTargets } from "../../components/documents/
 import { useConvertDocumentMutation, useGetDocumentRenderTemplateQuery } from "../../store/rtk/documentsApi";
 import DocumentTemplateRenderer from "../../features/documentTemplateRenderer";
 import { SelectField } from "../../components/ui/fields";
+import useAclPermissions from "../../hooks/useAclPermissions";
 import styles from "./DocumentEditorPage.module.css";
 
 const SPLIT_MODE_MIN_WIDTH = 1240;
@@ -179,6 +180,8 @@ export default function DocumentDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const topbar = useTopbarOptional();
+  const { can } = useAclPermissions();
+  const canUpdateDocument = can("document:update");
   const [convertDocument, { isLoading: isConverting }] = useConvertDocumentMutation();
   const [conversionTargetType, setConversionTargetType] = useState("");
   const [conversionError, setConversionError] = useState("");
@@ -324,7 +327,7 @@ export default function DocumentDetailsPage() {
         };
 
         const handleConvert = async () => {
-          if (!document?.id || !resolvedConversionTargetType || isBusy) return;
+          if (!canUpdateDocument || !document?.id || !resolvedConversionTargetType || isBusy) return;
           setConversionError("");
           try {
             const converted = await convertDocument({
@@ -381,7 +384,7 @@ export default function DocumentDetailsPage() {
                 <Printer size={14} />
                 Печать
               </button>
-              {hasConversionTargets ? (
+              {canUpdateDocument && hasConversionTargets ? (
                 <div className={styles.convertActionBlock}>
                   <p className={styles.convertLabel}>Создать на основе</p>
                   <div className={styles.convertControls}>
@@ -412,7 +415,7 @@ export default function DocumentDetailsPage() {
                 </div>
               ) : null}
 
-              {!isPreviewMode ? (
+              {!isPreviewMode && canUpdateDocument ? (
                 <button type="button" className={styles.saveButton} onClick={onSave} disabled={isBusy}>
                   {isSaving ? "Сохранение..." : "Сохранить"}
                 </button>
@@ -444,7 +447,7 @@ export default function DocumentDetailsPage() {
                     formState={formState}
                     clients={clients}
                     isClientsLoading={isClientsLoading}
-                    disabled={isSaving}
+                    disabled={isSaving || !canUpdateDocument}
                     error={saveError}
                     helperText={helperText}
                     helperTone={saveSuccess ? "success" : "neutral"}
@@ -467,7 +470,7 @@ export default function DocumentDetailsPage() {
               formState={formState}
               clients={clients}
               isClientsLoading={isClientsLoading}
-              disabled={isSaving}
+              disabled={isSaving || !canUpdateDocument}
               error={saveError}
               helperText={helperText}
               helperTone={saveSuccess ? "success" : "neutral"}

@@ -31,10 +31,13 @@ module.exports.addUser = async (req, res) => {
 exports.updateMember = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { role, status, departmentId, isLead } = req.body;
-    const row = await ucService.updateUserMembership(req.user.id, req.user.companyId, userId, {
-      role, status, departmentId, isLead
+    const payload = {};
+    ['role', 'status', 'departmentId', 'isLead'].forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(req.body || {}, key)) {
+        payload[key] = req.body[key];
+      }
     });
+    const row = await ucService.updateUserMembership(req.user.id, req.user.companyId, userId, payload);
     if (!row) return res.status(403).json({ error: 'forbidden' });
     res.json(row);
   } catch (e) {

@@ -41,3 +41,33 @@
   color: #fecaca;
   font-size: 13px;
 }
+
+.detailActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.detailActionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 76%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+  color: var(--text);
+  font-size: var(--font-size-13);
+  cursor: pointer;
+}
+
+.detailActionBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.detailActionDanger {
+  color: #f18686;
+  border-color: color-mix(in srgb, #ef4444 46%, transparent);
+}

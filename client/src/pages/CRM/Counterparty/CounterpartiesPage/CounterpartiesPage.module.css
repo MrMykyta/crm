@@ -1,0 +1,57 @@
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 76%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 95%, transparent);
+  color: var(--text);
+  font-size: var(--font-size-12);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.actionBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.actionDanger {
+  color: #f18686;
+}
+
+.departmentChip,
+.departmentChipMuted {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 24px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: var(--font-size-12);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.departmentChip {
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, var(--focus) 18%);
+  background: color-mix(in srgb, var(--card-bg) 88%, var(--focus) 10%);
+  color: var(--text);
+}
+
+.departmentChipMuted {
+  border: 1px solid color-mix(in srgb, var(--card-brd) 62%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  color: var(--muted);
+}

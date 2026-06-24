@@ -17,6 +17,8 @@ const {
 const { addContacts } = require("./contactPointService");
 const notificationService = require("../system/notificationService");
 
+const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+
 // какие поля разрешаем сортировать
 const SORT_WHITELIST = [
   "createdAt",
@@ -379,7 +381,9 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
     await counterparty.update(
       {
         holdingId: data.holdingId ?? counterparty.holdingId,
-        departmentId: data.departmentId ?? counterparty.departmentId,
+        departmentId: hasOwn(data, "departmentId")
+          ? data.departmentId
+          : counterparty.departmentId,
         mainResponsibleUserId:
           data.mainResponsibleUserId ?? counterparty.mainResponsibleUserId,
 
@@ -519,4 +523,3 @@ module.exports.convertLead = async (companyId, id, userId) => {
 
   return true;
 };
-

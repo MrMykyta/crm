@@ -9,5 +9,11 @@ done
 echo "[api] Running migrations..."
 npx sequelize-cli db:migrate
 
+echo "[api] Syncing core ACL..."
+npm run acl:sync:core
+
+echo "[api] Syncing WMS ACL..."
+npm run acl:sync:wms
+
 echo "[api] Starting server..."
 npm run start

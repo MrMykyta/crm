@@ -244,6 +244,23 @@
   .right { justify-self: end; }
 }
 
+@media (max-width: 640px) {
+  .topbar {
+    grid-template-columns: 1fr;
+    padding-inline: 8px;
+  }
+
+  .left,
+  .searchWrap {
+    display: none;
+  }
+
+  .right {
+    justify-self: end;
+    gap: 8px;
+  }
+}
+
 /* ===== Light theme overrides ===== */
 :root[data-theme="light"] .topbar .searchWrap {
   background: rgba(255,255,255,.96);

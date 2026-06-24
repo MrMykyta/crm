@@ -1,7 +1,8 @@
 .layout {
   grid-template-columns: minmax(620px, 1.35fr) minmax(420px, 1fr);
   gap: 18px;
-  height: calc(100dvh - var(--topbar-h, 64px) - 24px);
+  height: 100%;
+  min-height: 0;
 }
 
 .leftPane {
@@ -86,6 +87,60 @@
   background: color-mix(in srgb, var(--card-bg) 72%, #000 28%);
 }
 
+.dangerZone {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--card-brd));
+  border-radius: 12px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--danger-weak, transparent) 36%, var(--card-bg) 64%);
+}
+
+.dangerZone strong {
+  display: block;
+  color: color-mix(in srgb, var(--danger) 82%, var(--text));
+  font-size: var(--font-size-13);
+  line-height: 1.2;
+}
+
+.dangerZone p {
+  margin: 4px 0 0;
+  color: color-mix(in srgb, var(--muted) 86%, transparent);
+  font-size: var(--font-size-12);
+  line-height: 1.35;
+}
+
+.deleteButton {
+  flex: 0 0 auto;
+  min-height: 32px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--danger) 42%, transparent);
+  background: color-mix(in srgb, var(--danger-weak, transparent) 52%, var(--card-bg) 48%);
+  color: var(--danger);
+  padding: 0 12px;
+  font-size: var(--font-size-13);
+  cursor: pointer;
+}
+
+.deleteButton:hover {
+  border-color: color-mix(in srgb, var(--danger) 62%, transparent);
+  background: color-mix(in srgb, var(--danger-weak, transparent) 72%, var(--card-bg) 28%);
+}
+
+.deleteButton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.deleteError {
+  margin-top: 10px;
+  color: var(--danger);
+  font-size: var(--font-size-13);
+}
+
 @media (max-width: 1260px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
@@ -104,5 +159,10 @@
 
   .rightPane {
     padding: 10px;
+  }
+
+  .dangerZone {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

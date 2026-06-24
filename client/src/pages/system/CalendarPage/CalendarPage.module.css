@@ -259,6 +259,50 @@
   border-radius: 16px;
 }
 
+.toolbarSearch {
+  min-width: 220px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: 0 .75rem;
+  border-radius: 14px;
+  color: rgba(233,237,255,.68);
+  background: color-mix(in srgb, var(--topbar-bg) 52%, transparent);
+  border: 1px solid rgba(255,255,255,.055);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+}
+.toolbarSearch svg {
+  width: 17px;
+  height: 17px;
+  opacity: .72;
+  flex: 0 0 auto;
+}
+.toolbarSearch input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-sm);
+}
+.toolbarSearch input::placeholder {
+  color: rgba(233,237,255,.38);
+}
+
+.calendarState {
+  padding: .55rem 1.25rem;
+  border-inline: 1px solid color-mix(in srgb, var(--topbar-brd) 85%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 72%, transparent);
+  color: rgba(233,237,255,.62);
+  font-size: var(--fs-sm);
+}
+
+.calendarStateError {
+  color: var(--danger);
+}
+
 /* ===== BODY LAYOUT ===== */
 .bodyFull {
   flex: 1 1 auto;
@@ -271,7 +315,7 @@
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
   overflow: hidden;
   align-items: stretch;
 }
@@ -290,6 +334,16 @@
   padding: 1rem;
   display: flex;
   flex-direction: column;
+  gap: .85rem;
+  min-width: 0;
+  overflow-y: auto;
+}
+.side::-webkit-scrollbar {
+  width: var(--cal-scrollbar);
+}
+.side::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.12);
+  border-radius: 999px;
 }
 
 /* ===== MINI MONTH ===== */
@@ -303,8 +357,9 @@
   gap: 0.55rem;
   min-width: 210px;
   max-width: 100%;
-  min-height: 360px;
+  min-height: auto;
   box-sizing: border-box;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 12px 30px rgba(0,0,0,.16);
 }
 .miniMonthHeader {
   display: flex;
@@ -358,6 +413,177 @@
   background: color-mix(in srgb, var(--cal-accent) 12%, transparent);
   box-shadow: 0 4px 10px color-mix(in srgb, var(--cal-accent) 30%, transparent);
 }
+.miniMonthCellSelected {
+  color: var(--cal-today-text);
+  background: color-mix(in srgb, var(--cal-accent) 36%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cal-accent) 72%, transparent);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--cal-accent) 28%, transparent);
+}
+
+.sideCard {
+  background: color-mix(in srgb, var(--card-bg) 66%, transparent);
+  border: 1px solid rgba(255,255,255,.045);
+  border-radius: 18px;
+  padding: .85rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 12px 30px rgba(0,0,0,.14);
+}
+.sideCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .75rem;
+}
+.sideCardHeader h3 {
+  margin: 0;
+  font-size: var(--fs-md);
+  line-height: 1.25;
+  color: rgba(255,255,255,.92);
+}
+.sideEyebrow {
+  margin-bottom: .16rem;
+  font-size: .64rem;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: rgba(233,237,255,.42);
+}
+.sideCount {
+  min-width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  color: #fff;
+  background: color-mix(in srgb, var(--cal-accent) 34%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cal-accent) 46%, transparent);
+}
+.sidebarSearch,
+.sidebarSelect {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  margin-bottom: .65rem;
+  color: rgba(233,237,255,.58);
+  font-size: var(--fs-xs);
+}
+.sidebarSearch input,
+.sidebarSelect select {
+  width: 100%;
+  min-height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.06);
+  background: rgba(0,0,0,.14);
+  color: var(--text);
+  outline: none;
+  padding: 0 .65rem;
+  font-size: var(--fs-sm);
+}
+.sidebarSearch input:focus,
+.sidebarSelect select:focus {
+  border-color: color-mix(in srgb, var(--cal-accent) 58%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cal-accent) 16%, transparent);
+}
+.filterCheck {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  color: rgba(233,237,255,.72);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.filterCheck input {
+  accent-color: var(--cal-accent);
+}
+.sideTaskList {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+}
+.sideTask {
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: .22rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.045);
+  background: rgba(255,255,255,.035);
+  color: var(--text);
+  padding: .62rem .68rem;
+  cursor: pointer;
+  transition: background .14s ease, border-color .14s ease, transform .14s ease;
+}
+.sideTask:hover {
+  background: color-mix(in srgb, var(--cal-accent) 13%, rgba(255,255,255,.035));
+  border-color: color-mix(in srgb, var(--cal-accent) 34%, transparent);
+  transform: translateY(-1px);
+}
+.sideTaskCompleted {
+  opacity: .64;
+}
+.sideTaskOverdue {
+  border-color: color-mix(in srgb, var(--danger) 48%, rgba(255,255,255,.045));
+  background: color-mix(in srgb, var(--danger) 11%, rgba(255,255,255,.025));
+}
+.sideTaskTitle {
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  line-height: 1.25;
+}
+.sideTaskMeta {
+  color: rgba(233,237,255,.52);
+  font-size: var(--fs-xs);
+}
+.sideTaskBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+  margin-top: .12rem;
+}
+.priorityBadge,
+.statusBadge,
+.statusDoneBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 .45rem;
+  border-radius: 999px;
+  font-size: .62rem;
+  border: 1px solid rgba(255,255,255,.055);
+  color: rgba(233,237,255,.72);
+  background: rgba(0,0,0,.12);
+}
+.statusDoneBadge {
+  color: color-mix(in srgb, var(--success) 78%, #fff);
+  border-color: color-mix(in srgb, var(--success) 34%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, rgba(0,0,0,.08));
+}
+.sideEmpty {
+  display: grid;
+  gap: .65rem;
+  place-items: start;
+  padding: .85rem;
+  border-radius: 14px;
+  background: rgba(0,0,0,.1);
+  border: 1px dashed rgba(255,255,255,.07);
+}
+.sideEmpty p {
+  margin: 0;
+  color: rgba(233,237,255,.58);
+  font-size: var(--fs-sm);
+}
+.sideEmpty button {
+  min-height: 34px;
+  border: 1px solid color-mix(in srgb, var(--cal-accent) 42%, transparent);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--cal-accent) 22%, transparent);
+  color: #fff;
+  padding: 0 .75rem;
+  cursor: pointer;
+  font-size: var(--fs-sm);
+}
 
 /* ===== WEEKDAYS (small) ===== */
 .weekdays {
@@ -397,6 +623,11 @@
 .mgToday {
   background: var(--cal-accent-soft);
   border: 1px solid var(--cal-accent);
+}
+.mgSelected {
+  outline: 2px solid color-mix(in srgb, var(--cal-accent) 72%, transparent);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--cal-accent) 18%, transparent);
 }
 
 /* ===== YEAR VIEW ===== */
@@ -508,6 +739,10 @@
   justify-content: center;
   font-weight: 600;
 }
+.monthCellSelected {
+  background: color-mix(in srgb, var(--cal-accent) 13%, rgba(0,0,0,.06));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cal-accent) 52%, transparent);
+}
 .monthCellEvents {
   display: flex;
   flex-direction: column;
@@ -534,6 +769,33 @@
 .eventRed {
   background: var(--cal-event-red-bg);
   border-color: var(--cal-event-red-brd);
+}
+
+.taskPill {
+  background: color-mix(in srgb, var(--primary-start) 28%, rgba(0,0,0,.2));
+  border-color: color-mix(in srgb, var(--primary-start) 58%, rgba(255,255,255,.14));
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 4px 10px rgba(0,0,0,.12);
+}
+
+.taskPillCompleted {
+  opacity: .62;
+  text-decoration: line-through;
+}
+
+.taskPillOverdue {
+  background: color-mix(in srgb, var(--danger) 28%, rgba(0,0,0,.22));
+  border-color: color-mix(in srgb, var(--danger) 62%, rgba(255,255,255,.12));
+}
+
+.taskPriority1,
+.taskPriority2 {
+  border-left: 3px solid var(--danger);
+}
+
+.taskPriority4,
+.taskPriority5 {
+  border-left: 3px solid var(--success);
 }
 
 /* ========================================================= */
@@ -608,6 +870,13 @@
   background: var(--cal-today-bg);
   color: var(--cal-today-text);
   box-shadow: 0 4px 14px color-mix(in srgb, var(--cal-today-bg) 35%, transparent);
+}
+.weekDayHeadSelected {
+  background: color-mix(in srgb, var(--cal-accent) 8%, transparent);
+}
+.weekDayHeadSelected .weekDayNumber {
+  outline: 2px solid color-mix(in srgb, var(--cal-accent) 58%, transparent);
+  outline-offset: 2px;
 }
 
 /* тело */
@@ -692,6 +961,10 @@
 .weekTodayCol {
   background: rgba(255,255,255,.02);
 }
+.weekSelectedCol {
+  background: color-mix(in srgb, var(--cal-accent) 7%, rgba(0,0,0,.02));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cal-accent) 24%, transparent);
+}
 
 /* сетка по часам */
 .weekHourBg {
@@ -740,6 +1013,13 @@
 .weekEventViolet {
   background: rgba(120, 80, 170, 0.68);
   border-color: rgba(120, 80, 170, 0.88);
+}
+
+.taskEvent {
+  background: color-mix(in srgb, var(--primary-start) 38%, rgba(22, 24, 34, .78));
+  border-color: color-mix(in srgb, var(--primary-start) 58%, rgba(255,255,255,.14));
+  color: #fff;
+  cursor: pointer;
 }
 
 /* ===== CURRENT TIME (week) ===== */
@@ -950,6 +1230,13 @@
   font-weight: 600;
   text-transform: capitalize;
 }
+
+.dayAllDayList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin-top: .55rem;
+}
 .dayBody {
   flex: 1 1 auto;
   min-height: 0;
@@ -976,6 +1263,20 @@
 .dayCol .weekHourBg {
   height: var(--cal-hour-height);
   border-bottom: 1px solid rgba(255,255,255,.018);
+}
+
+.calendarEmptyDay {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  right: 18px;
+  padding: .75rem .9rem;
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 14px;
+  background: rgba(0,0,0,.12);
+  color: rgba(233,237,255,.56);
+  font-size: var(--fs-sm);
+  pointer-events: none;
 }
 .dayScroll::-webkit-scrollbar {
   width: var(--cal-scrollbar);
@@ -1118,8 +1419,21 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1180px) {
-  .bodyWithSide { grid-template-columns: 1fr; }
-  .side { display: none; }
+  .bodyWithSide {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+  .main {
+    min-height: 620px;
+  }
+  .side {
+    border-left: 0;
+    border-top: 1px solid rgba(255,255,255,.03);
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) repeat(2, minmax(0, 1fr));
+    align-items: start;
+    overflow: visible;
+  }
   .topbarCenter { justify-content: flex-start; }
 }
 @media (max-width: 720px) {
@@ -1127,6 +1441,7 @@
     flex-wrap: wrap;
     height: auto;
     gap: .6rem;
+    padding: .75rem;
   }
   .topbarLeft { order: 1; }
   .topbarCenter {
@@ -1137,7 +1452,33 @@
   .topbarRight {
     order: 2;
     margin-left: auto;
+    min-width: 0;
+  }
+  .segmentSimple {
+    min-width: 0;
+    width: 100%;
   }
   .monthTitle { font-size: var(--fs-lg); }
   .iconBtn { width: 38px; height: 38px; }
+  .toolbarSearch {
+    display: none;
+  }
+  .main {
+    min-height: 560px;
+    padding: .75rem;
+  }
+  .side {
+    grid-template-columns: 1fr;
+    padding: .75rem;
+  }
+  .monthGridMonth {
+    grid-template-columns: repeat(7, minmax(42px, 1fr));
+  }
+  .monthCell {
+    min-height: 82px;
+    padding: .32rem;
+  }
+  .eventPill {
+    max-width: 100%;
+  }
 }

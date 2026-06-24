@@ -24,7 +24,7 @@ const NOT_LEAD_STATUSES = ["active", "inactive"];
  * БАЗОВАЯ схема для контрагента (все типы, все статусы).
  * Её можно использовать там, где нужна "универсальная" форма.
  */
-export function counterpartySchema(i18n) {
+export function counterpartySchema(i18n, { departmentOptions = [], includeDepartmentField = false } = {}) {
   const countryOpts = getCountryOptions(i18n.language).map((c) => ({
     value: c.code,
     label: c.label,
@@ -77,6 +77,21 @@ export function counterpartySchema(i18n) {
       float: true,
       options: statusOpts,
     },
+    ...(includeDepartmentField
+      ? [
+          {
+            name: "departmentId",
+            label: "crm.form.fields.department",
+            type: "select",
+            float: true,
+            clearable: true,
+            searchable: true,
+            options: departmentOptions,
+            placeholder: "crm.form.placeholders.department",
+            hint: "crm.form.hints.departmentVisibility",
+          },
+        ]
+      : []),
 
     { kind: "section", title: "Регистрация" },
 
@@ -170,17 +185,17 @@ export function counterpartySchema(i18n) {
  * 🎯 Схема для ЛИДОВ
  * Тип можно менять (lead → client/partner/...)
  */
-export function counterpartyLeadSchema(i18n) {
+export function counterpartyLeadSchema(i18n, extras = {}) {
   // здесь пока просто базовая схема, со всеми типами
-  return counterpartySchema(i18n);
+  return counterpartySchema(i18n, extras);
 }
 
 /**
  * 🎯 Схема для КЛИЕНТОВ
  * Тип фиксированный "client", поле type из формы убираем вообще.
  */
-export function counterpartyClientSchema(i18n) {
-  const base = counterpartySchema(i18n);
+export function counterpartyClientSchema(i18n, extras = {}) {
+  const base = counterpartySchema(i18n, extras);
 
   return base.map((f) => {
     if (f.name !== "type") return f;
@@ -211,8 +226,8 @@ const ENTITY_TYPES = ["partner", "supplier", "manufacturer"];
 
 
 // counterpartyEntitySchema: описывает схему валидации и преобразования данных.
-export function counterpartyEntitySchema(i18n) {
-  const base = counterpartySchema(i18n);
+export function counterpartyEntitySchema(i18n, extras = {}) {
+  const base = counterpartySchema(i18n, extras);
 
   return base.map((f) => {
     if (f.name !== "type") return f;
@@ -243,6 +258,7 @@ const toFormCounterparty = (d) => ({
   description: d.description ?? "",
   type: d.type ?? "lead",
   status: d.status ?? "potential",
+  departmentId: d.departmentId ?? "",
   isCompany: d.isCompany ?? true,
   contacts: Array.isArray(d.contacts)
     ? d.contacts.map((c) => ({
@@ -269,6 +285,7 @@ const toApiCounterparty = (v) => ({
   description: v.description ?? "",
   type: v.type,
   status: v.status,
+  departmentId: trimOrNull(v.departmentId),
   isCompany: !!v.isCompany,
 });
 

@@ -5,6 +5,8 @@ import EntityDetailPage from '../../../_scaffold/EntityDetailPage';
 import DetailTabs from '../../../../components/data/DetailTabs';
 import EntityNotesSection from '../../../../components/notes/EntityNotesSection';
 import AvatarEditable from '../../../../components/media/AvatarEditable';
+import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
+import useAclPermissions from '../../../../hooks/useAclPermissions';
 import {
   contactEntitySchema,
   toApiContact,
@@ -92,6 +94,9 @@ export default function ContactDetailPage() {
   const navigate = useNavigate();
   const [revision, setRevision] = useState(0);
   const [dangerBusy, setDangerBusy] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const { can } = useAclPermissions();
+  const canDeleteContact = can('contact:delete');
 
   const defaultQuery = useMemo(
     () => ({ sort: 'createdAt', dir: 'DESC', limit: 25 }),
@@ -174,7 +179,6 @@ export default function ContactDetailPage() {
   );
 
   const onDelete = useCallback(async () => {
-    if (!window.confirm(t('contacts.confirm.delete', 'Удалить контакт?'))) return;
     setDangerBusy(true);
     try {
       await deleteContact(id).unwrap();
@@ -182,7 +186,7 @@ export default function ContactDetailPage() {
     } finally {
       setDangerBusy(false);
     }
-  }, [deleteContact, id, navigate, t]);
+  }, [deleteContact, id, navigate]);
 
   const onMakeMain = useCallback(async () => {
     setDangerBusy(true);
@@ -289,14 +293,16 @@ export default function ContactDetailPage() {
             </a>
           ) : null}
 
-          <button
-            type="button"
-            className={`${s.actionBtn} ${s.actionDanger}`}
-            onClick={onDelete}
-            disabled={dangerBusy}
-          >
-            {t('common.delete', 'Удалить')}
-          </button>
+          {canDeleteContact ? (
+            <button
+              type="button"
+              className={`${s.actionBtn} ${s.actionDanger}`}
+              onClick={() => setDeleteOpen(true)}
+              disabled={dangerBusy}
+            >
+              {t('common.delete', 'Удалить')}
+            </button>
+          ) : null}
         </div>
       </div>
     );
@@ -304,10 +310,10 @@ export default function ContactDetailPage() {
     avatarUploader,
     avatarUrlUploader,
     counterpartyLabelById,
+    canDeleteContact,
     dangerBusy,
     i18n.language,
     navigate,
-    onDelete,
     onMakeMain,
     t,
   ]);
@@ -325,30 +331,42 @@ export default function ContactDetailPage() {
   }
 
   return (
-    <EntityDetailPage
-      key={`${id}:${revision}`}
-      id={id}
-      tabs={[
-        { key: 'overview', label: 'Описание' },
-        { key: 'notes', label: 'Заметки' },
-        { key: 'files', label: 'Файлы' },
-        { key: 'history', label: 'История изменений' },
-        { key: 'tasks', label: 'Задания' },
-      ]}
-      tabsNamespace="crm.contacts.detail"
-      schemaBuilder={schemaBuilder}
-      toForm={toFormContact}
-      toApi={toApiContact}
-      isSaving={saving}
-      load={async () => base}
-      save={save}
-      storageKeyPrefix="contact"
-      autosave={{ debounceMs: 500 }}
-      saveOnExit
-      clearDraftOnUnmount
-      leftTop={renderLeftTop}
-      RightTabsComponent={ContactDetailTabs}
-    />
+    <>
+      <EntityDetailPage
+        key={`${id}:${revision}`}
+        id={id}
+        tabs={[
+          { key: 'overview', label: 'Описание' },
+          { key: 'notes', label: 'Заметки' },
+          { key: 'files', label: 'Файлы' },
+          { key: 'history', label: 'История изменений' },
+          { key: 'tasks', label: 'Задания' },
+        ]}
+        tabsNamespace="crm.contacts.detail"
+        schemaBuilder={schemaBuilder}
+        toForm={toFormContact}
+        toApi={toApiContact}
+        isSaving={saving}
+        load={async () => base}
+        save={save}
+        storageKeyPrefix="contact"
+        autosave={{ debounceMs: 500 }}
+        saveOnExit
+        clearDraftOnUnmount
+        leftTop={renderLeftTop}
+        RightTabsComponent={ContactDetailTabs}
+      />
+      <ConfirmDialog
+        open={deleteOpen}
+        title={t('contacts.confirm.deleteTitle', 'Удалить контакт?')}
+        text={t('contacts.confirm.delete', 'Удалить контакт?')}
+        okText={t('common.delete', 'Удалить')}
+        cancelText={t('common.cancel', 'Отмена')}
+        danger
+        loading={dangerBusy}
+        onOk={onDelete}
+        onCancel={() => setDeleteOpen(false)}
+      />
+    </>
   );
 }
-

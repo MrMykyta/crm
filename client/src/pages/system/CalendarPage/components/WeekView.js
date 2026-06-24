@@ -5,12 +5,24 @@ import { isSameDay, toKey } from "./dateUtils";
 import CurrentTimeLineWeek from "./CurrentTimeLineWeek";
 
 // Компонент WeekView: отвечает за отображение UI и обработку взаимодействий пользователя.
-export default function WeekView({ baseDate, today, onEventOpen }) {
+export default function WeekView({
+  baseDate,
+  today,
+  selectedDate,
+  calendarItems = [],
+  onItemOpen,
+  onCreateFromDate,
+  locale = "en",
+  labels = {},
+}) {
   // считаем понедельник
-  const start = new Date(baseDate);
-  const day = start.getDay();
-  const diff = (day + 6) % 7;
-  start.setDate(start.getDate() - diff);
+  const start = useMemo(() => {
+    const weekStart = new Date(baseDate);
+    const day = weekStart.getDay();
+    const diff = (day + 6) % 7;
+    weekStart.setDate(weekStart.getDate() - diff);
+    return weekStart;
+  }, [baseDate]);
 
   const scrollRef = useRef(null);
   const [allDayModal, setAllDayModal] = useState(null); // {day, events, rect}
@@ -25,57 +37,6 @@ export default function WeekView({ baseDate, today, onEventOpen }) {
       }),
     [start]
   );
-
-  // фейк-данные: делаем чтобы были дни с 3+ all-day
-  const fakeEvents = useMemo(() => {
-    const m = {};
-    // пн
-    m[toKey(days[0])] = [
-      { id: "a1", title: "💜 Весь день ПН", allDay: true, color: "violet" },
-      { id: "a2", title: "💜 ПН второй", allDay: true, color: "violet" },
-      { id: "a3", title: "💜 ПН третий", allDay: true, color: "violet" },
-      { id: "p1", title: "Пара 11:45", start: "11:45", end: "13:15", color: "orange" },
-    ];
-    // вт
-    m[toKey(days[1])] = [
-      { id: "b1", title: "💜 Вторник", allDay: true, color: "violet" },
-      { id: "b2", title: "CK – Sojusze", start: "13:30", end: "15:00", color: "violet" },
-    ];
-    // ср
-    m[toKey(days[2])] = [
-      { id: "c1", title: "Статистика", start: "13:30", end: "15:00", color: "violet" },
-    ];
-    // чт
-    m[toKey(days[3])] = [
-      { id: "d1", title: "💜 Чт all-day", allDay: true, color: "violet" },
-      { id: "d2", title: "Методология", start: "17:00", end: "18:30", color: "orange" },
-    ];
-    // пт
-    m[toKey(days[4])] = [
-      { id: "f1", title: "💜 Пт 1", allDay: true, color: "violet" },
-      { id: "f2", title: "💜 Пт 2", allDay: true, color: "violet" },
-      { id: "f3", title: "💜 Пт 3", allDay: true, color: "violet" },
-      { id: "f4", title: "💜 Пт 4", allDay: true, color: "violet" },
-      { id: "f5", title: "W – Prawo", start: "11:45", end: "13:15", color: "orange" },
-    ];
-    // сб вс
-    m[toKey(days[5])] = [];
-    m[toKey(days[6])] = [];
-    return m;
-  }, [days]);
-
-    // toMinutes: вспомогательная логика компонента.
-const toMinutes = (hhmm) => {
-    const [h, m] = hhmm.split(":").map(Number);
-    return h * 60 + m;
-  };
-
-  // открыть событие обычное
-  const openTimed = (ev, dayDate, el) => {
-    if (!onEventOpen) return;
-    const rect = el?.getBoundingClientRect();
-    onEventOpen({ ...ev, date: dayDate.toISOString() }, rect);
-  };
 
   // открыть модалку all-day
   const openAllDayList = (dayDate, events, el) => {
@@ -100,10 +61,18 @@ const closeAllDay = () => setAllDayModal(null);
         <div className={s.timeColHeaderSticky}></div>
         {days.map((d) => {
           const isToday = isSameDay(d, today);
-          const dayName = d.toLocaleString("ru-RU", { weekday: "long" });
+          const isSelected = selectedDate && isSameDay(d, selectedDate);
+          const dayName = d.toLocaleString(locale, { weekday: "long" });
           const dayNum = d.getDate();
           return (
-            <div key={d.toISOString()} className={`${s.weekDayHead} ${isToday ? s.weekDayHeadToday : ""}`}>
+            <div
+              key={d.toISOString()}
+              className={[
+                s.weekDayHead,
+                isToday ? s.weekDayHeadToday : "",
+                isSelected ? s.weekDayHeadSelected : "",
+              ].join(" ")}
+            >
               <div className={s.weekDayName}>
                 {dayName.charAt(0).toUpperCase() + dayName.slice(1)}
               </div>
@@ -122,7 +91,7 @@ const closeAllDay = () => setAllDayModal(null);
           {/* колонка времени */}
           <div className={s.timeCol}>
             <div className={s.timeColAllDay} style={{ height: ALLDAY_H }}>
-              весь день
+              {labels.allDay || "All day"}
             </div>
             {Array.from({ length: 24 }, (_, h) => (
               <div key={h} className={s.timeSlot}>
@@ -135,10 +104,11 @@ const closeAllDay = () => setAllDayModal(null);
           <div className={s.weekScroll}>
             {days.map((d) => {
               const key = toKey(d);
-              const raw = fakeEvents[key] || [];
+              const raw = calendarItems.filter((item) => item.dateKey === key);
               const allDay = raw.filter((e) => e.allDay);
               const timed = raw.filter((e) => !e.allDay);
               const isToday = isSameDay(d, today);
+              const isSelected = selectedDate && isSameDay(d, selectedDate);
 
               // что показать в ячейке
               const MAX_SHOW = 1;
@@ -146,15 +116,31 @@ const closeAllDay = () => setAllDayModal(null);
               const restCount = allDay.length - shown.length;
 
               return (
-                <div key={key} className={`${s.weekDayCol} ${isToday ? s.weekTodayCol : ""}`}>
+                <div
+                  key={key}
+                  className={[
+                    s.weekDayCol,
+                    isToday ? s.weekTodayCol : "",
+                    isSelected ? s.weekSelectedCol : "",
+                  ].join(" ")}
+                >
                   {/* полоска all-day у КОНКРЕТНОГО дня */}
-                  <div className={s.dayAllDayStrip} style={{ height: ALLDAY_H }}>
+                  <div className={s.dayAllDayStrip} style={{ height: ALLDAY_H }} onDoubleClick={() => onCreateFromDate?.(d)}>
                     {shown.map((ev) => (
                       <div
                         key={ev.id}
-                        className={s.allDayChip}
-                        onClick={(e) => openAllDayList(d, allDay, e.currentTarget)}
-                        onDoubleClick={(e) => openAllDayList(d, allDay, e.currentTarget)}
+                        className={[
+                          s.allDayChip,
+                          s.taskPill,
+                          ev.completed ? s.taskPillCompleted : "",
+                          ev.overdue ? s.taskPillOverdue : "",
+                        ].join(" ")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (allDay.length > 1) openAllDayList(d, allDay, e.currentTarget);
+                          else onItemOpen?.(ev);
+                        }}
+                        onDoubleClick={(e) => e.stopPropagation()}
                       >
                         {ev.title}
                       </div>
@@ -172,14 +158,14 @@ const closeAllDay = () => setAllDayModal(null);
 
                   {/* фон по часам */}
                   {Array.from({ length: 24 }, (_, h) => (
-                    <div key={h} className={s.weekHourBg}></div>
+                    <div key={h} className={s.weekHourBg} onDoubleClick={() => onCreateFromDate?.(d)}></div>
                   ))}
 
                   {/* обычные события */}
                   {timed.map((ev) => {
-                    const startMin = toMinutes(ev.start);
-                    const endMin = toMinutes(ev.end);
-                    const dur = endMin - startMin;
+                    const startMin = Number.isFinite(ev.startMinutes) ? ev.startMinutes : 0;
+                    const endMin = Number.isFinite(ev.endMinutes) ? ev.endMinutes : startMin + 60;
+                    const dur = Math.max(30, endMin - startMin);
                     const top = (startMin / 60) * 48 + ALLDAY_H; // ниже полоски мы не сдвигаем — потому что её высота фикс и она sticky
                     const height = (dur / 60) * 48;
                     return (
@@ -187,10 +173,12 @@ const closeAllDay = () => setAllDayModal(null);
                         key={ev.id}
                         className={[
                           s.weekEvent,
-                          ev.color === "violet" ? s.weekEventViolet : s.weekEventOrange,
+                          s.taskEvent,
+                          ev.completed ? s.taskPillCompleted : "",
+                          ev.overdue ? s.taskPillOverdue : "",
                         ].join(" ")}
                         style={{ top: `${top}px`, height: `${height}px` }}
-                        onDoubleClick={(e) => openTimed(ev, d, e.currentTarget)}
+                        onClick={() => onItemOpen?.(ev)}
                       >
                         <div className={s.weekEventTitle}>{ev.title}</div>
                         <div className={s.weekEventTime}>
@@ -214,17 +202,17 @@ const closeAllDay = () => setAllDayModal(null);
             onClick={(e) => e.stopPropagation()}
           >
             <div className={s.allDayModalHeader}>
-              Все события на {allDayModal.day.toLocaleDateString("ru-RU")}
+              {labels.allDayTasksOn || "All-day tasks on"} {allDayModal.day.toLocaleDateString(locale)}
             </div>
             <div className={s.allDayModalList}>
               {allDayModal.events.map((ev) => (
-                <div key={ev.id} className={s.allDayModalItem}>
+                <button key={ev.id} type="button" className={s.allDayModalItem} onClick={() => onItemOpen?.(ev)}>
                   {ev.title}
-                </div>
+                </button>
               ))}
             </div>
             <div className={s.allDayModalFooter}>
-              <button onClick={closeAllDay}>Закрыть</button>
+              <button onClick={closeAllDay}>{labels.close || "Close"}</button>
             </div>
           </div>
         </div>

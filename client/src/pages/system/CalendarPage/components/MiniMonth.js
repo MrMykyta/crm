@@ -1,10 +1,11 @@
 // src/components/Calendar/MiniMonth.jsx
 import React from "react";
 import s from "../CalendarPage.module.css";
+import { isSameDay } from "./dateUtils";
 
 // Компонент MiniMonth: отвечает за отображение UI и обработку взаимодействий пользователя.
-export default function MiniMonth({ date, today, onPick }) {
-  const monthLabel = date.toLocaleString("ru-RU", {
+export default function MiniMonth({ date, today, selectedDate, onPick, locale = "en" }) {
+  const monthLabel = date.toLocaleString(locale, {
     month: "long",
     year: "numeric",
   });
@@ -18,20 +19,23 @@ export default function MiniMonth({ date, today, onPick }) {
       </div>
 
       <div className={s.miniMonthWeekdays}>
-        {["П", "В", "С", "Ч", "П", "С", "В"].map((d, idx) => (
+        {Array.from({ length: 7 }, (_, idx) => {
+          const d = new Date(2026, 5, 22 + idx);
+          return d.toLocaleDateString(locale, { weekday: "short" }).slice(0, 2);
+        }).map((d, idx) => (
           <div key={idx} className={s.miniMonthWeekday}>
             {d}
           </div>
         ))}
       </div>
 
-      <MiniMonthGrid baseDate={date} today={today} onPick={onPick} />
+      <MiniMonthGrid baseDate={date} today={today} selectedDate={selectedDate} onPick={onPick} />
     </div>
   );
 }
 
 // Компонент MiniMonthGrid: отвечает за отображение UI и обработку взаимодействий пользователя.
-function MiniMonthGrid({ baseDate, today, onPick }) {
+function MiniMonthGrid({ baseDate, today, selectedDate, onPick }) {
   const year = baseDate.getFullYear();
   const month = baseDate.getMonth();
   const first = new Date(year, month, 1);
@@ -63,10 +67,8 @@ function MiniMonthGrid({ baseDate, today, onPick }) {
   return (
     <div className={s.miniMonthGrid}>
       {cells.map(({ date, outside }) => {
-        const isToday =
-          date.getFullYear() === today.getFullYear() &&
-          date.getMonth() === today.getMonth() &&
-          date.getDate() === today.getDate();
+        const isToday = isSameDay(date, today);
+        const isSelected = selectedDate && isSameDay(date, selectedDate);
 
         const isCurrentMonth = date.getMonth() === month;
 
@@ -79,6 +81,7 @@ function MiniMonthGrid({ baseDate, today, onPick }) {
               s.miniMonthCell,
               !isCurrentMonth ? s.miniMonthCellOutside : "",
               isToday ? s.miniMonthCellToday : "",
+              isSelected ? s.miniMonthCellSelected : "",
             ].join(" ")}
           >
             {date.getDate()}

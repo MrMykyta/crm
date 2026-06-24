@@ -30,6 +30,34 @@ function InputField({ name, label, type = "text", autoComplete }) {
   );
 }
 
+function isI18nKey(value) {
+  return /^[a-z][\w-]*(\.[\w-]+)+$/i.test(String(value || ''));
+}
+
+function resolveLoginErrorMessage(error, t) {
+  const msgFromServer =
+    error?.data?.error ||
+    error?.data?.message ||
+    error?.error ||
+    error?.message ||
+    null;
+
+  if (!msgFromServer) return t("errors.loginFailed");
+
+  if (isI18nKey(msgFromServer)) {
+    const translated = t(msgFromServer);
+    return translated && translated !== msgFromServer
+      ? translated
+      : t("errors.loginFailed");
+  }
+
+  if (/unauthorized|invalid credentials|login failed/i.test(msgFromServer)) {
+    return t("errors.loginFailed");
+  }
+
+  return msgFromServer;
+}
+
 // Компонент SignIn: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function SignIn({ onSwitch }) {
   const { t } = useTranslation();
@@ -94,21 +122,7 @@ const handleLogin = async (values, { setSubmitting, setStatus }) => {
     } catch (e) {
       console.error("[SignIn] login error", e);
 
-      // аккуратно собираем текст ошибки
-      const msgFromServer =
-        e?.data?.error ||
-        e?.error ||
-        e?.message ||
-        null;
-
-      // если пришёл понятный текст — показываем как есть,
-      // если нет — берём локализованный дефолт.
-      const finalMsg =
-        msgFromServer && !msgFromServer.startsWith("auth.")
-          ? msgFromServer
-          : t("errors.loginFailed");
-
-      setStatus(finalMsg);
+      setStatus(resolveLoginErrorMessage(e, t));
     } finally {
       setSubmitting(false);
     }

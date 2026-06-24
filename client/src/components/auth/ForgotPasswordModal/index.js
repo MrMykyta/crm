@@ -4,11 +4,22 @@ import { useRequestPasswordResetMutation } from '../../../store/rtk/authApi';
 import { TextField } from '../../ui/fields';
 import styles from './ForgotPasswordModal.module.css';
 
+function getResetRequestErrorMessage(error, t) {
+  const message = error?.data?.message || error?.data?.error || error?.error || error?.message || '';
+  if (/failed to fetch|network/i.test(message)) {
+    return t('auth.resetNetworkFailed', 'Could not reach the server. Please try again.');
+  }
+  if (/server error/i.test(message)) {
+    return t('auth.resetFailed', 'Failed to send reset email');
+  }
+  return message || t('auth.resetFailed', 'Failed to send reset email');
+}
+
 // Компонент ForgotPasswordModal: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ForgotPasswordModal({ open, onClose, initialEmail = '' }) {
   const { t } = useTranslation();
   const [email, setEmail] = useState(initialEmail);
-  const [status, setStatus] = useState(null); // 'ok' | 'error' | null
+  const [status, setStatus] = useState(null); // { type: 'ok' | 'error', message?: string } | null
   const [loading, setLoading] = useState(false);
   const closeRef = useRef(null);
   const [requestPasswordReset] = useRequestPasswordResetMutation();
@@ -26,17 +37,17 @@ export default function ForgotPasswordModal({ open, onClose, initialEmail = '' }
 
   if (!open) return null;
 
-    // submit: вспомогательная логика компонента.
-const submit = async (e) => {
+  // submit: вспомогательная логика компонента.
+  const submit = async (e) => {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
     setStatus(null);
     try {
       await requestPasswordReset(email).unwrap();
-      setStatus('ok');
-    } catch {
-      setStatus('error');
+      setStatus({ type: 'ok' });
+    } catch (error) {
+      setStatus({ type: 'error', message: getResetRequestErrorMessage(error, t) });
     } finally {
       setLoading(false);
     }
@@ -60,8 +71,8 @@ const submit = async (e) => {
             required
           />
 
-          {status === 'ok' && <div className={styles.ok}>{t('auth.resetSent', 'Reset link sent. Please check your inbox.')}</div>}
-          {status === 'error' && <div className={styles.err}>{t('auth.resetFailed', 'Failed to send reset email')}</div>}
+          {status?.type === 'ok' && <div className={styles.ok}>{t('auth.resetSent', 'Reset link sent. Please check your inbox.')}</div>}
+          {status?.type === 'error' && <div className={styles.err}>{status.message}</div>}
 
           <div className={styles.actions}>
             <button className={styles.primary} type="submit" disabled={loading}>

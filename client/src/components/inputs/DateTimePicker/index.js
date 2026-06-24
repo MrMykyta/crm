@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import s from './DateTimePicker.module.css';
 
-const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const DEFAULT_WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 // pad: вспомогательная логика компонента.
 function pad(n) {
@@ -24,6 +24,12 @@ function parseISODate(raw) {
   if (Number.isNaN(parsed.getTime())) return null;
   if (parsed.getFullYear() !== y || parsed.getMonth() !== m - 1 || parsed.getDate() !== d) return null;
   return parsed;
+}
+
+function normalizeDateBound(raw) {
+  const text = String(raw || '').trim();
+  if (!text) return null;
+  return parseISODate(text.slice(0, 10));
 }
 
 // parseTime: парсит входные данные для UI.
@@ -72,6 +78,27 @@ function formatDisplay(date, time, withTime) {
   return `${dd}.${mm}.${yyyy} ${time || '00:00'}`;
 }
 
+function normalizeLocale(language = 'en-US') {
+  const normalized = String(language || 'en-US').toLowerCase();
+  if (normalized.startsWith('ua') || normalized.startsWith('uk')) return 'uk-UA';
+  if (normalized.startsWith('ru')) return 'ru-RU';
+  if (normalized.startsWith('pl')) return 'pl-PL';
+  return language || 'en-US';
+}
+
+function buildWeekdayLabels(locale, fallback = DEFAULT_WEEKDAY_LABELS) {
+  const monday = new Date(2026, 5, 22);
+  try {
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + index);
+      return new Intl.DateTimeFormat(normalizeLocale(locale), { weekday: 'short' }).format(date);
+    });
+  } catch {
+    return fallback;
+  }
+}
+
 // isSameDay: проверяет условие для UI-логики.
 function isSameDay(a, b) {
   return Boolean(a && b)
@@ -82,7 +109,7 @@ function isSameDay(a, b) {
 
 // monthLabel: вспомогательная логика компонента.
 function monthLabel(date, locale) {
-  const raw = date.toLocaleString(locale || undefined, { month: 'long', year: 'numeric' });
+  const raw = date.toLocaleString(normalizeLocale(locale) || undefined, { month: 'long', year: 'numeric' });
   return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : '';
 }
 
@@ -147,11 +174,22 @@ export default function DateTimePicker({
   withTime = false,
   allowTimeToggle = false,
   onWithTimeChange,
-  timeToggleLabel = 'Со временем',
+  timeToggleLabel = 'With time',
+  timeLabel = 'Time',
+  todayLabel = 'Today',
+  clearLabel = 'Clear',
+  previousMonthLabel = 'Previous month',
+  nextMonthLabel = 'Next month',
+  openCalendarLabel = 'Open calendar',
+  weekdayLabels,
   className = '',
   disabled = false,
-  locale = 'ru-RU',
+  locale = 'en-US',
   placeholder,
+  min,
+  max,
+  isDateDisabled,
+  presets = [],
 }) {
   const wrapRef = useRef(null);
   const portalId = useRef(`dt-menu-${Math.random().toString(36).slice(2)}`);
@@ -267,13 +305,31 @@ const onKeyDown = (e) => {
   }, [open, placementLocked, computePosition]);
 
   const cells = useMemo(() => buildCells(viewDate), [viewDate]);
+  const minDate = useMemo(() => normalizeDateBound(min), [min]);
+  const maxDate = useMemo(() => normalizeDateBound(max), [max]);
+  const daysOfWeek = useMemo(
+    () => (Array.isArray(weekdayLabels) && weekdayLabels.length === 7
+      ? weekdayLabels
+      : buildWeekdayLabels(locale)),
+    [locale, weekdayLabels]
+  );
   const displayValue = useMemo(
     () => formatDisplay(selectedDate, selectedTime, withTime),
     [selectedDate, selectedTime, withTime]
   );
 
+  const isDisabledDate = useCallback((date) => {
+    if (!date) return true;
+    const dateOnly = parseISODate(formatISODate(date));
+    if (!dateOnly) return true;
+    if (minDate && dateOnly < minDate) return true;
+    if (maxDate && dateOnly > maxDate) return true;
+    return typeof isDateDisabled === 'function' ? Boolean(isDateDisabled(dateOnly)) : false;
+  }, [isDateDisabled, maxDate, minDate]);
+
     // applyDate: вспомогательная логика компонента.
 const applyDate = (date) => {
+    if (isDisabledDate(date)) return;
     const next = formatOutValue(date, timeDraft, withTime);
     onChange?.(next);
     if (!withTime) setOpen(false);
@@ -290,6 +346,7 @@ const applyTime = (nextTime) => {
     // onToday: вспомогательная логика компонента.
 const onToday = () => {
     const now = new Date();
+    if (isDisabledDate(now)) return;
     setViewDate(now);
     const defaultTime = withTime ? `${pad(now.getHours())}:${pad(now.getMinutes())}` : timeDraft;
     if (withTime) setTimeDraft(defaultTime);
@@ -297,9 +354,18 @@ const onToday = () => {
   };
 
     // onClear: вспомогательная логика компонента.
-const onClear = () => {
+  const onClear = () => {
     onChange?.('');
     setOpen(false);
+  };
+
+  const setTimeFromText = (nextTime) => {
+    const parsedTime = parseTime(nextTime);
+    if (!parsedTime) {
+      setTimeDraft(nextTime);
+      return;
+    }
+    applyTime(`${pad(parsedTime.hh)}:${pad(parsedTime.mm)}`);
   };
 
   const menuNode = open ? (
@@ -338,7 +404,7 @@ const onClear = () => {
           type="button"
           className={s.navBtn}
           onClick={() => setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-          aria-label="prev month"
+          aria-label={previousMonthLabel}
         >
           ‹
         </button>
@@ -347,14 +413,14 @@ const onClear = () => {
           type="button"
           className={s.navBtn}
           onClick={() => setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-          aria-label="next month"
+          aria-label={nextMonthLabel}
         >
           ›
         </button>
       </div>
 
       <div className={s.weekdays}>
-        {WEEKDAYS.map((day) => (
+        {daysOfWeek.map((day) => (
           <span key={day} className={s.weekday}>{day}</span>
         ))}
       </div>
@@ -363,6 +429,7 @@ const onClear = () => {
         {cells.map(({ date, outside }) => {
           const isTodayDate = isSameDay(date, new Date());
           const isSelected = isSameDay(date, selectedDate);
+          const isDateBlocked = isDisabledDate(date);
           return (
             <button
               key={date.toISOString()}
@@ -371,9 +438,11 @@ const onClear = () => {
                 s.day,
                 outside && s.dayOutside,
                 isTodayDate && s.dayToday,
-                isSelected && s.daySelected
+                isSelected && s.daySelected,
+                isDateBlocked && s.dayDisabled
               )}
               onClick={() => applyDate(date)}
+              disabled={isDateBlocked}
             >
               <span className={s.dayInner}>{date.getDate()}</span>
             </button>
@@ -383,21 +452,45 @@ const onClear = () => {
 
       {withTime ? (
         <div className={s.timeCard}>
-          <div className={s.timeCardHead}>Время</div>
+          <div className={s.timeCardHead}>{timeLabel}</div>
           <input
             id={`${portalId.current}-time`}
-            type="time"
-            step="60"
+            type="text"
+            inputMode="numeric"
+            placeholder="HH:mm"
             value={timeDraft}
             className={s.timeInput}
-            onChange={(e) => applyTime(e.target.value)}
+            onChange={(e) => setTimeFromText(e.target.value)}
+            onBlur={() => {
+              const parsedTime = parseTime(timeDraft);
+              setTimeDraft(parsedTime ? `${pad(parsedTime.hh)}:${pad(parsedTime.mm)}` : selectedTime || '00:00');
+            }}
           />
         </div>
       ) : null}
 
+      {Array.isArray(presets) && presets.length ? (
+        <div className={s.presets}>
+          {presets.map((preset) => (
+            <button
+              key={preset.value || preset.label}
+              type="button"
+              className={s.secondaryBtn}
+              onClick={() => {
+                const date = parseISODate(String(preset.value || '').slice(0, 10));
+                if (date) applyDate(date);
+              }}
+              disabled={!preset.value || isDisabledDate(parseISODate(String(preset.value).slice(0, 10)))}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div className={s.footer}>
-        <button type="button" className={s.secondaryBtn} onClick={onToday}>Сегодня</button>
-        <button type="button" className={s.secondaryBtn} onClick={onClear}>Очистить</button>
+        <button type="button" className={s.secondaryBtn} onClick={onToday}>{todayLabel}</button>
+        <button type="button" className={s.secondaryBtn} onClick={onClear}>{clearLabel}</button>
       </div>
     </div>
   ) : null;
@@ -426,7 +519,7 @@ const onClear = () => {
           }
         }}
         readOnly
-        placeholder={placeholder || (withTime ? 'дд.мм.гггг чч:мм' : 'дд.мм.гггг')}
+        placeholder={placeholder || (withTime ? 'yyyy-mm-dd hh:mm' : 'yyyy-mm-dd')}
         disabled={disabled}
       />
       <button
@@ -441,7 +534,7 @@ const onClear = () => {
           openMenu();
         }}
         tabIndex={-1}
-        aria-label="open calendar"
+        aria-label={openCalendarLabel}
       >
         <CalendarIcon />
       </button>
@@ -449,4 +542,3 @@ const onClear = () => {
     </div>
   );
 }
-

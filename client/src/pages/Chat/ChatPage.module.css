@@ -7,7 +7,8 @@
   position: relative;
   display: flex;
   gap: 12px;
-  height: calc(97vh - var(--topbar-h) - 2 * var(--space-3));
+  height: calc(100% - 2 * var(--space-3));
+  min-height: 0;
   margin: var(--space-3);
   border-radius: var(--radius-lg);
   isolation: isolate;

@@ -221,10 +221,10 @@ const handleWithTimeToggle = (nextHasTime) => {
           withTime={hasTime}
           allowTimeToggle
           onWithTimeChange={handleWithTimeToggle}
-          timeToggleLabel={t('crm.task.fields.withTime', 'Со временем')}
+          timeToggleLabel={t('crm.task.fields.withTime', 'With time')}
           locale={locale}
           onValueChange={(nextValue) => set(fieldName, nextValue)}
-          placeholder={hasTime ? 'дд.мм.гггг чч:мм' : 'дд.мм.гггг'}
+          placeholder={hasTime ? 'yyyy-mm-dd hh:mm' : 'yyyy-mm-dd'}
         />
       </div>
     );
@@ -236,7 +236,7 @@ const handleWithTimeToggle = (nextHasTime) => {
         <div className={`${st.field} ${st.span12}`}>
           <div className={st.labelRow}>
             <label className={st.label} htmlFor={`${formId}-title`}>
-              {t('crm.task.fields.title', 'Название')}*
+              {t('crm.task.fields.title', 'Title')}*
             </label>
             {counter('title')}
           </div>
@@ -246,7 +246,7 @@ const handleWithTimeToggle = (nextHasTime) => {
             value={values.title}
             onValueChange={(v) => set('title', v)}
             maxLength={MAX.title}
-            placeholder={t('crm.task.placeholders.title', 'Например: Перезвонить клиенту')}
+            placeholder={t('crm.task.placeholders.title', 'Example: Call the client back')}
             required
           />
         </div>
@@ -254,7 +254,7 @@ const handleWithTimeToggle = (nextHasTime) => {
         <div className={`${st.field} ${st.span12}`}>
           <div className={st.labelRow}>
             <label className={st.label} htmlFor={`${formId}-description`}>
-              {t('crm.task.fields.description', 'Описание')}
+              {t('crm.task.fields.description', 'Description')}
             </label>
             {counter('description')}
           </div>
@@ -265,13 +265,13 @@ const handleWithTimeToggle = (nextHasTime) => {
             value={values.description || ''}
             onValueChange={(v) => set('description', v)}
             maxLength={MAX.description}
-            placeholder={t('crm.task.placeholders.description', 'Кратко опишите задачу')}
+            placeholder={t('crm.task.placeholders.description', 'Briefly describe the task')}
           />
         </div>
 
         <div className={`${st.field} ${st.span6}`}>
           <label className={st.label} htmlFor={`${formId}-category`}>
-            {t('crm.task.fields.category', 'Категория')}
+            {t('crm.task.fields.category', 'Category')}
           </label>
           <TextField
             id={`${formId}-category`}
@@ -279,12 +279,12 @@ const handleWithTimeToggle = (nextHasTime) => {
             value={values.category || ''}
             onValueChange={(v) => set('category', v)}
             maxLength={MAX.category}
-            placeholder={t('crm.task.placeholders.category', 'Напр.: Звонок, Встреча')}
+            placeholder={t('crm.task.placeholders.category', 'E.g. call, meeting')}
           />
         </div>
 
         <div className={`${st.field} ${st.span3}`}>
-          <label className={st.label}>{t('crm.task.fields.status', 'Статус')}</label>
+          <label className={st.label}>{t('crm.task.fields.status', 'Status')}</label>
           <SelectField
             inputClassName={st.control}
             value={values.status || undefined}
@@ -293,12 +293,12 @@ const handleWithTimeToggle = (nextHasTime) => {
               value: v,
               label: t(`crm.task.enums.status.${v}`, v),
             }))}
-            placeholder={t('common.select', 'Выбрать…')}
+            placeholder={t('common.select', 'Select…')}
           />
         </div>
 
         <div className={`${st.field} ${st.span3}`}>
-          <label className={st.label}>{t('crm.task.fields.priority', 'Приоритет')}</label>
+          <label className={st.label}>{t('crm.task.fields.priority', 'Priority')}</label>
           <PriorityField
             inputClassName={st.priorityControl}
             value={values.priority}
@@ -306,35 +306,35 @@ const handleWithTimeToggle = (nextHasTime) => {
           />
         </div>
 
-        {renderDateField('startAt', 'plannedStartHasTime', t('crm.task.fields.startAt', 'Планируемое начало'))}
-        {renderDateField('endAt', 'plannedEndHasTime', t('crm.task.fields.endAt', 'Планируемое окончание'))}
-        {renderDateField('actualStartAt', 'actualStartHasTime', t('crm.task.fields.actualStartAt', 'Фактическое начало'))}
-        {renderDateField('actualEndAt', 'actualEndHasTime', t('crm.task.fields.actualEndAt', 'Фактическое окончание'))}
+        {renderDateField('startAt', 'plannedStartHasTime', t('crm.task.fields.startAt', 'Planned start'))}
+        {renderDateField('endAt', 'plannedEndHasTime', t('crm.task.fields.endAt', 'Planned end'))}
+        {renderDateField('actualStartAt', 'actualStartHasTime', t('crm.task.fields.actualStartAt', 'Actual start'))}
+        {renderDateField('actualEndAt', 'actualEndHasTime', t('crm.task.fields.actualEndAt', 'Actual end'))}
 
         <div className={`${st.field} ${st.span6}`}>
-          <label className={st.label}>{t('crm.task.fields.assignees', 'Назначенные работники')}</label>
+          <label className={st.label}>{t('crm.task.fields.assignees', 'Assignees')}</label>
           <MultiSelectField
             inputClassName={st.control}
             options={userOptions}
             value={Array.isArray(values.assigneeIds) ? values.assigneeIds : []}
             onValueChange={(next) => set('assigneeIds', next)}
-            placeholder={t('common.noneSelected', 'Не выбрано')}
+            placeholder={t('common.noneSelected', 'None selected')}
           />
         </div>
 
         <div className={`${st.field} ${st.span6}`}>
-          <label className={st.label}>{t('crm.task.fields.watchers', 'Наблюдатели')}</label>
+          <label className={st.label}>{t('crm.task.fields.watchers', 'Watchers')}</label>
           <MultiSelectField
             inputClassName={st.control}
             options={watcherOptions}
             value={Array.isArray(values.watcherIds) ? values.watcherIds : []}
             onValueChange={(next) => set('watcherIds', next)}
-            placeholder={t('common.noneSelected', 'Не выбрано')}
+            placeholder={t('common.noneSelected', 'None selected')}
           />
         </div>
 
         <div className={`${st.field} ${st.span12}`}>
-          <label className={st.label}>{t('crm.task.fields.counterparty', 'Клиент')}</label>
+          <label className={st.label}>{t('crm.task.fields.counterparty', 'Client')}</label>
           <AutocompleteField
             value={selectedCounterparty}
             inputValue={counterpartySearch}
@@ -360,10 +360,10 @@ const handleWithTimeToggle = (nextHasTime) => {
                 set('contactIds', []);
               }
             }}
-            placeholder={t('crm.task.placeholders.counterpartySearch', 'Начните вводить название клиента...')}
-            hint={t('crm.task.messages.typeToSearch', 'Начните вводить название')}
-            searchingLabel={t('crm.task.messages.searching', 'Поиск...')}
-            emptyLabel={t('crm.task.messages.empty', 'Ничего не найдено')}
+            placeholder={t('crm.task.placeholders.counterpartySearch', 'Start typing a client name...')}
+            hint={t('crm.task.messages.typeToSearch', 'Start typing a name')}
+            searchingLabel={t('crm.task.messages.searching', 'Searching...')}
+            emptyLabel={t('crm.task.messages.empty', 'Nothing found')}
             loading={Boolean(counterpartySearchDebounced) && counterpartyLookupLoading}
             getOptionPrimary={(opt) => opt?.name || String(opt?.id || '')}
             getOptionSecondary={(opt) =>
@@ -375,7 +375,7 @@ const handleWithTimeToggle = (nextHasTime) => {
         </div>
 
         <div className={`${st.field} ${st.span12}`}>
-          <label className={st.label}>{t('crm.task.fields.contacts', 'Контактные лица')}</label>
+          <label className={st.label}>{t('crm.task.fields.contacts', 'Contacts')}</label>
           <AutocompleteField
             value={null}
             inputValue={contactSearch}
@@ -392,14 +392,14 @@ const handleWithTimeToggle = (nextHasTime) => {
               setContactSearch('');
               setContactSearchDebounced('');
             }}
-            placeholder={t('crm.task.placeholders.contactSearch', 'Начните вводить имя, email или телефон...')}
+            placeholder={t('crm.task.placeholders.contactSearch', 'Start typing a name, email, or phone...')}
             hint={
               values.counterpartyId
-                ? t('crm.task.messages.typeToSearch', 'Начните вводить название')
-                : t('crm.task.messages.selectCounterpartyFirst', 'Сначала выберите клиента или введите поиск')
+                ? t('crm.task.messages.typeToSearch', 'Start typing a name')
+                : t('crm.task.messages.selectCounterpartyFirst', 'Select a client first or enter a search')
             }
-            searchingLabel={t('crm.task.messages.searching', 'Поиск...')}
-            emptyLabel={t('crm.task.messages.emptyContacts', 'Контакты не найдены')}
+            searchingLabel={t('crm.task.messages.searching', 'Searching...')}
+            emptyLabel={t('crm.task.messages.emptyContacts', 'No contacts found')}
             loading={contactsLookupLoading}
             getOptionPrimary={(opt) => opt?.name || String(opt?.id || '')}
             getOptionSecondary={(opt) => opt?.secondary || ''}
@@ -441,7 +441,7 @@ const handleWithTimeToggle = (nextHasTime) => {
               onValueChange={(v) => set('statusAggregate', v)}
               fullWidth={false}
             />
-            <span>{t('crm.task.fields.statusAggregate', 'Рассчитывать общий статус по исполнителям')}</span>
+            <span>{t('crm.task.fields.statusAggregate', 'Calculate overall status from assignees')}</span>
           </label>
         </div>
       </div>
@@ -449,10 +449,10 @@ const handleWithTimeToggle = (nextHasTime) => {
       {withButtons && (
         <div className={st.actions}>
           <button type="button" className={st.btn} onClick={onCancel}>
-            {t('common.cancel', 'Отмена')}
+            {t('common.cancel', 'Cancel')}
           </button>
           <button type="submit" className={st.primary} disabled={loading}>
-            {loading ? t('common.saving', 'Сохранение…') : t('common.save', 'Сохранить')}
+            {loading ? t('common.saving', 'Saving…') : t('common.save', 'Save')}
           </button>
         </div>
       )}

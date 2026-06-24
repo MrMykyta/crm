@@ -107,6 +107,7 @@ export default function ChatSidebar({
   onCreateDirect,
   onCreateGroup,
   onSelectRoom,
+  canWrite = true,
 }) {
   const { t } = useTranslation();
   const rooms = useSelector((state) => state.chat.rooms);
@@ -221,7 +222,10 @@ export default function ChatSidebar({
   }, [decoratedRooms, search]);
 
   /** Toggle create menu. */
-  const toggleMenu = () => setMenuOpen((v) => !v);
+  const toggleMenu = () => {
+    if (!canWrite) return;
+    setMenuOpen((v) => !v);
+  };
   /** Close create menu. */
   const closeMenu = () => setMenuOpen(false);
 
@@ -277,16 +281,18 @@ const onKey = (e) => {
         <div className={s.sidebarTitle}>{t("chat.sidebar.title")}</div>
 
         <div className={s.sidebarHeaderRight}>
-          <button
-            ref={btnRef}
-            type="button"
-            className={s.newChatBtn}
-            onClick={toggleMenu}
-          >
-            <MessageSquarePlus size={20} className={s.newChatBtnIcon} />
-          </button>
+          {canWrite ? (
+            <button
+              ref={btnRef}
+              type="button"
+              className={s.newChatBtn}
+              onClick={toggleMenu}
+            >
+              <MessageSquarePlus size={20} className={s.newChatBtnIcon} />
+            </button>
+          ) : null}
 
-          {menuOpen && (
+          {canWrite && menuOpen && (
             <div ref={menuRef} className={s.newChatMenu}>
               <button
                 type="button"

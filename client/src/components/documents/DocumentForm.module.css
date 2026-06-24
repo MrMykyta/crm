@@ -23,8 +23,10 @@
 }
 
 .workspaceSplit {
-  max-height: calc(100vh - 152px);
+  max-height: 100%;
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding-right: 4px;
 }
 
@@ -473,12 +475,15 @@
     0 1px 0 color-mix(in srgb, #fff 7%, transparent) inset,
     0 16px 30px color-mix(in srgb, black 26%, transparent);
   padding: 14px;
-  height: calc(100vh - 152px);
+  height: min(100%, calc(var(--app-content-h, 100dvh) - 124px));
+  min-height: 0;
 }
 
 .splitPreviewFrame {
   height: 100%;
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding-right: 2px;
   display: flex;
   justify-content: center;
@@ -496,8 +501,10 @@
 
 .previewOnlyFrame {
   width: min(100%, 1520px);
-  max-height: calc(100vh - 142px);
+  max-height: calc(var(--app-content-h, 100dvh) - 114px);
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 2px 3px 0;
   display: flex;
   justify-content: center;

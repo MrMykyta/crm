@@ -202,9 +202,11 @@ export default function DocumentTemplatesSection({
     <section className={s.card}>
       <header className={s.header}>
         <h2 className={s.title}>{resolvedTitle}</h2>
-        <button type="button" className={s.addButton} onClick={onAdd} disabled={!onAdd}>
-          {resolvedAddLabel}
-        </button>
+        {onAdd ? (
+          <button type="button" className={s.addButton} onClick={onAdd}>
+            {resolvedAddLabel}
+          </button>
+        ) : null}
       </header>
 
       {hasFilters ? (

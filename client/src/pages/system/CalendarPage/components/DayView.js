@@ -5,33 +5,50 @@ import { isSameDay } from "./dateUtils";
 import CurrentTimeLineWeek from "./CurrentTimeLineWeek";
 
 // Компонент DayView: отвечает за отображение UI и обработку взаимодействий пользователя.
-export default function DayView({ baseDate, today }) {
+export default function DayView({
+  baseDate,
+  today,
+  calendarItems = [],
+  onItemOpen,
+  onCreateFromDate,
+  locale = "en",
+  labels = {},
+}) {
   const isToday = isSameDay(baseDate, today);
-
-  const events = [
-    { id: "d1", title: "W – Prawo międzynarodowe cz. 1", start: "11:45", end: "13:15", color: "orange" },
-    { id: "d2", title: "CK – Sojusze strategiczne",     start: "13:30", end: "15:00", color: "violet" },
-    { id: "d3", title: "W – Seks i tabu",                start: "15:15", end: "16:45", color: "orange" },
-    { id: "d4", title: "W – Metodologia badań...",       start: "17:00", end: "18:30", color: "orange" },
-  ];
-
-    // toMinutes: вспомогательная логика компонента.
-const toMinutes = (hhmm) => {
-    const [h, m] = hhmm.split(":").map(Number);
-    return h * 60 + m;
-  };
+  const events = calendarItems.filter((item) => isSameDay(item.date, baseDate));
+  const allDay = events.filter((item) => item.allDay);
+  const timed = events.filter((item) => !item.allDay);
 
   return (
     <div className={s.dayView}>
       <div className={s.dayHeader}>
         <div className={s.dayTitle}>
-          {baseDate.toLocaleString("ru-RU", {
+          {baseDate.toLocaleString(locale, {
             weekday: "long",
             day: "numeric",
             month: "long",
             year: "numeric",
           })}
         </div>
+        {allDay.length ? (
+          <div className={s.dayAllDayList}>
+            {allDay.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={[
+                  s.allDayChip,
+                  s.taskPill,
+                  item.completed ? s.taskPillCompleted : "",
+                  item.overdue ? s.taskPillOverdue : "",
+                ].join(" ")}
+                onClick={() => onItemOpen?.(item)}
+              >
+                {item.title}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className={s.dayBody}>
@@ -48,13 +65,17 @@ const toMinutes = (hhmm) => {
 
           <div className={s.dayCol}>
             {Array.from({ length: 24 }, (_, h) => (
-              <div key={h} className={s.weekHourBg}></div>
+              <div key={h} className={s.weekHourBg} onDoubleClick={() => onCreateFromDate?.(baseDate)}></div>
             ))}
 
-            {events.map((ev) => {
-              const startMin = toMinutes(ev.start);
-              const endMin = toMinutes(ev.end);
-              const dur = endMin - startMin;
+            {!events.length ? (
+              <div className={s.calendarEmptyDay}>{labels.noTasksForDay || "No tasks for this day"}</div>
+            ) : null}
+
+            {timed.map((ev) => {
+              const startMin = Number.isFinite(ev.startMinutes) ? ev.startMinutes : 0;
+              const endMin = Number.isFinite(ev.endMinutes) ? ev.endMinutes : startMin + 60;
+              const dur = Math.max(30, endMin - startMin);
               const top = (startMin / 60) * 48;
               const height = (dur / 60) * 48;
 
@@ -63,9 +84,12 @@ const toMinutes = (hhmm) => {
                   key={ev.id}
                   className={[
                     s.weekEvent,
-                    ev.color === "violet" ? s.weekEventViolet : s.weekEventOrange,
+                    s.taskEvent,
+                    ev.completed ? s.taskPillCompleted : "",
+                    ev.overdue ? s.taskPillOverdue : "",
                   ].join(" ")}
                   style={{ top: `${top}px`, height: `${height}px`, left: "8px", right: "8px" }}
+                  onClick={() => onItemOpen?.(ev)}
                 >
                   <div className={s.weekEventTitle}>{ev.title}</div>
                   <div className={s.weekEventTime}>

@@ -6,10 +6,12 @@ import ListPage from '../../../../components/data/ListPage';
 import FilterToolbar from '../../../../components/filters/FilterToolbar';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import Modal from '../../../../components/Modal';
+import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
 import LinkCell from '../../../../components/cells/LinkCell';
 import ContactForm from '../../../../components/contacts/ContactForm';
 import useGridPrefs from '../../../../hooks/useGridPrefs';
 import useOpenAsModal from '../../../../hooks/useOpenAsModal';
+import useAclPermissions from '../../../../hooks/useAclPermissions';
 
 import {
   useCreateContactMutation,
@@ -46,8 +48,11 @@ export default function ContactsPage() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [formBusy, setFormBusy] = useState(false);
   const [deleteBusyId, setDeleteBusyId] = useState(null);
+  const { can } = useAclPermissions();
+  const canDeleteContact = can('contact:delete');
 
   const {
     colWidths,
@@ -118,16 +123,18 @@ const closeModal = () => {
     listRef.current?.refetch?.();
   }, [setMainContact]);
 
-  const onDelete = useCallback(async (id) => {
-    if (!window.confirm(t('contacts.confirm.delete', 'Удалить контакт?'))) return;
+  const confirmDelete = useCallback(async () => {
+    const id = deleteTarget?.id;
+    if (!id) return;
     setDeleteBusyId(id);
     try {
       await deleteContact(id).unwrap();
+      setDeleteTarget(null);
       listRef.current?.refetch?.();
     } finally {
       setDeleteBusyId(null);
     }
-  }, [deleteContact, t]);
+  }, [deleteContact, deleteTarget]);
 
   const columns = useMemo(
     () => [
@@ -222,19 +229,21 @@ render: (row) => formatDate(row.updatedAt, i18n.language),
           </a>
         ) : null}
 
-        <button
-          type="button"
-          className={`${s.actionBtn} ${s.actionDanger}`}
-          onClick={() => onDelete(row.id)}
-          disabled={deleteBusyId === row.id}
-        >
-          {deleteBusyId === row.id
-            ? t('common.loading', 'Загрузка...')
-            : t('common.delete', 'Удалить')}
-        </button>
+        {canDeleteContact ? (
+          <button
+            type="button"
+            className={`${s.actionBtn} ${s.actionDanger}`}
+            onClick={() => setDeleteTarget(row)}
+            disabled={deleteBusyId === row.id}
+          >
+            {deleteBusyId === row.id
+              ? t('common.loading', 'Загрузка...')
+              : t('common.delete', 'Удалить')}
+          </button>
+        ) : null}
       </div>
     ),
-    [deleteBusyId, onDelete, onSetMain, t]
+    [canDeleteContact, deleteBusyId, onSetMain, t]
   );
 
     // onFormSubmit: вспомогательная логика компонента.
@@ -347,7 +356,18 @@ const onFormSubmit = async (payload) => {
           onSubmit={onFormSubmit}
         />
       </Modal>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={t('contacts.confirm.deleteTitle', 'Удалить контакт?')}
+        text={t('contacts.confirm.delete', 'Удалить контакт?')}
+        okText={t('common.delete', 'Удалить')}
+        cancelText={t('common.cancel', 'Отмена')}
+        danger
+        loading={Boolean(deleteBusyId)}
+        onOk={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </>
   );
 }
-

@@ -7,6 +7,7 @@ import FilterToolbar from '../../../../components/filters/FilterToolbar';
 import LinkCell from '../../../../components/cells/LinkCell';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import Modal from '../../../../components/Modal';
+import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
 import {
   AutocompleteField,
   DateField,
@@ -18,9 +19,11 @@ import {
 import useGridPrefs from '../../../../hooks/useGridPrefs';
 import useOpenAsModal from '../../../../hooks/useOpenAsModal';
 import useCompanyMembersOptions from '../../../../hooks/useCompanyMembersOptions';
+import useAclPermissions from '../../../../hooks/useAclPermissions';
 
 import {
   useCreateDealMutation,
+  useDeleteDealMutation,
   useMarkWonMutation,
   useMarkLostMutation,
 } from '../../../../store/rtk/dealsApi';
@@ -294,9 +297,13 @@ export default function DealsListPage() {
   } = useGridPrefs('crm.deals');
 
   const [open, setOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [createDeal, { isLoading: creating }] = useCreateDealMutation();
+  const [deleteDeal, { isLoading: deleting }] = useDeleteDealMutation();
   const [markWon] = useMarkWonMutation();
   const [markLost] = useMarkLostMutation();
+  const { can } = useAclPermissions();
+  const canDeleteDeal = can('deal:delete');
   const { options: ownerOptions } = useCompanyMembersOptions();
   const statusLabels = useMemo(() => buildStatusLabels(t), [t]);
   const statusOptions = useMemo(
@@ -402,9 +409,29 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
         >
           {t('deals.actions.lost', 'Lost')}
         </button>
+        {canDeleteDeal ? (
+          <>
+            <span className={s.sep}>·</span>
+            <button
+              type="button"
+              className={s.rowDanger}
+              disabled={deleting}
+              onClick={() => setDeleteTarget(row)}
+            >
+              {t('common.delete', 'Удалить')}
+            </button>
+          </>
+        ) : null}
       </div>
     );
-  }, [markLost, markWon, openDetail, t]);
+  }, [canDeleteDeal, deleting, markLost, markWon, openDetail, t]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteTarget?.id) return;
+    await deleteDeal(deleteTarget.id).unwrap();
+    setDeleteTarget(null);
+    listRef.current?.refetch?.();
+  }, [deleteDeal, deleteTarget]);
 
   return (
     <>
@@ -416,6 +443,7 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
         defaultQuery={defaultQuery}
         actions={actions}
         rowActions={rowActions}
+        rowActionsWidth={280}
         columnWidths={colWidths}
         onColumnResize={onColumnResize}
         columnOrder={colOrder}
@@ -512,6 +540,21 @@ render: ({ query, onChange }) => (
           }}
         />
       </Modal>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={t('deals.confirm.deleteTitle', 'Удалить сделку?')}
+        text={t(
+          'deals.confirm.deleteText',
+          'Сделка будет удалена или архивирована согласно настройкам системы.'
+        )}
+        okText={t('common.delete', 'Удалить')}
+        cancelText={t('common.cancel', 'Отмена')}
+        danger
+        loading={deleting}
+        onOk={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </>
   );
 }

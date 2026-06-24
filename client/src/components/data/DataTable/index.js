@@ -49,6 +49,7 @@ export default function DataTable({
   sortKey,
   sortDir,
   rowActions,
+  rowActionsWidth = 120,
   onRowClick,
   rowClassName,
 
@@ -195,9 +196,9 @@ const startResize = (key, index, e) => {
   const liveTableWidth = React.useMemo(() => {
     let sum = 0;
     visibleOrder.forEach(k => { sum += liveWidths.get(k) || 0; });
-    if (rowActions) sum += 120;
+    if (rowActions) sum += rowActionsWidth;
     return sum;
-  }, [rowActions, visibleOrder, liveWidths]);
+  }, [rowActions, rowActionsWidth, visibleOrder, liveWidths]);
 
   const commitResize = React.useCallback((key, _index, nextW) => {
     onColumnResize({ ...columnWidths, [key]: clamp(key, nextW) });
@@ -289,7 +290,7 @@ const onDrop = (key) => (e) => {
           {visibleOrder.map((k) => (
             <col key={k} style={{ width: widthAt(k) }} />
           ))}
-          {rowActions && <col style={{ width: 120 }} />}
+          {rowActions && <col style={{ width: rowActionsWidth }} />}
         </colgroup>
 
         <thead>

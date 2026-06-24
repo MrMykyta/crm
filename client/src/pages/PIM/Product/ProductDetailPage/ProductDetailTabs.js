@@ -63,6 +63,7 @@ import {
   UNIT_FACTORS,
 } from '../../../../utils/measurements';
 import { withApiOrigin } from '../../../../config/api';
+import useAclPermissions from '../../../../hooks/useAclPermissions';
 import s from './ProductDetailPage.module.css';
 
 // formatDateTime: форматирует данные для отображения.
@@ -2282,6 +2283,11 @@ function SuppliersPurchaseTab({ productId, product }) {
 
 // Компонент PricesTab: отвечает за отображение UI и обработку взаимодействий пользователя.
 function PricesTab({ productId, product }) {
+  const { can } = useAclPermissions();
+  const canReadPriceList = can('price_list:read');
+  const canCreatePriceList = can('price_list:create');
+  const canUpdatePriceList = can('price_list:update');
+  const canDeletePriceList = can('price_list:delete');
   const { data, isFetching } = useGetProductPricesQuery(productId);
   const { data: suppliersData } = useListCounterpartiesQuery({
     limit: 100,
@@ -2289,7 +2295,10 @@ function PricesTab({ productId, product }) {
     dir: 'ASC',
     excludeLeadClient: true,
   });
-  const { data: listsData } = useListPriceListsLookupQuery({ limit: 100 });
+  const { data: listsData } = useListPriceListsLookupQuery(
+    { limit: 100 },
+    { skip: !canReadPriceList }
+  );
 
   const [createPrice] = useCreateProductPriceMutation();
   const [updatePrice] = useUpdateProductPriceMutation();
@@ -2372,6 +2381,8 @@ const openEdit = (item) => {
 const submit = async (event) => {
     event?.preventDefault();
     setError('');
+    if (editing?.id && !canUpdatePriceList) return;
+    if (!editing?.id && !canCreatePriceList) return;
 
     if (form.type === 'purchase' && !String(form.supplierId || '').trim()) {
       setError('Выберите поставщика');
@@ -2476,7 +2487,7 @@ render: (row) => formatQuantity(row.minQty || 1, { symbol: row.unit, precision: 
               Продажа: от {formatNumber(minSaleRow.amount, { digits: 2 })} {minSaleRow?.item?.currency || product?.currency || 'PLN'} ({minSaleRow.mode === 'gross' ? 'брутто' : 'нетто'})
             </span>
           ) : null}
-          <AddButton onClick={openCreate}>Добавить ценник</AddButton>
+          {canCreatePriceList ? <AddButton onClick={openCreate}>Добавить ценник</AddButton> : null}
         </div>
       </div>
       <div className={s.hint}>Здесь управляются закупочные и продажные цены товара.</div>
@@ -2491,7 +2502,7 @@ render: (row) => formatQuantity(row.minQty || 1, { symbol: row.unit, precision: 
           <div className={s.emptyStateTitle}>У товара пока нет цен</div>
           <div className={s.emptyStateText}>Добавьте закупочную или продажную цену, чтобы использовать товар в коммерческих сценариях.</div>
           <div className={s.emptyStateActions}>
-            <AddButton onClick={openCreate}>Добавить цену</AddButton>
+            {canCreatePriceList ? <AddButton onClick={openCreate}>Добавить цену</AddButton> : null}
           </div>
         </div>
       ) : null}
@@ -2503,18 +2514,20 @@ render: (row) => formatQuantity(row.minQty || 1, { symbol: row.unit, precision: 
           columns={columns}
           data={purchaseItems}
           loading={isFetching}
-          rowActions={(row) => (
+          rowActions={canUpdatePriceList || canDeletePriceList ? (row) => (
             <div className={s.rowActions}>
-              <button type="button" className={s.actionBtn} onClick={() => openEdit(row)}>Редактировать</button>
-              <button
-                type="button"
-                className={`${s.actionBtn} ${s.actionDanger}`}
-                onClick={() => setPriceToDelete(row)}
-              >
-                Удалить
-              </button>
+              {canUpdatePriceList ? <button type="button" className={s.actionBtn} onClick={() => openEdit(row)}>Редактировать</button> : null}
+              {canDeletePriceList ? (
+                <button
+                  type="button"
+                  className={`${s.actionBtn} ${s.actionDanger}`}
+                  onClick={() => setPriceToDelete(row)}
+                >
+                  Удалить
+                </button>
+              ) : null}
             </div>
-          )}
+          ) : undefined}
         />
       </div>
 
@@ -2525,18 +2538,20 @@ render: (row) => formatQuantity(row.minQty || 1, { symbol: row.unit, precision: 
           columns={columns}
           data={saleItems}
           loading={isFetching}
-          rowActions={(row) => (
+          rowActions={canUpdatePriceList || canDeletePriceList ? (row) => (
             <div className={s.rowActions}>
-              <button type="button" className={s.actionBtn} onClick={() => openEdit(row)}>Редактировать</button>
-              <button
-                type="button"
-                className={`${s.actionBtn} ${s.actionDanger}`}
-                onClick={() => setPriceToDelete(row)}
-              >
-                Удалить
-              </button>
+              {canUpdatePriceList ? <button type="button" className={s.actionBtn} onClick={() => openEdit(row)}>Редактировать</button> : null}
+              {canDeletePriceList ? (
+                <button
+                  type="button"
+                  className={`${s.actionBtn} ${s.actionDanger}`}
+                  onClick={() => setPriceToDelete(row)}
+                >
+                  Удалить
+                </button>
+              ) : null}
             </div>
-          )}
+          ) : undefined}
         />
       </div>
 
@@ -2550,7 +2565,7 @@ render: (row) => formatQuantity(row.minQty || 1, { symbol: row.unit, precision: 
         footer={(
           <>
             <Modal.Button onClick={() => setOpen(false)}>Отмена</Modal.Button>
-            <Modal.Button variant="primary" form="product-price-form" disabled={busy}>
+            <Modal.Button variant="primary" form="product-price-form" disabled={busy || (editing ? !canUpdatePriceList : !canCreatePriceList)}>
               {busy ? 'Сохранение...' : 'Сохранить'}
             </Modal.Button>
           </>
@@ -3733,6 +3748,10 @@ function ProductPickerDemoTab() {
 export default function ProductDetailTabs({ tab, data, values, onChange }) {
   const productId = data?.id;
   const [updateDescription] = useUpdateProductDescriptionMutation();
+  const hasDescriptionValue = Object.prototype.hasOwnProperty.call(values || {}, 'description');
+  const descriptionHtml = hasDescriptionValue
+    ? String(values?.description ?? '')
+    : String(data?.description ?? '');
 
   if (!productId) return null;
 
@@ -3740,7 +3759,7 @@ export default function ProductDetailTabs({ tab, data, values, onChange }) {
     return (
       <HtmlDescriptionSection
         title="Описание"
-        value={values?.description || data?.description || ''}
+        value={descriptionHtml}
         onSave={async (nextHtml) => {
           const saved = await updateDescription({
             id: productId,

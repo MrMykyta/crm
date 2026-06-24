@@ -1,7 +1,42 @@
 const { v4: uuidv4 } = require('uuid');
+const { Op } = require('sequelize');
 const { Permission, Role, RolePermission, UserRole } = require('../../models');
 const { PERMISSIONS } = require('../../constants/permissions');
-const { DEFAULT_ROLE_SETS } = require('../../constants/aclDefaults');
+const { DEFAULT_ROLE_META, DEFAULT_ROLE_SETS, normalizeRoleSlug } = require('../../constants/aclDefaults');
+
+const DEFAULT_ROLE_SLUGS = Object.keys(DEFAULT_ROLE_SETS);
+
+function roleDefaultSlug(role) {
+    const slug = normalizeRoleSlug(role.slug);
+    if (DEFAULT_ROLE_SETS[slug]) return slug;
+
+    const legacyName = normalizeRoleSlug(role.name);
+    if (DEFAULT_ROLE_SETS[legacyName]) return legacyName;
+
+    return null;
+}
+
+function canonicalRoleMap(roles) {
+    const map = new Map();
+    for (const role of roles) {
+        const slug = roleDefaultSlug(role);
+        if (slug && !map.has(slug)) {
+            map.set(slug, role.id);
+        }
+    }
+    return map;
+}
+
+async function ensureRoleMetadata(role, meta, transaction) {
+    const patch = {};
+    if (role.slug !== meta.slug) patch.slug = meta.slug;
+    if (role.isSystem !== meta.isSystem) patch.isSystem = meta.isSystem;
+    if (role.isDefault !== meta.isDefault) patch.isDefault = meta.isDefault;
+
+    if (Object.keys(patch).length) {
+        await role.update(patch, { transaction });
+    }
+}
 
 /**
  * Создаёт дефолтные роли, мапит права и назначает владельца.
@@ -28,22 +63,65 @@ module.exports.bootstrapCompanyAcl = async ({ companyId, ownerUserId, transactio
         .map(name => ({ id: uuidv4(), name, description: null }));
 
     if (toInsert.length) {
-        await Permission.bulkCreate(toInsert, { transaction });
+        await Permission.bulkCreate(toInsert, { ignoreDuplicates: true, transaction });
     }
 
     const allPerms = await Permission.findAll({ attributes: ['id','name'], transaction });
 
     const permMap = new Map(allPerms.map(p => [p.name, p.id]));
 
-    // 2) Create roles for company
-    const roleRows = ['owner','admin','manager','employee'].map(name => ({
-        id: uuidv4(), companyId, name, description: `Default ${name} role`
-    }));
-    await Role.bulkCreate(roleRows, { transaction });
+    // 2) Ensure default roles for company.
+    // slug-first lookup with legacy name fallback; duplicate legacy rows are not deleted.
+    let roles = await Role.findAll({
+        where: {
+            companyId,
+            [Op.or]: [
+                { slug: DEFAULT_ROLE_SLUGS },
+                { name: DEFAULT_ROLE_SLUGS },
+            ],
+        },
+        order: [['slug', 'ASC'], ['name', 'ASC'], ['createdAt', 'ASC'], ['id', 'ASC']],
+        transaction
+    });
+    let roleMap = canonicalRoleMap(roles);
 
-    const roles = await Role.findAll({ where: { companyId }, transaction });
+    for (const role of roles) {
+        const slug = roleDefaultSlug(role);
+        const meta = slug ? DEFAULT_ROLE_META[slug] : null;
+        if (meta) {
+            await ensureRoleMetadata(role, meta, transaction);
+        }
+    }
 
-    const roleMap = new Map(roles.map(r => [r.name, r.id]));
+    for (const slug of DEFAULT_ROLE_SLUGS) {
+        if (roleMap.has(slug)) {
+            continue;
+        }
+        const meta = DEFAULT_ROLE_META[slug];
+        const role = await Role.create({
+            id: uuidv4(),
+            companyId,
+            name: meta.name,
+            slug: meta.slug,
+            isSystem: meta.isSystem,
+            isDefault: meta.isDefault,
+            description: `Default ${meta.slug} role`
+        }, { transaction });
+        roleMap.set(slug, role.id);
+    }
+
+    roles = await Role.findAll({
+        where: {
+            companyId,
+            [Op.or]: [
+                { slug: DEFAULT_ROLE_SLUGS },
+                { name: DEFAULT_ROLE_SLUGS },
+            ],
+        },
+        order: [['slug', 'ASC'], ['name', 'ASC'], ['createdAt', 'ASC'], ['id', 'ASC']],
+        transaction
+    });
+    roleMap = canonicalRoleMap(roles);
 
     // 3) Map role -> permissions
     const rpRows = [];
@@ -66,8 +144,12 @@ module.exports.bootstrapCompanyAcl = async ({ companyId, ownerUserId, transactio
 
     // 4) Assign owner role to creator
     const ownerRoleId = roleMap.get('owner');
+    if (!ownerRoleId) {
+        throw new Error('owner role was not created');
+    }
     await UserRole.findOrCreate({
         where: { userId: ownerUserId, companyId, roleId: ownerRoleId },
+        defaults: { userId: ownerUserId, companyId, roleId: ownerRoleId },
         transaction
     });
 

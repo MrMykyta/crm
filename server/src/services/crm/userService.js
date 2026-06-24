@@ -433,6 +433,7 @@ exports.getById = async (userId, companyId) => {
       role: membership.role,
       status: membership.status,
       isLead: !!membership.isLead,
+      departmentId: membership.departmentId || null,
       department: membership.department ? { id: membership.department.id, name: membership.department.name } : null,
       createdAt: membership.createdAt,
     } : null,
@@ -483,4 +484,3 @@ exports.updateById = async (userId, companyId, payload = {}) => {
     throw e;
   }
 };
-

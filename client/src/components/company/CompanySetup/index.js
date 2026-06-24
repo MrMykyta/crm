@@ -71,7 +71,7 @@ const toNull = (v) => (v === '' ? null : v);
   const schema = Yup.object({
     name:      Yup.string().max(120, 'Too long').required(t('common.required')),
     legalName: Yup.string().max(160, 'Too long').transform(toNull).nullable(),
-    taxId:     Yup.string().max(32,  'Too long').transform(toNull).nullable(),
+    taxId:     Yup.string().max(10,  'Too long').transform(toNull).nullable(),
     country:   Yup.string().length(2, 'ISO 2').required(t('common.required')),
     website:   Yup.string().url('Invalid URL').transform(toNull).nullable(),
   });
@@ -83,8 +83,15 @@ const toNull = (v) => (v === '' ? null : v);
       onSubmit={async (values, { setSubmitting, setStatus }) => {
         setStatus(null);
         try {
+          const companyPayload = {
+            name: values.name,
+            country: values.country,
+            website: values.website,
+            nip: values.taxId,
+          };
+
           // 1) создаём компанию (authApi.onQueryStarted сам положит токены/activeCompanyId)
-          const data = await createCompany(values).unwrap();
+          const data = await createCompany(companyPayload).unwrap();
 
           const companyId =
             data?.activeCompanyId ||

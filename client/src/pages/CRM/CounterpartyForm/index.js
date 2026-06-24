@@ -71,6 +71,7 @@ export default function CounterpartyForm({
   loading = false,
   withButtons = true,
   initial = {},
+  departments = [],
 
   // 🔧 новые универсальные настройки
   allowedTypes = TYPES,
@@ -84,11 +85,22 @@ export default function CounterpartyForm({
     () => getCountryOptions(i18n.language),
     [i18n.language]
   );
+  const departmentOptions = useMemo(
+    () =>
+      (Array.isArray(departments) ? departments : [])
+        .filter((department) => department?.isActive !== false && !department?.deletedAt)
+        .map((department) => ({
+          value: String(department.id),
+          label: department.name || department.code || String(department.id),
+        })),
+    [departments]
+  );
 
   const initialState = useMemo(() => {
     let base = {
       shortName:'', fullName:'', nip:'', regon:'', krs:'', bdo:'',
       country:'', city:'', postalCode:'', street:'', description:'',
+      departmentId: '',
       type: defaultType,
       status: defaultStatus ?? (defaultType === 'lead' ? 'potential' : 'active'),
       isCompany: true,
@@ -153,6 +165,7 @@ const handleSubmit = async (e) => {
       postalCode: trimOrNull(values.postalCode),
       street:     trimOrNull(values.street),
       description:trimOrNull(values.description),
+      departmentId: trimOrNull(values.departmentId),
     };
 
     // если форма заблокировала тип/статус — поверх текущих значений аккуратно ставим дефолт
@@ -248,6 +261,20 @@ const counter = (name) => {
             disabled={lockStatus}
           />
           {errors.status && <div className={s.err}>{errors.status}</div>}
+        </div>
+
+        <div className={s.field}>
+          <label className={s.label}>{t('crm.form.fields.department')}</label>
+          <SelectField
+            inputClassName={s.input}
+            value={values.departmentId || ''}
+            onValueChange={(val)=>set('departmentId', val || '')}
+            options={departmentOptions}
+            placeholder={t('crm.form.placeholders.department')}
+            clearable
+            searchable
+          />
+          <div className={s.fieldHint}>{t('crm.form.hints.departmentVisibility')}</div>
         </div>
 
         {/* Рег. номера */}

@@ -31,6 +31,7 @@ export default function EntityDetailPage({
   panelClassName = "",
   formClassName = "",
   formVariant = "",
+  readOnly = false,
   activeTab,
   onActiveTabChange,
   hideTabs = false,
@@ -85,6 +86,10 @@ export default function EntityDetailPage({
   const debounceMs = autosave?.debounceMs ?? 500;
 
   const schema = useMemo(() => schemaBuilder(i18n), [schemaBuilder, i18n]);
+  const renderedSchema = useMemo(() => {
+    if (!readOnly || !Array.isArray(schema)) return schema;
+    return schema.map((field) => ({ ...field, disabled: true }));
+  }, [readOnly, schema]);
   // Вспомогательный timestamp для draft/метаданных сохранения.
   const stamp = () => new Date().toISOString();
 
@@ -139,6 +144,7 @@ const stringify = (o) => {
 
   // Выполняет фактическое сохранение (с защитой от параллельных запросов и no-op изменений).
   const flushSave = async () => {
+    if (readOnly) return;
     if (unmounted.current) return;
     if (inFlight.current) return;
     if (!dirtyRef.current) return;
@@ -176,6 +182,7 @@ const stringify = (o) => {
 
   // Ставит сохранение в debounce-очередь и пишет текущий draft локально.
   const scheduleSave = () => {
+    if (readOnly) return;
     const payload = makePayload(values);
     const nowJSON = stableStringify(payload);
     if (nowJSON === lastSavedJSONRef.current) {
@@ -219,9 +226,11 @@ const stringify = (o) => {
   }, [id]);
 
   // Автосохранение при изменении формы.
-  useEffect(() => { if (data != null) scheduleSave(); /* eslint-disable-next-line */ }, [values]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!readOnly && data != null) scheduleSave(); }, [values]);
   // Автосохранение при изменении внешних зависимостей payload.
-  useEffect(() => { if (data != null) scheduleSave(); /* eslint-disable-next-line */ }, payloadDeps);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!readOnly && data != null) scheduleSave(); }, payloadDeps);
 
   useEffect(() => {
     if (!saveOnExit) return;
@@ -243,7 +252,10 @@ const onVisibilityChange = () => {
   }, [values, data]);
 
   // Унифицированный setter для полей SmartForm.
-  const onChange = (name, val) => setValues(v => ({ ...v, [name]: val }));
+  const onChange = (name, val) => {
+    if (readOnly) return;
+    setValues(v => ({ ...v, [name]: val }));
+  };
 
   if (!data) return null;
 
@@ -261,14 +273,16 @@ const onVisibilityChange = () => {
           values={values}
           errors={errors}
           onChange={onChange}
-          schema={schema}
+          schema={renderedSchema}
           i18n={{ t }}
           className={formClassName}
           variant={formVariant}
         />
         {leftExtras}
         <div className={styles.autosaveHint}>
-          {saving
+          {readOnly
+            ? t("common.noPermission", "No permission")
+            : saving
             ? t("common.saving", "Сохранение...")
             : (dirtyRef.current ? t("common.unsaved", "Есть несохранённые изменения") : t("common.saved", "Сохранено"))}
           {saveError && <span className={styles.saveErr}> • {saveError}</span>}

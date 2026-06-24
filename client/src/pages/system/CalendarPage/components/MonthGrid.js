@@ -1,11 +1,13 @@
 // src/components/Calendar/MonthGrid.jsx
 import React from "react";
 import s from "../CalendarPage.module.css";
+import { isSameDay } from "./dateUtils";
 
 // Компонент MonthGrid: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function MonthGrid({
   baseDate,
   today,
+  selectedDate,
   onClickDay,
   compact = false,
   yearMode = false,
@@ -39,10 +41,8 @@ export default function MonthGrid({
   return (
     <div className={compact ? s.monthGridCompact : s.monthGrid}>
       {days.map(({ date, outside }) => {
-        const isToday =
-          date.getFullYear() === today.getFullYear() &&
-          date.getMonth() === today.getMonth() &&
-          date.getDate() === today.getDate();
+        const isToday = isSameDay(date, today);
+        const isSelected = selectedDate && isSameDay(date, selectedDate);
 
         const shouldHighlightToday = !yearMode || month === today.getMonth();
 
@@ -54,6 +54,7 @@ export default function MonthGrid({
               s.mgCell,
               outside ? s.mgOutside : "",
               isToday && shouldHighlightToday ? s.mgToday : "",
+              isSelected ? s.mgSelected : "",
             ].join(" ")}
             onClick={() => onClickDay && onClickDay(date)}
           >

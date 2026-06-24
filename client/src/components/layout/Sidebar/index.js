@@ -9,6 +9,7 @@ import WorkspaceViewsSidebarSection from "../../common/WorkspaceViews/WorkspaceV
 import WorkspaceViewsFlyout from "../../common/WorkspaceViews/WorkspaceViewsFlyout";
 import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import { useListWarehousesQuery } from "../../../store/rtk/wmsDocumentsApi";
+import useAclPermissions, { hasAclRequirements } from "../../../hooks/useAclPermissions";
 import styles from "./Sidebar.module.css";
 
 // RTK Query — данные компании
@@ -18,6 +19,7 @@ import { useGetCompanyQuery } from "../../../store/rtk/companyApi";
 export default function Sidebar({ collapsed = false, onToggle, onNavigate, t }) {
   const { pathname } = useLocation();
   const brandWrapRef = useRef(null);
+  const acl = useAclPermissions();
 
   // из Redux
   const companyId = useSelector(s => s.auth?.companyId);
@@ -66,20 +68,23 @@ const onReady = (e) => setPreAvatar(e?.detail?.url || "");
   const { url: companyAvatarUrl, onError: onCompanyAvatarError } = useSignedFileUrl(company?.avatarUrl || preAvatar || "");
 
   const sections = useMemo(() => {
+    const canShow = (item) => hasAclRequirements(acl, item);
     const res = [];
     let current = null;
     for (const item of MENU) {
       if (item.type === "section") {
         current = { ...item, children: [] };
         res.push(current);
+      } else if (!canShow(item)) {
+        continue;
       } else if (current) {
         current.children.push(item);
       } else {
         res.push(item);
       }
     }
-    return res;
-  }, []);
+    return res.filter((item) => item.type !== "section" || item.children.length > 0);
+  }, [acl]);
 
     // tr: вспомогательная логика компонента.
 const tr = (key) => (t ? t(key) : key);

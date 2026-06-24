@@ -2,7 +2,11 @@
 'use strict';
 
 const service = require('../../services/system/invitationService');
-const { Company } = require('../../models');
+const { Company, User } = require('../../models');
+
+function getUserDisplayName(user) {
+  return [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || user?.email || '';
+}
 
 // Возвращает список приглашений с учётом фильтров и доступа.
 exports.listInvitations = async (req, res) => {
@@ -33,7 +37,14 @@ exports.createInvitation = async (req, res) => {
 exports.resendInvitation = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await service.resend(id, req.user);
+    const companyId = req.user.companyId;
+    const company = await Company.findByPk(companyId, { attributes: ['id', 'name'] });
+    if (!company) return res.status(404).json({ error: 'Company not found' });
+
+    const invitedBy = await User.findByPk(req.user.id, {
+      attributes: ['id', 'email', 'firstName', 'lastName'],
+    });
+    const result = await service.resend(id, company.name, getUserDisplayName(invitedBy));
     res.json(result);
   } catch (e) {
     res.status(400).json({ error: e.message });
@@ -73,4 +84,3 @@ exports.acceptInvitation = async (req, res) => {
     res.status(400).json({ error: e.message });
   }
 };
-

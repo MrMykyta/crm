@@ -14,6 +14,7 @@ import {
 import { DOCUMENT_VIEW_MODES } from "../../components/documents/documentViewModes";
 import { getDocumentTypeConfig } from "../../components/documents/documentTypeConfig";
 import { getDocumentStatusLabel } from "../../components/documents/documentStatusConfig";
+import useAclPermissions from "../../hooks/useAclPermissions";
 import styles from "./DocumentEditorPage.module.css";
 
 const SPLIT_MODE_MIN_WIDTH = 1240;
@@ -38,6 +39,8 @@ export default function DocumentCreatePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const topbar = useTopbarOptional();
+  const { can } = useAclPermissions();
+  const canCreateDocument = can("document:create");
   const [viewMode, setViewMode] = useState(DOCUMENT_VIEW_MODES.EDIT);
   const [isCompactViewport, setIsCompactViewport] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -172,7 +175,7 @@ export default function DocumentCreatePage() {
                   disabled={isSaving}
                   disabledModes={isCompactViewport ? [DOCUMENT_VIEW_MODES.SPLIT] : []}
                 />
-                <button type="button" className={styles.saveButton} onClick={onSave} disabled={isSaving}>
+                <button type="button" className={styles.saveButton} onClick={onSave} disabled={isSaving || !canCreateDocument}>
                   {isSaving ? "Сохранение..." : "Сохранить"}
                 </button>
               </div>
@@ -182,7 +185,7 @@ export default function DocumentCreatePage() {
               formState={formState}
               clients={clients}
               isClientsLoading={isClientsLoading}
-              disabled={isSaving}
+              disabled={isSaving || !canCreateDocument}
               error={saveError}
               viewMode={viewMode}
             />

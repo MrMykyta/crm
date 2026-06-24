@@ -148,9 +148,18 @@ const buildDocsViewerUrl = (url) =>
   `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`;
 
 // ================= ОБЁРТКА =================
-export default function ChatWindow({ roomId, mode = "room", onExitCreate }) {
+export default function ChatWindow({ roomId, mode = "room", onExitCreate, canWrite = true }) {
   const { t } = useTranslation();
   if (mode === "createDirect" || mode === "createGroup") {
+    if (!canWrite) {
+      return (
+        <div className={s.window}>
+          <div className={s.chatMain}>
+            <div className={s.empty}>{t("acl.noPermission", "You do not have permission to access this page.")}</div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className={s.window}>
         <div className={s.chatMain}>
@@ -173,11 +182,11 @@ export default function ChatWindow({ roomId, mode = "room", onExitCreate }) {
     );
   }
 
-  return <ChatRoomWindow roomId={roomId} />;
+  return <ChatRoomWindow roomId={roomId} canWrite={canWrite} />;
 }
 
 // ================= ВНУТРЕННИЙ КОМПОНЕНТ =================
-function ChatRoomWindow({ roomId }) {
+function ChatRoomWindow({ roomId, canWrite = true }) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const chatMainRef = useRef(null);
@@ -1405,6 +1414,7 @@ const clearSelection = () => {
   // ====== ПЕРЕСЫЛКА ======
 
   const handleForward = (msg) => {
+    if (!canWrite) return;
     setForwardMessages([msg]);
     setForwardDialogOpen(true);
     setActiveOverlay({ type: "dialog", kind: "forward" });
@@ -1413,11 +1423,13 @@ const clearSelection = () => {
 
     // handleSelect: обработчик пользовательского действия.
 const handleSelect = (msg) => {
+    if (!canWrite) return;
     startSelectWith(msg);
   };
 
     // handleForwardSelected: обработчик пользовательского действия.
 const handleForwardSelected = () => {
+    if (!canWrite) return;
     if (!selectedIds.length) return;
     const idSet = new Set(selectedIds);
 
@@ -1449,6 +1461,7 @@ const getForwardSourceId = (msg) => {
 
     // handleForwardSelectRoom: обработчик пользовательского действия.
 const handleForwardSelectRoom = (targetRoomId) => {
+    if (!canWrite) return;
     const socket = getSocket();
     if (!socket || !forwardMessages.length) return;
 
@@ -1517,6 +1530,7 @@ const cancelEdit = () => {
 
     // handleEdit: обработчик пользовательского действия.
 const handleEdit = (msg) => {
+    if (!canWrite) return;
     if (!isMessageEditable(msg)) {
       closeMenu();
       return;
@@ -1539,6 +1553,7 @@ const handleEdit = (msg) => {
 
     // handlePin: обработчик пользовательского действия.
 const handlePin = (msg) => {
+    if (!canWrite) return;
     if (!msg || !msg._id) {
       closeMenu();
       return;
@@ -1591,6 +1606,7 @@ const handlePin = (msg) => {
 
     // handleUnpinFromBar: обработчик пользовательского действия.
 const handleUnpinFromBar = (messageId) => {
+    if (!canWrite) return;
     if (!messageId) return;
     const socket = getSocket();
     if (!socket) return;
@@ -1600,6 +1616,7 @@ const handleUnpinFromBar = (messageId) => {
 
     // handleDelete: обработчик пользовательского действия.
 const handleDelete = (msg) => {
+    if (!canWrite) return;
     if (!msg || !msg._id) {
       closeMenu();
       return;
@@ -1619,6 +1636,7 @@ const handleDelete = (msg) => {
 
   // Toggle reaction for a message and sync response into Redux.
   const handleToggleReaction = async (messageId, emoji) => {
+    if (!canWrite) return;
     if (!messageId || !emoji) return;
     try {
       const res = await toggleReaction({
@@ -1647,6 +1665,7 @@ const handleDelete = (msg) => {
 
     // confirmDelete: вспомогательная логика компонента.
 const confirmDelete = async () => {
+    if (!canWrite) return;
     const msg = deleteConfirm.message;
     if (!msg || !msg._id) {
       setDeleteConfirm({ open: false, message: null });
@@ -1696,7 +1715,8 @@ const handleShowOriginal = (msg) => {
   };
 
   // ===== отправка через socket =====
-  const handleSend = async () => {
+const handleSend = async () => {
+    if (!canWrite) return;
     const raw = text || "";
     const trimmed = raw.trim();
     const hasText = trimmed.length > 0;
@@ -1785,6 +1805,7 @@ const handleShowOriginal = (msg) => {
 
     // onKeyDown: вспомогательная логика компонента.
 const onKeyDown = (e) => {
+    if (!canWrite) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -1793,6 +1814,7 @@ const onKeyDown = (e) => {
 
     // onChangeText: вспомогательная логика компонента.
 const onChangeText = (e) => {
+    if (!canWrite) return;
     const next = e.target.value;
     setText(next);
     if (sendError) setSendError(false);
@@ -2070,13 +2092,15 @@ const handleToggleDropdown = (e) => {
               )}
             </div>
 
-            <button
-              type="button"
-              className={s.pinnedCloseBtn}
-              onClick={() => handleUnpinFromBar(currentPinned._id)}
-            >
-              ✕
-            </button>
+            {canWrite ? (
+              <button
+                type="button"
+                className={s.pinnedCloseBtn}
+                onClick={() => handleUnpinFromBar(currentPinned._id)}
+              >
+                ✕
+              </button>
+            ) : null}
           </div>
         )}
 
@@ -2101,10 +2125,10 @@ const handleToggleDropdown = (e) => {
             searchQuery={searchQuery}
             onMessageActionsClick={openMessageMenu}
             onOpenMedia={handleOpenMediaViewer}
-            onToggleReaction={handleToggleReaction}
+            onToggleReaction={canWrite ? handleToggleReaction : null}
             selectMode={selectMode}
             selectedIds={selectedIds}
-            onToggleSelect={toggleSelect}
+            onToggleSelect={canWrite ? toggleSelect : null}
             hasMore={hasMore}
             isLoadingMore={isLoadingMore}
             onLoadMore={handleLoadMore}
@@ -2141,12 +2165,12 @@ const handleToggleDropdown = (e) => {
           side={menuState.side}
           message={menuState.message}
           attachmentActions={attachmentActions}
-          onToggleReaction={handleToggleReaction}
+          onToggleReaction={canWrite ? handleToggleReaction : null}
           timeMeta={menuTimeMeta}
-          canEdit={isMessageEditable(menuState.message)}
+          canEdit={canWrite && isMessageEditable(menuState.message)}
           canCopy={canCopyMessage(menuState.message)}
-          canForward={canForwardMessage(menuState.message)}
-          canDelete={canDeletePermission(menuState.message)}
+          canForward={canWrite && canForwardMessage(menuState.message)}
+          canDelete={canWrite && canDeletePermission(menuState.message)}
           canShowOriginal={!!getOriginalInfo(menuState.message)}
           deleteDisabled={!!menuState.message?.deletedAt}
           isDeleting={isDeleting}
@@ -2154,9 +2178,9 @@ const handleToggleDropdown = (e) => {
           onReply={handleReply}
           onCopy={handleCopy}
           onEdit={handleEdit}
-          onPin={handlePin}
-          onForward={handleForward}
-          onSelect={handleSelect}
+          onPin={canWrite ? handlePin : null}
+          onForward={canWrite ? handleForward : null}
+          onSelect={canWrite ? handleSelect : null}
           onDelete={handleDelete}
           onShowOriginal={handleShowOriginal}
           showOriginalLabel={t("chat.menu.showOriginal")}
@@ -2263,7 +2287,7 @@ const handleToggleDropdown = (e) => {
             <button
               type="button"
               className={s.selectBarBtnPrimary}
-              disabled={!selectedIds.length}
+              disabled={!canWrite || !selectedIds.length}
               onClick={handleForwardSelected}
             >
               {t("chat.select.forward")}
@@ -2277,7 +2301,8 @@ const handleToggleDropdown = (e) => {
           onKeyDown={onKeyDown}
           onSend={handleSend}
           isBusy={isBusy}
-          canSend={canSend}
+          canSend={canWrite && canSend}
+          disabled={!canWrite}
           onHeightChange={handleInputHeightChange}
           replyTo={replyContextToShow}
           onCancelReply={cancelComposerContext}
@@ -2288,7 +2313,7 @@ const handleToggleDropdown = (e) => {
           onRemoveAttachment={handleRemoveAttachment}
           onRetryAttachment={handleRetryAttachment}
           isUploading={hasUploading}
-          disableAttachments={isEditMode}
+          disableAttachments={!canWrite || isEditMode}
           sendError={sendError}
           onRetrySend={handleSend}
         />

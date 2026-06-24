@@ -5,6 +5,7 @@ import ListPage from "../../components/data/ListPage";
 import FilterToolbar from "../../components/filters/FilterToolbar";
 import AddButton from "../../components/buttons/AddButton/AddButton";
 import useGridPrefs from "../../hooks/useGridPrefs";
+import useAclPermissions from "../../hooks/useAclPermissions";
 import { createDocumentListColumns } from "../../components/data/ListPage/columnSchemas/documentsColumns";
 import { DOCUMENT_TYPE_OPTIONS } from "../../components/documents/documentTypeConfig";
 
@@ -19,6 +20,8 @@ const DIRECTION_OPTIONS = [
 export default function DocumentsListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { can } = useAclPermissions();
+  const canCreateDocument = can("document:create");
 
   const {
     colWidths,
@@ -53,11 +56,11 @@ export default function DocumentsListPage() {
       title={t("menu.documents", "Документы")}
       columns={columns}
       defaultQuery={{ sort: "createdAt", dir: "DESC", limit: 25 }}
-      actions={(
+      actions={canCreateDocument ? (
         <AddButton onClick={() => navigate("/main/documents/create")}>
           Создать документ
         </AddButton>
-      )}
+      ) : null}
       columnWidths={colWidths}
       onColumnResize={onColumnResize}
       columnOrder={colOrder}

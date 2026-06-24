@@ -36,9 +36,11 @@
 | `UrlField` | TextField type="url" |
 | `CurrencyField` | NumberField + prefix/suffix валюты |
 | `PercentField` | NumberField + суффикс "%" (min/max 0..100) |
-| `DateField` | Обёртка над `DateTimePicker` (date-only) |
-| `TimeField` | input type="time" поверх TextField |
-| `DateTimeField` | Обёртка над `DateTimePicker` (withTime) |
+| `DatePickerField` | Custom date picker поверх `DateTimePicker`; поддерживает `min`/`max`/`isDateDisabled` |
+| `TimePickerField` | Custom time picker без native `input type="time"` |
+| `DateField` | Back-compat alias для `DatePickerField` (date-only) |
+| `TimeField` | Back-compat alias для `TimePickerField` |
+| `DateTimeField` | Back-compat alias для `DatePickerField` с `withTime` |
 | `FileField` | Неконтролируемый file input |
 | `CountryField` | SelectField на `utils/countries.js` (ISO2) |
 | `FormActions` | Блок кнопок формы (submit/cancel) |

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, lazy, Suspense } from "react";
 import { Provider, useSelector, useDispatch } from "react-redux";
 import store, { startRealtime } from "./store";
@@ -53,6 +53,7 @@ import DocumentCreatePage from "./pages/documents/DocumentCreatePage";
 import DocumentDetailsPage from "./pages/documents/DocumentDetailsPage";
 import DocumentsListPage from "./pages/documents/DocumentsListPage";
 import ComingSoonPage from "./components/common/ComingSoonPage/ComingSoonPage";
+import RequirePermission from "./components/acl/RequirePermission";
 import WarehousePrintPage from "./pages/wms/WarehousePrintPage";
 import {
   getWmsDocumentsLegacyRoute,
@@ -98,6 +99,11 @@ const WmsParcelsRoute = () => {
       replace
     />
   );
+};
+
+const LegacyUserRedirect = () => {
+  const { userId } = useParams();
+  return <Navigate to={`/main/company-users/people/${encodeURIComponent(userId || "")}`} replace />;
 };
 
 // ===== Protected
@@ -181,7 +187,7 @@ function AppShell() {
           <Route path="notifications" element={<NotificationsPage />} />
 
           <Route path="company/details" element={<CompanyInfoPage />} />
-          <Route path="company-settings" element={<CompanySettings />}>
+          <Route path="company-settings" element={<RequirePermission requiredPermission="company:settings:read"><CompanySettings /></RequirePermission>}>
             <Route index element={<Navigate to="modules" replace />} />
             <Route path="modules" element={<CompanyModules />} />
             <Route path="warehouse" element={<WarehouseWmsSettings />} />
@@ -193,9 +199,9 @@ function AppShell() {
             <Route path="deals" element={<CompanyDeals />} />
             <Route path="invoices" element={<InvoicesSettings />} />
             <Route path="warehouse-docs" element={<WarehouseDocumentSettings />} />
-            <Route path="document-templates" element={<DocumentTemplatesPage />} />
-            <Route path="document-templates/new" element={<DocumentTemplatesPage />} />
-            <Route path="document-templates/:templateId/editor" element={<DocumentTemplateEditorPage />} />
+            <Route path="document-templates" element={<RequirePermission requiredPermission="document:template:read"><DocumentTemplatesPage /></RequirePermission>} />
+            <Route path="document-templates/new" element={<RequirePermission requiredPermission="document:template:manage"><DocumentTemplatesPage /></RequirePermission>} />
+            <Route path="document-templates/:templateId/editor" element={<RequirePermission requiredPermission="document:template:manage"><DocumentTemplateEditorPage /></RequirePermission>} />
             {/* UI-PLACEHOLDER-1: tabs already in the sidebar but pages not yet implemented. */}
             <Route path="lists" element={<ComingSoonPage titleKey="companySettings.lists" fallbackTitle="Lists" moduleName="company-settings.lists" />} />
             <Route path="offers" element={<ComingSoonPage titleKey="companySettings.offers" fallbackTitle="Offers" moduleName="company-settings.offers" />} />
@@ -206,29 +212,29 @@ function AppShell() {
             <Route path="other" element={<ComingSoonPage titleKey="companySettings.other" fallbackTitle="Other" moduleName="company-settings.other" />} />
           </Route>
 
-          <Route path="counterparties" element={<CounterpartiesPage />} />
+          <Route path="counterparties" element={<RequirePermission requiredPermission="counterparty:read"><CounterpartiesPage /></RequirePermission>} />
           <Route
             path="counterparties/:id"
-            element={<CounterpartyDetailPage />}
+            element={<RequirePermission requiredPermission="counterparty:read"><CounterpartyDetailPage /></RequirePermission>}
           />
-          <Route path="leads" element={<LeadsPage />} />
-          <Route path="leads/:id" element={<LeadDetailPage />} />
-          <Route path="clients" element={<ClientsPage />} />
-          <Route path="clients/:id" element={<ClientDetailPage />} />
+          <Route path="leads" element={<RequirePermission requiredPermission="counterparty:read"><LeadsPage /></RequirePermission>} />
+          <Route path="leads/:id" element={<RequirePermission requiredPermission="counterparty:read"><LeadDetailPage /></RequirePermission>} />
+          <Route path="clients" element={<RequirePermission requiredPermission="counterparty:read"><ClientsPage /></RequirePermission>} />
+          <Route path="clients/:id" element={<RequirePermission requiredPermission="counterparty:read"><ClientDetailPage /></RequirePermission>} />
 
-          <Route path="calendar" element={<CalendarPage />} />
-          <Route path="deals" element={<DealsListPage />} />
-          <Route path="deals/:id" element={<DealDetailsPage />} />
-          <Route path="tasks" element={<TaskPage />} />
-          <Route path="tasks/:id" element={<TaskDetailPage />} />
-          <Route path="notes" element={<NotesPage />} />
+          <Route path="calendar" element={<RequirePermission requiredPermission="task:read"><CalendarPage /></RequirePermission>} />
+          <Route path="deals" element={<RequirePermission requiredPermission="deal:read"><DealsListPage /></RequirePermission>} />
+          <Route path="deals/:id" element={<RequirePermission requiredPermission="deal:read"><DealDetailsPage /></RequirePermission>} />
+          <Route path="tasks" element={<RequirePermission requiredPermission="task:read"><TaskPage /></RequirePermission>} />
+          <Route path="tasks/:id" element={<RequirePermission requiredPermission="task:read"><TaskDetailPage /></RequirePermission>} />
+          <Route path="notes" element={<RequirePermission requiredPermission="note:read"><NotesPage /></RequirePermission>} />
           <Route path="contacts" element={<ContactsPage />} />
           <Route path="contacts/:id" element={<ContactDetailPage />} />
-          <Route path="products" element={<ProductsPage />} />
-          <Route path="products/:id" element={<ProductDetailPage />} />
-          <Route path="documents" element={<DocumentsListPage />} />
-          <Route path="documents/create" element={<DocumentCreatePage />} />
-          <Route path="documents/:id" element={<DocumentDetailsPage />} />
+          <Route path="products" element={<RequirePermission requiredPermission="product:read"><ProductsPage /></RequirePermission>} />
+          <Route path="products/:id" element={<RequirePermission requiredPermission="product:read"><ProductDetailPage /></RequirePermission>} />
+          <Route path="documents" element={<RequirePermission requiredPermission="document:read"><DocumentsListPage /></RequirePermission>} />
+          <Route path="documents/create" element={<RequirePermission requiredPermission="document:create"><DocumentCreatePage /></RequirePermission>} />
+          <Route path="documents/:id" element={<RequirePermission requiredPermission="document:read"><DocumentDetailsPage /></RequirePermission>} />
 
           <Route path="oms/orders" element={<LazyPage><OrdersListPage /></LazyPage>} />
           <Route path="oms/orders/new" element={<LazyPage><OrderEditorPage /></LazyPage>} />
@@ -248,7 +254,7 @@ function AppShell() {
           <Route path="oms/promotions" element={<ComingSoonPage titleKey="menu.promotions" fallbackTitle="Promotions" moduleName="oms.promotions" />} />
           <Route path="oms/coupons" element={<ComingSoonPage titleKey="menu.coupons" fallbackTitle="Coupons" moduleName="oms.coupons" />} />
           <Route path="oms/shipments" element={<ComingSoonPage titleKey="menu.shipments" fallbackTitle="Shipments" moduleName="oms.shipments" />} />
-          <Route path="pim/services" element={<ComingSoonPage titleKey="menu.services" fallbackTitle="Services" moduleName="pim.services" />} />
+          <Route path="pim/services" element={<RequirePermission requiredPermission="product:read"><ComingSoonPage titleKey="menu.services" fallbackTitle="Services" moduleName="pim.services" /></RequirePermission>} />
 
           {/* Workspace Views entry point — same page for all ?view= values. */}
           <Route path="wms" element={<Navigate to="/main/wms/documents" replace />} />
@@ -291,11 +297,17 @@ function AppShell() {
           <Route path="wms/cycle-counts/:id/print" element={<WarehousePrintPage kind="cycleCount" />} />
           <Route path="wms/cycle-counts/:id" element={<LazyPage><CycleCountDetailPage /></LazyPage>} />
 
-          <Route path="company-users" element={<CompanyUsers />} />
-          <Route path="users/:userId" element={<UserEntityPage />} />
+          <Route path="company-users" element={<Navigate to="/main/company-users/people" replace />} />
+          <Route path="company-users/people" element={<RequirePermission requiredPermission="member:read"><CompanyUsers /></RequirePermission>} />
+          <Route path="company-users/people/:id" element={<RequirePermission requiredAnyPermission={['member:read', 'role:read', 'permission:read']}><UserEntityPage /></RequirePermission>} />
+          <Route path="company-users/invitations" element={<RequirePermission requiredAnyPermission={['member:read', 'member:invite']}><CompanyUsers /></RequirePermission>} />
+          <Route path="company-users/roles" element={<RequirePermission requiredAnyPermission={['role:read', 'permission:read']}><CompanyUsers /></RequirePermission>} />
+          <Route path="company-users/departments" element={<RequirePermission requiredPermission="department:read"><CompanyUsers /></RequirePermission>} />
+          <Route path="company-users/departments/:id" element={<RequirePermission requiredPermission="department:read"><CompanyUsers /></RequirePermission>} />
+          <Route path="users/:userId" element={<LegacyUserRedirect />} />
 
 
-          <Route path="chat" element={<ChatPage />} />
+          <Route path="chat" element={<RequirePermission requiredPermission="chat.read"><ChatPage /></RequirePermission>} />
         </Route>
 
         <Route

@@ -10,7 +10,7 @@ const {
   UserPermission,
 } = require('../models');
 
-const { DEFAULT_ROLE_SETS, DEPT_HEAD_PERMS } = require('../constants/aclDefaults');
+const { DEFAULT_ROLE_SETS, canonicalMembershipRole } = require('../constants/aclDefaults');
 
 const CACHE_TTL = 60_000; // 60s
 const cache = new Map();
@@ -37,13 +37,14 @@ async function load({ userId, companyId }) {
   }
 
   const role = membership.role || null;
+  const defaultRole = canonicalMembershipRole(role);
 
   // Начинаем собирать множества allow/deny
   const allow = new Set();
   const deny  = new Set();
 
   // 1) БАЗОВЫЕ ПРАВА ПО РОЛИ ЧЛЕНСТВА (owner/admin/manager/user и т.д.)
-  const baseSet = DEFAULT_ROLE_SETS?.[role];
+  const baseSet = DEFAULT_ROLE_SETS?.[defaultRole];
   if (Array.isArray(baseSet)) {
     for (const p of baseSet) allow.add(p);
   }
@@ -82,10 +83,8 @@ async function load({ userId, companyId }) {
     }
   }
 
-  // 4) ДОБАВКА ДЛЯ ЛИДЕРА ОТДЕЛА
-  if (membership.isLead && membership.departmentId) {
-    for (const p of DEPT_HEAD_PERMS) allow.add(p);
-  }
+  // Departments-1 is directory-only: department and lead fields must not grant
+  // additional ACL visibility until explicit dept-scope work is implemented.
 
   return {
     role,

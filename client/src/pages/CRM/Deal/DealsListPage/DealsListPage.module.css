@@ -1,7 +1,10 @@
 .rowActions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-2);
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .rowLink {

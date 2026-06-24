@@ -261,7 +261,7 @@ const handleWithTimeToggle = (nextHasTime) => {
                 withTime={hasTime}
                 allowTimeToggle={Boolean(hasTimeField)}
                 onWithTimeChange={handleWithTimeToggle}
-                timeToggleLabel={t("crm.task.fields.withTime", "Со временем")}
+                timeToggleLabel={t("crm.task.fields.withTime", "With time")}
                 onChange={(value) => set(f.name, value)}
                 disabled={disabled}
                 error={err}
@@ -270,7 +270,7 @@ const handleWithTimeToggle = (nextHasTime) => {
                 className={s.field}
                 inputClassName={s.input}
                 locale={locale}
-                placeholder={hasTime ? "дд.мм.гггг чч:мм" : "дд.мм.гггг"}
+                placeholder={hasTime ? "yyyy-mm-dd hh:mm" : "yyyy-mm-dd"}
               />
             </div>
           );
@@ -703,6 +703,8 @@ const runReplace = () => {
                 error={err}
                 helperText={f.hint ? t(f.hint) : undefined}
                 float={!!f.float}
+                clearable={Boolean(f.clearable)}
+                searchable={f.searchable}
                 className={s.field}
                 inputClassName={f.float ? "asInput" : ""}
               />

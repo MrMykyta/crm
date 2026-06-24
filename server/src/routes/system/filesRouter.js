@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const { auth } = require('../../middleware/auth');
 const fileAuth = require('../../middleware/fileAuth');
+const authorize = require('../../middleware/authorize');
 const { TMP_ROOT, MAX_SIZE_BYTES } = require('../../config/files');
 const FileController = require('../../controllers/system/File.controller');
 
@@ -29,14 +30,20 @@ const upload = multer({
   limits: { fileSize: MAX_SIZE_BYTES },
 });
 
+// fileAuth supports ?token=... and populates req.user, but not req.companyId.
+const restoreCompanyContext = (req, _res, next) => {
+  req.companyId = req.companyId || req.user?.companyId || null;
+  next();
+};
+
 // Unified Files API
-router.post('/upload', auth, upload.single('file'), FileController.upload);
-router.get('/', auth, FileController.list);
-router.post('/:id/signed-url', auth, FileController.signedUrl);
-router.post('/:id/signed-download', auth, FileController.signedDownload);
+router.post('/upload', auth, authorize(['file:upload', 'attachment:upload']), upload.single('file'), FileController.upload);
+router.get('/', auth, authorize(['file:read', 'attachment:read']), FileController.list);
+router.post('/:id/signed-url', auth, authorize(['file:read', 'attachment:read']), FileController.signedUrl);
+router.post('/:id/signed-download', auth, authorize(['file:read', 'attachment:read']), FileController.signedDownload);
 router.get('/:id/inline', FileController.inline);
 router.get('/:id/download-inline', FileController.downloadInline);
-router.get('/:id/download', fileAuth, FileController.downloadPrivate);
-router.delete('/:id', auth, FileController.remove);
+router.get('/:id/download', fileAuth, restoreCompanyContext, authorize(['file:read', 'attachment:read']), FileController.downloadPrivate);
+router.delete('/:id', auth, authorize(['file:delete', 'attachment:delete']), FileController.remove);
 
 module.exports = router;

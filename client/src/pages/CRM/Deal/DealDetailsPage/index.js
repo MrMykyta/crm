@@ -1,11 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import EntityDetailPage from '../../../_scaffold/EntityDetailPage';
 import InfoRow from '../../../../components/shared/InfoRow';
 import HtmlDescriptionSection from '../../../../components/data/HtmlDescriptionSection';
+import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
 import useCompanyMembersOptions from '../../../../hooks/useCompanyMembersOptions';
+import useAclPermissions from '../../../../hooks/useAclPermissions';
 
 import {
   useDeleteDealMutation,
@@ -102,6 +104,9 @@ export default function DealDetailsPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { options: ownerOptions } = useCompanyMembersOptions();
+  const { can } = useAclPermissions();
+  const canDeleteDeal = can('deal:delete');
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const {
     data: base,
@@ -197,62 +202,80 @@ const save = async (entityId, payload) => {
   const noneLabel = t('common.none', '—');
 
   return (
-    <EntityDetailPage
-      id={id}
-      tabs={tabs}
-      tabsNamespace="crm.deal.detail"
-      schemaBuilder={schemaBuilder}
-      toForm={(d) => toFormDeal(d, noneLabel)}
-      toApi={toApiDeal}
-      isSaving={saving}
-      load={async () => base}
-      save={save}
-      storageKeyPrefix="deal"
-      autosave={{ debounceMs: 500 }}
-      saveOnExit
-      clearDraftOnUnmount
-      RightTabsComponent={DealDetailTabs}
-      leftTop={({ values, onChange }) => (
-        <div className={s.header}>
-          <div>
-            <div className={s.breadcrumb}>
-              <Link to="/main/deals">{t('deals.title', 'Deals')}</Link> / {values.title || base.title || base.id}
+    <>
+      <EntityDetailPage
+        id={id}
+        tabs={tabs}
+        tabsNamespace="crm.deal.detail"
+        schemaBuilder={schemaBuilder}
+        toForm={(d) => toFormDeal(d, noneLabel)}
+        toApi={toApiDeal}
+        isSaving={saving}
+        load={async () => base}
+        save={save}
+        storageKeyPrefix="deal"
+        autosave={{ debounceMs: 500 }}
+        saveOnExit
+        clearDraftOnUnmount
+        RightTabsComponent={DealDetailTabs}
+        leftTop={({ values, onChange }) => (
+          <div className={s.header}>
+            <div>
+              <div className={s.breadcrumb}>
+                <Link to="/main/deals">{t('deals.title', 'Deals')}</Link> / {values.title || base.title || base.id}
+              </div>
+              <div className={s.title}>
+                {values.title || base.title || t('deals.details.untitled', 'Untitled deal')}
+              </div>
             </div>
-            <div className={s.title}>
-              {values.title || base.title || t('deals.details.untitled', 'Untitled deal')}
+            <div className={s.actions}>
+              <button
+                className={s.actionBtn}
+                onClick={() => onChange?.('status', 'won')}
+                disabled={values.status === 'won'}
+              >
+                {t('deals.actions.won', 'Won')}
+              </button>
+              <button
+                className={s.actionBtn}
+                onClick={() => onChange?.('status', 'lost')}
+                disabled={values.status === 'lost'}
+              >
+                {t('deals.actions.lost', 'Lost')}
+              </button>
+              {canDeleteDeal ? (
+                <button
+                  className={`${s.actionBtn} ${s.actionBtnDanger}`}
+                  onClick={() => setDeleteOpen(true)}
+                  disabled={deleting}
+                >
+                  {deleting
+                    ? t('deals.actions.archiving', 'Archiving…')
+                    : t('deals.actions.archive', 'Archive')}
+                </button>
+              ) : null}
             </div>
           </div>
-          <div className={s.actions}>
-            <button
-              className={s.actionBtn}
-              onClick={() => onChange?.('status', 'won')}
-              disabled={values.status === 'won'}
-            >
-              {t('deals.actions.won', 'Won')}
-            </button>
-            <button
-              className={s.actionBtn}
-              onClick={() => onChange?.('status', 'lost')}
-              disabled={values.status === 'lost'}
-            >
-              {t('deals.actions.lost', 'Lost')}
-            </button>
-            <button
-              className={`${s.actionBtn} ${s.actionBtnDanger}`}
-              onClick={async () => {
-                await deleteDeal(id).unwrap();
-                navigate('/main/deals');
-              }}
-              disabled={deleting}
-            >
-              {deleting
-                ? t('deals.actions.archiving', 'Archiving…')
-                : t('deals.actions.archive', 'Archive')}
-            </button>
-          </div>
-        </div>
-      )}
-    />
+        )}
+      />
+      <ConfirmDialog
+        open={deleteOpen}
+        title={t('deals.confirm.deleteTitle', 'Удалить сделку?')}
+        text={t(
+          'deals.confirm.deleteText',
+          'Сделка будет удалена или архивирована согласно настройкам системы.'
+        )}
+        okText={t('common.delete', 'Удалить')}
+        cancelText={t('common.cancel', 'Отмена')}
+        danger
+        loading={deleting}
+        onOk={async () => {
+          await deleteDeal(id).unwrap();
+          setDeleteOpen(false);
+          navigate('/main/deals');
+        }}
+        onCancel={() => setDeleteOpen(false)}
+      />
+    </>
   );
 }
-

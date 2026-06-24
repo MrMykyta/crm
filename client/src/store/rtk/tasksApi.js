@@ -18,8 +18,12 @@ endpoints: (build) => ({
     listTasks: build.query({
             // query: формирует параметры HTTP-запроса для endpoint-а.
 query: (params = {}) => ({
-        url: '/tasks',
-        params: stripCompanyId(params),
+        url: params?.calendar ? '/tasks/calendar' : '/tasks',
+        params: stripCompanyId(
+          params?.calendar
+            ? Object.fromEntries(Object.entries(params).filter(([key]) => key !== 'calendar' && key !== 'page' && key !== 'limit'))
+            : params
+        ),
       }),
             // transformResponse: нормализует ответ API перед записью в кэш.
 transformResponse: (resp) => {
@@ -92,6 +96,18 @@ invalidatesTags: (res) =>
 query: (id) => ({ url: `/tasks/${encodeURIComponent(id)}`, method: 'DELETE' }),
       invalidatesTags: [{ type: 'TaskList', id: 'LIST' }],
     }),
+
+    restoreTask: build.mutation({
+            // query: формирует параметры HTTP-запроса для endpoint-а.
+query: (id) => ({ url: `/tasks/${encodeURIComponent(id)}/restore`, method: 'POST' }),
+            // transformResponse: нормализует ответ API перед записью в кэш.
+transformResponse: (resp) => resp?.data ?? resp,
+            // invalidatesTags: помечает теги кэша для рефетча связанных данных.
+invalidatesTags: (res, err, id) => [
+        { type: 'TaskList', id: 'LIST' },
+        { type: 'Task', id },
+      ],
+    }),
   }),
   overrideExisting: true,
 });
@@ -102,5 +118,5 @@ export const {
   useCreateTaskMutation,
   useUpdateTaskMutation,
   useDeleteTaskMutation,
+  useRestoreTaskMutation,
 } = tasksApi;
-

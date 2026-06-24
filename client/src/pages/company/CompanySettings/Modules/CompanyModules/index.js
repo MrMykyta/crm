@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useGetCompanyQuery } from "../../../../../store/rtk/companyApi";
 import { useTranslation } from "react-i18next";
+import useAclPermissions from "../../../../../hooks/useAclPermissions";
 import s from "./CompanyModules.module.css";
 
 // Компонент Switch: отвечает за отображение UI и обработку взаимодействий пользователя.
@@ -28,6 +29,8 @@ const handleClick = () => { if (!disabled) onChange?.(!checked); };
 // Компонент CompanyModules: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CompanyModules() {
   const { t } = useTranslation();
+  const { can } = useAclPermissions();
+  const canUpdateSettings = can("company:settings:update");
   const companyId = useSelector((s) => s.auth.companyId);
   // прогрев /companies/:id (используем для ready-состояния/авторизации)
   const { isFetching } = useGetCompanyQuery(undefined, { skip: !companyId });
@@ -121,6 +124,7 @@ const persist = async (next) => {
                 onChange={(v)=>toggleMain(m.key, v)}
                 color="success"
                 ariaLabel={`${m.name}: основной переключатель`}
+                disabled={!canUpdateSettings}
               />
             </div>
 
@@ -134,7 +138,7 @@ const persist = async (next) => {
                       onChange={(v)=>toggleExtra(m.key, ex.key, v)}
                       color={ex.enabled ? "success" : "danger"}
                       ariaLabel={`${m.name}: ${ex.label}`}
-                      disabled={locked}
+                      disabled={locked || !canUpdateSettings}
                     />
                   </li>
                 ))}
@@ -149,7 +153,7 @@ const persist = async (next) => {
         );
       })}
     </div>
-  ), [mods, toggleMain, toggleExtra]);
+  ), [canUpdateSettings, mods, toggleMain, toggleExtra]);
 
   if (!companyId) return null;
   if (loading || isFetching) return <div className={s.skeleton}>Загрузка…</div>;

@@ -2,7 +2,7 @@
   position: relative;
   flex: 1 1 auto;
   width: 100%;
-  min-height: calc(100dvh - 72px); /* 64px топбар + небольшой зазор учтён в 72 */
+  min-height: 100%;
   padding: 0 16px 20px;            /* внутренние поля по вкусу */
   box-sizing: border-box;
 }

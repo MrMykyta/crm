@@ -288,3 +288,33 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+@media (max-width: 640px) {
+  .sidebar {
+    width: var(--sidebar-w-collapsed);
+  }
+
+  .brandText,
+  .label,
+  .sectionTitle {
+    display: none;
+  }
+
+  .item {
+    justify-content: center;
+    padding-inline: 8px;
+  }
+
+  .sectionHead {
+    justify-content: center;
+    padding: 6px 0;
+  }
+
+  .toggle {
+    right: 0;
+  }
+
+  .chev::before {
+    clip-path: polygon(0% 0%, 72% 50%, 0% 100%);
+  }
+}

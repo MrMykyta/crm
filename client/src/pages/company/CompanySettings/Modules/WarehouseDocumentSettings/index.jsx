@@ -22,6 +22,7 @@ import {
   buildTemplateNewRoute,
   resolveTemplateDocumentTypeKey,
 } from "../_shared/templateRouteUtils";
+import useAclPermissions from "../../../../../hooks/useAclPermissions";
 import s from "./WarehouseDocumentSettings.module.css";
 
 const TYPE_ORDER = ["pz", "wz", "mm", "rw", "pw"];
@@ -177,6 +178,9 @@ function toComparable(form = DEFAULT_FORM) {
 export default function WarehouseDocumentSettings() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { can } = useAclPermissions();
+  const canUpdateSettings = can("company:settings:update");
+  const canManageTemplates = can("document:template:manage");
   const { data, isFetching, error, refetch } = useGetCompanyWarehouseDocumentSettingsQuery();
   const [updateSettings, { isLoading: isSaving }] = useUpdateCompanyWarehouseDocumentSettingsMutation();
 
@@ -347,6 +351,7 @@ export default function WarehouseDocumentSettings() {
   };
 
   const onSave = async () => {
+    if (!canUpdateSettings) return;
     setValidationError("");
     setSaveError("");
     setSaveSuccess("");
@@ -506,7 +511,7 @@ export default function WarehouseDocumentSettings() {
             type="button"
             className={s.primaryButton}
             onClick={onSave}
-            disabled={isSaving || !isDirty}
+            disabled={isSaving || !isDirty || !canUpdateSettings}
           >
             {isSaving
               ? t("companySettings.documents.common.saving")
@@ -525,7 +530,7 @@ export default function WarehouseDocumentSettings() {
         allowToggle
         allowDisableLast={false}
         onToggleRow={(typeKey) => toggleType(typeKey)}
-        disabled={isSaving}
+        disabled={isSaving || !canUpdateSettings}
         columns={{
           documentType: t("companySettings.documents.numbering.columns.documentType"),
           numberPattern: t("companySettings.documents.numbering.columns.numberPattern"),
@@ -543,10 +548,10 @@ export default function WarehouseDocumentSettings() {
         extraError={templateActionError}
         extraSuccess={templateActionSuccess}
         onRetry={refetchTemplates}
-        onAdd={onAddTemplate}
-        onEdit={onEditTemplate}
-        onDelete={onDeleteTemplate}
-        onSetDefault={onSetDefaultTemplate}
+        onAdd={canManageTemplates ? onAddTemplate : null}
+        onEdit={canManageTemplates ? onEditTemplate : null}
+        onDelete={canManageTemplates ? onDeleteTemplate : null}
+        onSetDefault={canManageTemplates ? onSetDefaultTemplate : null}
         settingDefaultTemplateId={isSettingDefault ? settingDefaultTemplateId : null}
         deletingTemplateId={deletingTemplateId}
         filterOptions={warehouseTemplateFilterOptions}

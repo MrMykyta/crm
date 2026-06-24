@@ -20,7 +20,7 @@
   top: calc(var(--chat-header-h, 64px) + 10px);
   transform: translateX(-50%);
   width: min(780px, calc(100vw - 24px));
-  max-height: calc(100vh - var(--chat-header-h, 64px) - 24px);
+  max-height: calc(100% - var(--chat-header-h, 64px) - 24px);
   background: rgba(17, 26, 40, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.12);
@@ -272,6 +272,8 @@
 .infoContent {
   min-height: 120px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 0 18px 14px;
   flex: 1;
 }

@@ -1,12 +1,12 @@
 import React from "react";
-import TextField from "../TextField";
+import TimePickerField from "../TimePickerField";
 
 /**
- * TimeField — простой input type="time" поверх TextField (→ FieldShell).
+ * TimeField — back-compat wrapper over custom TimePickerField.
  * Эмитит строку "HH:mm". dual-mode onChange наследуется от TextField:
  *   onValueChange?.(value)
- *   onChange?.(value, event)
+ *   onChange?.(value, null)
  */
 export default function TimeField(props) {
-  return <TextField type="time" {...props} />;
+  return <TimePickerField {...props} />;
 }

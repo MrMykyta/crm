@@ -1,6 +1,7 @@
 .page {
   padding: 22px;
-  min-height: calc(100vh - 96px);
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .stateCard {

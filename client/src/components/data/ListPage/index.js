@@ -649,6 +649,7 @@ const ListPage = forwardRef(function ListPage(
     defaultQuery = {},
     actions,
     rowActions,
+    rowActionsWidth,
     columnWidths,
     onColumnResize,
     columnOrder,
@@ -1502,6 +1503,7 @@ const onEscape = (event) => {
                 emptyStateText={emptyStateText}
                 emptyStateContent={emptyStateContent}
                 rowActions={rowActions}
+                rowActionsWidth={rowActionsWidth}
                 sortKey={query.sort}
                 sortDir={query.dir}
                 onSort={(key, dir) => setSort(key, dir)}

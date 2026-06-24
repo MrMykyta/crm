@@ -103,12 +103,12 @@ async onQueryStarted(_arg, { queryFulfilled, dispatch }) {
     }),
     // пароли
     requestPasswordReset: build.mutation({
-            // query: формирует параметры HTTP-запроса для endpoint-а.
-query: (email) => ({ url: '/auth/password/reset-request', method: 'POST', body: { email } }),
+      // query: формирует параметры HTTP-запроса для endpoint-а.
+      query: (email) => ({ url: '/auth/password/forgot', method: 'POST', body: { email } }),
     }),
     resetPassword: build.mutation({
-            // query: формирует параметры HTTP-запроса для endpoint-а.
-query: ({ token, password }) => ({ url: '/auth/reset', method: 'POST', body: { token, password } }),
+      // query: формирует параметры HTTP-запроса для endpoint-а.
+      query: ({ token, password }) => ({ url: '/auth/password/reset', method: 'POST', body: { token, password } }),
     }),
   }),
 });
@@ -123,4 +123,3 @@ export const {
   useRequestPasswordResetMutation,
   useResetPasswordMutation,
 } = authApi;
-

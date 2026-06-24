@@ -12,8 +12,8 @@ companyRouter.get('/:id', companyController.getOne);
 
 companyRouter.post('/', companyController.create);
 
-companyRouter.put('/:id', authorize('compamy:update'), companyController.update);
+companyRouter.put('/:id', authorize('company:update'), companyController.update);
 
-companyRouter.delete('/:id', authorize('compamy:delete'), companyController.remove);
+companyRouter.delete('/:id', authorize('company:delete'), companyController.remove);
 
 module.exports = companyRouter;

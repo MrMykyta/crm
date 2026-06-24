@@ -9,6 +9,7 @@ import { deleteTemplate } from "../../../../../api/documentTemplates.api";
 import { resolveTemplateDocumentTypeKey } from "../_shared/templateRouteUtils";
 import StatusBadge from "../../../../../components/shared/StatusBadge";
 import { SelectField, TextField } from "../../../../../components/ui/fields";
+import useAclPermissions from "../../../../../hooks/useAclPermissions";
 import s from "./DocumentTemplatesPage.module.css";
 
 const DOCUMENT_TYPE_OPTIONS = ["faktura_vat", "oferta", "zamowienie", "wz"];
@@ -49,6 +50,8 @@ function getDocumentTypeKey(template) {
 export default function DocumentTemplatesPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { can } = useAclPermissions();
+  const canManageTemplates = can("document:template:manage");
   const searchParams = useMemo(() => new URLSearchParams(location.search || ""), [location.search]);
   const queryKind = String(searchParams.get("kind") || "").trim().toLowerCase();
   const queryType = String(searchParams.get("type") || "").trim().toLowerCase();
@@ -98,6 +101,7 @@ export default function DocumentTemplatesPage() {
   }, [isNewRoute, queryDocumentTypeKey]);
 
   const onOpenCreate = () => {
+    if (!canManageTemplates) return;
     setCreateError("");
     setIsCreateOpen((prev) => !prev);
   };
@@ -105,12 +109,14 @@ export default function DocumentTemplatesPage() {
   const onEdit = (template) => {
     const templateId = getTemplateId(template);
     if (!templateId) return;
+    if (!canManageTemplates) return;
     navigate(`/main/company-settings/document-templates/${templateId}/editor`);
   };
 
   const onSetDefault = async (template) => {
     const templateId = getTemplateId(template);
     if (!templateId) return;
+    if (!canManageTemplates) return;
     setSetDefaultError("");
     setSettingDefaultId(templateId);
     try {
@@ -129,6 +135,7 @@ export default function DocumentTemplatesPage() {
   const onDelete = async (template) => {
     const templateId = getTemplateId(template);
     if (!templateId) return;
+    if (!canManageTemplates) return;
 
     if (!window.confirm("Delete this template?")) {
       return;
@@ -153,6 +160,7 @@ export default function DocumentTemplatesPage() {
 
   const onCreate = async (event) => {
     event.preventDefault();
+    if (!canManageTemplates) return;
     setCreateError("");
 
     const normalizedName = String(name || "").trim();
@@ -211,14 +219,16 @@ export default function DocumentTemplatesPage() {
             Manage templates and open the template editor for selected document types.
           </p>
         </div>
-        <div className={s.headerActions}>
-          <button type="button" className={s.primaryButton} onClick={onOpenCreate}>
-            {isCreateOpen ? "Close Create" : "Create Template"}
-          </button>
-        </div>
+        {canManageTemplates ? (
+          <div className={s.headerActions}>
+            <button type="button" className={s.primaryButton} onClick={onOpenCreate}>
+              {isCreateOpen ? "Close Create" : "Create Template"}
+            </button>
+          </div>
+        ) : null}
       </header>
 
-      {isCreateOpen ? (
+      {canManageTemplates && isCreateOpen ? (
         <section className={s.createCard}>
           <form className={s.createForm} onSubmit={onCreate}>
             <label className={s.field}>
@@ -292,15 +302,17 @@ export default function DocumentTemplatesPage() {
                     <td>{getCurrentVersionId(template)}</td>
                     <td>{formatDateTime(getUpdatedAt(template))}</td>
                     <td>
-                      <button
-                        type="button"
-                        className={s.ghostButton}
-                        onClick={() => onEdit(template)}
-                        disabled={!templateId}
-                      >
-                        Edit
-                      </button>
-                      {!isArchived && !isDefault ? (
+                      {canManageTemplates ? (
+                        <button
+                          type="button"
+                          className={s.ghostButton}
+                          onClick={() => onEdit(template)}
+                          disabled={!templateId}
+                        >
+                          Edit
+                        </button>
+                      ) : null}
+                      {canManageTemplates && !isArchived && !isDefault ? (
                         <button
                           type="button"
                           className={s.ghostButton}
@@ -310,14 +322,16 @@ export default function DocumentTemplatesPage() {
                           {isSettingThis ? "Setting…" : "Set as default"}
                         </button>
                       ) : null}
-                      <button
-                        type="button"
-                        className={s.ghostButton}
-                        onClick={() => onDelete(template)}
-                        disabled={!templateId || deletingTemplateId === templateId}
-                      >
-                        {deletingTemplateId === templateId ? "Deleting…" : "Delete"}
-                      </button>
+                      {canManageTemplates ? (
+                        <button
+                          type="button"
+                          className={s.ghostButton}
+                          onClick={() => onDelete(template)}
+                          disabled={!templateId || deletingTemplateId === templateId}
+                        >
+                          {deletingTemplateId === templateId ? "Deleting…" : "Delete"}
+                        </button>
+                      ) : null}
                     </td>
                   </tr>
                 );

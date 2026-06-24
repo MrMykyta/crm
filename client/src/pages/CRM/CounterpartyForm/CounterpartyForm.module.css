@@ -115,6 +115,7 @@ textarea.input{ min-height: 84px; resize: vertical; }
   display:flex; flex-direction:column; gap: 10px;
 }
 .muted{ color: var(--muted); font-size: var(--font-size-13); }
+.fieldHint{ color: var(--muted); font-size: var(--font-size-12); line-height: 1.35; }
 
 /* Contact row card */
 .contactRow{

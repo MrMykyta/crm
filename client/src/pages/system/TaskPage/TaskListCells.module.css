@@ -28,3 +28,141 @@
   font-size: var(--font-size-12);
   color: color-mix(in srgb, var(--muted) 84%, transparent);
 }
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 76%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  color: var(--text);
+  font-size: var(--font-size-12);
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+
+.actionBtn:hover {
+  background: color-mix(in srgb, var(--sidebar-hover) 78%, transparent);
+  border-color: color-mix(in srgb, var(--focus) 28%, transparent);
+}
+
+.actionBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.dangerBtn {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 34%, transparent);
+  background: color-mix(in srgb, var(--danger-weak, transparent) 54%, var(--card-bg) 46%);
+}
+
+.deleteError {
+  margin-top: 10px;
+  color: var(--danger);
+  font-size: var(--font-size-13);
+}
+
+.statusChip,
+.priorityChip {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  min-height: 26px;
+  border-radius: 999px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  font-size: var(--font-size-12);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.statusChip {
+  gap: 7px;
+}
+
+.chipDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.status_todo,
+.status_backlog {
+  color: color-mix(in srgb, var(--text) 78%, var(--muted));
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  border-color: color-mix(in srgb, var(--card-brd) 80%, transparent);
+}
+
+.status_in_progress {
+  color: color-mix(in srgb, #67c7ff 78%, var(--text));
+  background: color-mix(in srgb, #2679c8 18%, var(--card-bg));
+  border-color: color-mix(in srgb, #67c7ff 34%, transparent);
+}
+
+.status_done {
+  color: color-mix(in srgb, #7de0a1 78%, var(--text));
+  background: color-mix(in srgb, #1f8f53 18%, var(--card-bg));
+  border-color: color-mix(in srgb, #7de0a1 34%, transparent);
+}
+
+.status_blocked {
+  color: color-mix(in srgb, #ffce73 82%, var(--text));
+  background: color-mix(in srgb, #bf7b1f 18%, var(--card-bg));
+  border-color: color-mix(in srgb, #ffce73 34%, transparent);
+}
+
+.status_canceled,
+.status_cancelled {
+  color: color-mix(in srgb, #ff8f8f 76%, var(--text));
+  background: color-mix(in srgb, var(--danger) 16%, var(--card-bg));
+  border-color: color-mix(in srgb, var(--danger) 34%, transparent);
+}
+
+.priorityChip {
+  gap: 8px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  border-color: color-mix(in srgb, var(--card-brd) 78%, transparent);
+}
+
+.priority_low {
+  color: color-mix(in srgb, var(--muted) 84%, var(--text));
+}
+
+.priority_normal {
+  color: color-mix(in srgb, #8fc4ff 76%, var(--text));
+  border-color: color-mix(in srgb, #8fc4ff 28%, transparent);
+}
+
+.priority_high {
+  color: color-mix(in srgb, #ffce73 82%, var(--text));
+  border-color: color-mix(in srgb, #ffce73 32%, transparent);
+}
+
+.priority_urgent {
+  color: color-mix(in srgb, #ff8f8f 78%, var(--text));
+  border-color: color-mix(in srgb, var(--danger) 38%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, var(--card-bg));
+}
+
+.priorityValue {
+  opacity: 0.66;
+  font-weight: 700;
+}

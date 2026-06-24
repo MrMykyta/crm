@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const notificationController = require("../../controllers/system/Notification.controller");
+const authorize = require("../../middleware/authorize");
 
 // GET /api/notifications?onlyUnread=1&limit=20&beforeId=123
 router.get("/", notificationController.listMy);
@@ -11,6 +12,6 @@ router.post("/:id/read", notificationController.markOneRead);
 router.post("/read-all/all", notificationController.markAllRead);
 
 // POST /api/notifications (опционально; для системного использования)
-router.post("/", notificationController.createForUser);
+router.post("/", authorize("notification:create"), notificationController.createForUser);
 
 module.exports = router;

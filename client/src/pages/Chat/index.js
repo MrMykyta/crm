@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import { initSocket } from '../../sockets/io';
 import { useListRoomsQuery } from '../../store/rtk/chatApi';
+import useAclPermissions from '../../hooks/useAclPermissions';
 import {
   setRooms,
   setActiveRoom,
@@ -21,6 +22,8 @@ import s from './ChatPage.module.css';
 export default function ChatPage({ accessToken: accessTokenProp }) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
+  const { can } = useAclPermissions();
+  const canWriteChat = can('chat.write');
   // Current mode for chat screen (room list vs create dialog).
   const [mode, setMode] = useState('room'); // 'room' | 'createDirect' | 'createGroup'
 
@@ -95,11 +98,13 @@ const handleExitCreate = () => {
     <div className={s.wrap} data-ui="chat-root">
       <ChatSidebar
         onCreateDirect={() => {
+          if (!canWriteChat) return;
           // при создании чата/группы можно сбросить активную комнату
           dispatch(setActiveRoom(null));
           setMode('createDirect');
         }}
         onCreateGroup={() => {
+          if (!canWriteChat) return;
           dispatch(setActiveRoom(null));
           setMode('createGroup');
         }}
@@ -107,15 +112,17 @@ const handleExitCreate = () => {
           dispatch(setActiveRoom(roomId));
           setMode('room');
         }}
+        canWrite={canWriteChat}
       />
 
       {mode === 'createDirect' || mode === 'createGroup' ? (
-        <ChatWindow mode={mode} onExitCreate={handleExitCreate} />
+        <ChatWindow mode={mode} onExitCreate={handleExitCreate} canWrite={canWriteChat} />
       ) : activeRoomId ? (
         <ChatWindow
           mode="room"
           roomId={activeRoomId}
           onExitCreate={handleExitCreate}
+          canWrite={canWriteChat}
         />
       ) : (
         <div className={s.empty}>
@@ -125,4 +132,3 @@ const handleExitCreate = () => {
     </div>
   );
 }
-

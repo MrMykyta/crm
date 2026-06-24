@@ -1,0 +1,814 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  /* Локально усиливаем WMS-поверхности (НЕ трогая WMS globals), чтобы карточки
+     были читаемыми поверх любого пользовательского фона/обоев. Custom-props
+     наследуются вниз до .surface_* у WmsSurface внутри страницы. */
+  --wms-work-surface-bg: color-mix(in srgb, var(--card-bg, var(--ui-surface-1)) 95%, transparent);
+  --wms-work-surface-soft-bg: color-mix(in srgb, var(--card-bg, var(--ui-surface-1)) 92%, transparent);
+  --wms-surface: var(--wms-work-surface-bg);
+  --wms-surface-soft: var(--wms-work-surface-soft-bg);
+}
+
+.breadcrumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--muted, var(--ui-text-3));
+  font-size: var(--fs-xs);
+}
+
+.breadcrumbs button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--primary, var(--accent));
+  font: inherit;
+  cursor: pointer;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  align-items: center;
+  min-width: 0;
+  border-color: color-mix(in srgb, var(--primary, #2563eb) 28%, var(--card-brd, var(--ui-border-soft)));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--primary, #2563eb) 8%, transparent), transparent 38%),
+    color-mix(in srgb, var(--card-bg, var(--ui-surface-1)) 96%, transparent);
+  box-shadow:
+    var(--wms-work-surface-shadow),
+    0 18px 52px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.heroIdentity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--card-brd));
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 10%, var(--card-bg));
+  overflow: hidden;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarFallback {
+  color: var(--text, var(--ui-text-1));
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+}
+
+.heroCopy {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.heroEyebrow,
+.heroEmail,
+.metaItem span,
+.sectionHeader p,
+.detailCard p,
+.muted {
+  color: var(--muted, var(--ui-text-3));
+  font-size: var(--fs-sm);
+}
+
+.heroEyebrow {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  font-weight: var(--fw-bold);
+}
+
+.heroCopy h2 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text, var(--ui-text-1));
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.heroEmail,
+.heroRoleLine,
+.heroChips,
+.heroActions,
+.primaryRoleLine,
+.capabilityChips,
+.effectivePreview,
+.riskChips,
+.riskList {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.heroEmail span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.heroChips,
+.capabilityChips,
+.effectivePreview,
+.riskChips,
+.riskList {
+  flex-wrap: wrap;
+}
+
+.heroRoleLine {
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.heroRoleMeaning {
+  min-width: 0;
+  color: color-mix(in srgb, var(--text, var(--ui-text-1)) 70%, var(--muted, var(--ui-text-3)));
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+}
+
+.riskChips {
+  display: inline-flex;
+}
+
+.heroMeta {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-3);
+}
+
+.metaItem {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.metaItem strong {
+  color: var(--text, var(--ui-text-1));
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: background var(--tr-fast), border-color var(--tr-fast), color var(--tr-fast);
+}
+
+.primaryButton {
+  border: 1px solid color-mix(in srgb, var(--primary) 48%, transparent);
+  background: var(--primary);
+  color: #fff;
+}
+
+.secondaryButton {
+  border: 1px solid var(--card-brd, var(--ui-border-soft));
+  background: var(--card-bg, var(--ui-surface-1));
+  color: var(--text, var(--ui-text-1));
+}
+
+.workspaceGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.45fr);
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.leftColumn,
+.rightColumn,
+.tabPanel {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.overviewGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.detailCard {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.sectionHeader h3 {
+  margin: 0;
+  color: var(--text, var(--ui-text-1));
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+}
+
+.sectionHeader p,
+.detailCard p {
+  margin: 0;
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.membershipEditor {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.membershipControls {
+  display: grid;
+  grid-template-columns: minmax(190px, 1fr) minmax(180px, auto);
+  gap: var(--space-3);
+  align-items: end;
+  min-width: 0;
+}
+
+.inlineNotice {
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+
+.inlineNotice_success {
+  color: var(--success);
+}
+
+.inlineNotice_error {
+  color: var(--danger);
+}
+
+.factItem {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  min-height: 64px;
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--card-brd) 76%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--card-bg, var(--ui-surface-1)) 93%, transparent);
+}
+
+.factItem span,
+.summaryRow span,
+.statsGrid span {
+  color: var(--muted, var(--ui-text-3));
+  font-size: var(--fs-xs);
+}
+
+.factItem strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text, var(--ui-text-1));
+  font-size: var(--fs-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.statsGrid > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--primary) 5%, var(--card-bg));
+}
+
+.statsGrid strong {
+  color: var(--text, var(--ui-text-1));
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+}
+
+.primaryRoleCard {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.summaryGrid,
+.summaryGridCompact {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.summaryGridCompact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--card-bg, var(--ui-surface-1)) 90%, transparent);
+}
+
+.summaryRow strong {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--card-brd, var(--ui-border-soft));
+  border-radius: var(--radius-full);
+  background: var(--surface-2, var(--card-bg));
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+
+.riskList {
+  align-items: flex-start;
+  margin-bottom: var(--space-1);
+}
+
+.access_none {
+  color: var(--muted, var(--ui-text-3));
+}
+
+.access_read {
+  border-color: color-mix(in srgb, var(--info, #3b82f6) 36%, var(--card-brd));
+  color: var(--info, #3b82f6);
+}
+
+.access_write {
+  border-color: color-mix(in srgb, var(--warning, #f59e0b) 38%, var(--card-brd));
+  color: var(--warning, #f59e0b);
+}
+
+.access_admin {
+  border-color: color-mix(in srgb, var(--success, #16a34a) 34%, var(--card-brd));
+  color: var(--success, #16a34a);
+}
+
+.tabsSurface {
+  position: sticky;
+  top: calc(var(--topbar-h, 72px) + var(--space-2));
+  z-index: 2;
+  overflow: hidden;
+}
+
+.tabsWrap {
+  min-width: 0;
+  padding: var(--space-2);
+}
+
+.cardToolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  gap: var(--space-3);
+  align-items: start;
+  min-width: 0;
+}
+
+.search {
+  width: 100%;
+}
+
+.currentAccessCard,
+.rolePickerPanel {
+  border-color: color-mix(in srgb, var(--primary, #2563eb) 18%, var(--card-brd, var(--ui-border-soft)));
+}
+
+.accessOverview {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.accessIdentity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, auto);
+  gap: var(--space-3);
+  align-items: stretch;
+  min-width: 0;
+}
+
+.accessRoleBlock,
+.accessLevelBlock {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--card-brd, var(--ui-border-soft)) 78%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--card-bg, var(--ui-surface-1)) 91%, transparent);
+}
+
+.accessLevelBlock {
+  justify-items: start;
+}
+
+.accessRoleBlock > span,
+.accessLevelBlock > span,
+.impactGrid > div > span {
+  color: var(--muted, var(--ui-text-3));
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+}
+
+.accessRoleBlock strong {
+  min-width: 0;
+  color: var(--text, var(--ui-text-1));
+  font-size: var(--fs-lg);
+  line-height: var(--lh-tight);
+}
+
+.accessRoleBlock p {
+  max-width: 720px;
+  color: var(--muted, var(--ui-text-3));
+  font-size: var(--fs-sm);
+}
+
+.accessCapabilities,
+.accessActions,
+.roleBadges,
+.confirmActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.accessCapabilities,
+.roleBadges {
+  flex-wrap: wrap;
+}
+
+.accessActions {
+  justify-content: flex-end;
+}
+
+.warning,
+.notice {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+}
+
+.warning {
+  border: 1px solid color-mix(in srgb, var(--warning, #f59e0b) 36%, var(--card-brd));
+  background: color-mix(in srgb, var(--warning, #f59e0b) 9%, var(--card-bg));
+  color: var(--text, var(--ui-text-1));
+}
+
+.notice_success {
+  border: 1px solid color-mix(in srgb, var(--success, #16a34a) 34%, var(--card-brd));
+  background: color-mix(in srgb, var(--success, #16a34a) 8%, var(--card-bg));
+  color: var(--success, #16a34a);
+}
+
+.notice_error {
+  border: 1px solid color-mix(in srgb, var(--danger, #dc2626) 34%, var(--card-brd));
+  background: color-mix(in srgb, var(--danger, #dc2626) 8%, var(--card-bg));
+  color: var(--danger, #dc2626);
+}
+
+.roleList {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.roleRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--card-brd, var(--ui-border-soft));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--card-bg, var(--ui-surface-1)) 94%, transparent);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--tr-fast), background var(--tr-fast), box-shadow var(--tr-fast);
+}
+
+.roleRow:hover,
+.roleRowActive {
+  border-color: color-mix(in srgb, var(--primary, #2563eb) 42%, var(--card-brd));
+  background: color-mix(in srgb, var(--primary, #2563eb) 5%, var(--card-bg));
+}
+
+.roleRowSelected {
+  border-color: color-mix(in srgb, var(--primary, #2563eb) 62%, var(--card-brd));
+  background: color-mix(in srgb, var(--primary, #2563eb) 8%, var(--card-bg));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary, #2563eb) 18%, transparent);
+}
+
+.roleRow:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.roleRadio {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 1px solid var(--card-brd, var(--ui-border-soft));
+  border-radius: 50%;
+  background: var(--card-bg, var(--ui-surface-1));
+}
+
+.roleRadio span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.roleRowActive .roleRadio {
+  border-color: var(--primary, #2563eb);
+}
+
+.roleRowActive .roleRadio span {
+  background: var(--primary, #2563eb);
+}
+
+.roleMain {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.roleHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.roleHead > span:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.roleHead strong,
+.roleHead small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roleHead strong {
+  color: var(--text, var(--ui-text-1));
+}
+
+.roleHead small {
+  color: var(--muted, var(--ui-text-3));
+  font-size: var(--fs-xs);
+  white-space: normal;
+}
+
+.impactPreview {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--primary, #2563eb) 24%, var(--card-brd, var(--ui-border-soft)));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--primary, #2563eb) 5%, var(--card-bg, var(--ui-surface-1)));
+}
+
+.impactGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.impactGrid > div {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--card-brd, var(--ui-border-soft)) 72%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--card-bg, var(--ui-surface-1)) 88%, transparent);
+}
+
+.impactGrid ul {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding-left: var(--space-4);
+  color: var(--text, var(--ui-text-1));
+  font-size: var(--fs-sm);
+}
+
+.confirmActions {
+  justify-content: flex-end;
+}
+
+.accessPanelWrap {
+  min-width: 0;
+}
+
+.tabPanelAnchor {
+  min-width: 0;
+  scroll-margin-top: calc(var(--topbar-h, 72px) + 72px);
+}
+
+.accessPanelWrap :global([class*="UserAccessPanel_panel"]) {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.accessPanelWrap :global([class*="UserAccessPanel_block"]) {
+  border-color: color-mix(in srgb, var(--card-brd) 72%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+}
+
+/* Permissions: компактная сводка сверху, детальные права свёрнуты под кнопкой */
+.detailsDisclosure {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.disclosureButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--card-brd, var(--ui-border-soft));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--card-bg, var(--ui-surface-1)) 92%, transparent);
+  color: var(--text, var(--ui-text-1));
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: border-color var(--tr-fast), background var(--tr-fast);
+}
+
+.disclosureButton:hover {
+  border-color: color-mix(in srgb, var(--primary, #2563eb) 42%, var(--card-brd));
+  background: color-mix(in srgb, var(--primary, #2563eb) 5%, var(--card-bg));
+}
+
+.disclosureCaret {
+  color: var(--muted, var(--ui-text-3));
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  gap: var(--space-2);
+  min-height: 240px;
+  text-align: center;
+  color: var(--muted, var(--ui-text-3));
+}
+
+.placeholder h2,
+.placeholder p {
+  margin: 0;
+}
+
+@media (max-width: 1100px) {
+  .workspaceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .rightColumn {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rightColumn > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .heroIdentity {
+    align-items: flex-start;
+  }
+
+  .heroMeta {
+    justify-items: stretch;
+  }
+
+  .metaItem {
+    text-align: left;
+  }
+
+  .heroActions,
+  .rightColumn,
+  .overviewGrid,
+  .summaryGridCompact,
+  .cardToolbar,
+  .accessIdentity,
+  .impactGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroActions {
+    display: grid;
+  }
+
+  .accessActions,
+  .confirmActions {
+    display: grid;
+    justify-content: stretch;
+  }
+
+  .factGrid,
+  .membershipControls,
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .tabsSurface {
+    position: static;
+  }
+}
+
+@media (max-width: 520px) {
+  .heroIdentity {
+    flex-direction: column;
+  }
+
+  .heroCopy h2 {
+    white-space: normal;
+  }
+
+  .avatar {
+    width: 64px;
+    height: 64px;
+  }
+}

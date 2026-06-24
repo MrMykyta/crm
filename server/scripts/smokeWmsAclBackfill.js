@@ -7,7 +7,7 @@
 //  - каталог permissions содержит все WMS-права;
 //  - owner/admin получают все WMS-права;
 //  - manager получает операционный набор, но НЕ costing/settings;
-//  - employee/user получают только read, НЕ document:post;
+//  - employee получает только read, НЕ document:post;
 //  - viewer — только read, без manage/post;
 //  - finance — read + costing:manage;
 //  - кастомная роль не получает ничего (без over-grant);
@@ -82,7 +82,7 @@ async function permNamesForRole(roleId, transaction) {
     const companyId = company.id;
 
     // Роли, имитирующие существующую (pre-Phase) компанию: WMS-прав ещё нет.
-    const roleDefs = ['owner', 'admin', 'manager', 'employee', 'user', 'viewer', 'finance', 'salescustom'];
+    const roleDefs = ['owner', 'admin', 'manager', 'employee', 'viewer', 'finance', 'salescustom'];
     const roleByName = {};
     for (const name of roleDefs) {
       roleByName[name] = await Role.create(
@@ -132,7 +132,6 @@ async function permNamesForRole(roleId, transaction) {
     const admin = await permNamesForRole(roleByName.admin.id, t);
     const manager = await permNamesForRole(roleByName.manager.id, t);
     const employee = await permNamesForRole(roleByName.employee.id, t);
-    const user = await permNamesForRole(roleByName.user.id, t);
     const viewer = await permNamesForRole(roleByName.viewer.id, t);
     const finance = await permNamesForRole(roleByName.finance.id, t);
     const salescustom = await permNamesForRole(roleByName.salescustom.id, t);
@@ -151,8 +150,6 @@ async function permNamesForRole(roleId, transaction) {
 
     check('employee read-only set', WMS_READONLY.every((p) => employee.has(p)));
     check('employee does NOT have wms:document:post', !employee.has('wms:document:post'));
-    check('user read-only set', WMS_READONLY.every((p) => user.has(p)));
-    check('user does NOT have wms:document:post', !user.has('wms:document:post'));
 
     check('viewer read-only set', WMS_READONLY.every((p) => viewer.has(p)));
     check(

@@ -2,8 +2,91 @@ const aclService = require('../../services/system/aclService');
 
 const {UserPermission} = require('../../models');
 
+const sendAclError = (res, e) => {
+    const status = Number(e?.statusCode || e?.status || 400);
+    const httpStatus = status >= 400 && status <= 599 ? status : 400;
+    const message = e?.message || 'Request failed';
+    const payload = { error: message, message };
+    if (e?.code) payload.code = e.code;
+    if (e?.assignedCount !== undefined) payload.assignedCount = e.assignedCount;
+    return res.status(httpStatus).json(payload);
+};
 
 // ---- Roles ----
+module.exports.listRoleTemplates = async (req, res) => {
+    try {
+        const list = await aclService.listRoleTemplates();
+        res.json(list);
+    } catch (e) {
+        res.status(400).json({ error: e.message });
+    }
+};
+
+module.exports.createRoleFromTemplate = async (req, res) => {
+    try {
+        const created = await aclService.createRoleFromTemplate({
+            companyId: req.user.companyId,
+            templateId: req.params.templateId,
+        });
+        res.status(201).json(created);
+    } catch (e) {
+        sendAclError(res, e);
+    }
+};
+
+module.exports.cloneRole = async (req, res) => {
+    try {
+        const created = await aclService.cloneRole({
+            companyId: req.user.companyId,
+            roleId: req.params.roleId,
+        });
+        if (!created) return res.sendStatus(404);
+        res.status(201).json(created);
+    } catch (e) {
+        sendAclError(res, e);
+    }
+};
+
+module.exports.resetDefaultRole = async (req, res) => {
+    try {
+        const updated = await aclService.resetDefaultRole({
+            companyId: req.user.companyId,
+            roleId: req.params.roleId,
+        });
+        if (!updated) return res.sendStatus(404);
+        res.status(200).json(updated);
+    } catch (e) {
+        sendAclError(res, e);
+    }
+};
+
+module.exports.getRoleDiff = async (req, res) => {
+    try {
+        const diff = await aclService.getRoleDiff({
+            companyId: req.user.companyId,
+            roleId: req.params.roleId,
+            templateId: req.query.templateId,
+        });
+        if (!diff) return res.sendStatus(404);
+        res.status(200).json(diff);
+    } catch (e) {
+        sendAclError(res, e);
+    }
+};
+
+module.exports.reassignAndDeleteRole = async (req, res) => {
+    try {
+        const result = await aclService.reassignAndDeleteRole({
+            companyId: req.user.companyId,
+            roleId: req.params.roleId,
+            targetRoleId: req.body.targetRoleId,
+        });
+        res.status(200).json(result);
+    } catch (e) {
+        sendAclError(res, e);
+    }
+};
+
 module.exports.createRole = async (req, res) => {
     try {
         const created = await aclService.createRole({
@@ -91,20 +174,30 @@ module.exports.removePermFromRole = async (req, res) => {
 // ---- User ↔ Role ----
 module.exports.assignRoleToUser = async (req, res) => {
     try {
-        await aclService.assignRoleToUser({ userId: req.params.userId, companyId: req.user.companyId, roleId: req.params.roleId });
+        await aclService.assignRoleToUser({
+            userId: req.params.userId,
+            companyId: req.user.companyId,
+            roleId: req.params.roleId,
+            currentUserId: req.user.id,
+        });
         res.sendStatus(204);
     } catch (e) { 
-        res.status(400).json({ error: e.message }); 
+        sendAclError(res, e);
     }
 };
 
 // Снимает роль с пользователя.
 module.exports.removeRoleFromUser = async (req, res) => {
     try {
-        await aclService.removeRoleFromUser({ userId: req.params.userId, companyId: req.user.companyId, roleId: req.params.roleId });
+        await aclService.removeRoleFromUser({
+            userId: req.params.userId,
+            companyId: req.user.companyId,
+            roleId: req.params.roleId,
+            currentUserId: req.user.id,
+        });
         res.sendStatus(204);
     } catch (e) { 
-        res.status(400).json({ error: e.message }); 
+        sendAclError(res, e);
     }
 };
 
@@ -235,4 +328,3 @@ module.exports.clearPermOverride = async (req, res) => {
     res.sendStatus(204);
   } catch (e) { res.status(400).json({ error: e.message }); }
 };
-

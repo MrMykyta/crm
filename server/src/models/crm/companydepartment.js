@@ -32,7 +32,19 @@ static associate(models) {
       id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
       companyId: { type: DataTypes.UUID, allowNull: false, field: 'company_id' },
       name: { type: DataTypes.STRING(100), allowNull: false },
+      code: { type: DataTypes.STRING(32), allowNull: false },
       description: { type: DataTypes.TEXT, allowNull: true },
+      isActive: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'is_active',
+      },
+      deletedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'deleted_at',
+      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
@@ -52,6 +64,7 @@ static associate(models) {
       tableName: 'company_departments',
       underscored: true,
       timestamps: true,
+      paranoid: true,
     }
   );
 

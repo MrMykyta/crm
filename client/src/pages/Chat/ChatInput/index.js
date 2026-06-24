@@ -106,6 +106,7 @@ export default function ChatInput({
   onSend,
   isBusy = false,
   canSend = true,
+  disabled = false,
   onHeightChange, // delta px: >0 выросло, <0 сжалось
 
   // контекст: reply / forward
@@ -138,7 +139,7 @@ export default function ChatInput({
 
     // handleSendClick: обработчик пользовательского действия.
 const handleSendClick = () => {
-    if (isBusy || !canSend) return;
+    if (disabled || isBusy || !canSend) return;
     onSend && onSend();
   };
 
@@ -200,7 +201,7 @@ const handleKeyDown = (e) => {
 
     // handleAttachClick: обработчик пользовательского действия.
 const handleAttachClick = () => {
-    if (disableAttachments || isBusy) return;
+    if (disabled || disableAttachments || isBusy) return;
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -209,7 +210,7 @@ const handleAttachClick = () => {
     // handleFiles: обработчик пользовательского действия.
 const handleFiles = (files) => {
     if (!files || !files.length) return;
-    if (disableAttachments || isBusy) return;
+    if (disabled || disableAttachments || isBusy) return;
     onFilesSelected && onFilesSelected(files);
   };
 
@@ -223,7 +224,7 @@ const handleFileChange = (e) => {
     // handleDragOver: обработчик пользовательского действия.
 const handleDragOver = (e) => {
     e.preventDefault();
-    if (disableAttachments || isBusy) return;
+    if (disabled || disableAttachments || isBusy) return;
     setIsDragging(true);
   };
 
@@ -235,7 +236,7 @@ const handleDragLeave = () => {
     // handleDrop: обработчик пользовательского действия.
 const handleDrop = (e) => {
     e.preventDefault();
-    if (disableAttachments || isBusy) return;
+    if (disabled || disableAttachments || isBusy) return;
     setIsDragging(false);
     const files = Array.from(e.dataTransfer.files || []);
     handleFiles(files);
@@ -293,7 +294,7 @@ const handleDrop = (e) => {
         type="button"
         className={s.inputIconBtn}
         onClick={handleAttachClick}
-        disabled={disableAttachments || isBusy}
+        disabled={disabled || disableAttachments || isBusy}
       >
         📎
       </button>
@@ -398,14 +399,14 @@ const handleDrop = (e) => {
               placeholder={t("chat.composer.placeholder")}
               onChange={handleChange}
               onKeyDown={handleKeyDown}
-              disabled={isBusy}
+              disabled={disabled || isBusy}
             />
           </div>
 
           <button
             className={s.sendIconBtn}
             onClick={handleSendClick}
-            disabled={isBusy || !canSend}
+            disabled={disabled || isBusy || !canSend}
             type="button"
           >
             {isBusy ? "⏳" : "➤"}
@@ -415,4 +416,3 @@ const handleDrop = (e) => {
     </div>
   );
 }
-

@@ -2,6 +2,25 @@ import { useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useUserPermSummaryQuery } from '../store/rtk/aclApi';
 
+export function hasAclRequirements(acl, requirements = {}) {
+  const requiredPermission = requirements.requiredPermission;
+  const requiredAnyPermission = requirements.requiredAnyPermission;
+  const requiredAllPermissions = requirements.requiredAllPermissions;
+
+  if (requiredPermission && !acl.can(requiredPermission)) return false;
+  if (Array.isArray(requiredAnyPermission) && requiredAnyPermission.length && !acl.hasAny(requiredAnyPermission)) return false;
+  if (Array.isArray(requiredAllPermissions) && requiredAllPermissions.length && !acl.hasAll(requiredAllPermissions)) return false;
+  return true;
+}
+
+export function hasAclRequirement(requirements = {}) {
+  return Boolean(
+    requirements.requiredPermission ||
+    (Array.isArray(requirements.requiredAnyPermission) && requirements.requiredAnyPermission.length) ||
+    (Array.isArray(requirements.requiredAllPermissions) && requirements.requiredAllPermissions.length)
+  );
+}
+
 export default function useAclPermissions() {
   const userId = useSelector((state) => state.auth?.currentUser?.id || null);
   const { data, isLoading, isFetching, isError } = useUserPermSummaryQuery(userId, {

@@ -253,6 +253,20 @@
   box-shadow: 0 6px 14px color-mix(in srgb, var(--primary-start) 28%, transparent);
 }
 
+.dayDisabled,
+.day:disabled {
+  cursor: not-allowed;
+  opacity: .46;
+  color: color-mix(in srgb, var(--ui-text-3) 86%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-1) 70%, transparent);
+}
+
+.dayDisabled:hover,
+.day:disabled:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--ui-surface-1) 70%, transparent);
+}
+
 .timeCard {
   position: relative;
   z-index: 1;
@@ -278,6 +292,15 @@
   background: var(--ui-field-bg);
   color: color-mix(in srgb, var(--ui-text-1) 96%, transparent);
   padding: 6px 8px;
+}
+
+.presets {
+  position: relative;
+  z-index: 1;
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .footer {

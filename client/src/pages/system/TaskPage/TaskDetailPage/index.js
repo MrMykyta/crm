@@ -1,24 +1,15 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import EntityDetailPage from '../../../_scaffold/EntityDetailPage';
 import { buildTaskSchema, toFormTask, toApiTask } from '../../../../schemas/task.schema';
-import { useGetTaskQuery, useUpdateTaskMutation } from '../../../../store/rtk/tasksApi';
+import { useDeleteTaskMutation, useGetTaskQuery, useUpdateTaskMutation } from '../../../../store/rtk/tasksApi';
 import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
 import { useGetContactsQuery } from '../../../../store/rtk/contactsApi';
+import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
 import TaskDetailTabs from '../TaskDetailTabs';
 import s from './TaskDetailPage.module.css';
-
-// Набор вкладок правой части карточки задачи.
-const TABS = [
-  { key:'description',  label:'Описание' },
-  { key:'notes',        label:'Заметки' },
-  { key:'files',     label:'Файлы' },
-  { key:'links',     label:'Связи' },
-  { key:'history',   label:'История' },
-  { key:'reminders', label:'Напоминания' },
-  { key:'settings',  label:'Настройки' },
-];
 
 /**
  * Детальная страница задачи на базе общего EntityDetailPage:
@@ -27,8 +18,12 @@ const TABS = [
 export default function TaskDetailPage(){
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { data: base, isFetching } = useGetTaskQuery(id);
   const [updateTask, { isLoading: saving }] = useUpdateTaskMutation();
+  const [deleteTask, { isLoading: deleting }] = useDeleteTaskMutation();
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const members = useSelector((s) => s.bootstrap?.companyUsers || []);
   const currentUserId = useSelector((s) => s.auth?.currentUser?.id || null);
   const { data: counterpartiesData } = useListCounterpartiesQuery(
@@ -39,6 +34,11 @@ export default function TaskDetailPage(){
     { limit: 100, sort: 'createdAt', dir: 'DESC' },
     { refetchOnMountOrArgChange: false }
   );
+
+  const tabs = useMemo(() => [
+    { key: 'description', label: t('crm.task.detail.tabs.description') },
+    { key: 'notes', label: t('crm.task.detail.tabs.notes') },
+  ], [t]);
 
   // Нормализует контрагентов в единый формат option для form/select.
   const counterpartyOptions = useMemo(() => {
@@ -167,7 +167,7 @@ const pick = (name, overrides = {}) => {
     return (
       <div className={s.relatedPanel}>
         <div className={s.relatedBlock}>
-          <span className={s.relatedLabel}>Клиент</span>
+          <span className={s.relatedLabel}>{t('crm.task.fields.counterparty')}</span>
           {counterpartyId ? (
             <button
               type="button"
@@ -182,7 +182,7 @@ const pick = (name, overrides = {}) => {
         </div>
 
         <div className={s.relatedBlock}>
-          <span className={s.relatedLabel}>Контактные лица</span>
+          <span className={s.relatedLabel}>{t('crm.task.fields.contacts')}</span>
           {contactIds.length ? (
             <div className={s.entityChipList}>
               {contactIds.map((contactId) => (
@@ -202,7 +202,7 @@ const pick = (name, overrides = {}) => {
         </div>
       </div>
     );
-  }, [contactById, counterpartyById, navigate]);
+  }, [contactById, counterpartyById, navigate, t]);
 
   // Единая функция сохранения для EntityDetailPage.
   const save = async (entityId, payload) => {
@@ -210,32 +210,88 @@ const pick = (name, overrides = {}) => {
     return saved;
   };
 
+  const confirmDelete = async () => {
+    if (!id || deleting) return;
+    setDeleteError('');
+    try {
+      await deleteTask(id).unwrap();
+      navigate('/main/tasks');
+    } catch (error) {
+      setDeleteError(
+        error?.data?.message
+        || error?.data?.error
+        || error?.message
+        || t('crm.task.messages.deleteFailed')
+      );
+    }
+  };
+
   if (!base && isFetching) return null;
   if (!base) return null;
 
   return (
-    <EntityDetailPage
-      id={id}
-      tabs={TABS}
-      tabsNamespace="crm.task.detail"
-      schemaBuilder={schemaBuilder}
-      toForm={toFormTask}
-      toApi={toApiTask}
-      isSaving={saving}
-      load={async()=>base}
-      save={save}
-      storageKeyPrefix="task"
-      autosave={{ debounceMs: 500 }}
-      saveOnExit
-      clearDraftOnUnmount
-      leftTop={renderLeftTop}
-      RightTabsComponent={TaskDetailTabs}
-      layoutClassName={s.layout}
-      leftPaneClassName={s.leftPane}
-      rightPaneClassName={s.rightPane}
-      tabsClassName={s.tabsArea}
-      panelClassName={s.panel}
-    />
+    <>
+      <EntityDetailPage
+        id={id}
+        tabs={tabs}
+        tabsNamespace="crm.task.detail"
+        schemaBuilder={schemaBuilder}
+        toForm={toFormTask}
+        toApi={toApiTask}
+        isSaving={saving}
+        load={async()=>base}
+        save={save}
+        storageKeyPrefix="task"
+        autosave={{ debounceMs: 500 }}
+        saveOnExit
+        clearDraftOnUnmount
+        leftTop={renderLeftTop}
+        leftExtras={(
+          <div className={s.dangerZone}>
+            <div>
+              <strong>{t('crm.task.actions.delete')}</strong>
+              <p>{t('crm.task.confirm.deleteText')}</p>
+            </div>
+            <button
+              type="button"
+              className={s.deleteButton}
+              disabled={deleting}
+              onClick={() => {
+                setDeleteOpen(true);
+                setDeleteError('');
+              }}
+            >
+              {t('crm.task.actions.delete')}
+            </button>
+          </div>
+        )}
+        RightTabsComponent={TaskDetailTabs}
+        layoutClassName={s.layout}
+        leftPaneClassName={s.leftPane}
+        rightPaneClassName={s.rightPane}
+        tabsClassName={s.tabsArea}
+        panelClassName={s.panel}
+      />
+      <ConfirmDialog
+        open={deleteOpen}
+        title={t('crm.task.confirm.deleteTitle')}
+        text={(
+          <>
+            <div>{t('crm.task.confirm.deleteText')}</div>
+            {deleteError ? <div className={s.deleteError}>{deleteError}</div> : null}
+          </>
+        )}
+        danger
+        loading={deleting}
+        okText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        onOk={confirmDelete}
+        onCancel={() => {
+          if (deleting) return;
+          setDeleteOpen(false);
+          setDeleteError('');
+        }}
+      />
+    </>
   );
 }
-
