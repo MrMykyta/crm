@@ -2062,7 +2062,9 @@
         "eyebrow": "Робоча область задач",
         "subtitle": "Плануйте роботу, відстежуйте дедлайни та тримайте відповідальних у полі зору.",
         "count": "{{count}} задача",
-        "count_plural": "{{count}} задач"
+        "count_plural": "{{count}} задач",
+        "filteredCount": "{{count}} з {{total}} задач",
+        "filteredCount_plural": "{{count}} з {{total}} задач"
       },
       "kpi": {
         "title": "Підсумок задач",

@@ -1,4 +1,4 @@
-import LinkCell from '../../../cells/LinkCell';
+import LinkCell from '../../cells/LinkCell';
 
 function asText(value) {
   if (value === null || value === undefined) return '';
@@ -28,28 +28,28 @@ function statusLabel(status, t) {
   return t(`statuses.${normalized}`, normalized);
 }
 
-const RECEIPT_COLUMNS = [
+const CYCLE_COUNT_COLUMNS = [
   {
-    key: 'number',
-    width: 220,
+    key: 'id',
+    width: 230,
     align: 'left',
     render: (row, { onOpenDetail }) => (
       <LinkCell
-        primary={asDash(row?.number)}
+        primary={asText(row?.id).slice(0, 8) || '—'}
         secondary={asDash(row?.warehouseId)}
         onClick={row?.id ? () => onOpenDetail?.(row.id) : undefined}
-        ariaLabel="Open receipt"
+        ariaLabel="Open cycle count"
       />
     ),
-    labelKey: 'wms.receipts.columns.number',
-    fallbackLabel: 'Number',
+    labelKey: 'wms.cycleCounts.columns.sheet',
+    fallbackLabel: 'Sheet',
   },
   {
     key: 'status',
     width: 140,
     align: 'left',
     render: (row, { t }) => statusLabel(row?.status, t),
-    labelKey: 'wms.receipts.columns.status',
+    labelKey: 'wms.cycleCounts.columns.status',
     fallbackLabel: 'Status',
   },
   {
@@ -57,27 +57,35 @@ const RECEIPT_COLUMNS = [
     width: 220,
     align: 'left',
     render: (row) => asDash(row?.warehouseId),
-    labelKey: 'wms.receipts.columns.warehouse',
+    labelKey: 'wms.cycleCounts.columns.warehouse',
     fallbackLabel: 'Warehouse',
+  },
+  {
+    key: 'itemsCount',
+    width: 140,
+    align: 'right',
+    render: (row) => String(Array.isArray(row?.items) ? row.items.length : 0),
+    labelKey: 'wms.cycleCounts.columns.itemsCount',
+    fallbackLabel: 'Counted lines',
   },
   {
     key: 'createdAt',
     width: 150,
     align: 'left',
     render: (row, { locale }) => formatDate(row?.createdAt, locale),
-    labelKey: 'wms.receipts.columns.createdAt',
+    labelKey: 'wms.cycleCounts.columns.createdAt',
     fallbackLabel: 'Created',
   },
 ];
 
-export function createWmsReceiptsColumns(options = {}) {
+export function createWmsCycleCountsColumns(options = {}) {
   const {
     t = (key, fallback) => fallback || key,
     locale = 'en',
     onOpenDetail,
   } = options;
 
-  return RECEIPT_COLUMNS.map((column) => ({
+  return CYCLE_COUNT_COLUMNS.map((column) => ({
     key: column.key,
     title: t(column.labelKey, column.fallbackLabel),
     managerLabel: t(column.labelKey, column.fallbackLabel),
@@ -91,3 +99,4 @@ export function createWmsReceiptsColumns(options = {}) {
     render: (row) => column.render(row, { t, locale, onOpenDetail }),
   }));
 }
+

@@ -23,6 +23,7 @@ export default function ThemedSelect({
   placeholder = 'Выбрать…',
   size = 'md',
   className = '',
+  contentClassName = '',
   disabled = false,
   searchable = false,
   searchPlaceholder = 'Поиск…',
@@ -126,7 +127,7 @@ export default function ThemedSelect({
 
       <Select.Portal>
         <Select.Content
-          className={s.content}
+          className={clsx(s.content, contentClassName)}
           position="popper"
           side={contentSide}
           align="start"

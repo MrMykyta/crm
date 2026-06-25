@@ -48,7 +48,7 @@
 }
 
 .wmsShellDocumentBar p,
-.wmsShellWorkspaceHeader span,
+.wmsShellItemsHeader span,
 .wmsShellHint,
 .wmsShellMuted,
 .wmsShellItemsMeta {
@@ -214,7 +214,7 @@
 }
 
 .wmsShellHeaderRail h2,
-.wmsShellWorkspaceHeader h2 {
+.wmsShellItemsHeader h2 {
   margin: 0;
   color: var(--text, #f1f5f9);
   font-size: 15px;
@@ -298,7 +298,7 @@
     color-mix(in srgb, var(--wms-shell-soft) 48%, transparent);
 }
 
-.wmsShellWorkspaceHeader {
+.wmsShellItemsHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -797,7 +797,7 @@
   overflow: visible;
 }
 
-.wmsShellPostedBody .wmsShellWorkspaceHeader {
+.wmsShellPostedBody .wmsShellItemsHeader {
   margin-bottom: 10px;
 }
 

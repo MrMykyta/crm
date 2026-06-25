@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import FilterToolbar from '../../../components/filters/FilterToolbar';
-import ListPage from '../../../components/data/ListPage';
-import { createWmsStockMovesColumns } from '../../../components/data/ListPage/columnSchemas/wmsStockMovesColumns';
+import { Workspace } from '../../../components/workspace';
+import { createWmsStockMovesColumns } from '../../../components/workspace/columnSchemas/wmsStockMovesColumns';
 import { SearchField } from '../../../components/ui/fields';
 import useAclPermissions from '../../../hooks/useAclPermissions';
 import useGridPrefs from '../../../hooks/useGridPrefs';
@@ -115,7 +114,7 @@ export default function StockMovesPage() {
   }
 
   return (
-    <ListPage
+    <Workspace
       source="wmsStockMoves"
       title={t('wms.stockMoves.title', 'Stock moves')}
       columns={columns}
@@ -132,10 +131,7 @@ export default function StockMovesPage() {
       onSavedViewsChange={onSavedViewsChange}
       onActiveViewChange={onActiveViewChange}
       onResetColumns={resetGridPrefs}
-      ToolbarComponent={(props) => (
-        <FilterToolbar
-          {...props}
-          controls={[
+      filterControls={[
             {
               type: 'select',
               key: 'warehouseId',
@@ -221,8 +217,6 @@ export default function StockMovesPage() {
               ),
             },
           ]}
-        />
-      )}
     />
   );
 }

@@ -98,6 +98,18 @@ app.use(
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
+// API responses are consumed by RTK Query/fetchBaseQuery and must always carry
+// a JSON body. Browser-level conditional caching can turn JSON API responses
+// into 304 responses with an empty body after rebuilds/full reloads.
+app.use('/api', (req, res, next) => {
+  delete req.headers['if-none-match'];
+  delete req.headers['if-modified-since'];
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 /* ---------- Files (Unified) ---------- */
 // Private files are NEVER served via express.static.
 // Public files are served only via /api/public-files/:publicKey.

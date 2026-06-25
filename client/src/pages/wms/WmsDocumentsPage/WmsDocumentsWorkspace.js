@@ -1,16 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
-import { RefreshCcw, Search, SlidersHorizontal, Warehouse } from 'lucide-react';
+import { Search, SlidersHorizontal, Warehouse } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import AddButton from '../../../components/buttons/AddButton/AddButton';
 import { SearchField, SelectField } from '../../../components/ui/fields';
 import {
-  WmsEmptyState,
-  WmsErrorState,
-  WmsLoadingState,
-  WmsStatusChip,
-} from '../../../components/wms/ui';
+  Workspace,
+  WorkspaceStatusChip,
+} from '../../../components/workspace';
 import {
   useListCycleCountsQuery,
   useListLocationsQuery,
@@ -99,23 +97,6 @@ function getActiveChipLabel(t, view, title) {
   return t('wms.documents.workspace.active.view', 'View: {{view}}', { view: title });
 }
 
-function getStoredColumnState() {
-  try {
-    const raw = window.localStorage.getItem(WMS_DOCUMENTS_COLUMNS_STORAGE_KEY);
-    return normalizeDocumentsColumnState(raw ? JSON.parse(raw) : {});
-  } catch {
-    return normalizeDocumentsColumnState({});
-  }
-}
-
-function persistColumnState(next) {
-  try {
-    window.localStorage.setItem(WMS_DOCUMENTS_COLUMNS_STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // localStorage can be unavailable in private or restricted browser contexts.
-  }
-}
-
 function TypePicker({ open, onCreate, disabledTypes = {} }) {
   const { t } = useTranslation();
   if (!open) return null;
@@ -161,9 +142,9 @@ function renderCell(row, column, t, locale) {
   }
   if (column.key === 'status') {
     return (
-      <WmsStatusChip status={row.status} size="sm">
+      <WorkspaceStatusChip status={row.status} size="sm">
         {t(`statuses.${String(row.status || '').toLowerCase()}`, row.status || '-')}
-      </WmsStatusChip>
+      </WorkspaceStatusChip>
     );
   }
   if (column.key === 'date') return formatDate(row.date, locale);
@@ -182,11 +163,6 @@ export default function WmsDocumentsWorkspace() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [columnState, setColumnState] = useState(getStoredColumnState);
-  const [draggedColumnKey, setDraggedColumnKey] = useState('');
-  const [dragOverColumnKey, setDragOverColumnKey] = useState('');
-  const [columnsOpen, setColumnsOpen] = useState(false);
-  const [technicalColumnsOpen, setTechnicalColumnsOpen] = useState(false);
   const [selectedRowId, setSelectedRowId] = useState('');
 
   const view = useMemo(() => getDocumentsWorkspaceView(searchParams), [searchParams]);
@@ -254,121 +230,6 @@ export default function WmsDocumentsWorkspace() {
   const createLabel = view.type
     ? t('wms.documents.workspace.createType', 'Create {{type}}', { type: view.type })
     : t('wms.documents.actions.create', 'Create Document');
-  const normalizedColumnState = useMemo(() => normalizeDocumentsColumnState(columnState), [columnState]);
-  const columns = useMemo(() => getDocumentsTableColumns(normalizedColumnState), [normalizedColumnState]);
-  const tableWidth = useMemo(
-    () => columns.reduce((sum, column) => sum + Number(column.width || 0), 0),
-    [columns]
-  );
-  const visibleColumnCount = columns.length;
-  const columnGroups = useMemo(() => {
-    const visibleGroups = [
-      { key: 'core', columns: WMS_DOCUMENTS_DEFAULT_COLUMNS.filter((column) => (column.category || 'core') === 'core') },
-      { key: 'operational', columns: WMS_DOCUMENTS_DEFAULT_COLUMNS.filter((column) => column.category === 'operational') },
-      { key: 'context', columns: WMS_DOCUMENTS_DEFAULT_COLUMNS.filter((column) => column.category === 'context') },
-    ].filter((group) => group.columns.length > 0);
-    const technicalColumns = WMS_DOCUMENTS_DEFAULT_COLUMNS.filter((column) => column.category === 'technical');
-    return { visibleGroups, technicalColumns };
-  }, []);
-
-  const saveColumnState = useCallback((updater) => {
-    setColumnState((current) => {
-      const next = normalizeDocumentsColumnState(
-        typeof updater === 'function' ? updater(current) : updater
-      );
-      persistColumnState(next);
-      return next;
-    });
-  }, []);
-
-  const resetColumns = useCallback(() => {
-    const next = normalizeDocumentsColumnState({});
-    persistColumnState(next);
-    setColumnState(next);
-  }, []);
-
-  const setColumnVisibility = useCallback((column, visible) => {
-    if (column.required) return;
-    saveColumnState((current) => ({
-      ...current,
-      visibility: { ...(current.visibility || {}), [column.key]: visible },
-    }));
-  }, [saveColumnState]);
-
-  const showAllColumns = useCallback(() => {
-    saveColumnState((current) => ({
-      ...current,
-      visibility: Object.fromEntries(WMS_DOCUMENTS_DEFAULT_COLUMNS.map((column) => [column.key, true])),
-    }));
-  }, [saveColumnState]);
-
-  const resizeColumn = useCallback((column, startX, startWidth) => {
-    const onMove = (event) => {
-      const nextWidth = Math.min(
-        Math.max(startWidth + event.clientX - startX, column.minWidth),
-        column.maxWidth
-      );
-      saveColumnState((current) => ({
-        ...current,
-        widths: { ...(current.widths || {}), [column.key]: nextWidth },
-      }));
-    };
-    const onUp = () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      document.body.classList.remove(s.columnResizingBody);
-    };
-    document.body.classList.add(s.columnResizingBody);
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  }, [saveColumnState]);
-
-  const moveColumn = useCallback((fromKey, toKey) => {
-    if (!fromKey || !toKey || fromKey === toKey) return;
-    saveColumnState((current) => {
-      const order = Array.isArray(current.order) ? current.order.slice() : columns.map((column) => column.key);
-      const fromIndex = order.indexOf(fromKey);
-      const toIndex = order.indexOf(toKey);
-      if (fromIndex < 0 || toIndex < 0) return current;
-      const [moved] = order.splice(fromIndex, 1);
-      order.splice(toIndex, 0, moved);
-      return { ...current, order };
-    });
-  }, [columns, saveColumnState]);
-
-  const startColumnMouseDrag = useCallback((column, event) => {
-    if (event.button !== 0) return;
-    const startX = event.clientX;
-    const startY = event.clientY;
-    let didDrag = false;
-
-    const getTargetKey = (clientX, clientY) => {
-      const target = document.elementFromPoint(clientX, clientY)?.closest('[data-column-key]');
-      return target?.getAttribute('data-column-key') || '';
-    };
-
-    const onMove = (moveEvent) => {
-      const distance = Math.abs(moveEvent.clientX - startX) + Math.abs(moveEvent.clientY - startY);
-      if (distance < 8) return;
-      didDrag = true;
-      setDraggedColumnKey(column.key);
-      setDragOverColumnKey(getTargetKey(moveEvent.clientX, moveEvent.clientY));
-    };
-
-    const onUp = (upEvent) => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      if (didDrag) {
-        moveColumn(column.key, getTargetKey(upEvent.clientX, upEvent.clientY));
-      }
-      setDraggedColumnKey('');
-      setDragOverColumnKey('');
-    };
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  }, [moveColumn]);
-
   const openDocumentRow = useCallback((row) => {
     if (!row?.route) return;
     setSelectedRowId(row.id || '');
@@ -409,287 +270,186 @@ export default function WmsDocumentsWorkspace() {
     if (fetchCycleCounts) cycleCountsQuery.refetch();
   }, [cycleCountsQuery, documentsQuery, fetchCycleCounts, fetchDocuments]);
 
+  const actions = useMemo(() => (
+    <>
+      <span className={s.modePill} title={getWmsLocationModeDescription(locationMode)}>
+        {getWmsLocationModeLabel(locationMode)}
+      </span>
+      <div className={s.createWrap}>
+        <AddButton
+          onClick={onCreate}
+          disabled={isCurrentCreateDisabled}
+          title={isCurrentCreateDisabled ? mmUnavailableMessage : undefined}
+        >
+          {createLabel}
+        </AddButton>
+        <TypePicker open={pickerOpen} onCreate={onCreateType} disabledTypes={disabledTypes} />
+      </div>
+    </>
+  ), [
+    createLabel,
+    disabledTypes,
+    isCurrentCreateDisabled,
+    locationMode,
+    mmUnavailableMessage,
+    onCreate,
+    onCreateType,
+    pickerOpen,
+  ]);
+
+  const controls = useMemo(() => [
+    {
+      key: 'warehouse',
+      icon: <Warehouse size={16} aria-hidden="true" />,
+      label: t('wms.documents.workspace.filters.warehouse', 'Warehouse'),
+      control: (
+        <SelectField
+          value={selectedWarehouseId}
+          onValueChange={(value) => setParam(searchParams, navigate, 'warehouseId', value)}
+          options={[
+            { value: '', label: t('wms.documents.workspace.filters.allWarehouses', 'All warehouses') },
+            ...warehouses.map((warehouse) => ({
+              value: warehouse.id,
+              label: getWarehouseLabel(warehouse),
+            })),
+          ]}
+        />
+      ),
+    },
+    {
+      key: 'search',
+      kind: 'search',
+      icon: <Search size={16} aria-hidden="true" />,
+      control: (
+        <SearchField
+          value={search}
+          placeholder={t('wms.documents.workspace.filters.search', 'Search documents')}
+          onValueChange={(value) => setParam(searchParams, navigate, 'search', value)}
+        />
+      ),
+    },
+    {
+      key: 'type',
+      icon: <SlidersHorizontal size={16} aria-hidden="true" />,
+      label: t('wms.documents.workspace.filters.type', 'Type'),
+      control: (
+        <SelectField
+          value={selectedType}
+          onValueChange={(value) => setTypeParam(searchParams, navigate, value)}
+          options={[
+            { value: '', label: t('wms.documents.workspace.filters.allTypes', 'All types') },
+            ...WMS_DOCUMENT_TYPES.map((type) => ({
+              value: type,
+              label: t(`wms.documents.types.${type}`, type),
+              disabled: Boolean(disabledTypes[type]),
+            })),
+          ]}
+        />
+      ),
+    },
+    {
+      key: 'status',
+      icon: <SlidersHorizontal size={16} aria-hidden="true" />,
+      label: t('wms.documents.workspace.filters.status', 'Status'),
+      control: (
+        <SelectField
+          value={selectedStatus}
+          onValueChange={(value) => setParam(searchParams, navigate, 'status', value)}
+          options={STATUS_FILTERS.map((status) => ({
+            value: status,
+            label: status ? t(`statuses.${status}`, status) : t('common.all', 'All'),
+          }))}
+        />
+      ),
+    },
+  ], [
+    disabledTypes,
+    navigate,
+    search,
+    searchParams,
+    selectedStatus,
+    selectedType,
+    selectedWarehouseId,
+    t,
+    warehouses,
+  ]);
+
+  const labels = useMemo(() => ({
+    controlsAria: 'Document controls',
+    resetColumns: t('wms.documents.workspace.resetColumns', 'Reset columns'),
+    columnsMenu: t('wms.documents.workspace.columnsMenu', 'Columns'),
+    visibleColumns: (count) => t('wms.documents.workspace.visibleColumns', 'Visible: {{count}}', { count }),
+    groupLabel: (key) => t(`wms.documents.workspace.columnGroups.${key}`, key),
+    columnLabel: (column) => t(column.labelKey, column.fallbackLabel),
+    requiredColumn: t('wms.documents.workspace.requiredColumn', 'Required column'),
+    columnContext: (column) => (column.contextLabelKey ? t(column.contextLabelKey, '') : ''),
+    columnHelper: (column) => (column.helperKey ? t(column.helperKey, '') : ''),
+    hideTechnicalColumns: t('wms.documents.workspace.hideTechnicalColumns', 'Hide technical fields'),
+    showTechnicalColumns: t('wms.documents.workspace.showTechnicalColumns', 'Show technical fields'),
+    showAllColumns: t('wms.documents.workspace.showAllColumns', 'Show all'),
+    dragColumn: t('wms.documents.workspace.dragColumn', 'Drag to reorder column'),
+    resizeColumn: t('wms.documents.workspace.resizeColumn', 'Resize column'),
+    loading: t('wms.documents.workspace.loading', 'Loading documents'),
+    errorTitle: t('wms.documents.workspace.errorTitle', 'Failed to load documents'),
+    retry: t('common.retry', 'Retry'),
+    emptyTitle: t('wms.documents.workspace.emptyTitle', 'No documents found'),
+  }), [t]);
+
+  const emptyState = useMemo(() => {
+    const isMmGuard = view.type === 'MM' && isMmUnavailable;
+    return {
+      title: isMmGuard ? mmUnavailableMessage : t('wms.documents.workspace.emptyTitle', 'No documents found'),
+      description: isMmGuard
+        ? t('wms.documents.mmGuard.description', 'Create a second warehouse to move goods between warehouses')
+        : t('wms.documents.workspace.emptyDescription', 'Adjust search or filters, or create a new WMS document.'),
+      action: isMmGuard
+        ? <AddButton onClick={() => navigate('/main/wms/setup?tab=warehouses')}>{t('wms.documents.mmGuard.openWarehouses', 'Open warehouses')}</AddButton>
+        : <AddButton onClick={onCreate}>{createLabel}</AddButton>,
+    };
+  }, [createLabel, isMmUnavailable, mmUnavailableMessage, navigate, onCreate, t, view.type]);
+
+  const guardState = rows.length > 0 && view.type === 'MM' && isMmUnavailable
+    ? {
+      title: mmUnavailableMessage,
+      description: t('wms.documents.mmGuard.description', 'Create a second warehouse to move goods between warehouses'),
+      action: <AddButton onClick={() => navigate('/main/wms/setup?tab=warehouses')}>{t('wms.documents.mmGuard.openWarehouses', 'Open warehouses')}</AddButton>,
+    }
+    : null;
+
   return (
-    <div className={s.workspace}>
-      <header className={s.topbar}>
-        <div>
-          <h1>{title}</h1>
-          <div className={s.subtitleRow}>
-            <p>{t('wms.documents.workspace.subtitle', 'Warehouse document workspace')}</p>
-            <span className={s.activeChip}>{activeChipLabel}</span>
-          </div>
-        </div>
-        <div className={s.actions}>
-          <span className={s.modePill} title={getWmsLocationModeDescription(locationMode)}>
-            {getWmsLocationModeLabel(locationMode)}
-          </span>
-          <div className={s.createWrap}>
-            <AddButton
-              onClick={onCreate}
-              disabled={isCurrentCreateDisabled}
-              title={isCurrentCreateDisabled ? mmUnavailableMessage : undefined}
-            >
-              {createLabel}
-            </AddButton>
-            <TypePicker open={pickerOpen} onCreate={onCreateType} disabledTypes={disabledTypes} />
-          </div>
-        </div>
-      </header>
-
-      <section className={s.controls} aria-label="Document controls">
-        <label className={s.filterBox}>
-          <Warehouse size={16} aria-hidden="true" />
-          <span>{t('wms.documents.workspace.filters.warehouse', 'Warehouse')}</span>
-          <SelectField
-            value={selectedWarehouseId}
-            onValueChange={(value) => setParam(searchParams, navigate, 'warehouseId', value)}
-            options={[
-              { value: '', label: t('wms.documents.workspace.filters.allWarehouses', 'All warehouses') },
-              ...warehouses.map((warehouse) => ({
-                value: warehouse.id,
-                label: getWarehouseLabel(warehouse),
-              })),
-            ]}
-          />
-        </label>
-        <label className={s.searchBox}>
-          <Search size={16} aria-hidden="true" />
-          <SearchField
-            value={search}
-            placeholder={t('wms.documents.workspace.filters.search', 'Search documents')}
-            onValueChange={(value) => setParam(searchParams, navigate, 'search', value)}
-          />
-        </label>
-        <label className={s.filterBox}>
-          <SlidersHorizontal size={16} aria-hidden="true" />
-          <span>{t('wms.documents.workspace.filters.type', 'Type')}</span>
-          <SelectField
-            value={selectedType}
-            onValueChange={(value) => setTypeParam(searchParams, navigate, value)}
-            options={[
-              { value: '', label: t('wms.documents.workspace.filters.allTypes', 'All types') },
-              ...WMS_DOCUMENT_TYPES.map((type) => ({
-                value: type,
-                label: t(`wms.documents.types.${type}`, type),
-                disabled: Boolean(disabledTypes[type]),
-              })),
-            ]}
-          />
-        </label>
-        <label className={s.filterBox}>
-          <SlidersHorizontal size={16} aria-hidden="true" />
-          <span>{t('wms.documents.workspace.filters.status', 'Status')}</span>
-          <SelectField
-            value={selectedStatus}
-            onValueChange={(value) => setParam(searchParams, navigate, 'status', value)}
-            options={STATUS_FILTERS.map((status) => ({
-              value: status,
-              label: status ? t(`statuses.${status}`, status) : t('common.all', 'All'),
-            }))}
-          />
-        </label>
-        <button type="button" className={s.resetColumnsButton} onClick={resetColumns}>
-          <RefreshCcw size={14} aria-hidden="true" />
-          <span>{t('wms.documents.workspace.resetColumns', 'Reset columns')}</span>
-        </button>
-        <div className={s.columnsMenuWrap}>
-          <button
-            type="button"
-            className={s.resetColumnsButton}
-            onClick={() => setColumnsOpen((current) => !current)}
-            aria-expanded={columnsOpen}
-            aria-haspopup="menu"
-          >
-            <SlidersHorizontal size={14} aria-hidden="true" />
-            <span>{t('wms.documents.workspace.columnsMenu', 'Columns')}</span>
-          </button>
-          {columnsOpen ? (
-            <div
-              className={s.columnsMenu}
-              role="menu"
-              aria-label={t('wms.documents.workspace.columnsMenu', 'Columns')}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className={s.columnsMenuHeader}>
-                <strong>{t('wms.documents.workspace.columnsMenu', 'Columns')}</strong>
-                <span>{t('wms.documents.workspace.visibleColumns', 'Visible: {{count}}', { count: visibleColumnCount })}</span>
-              </div>
-              <div className={s.columnChecks}>
-                {[...columnGroups.visibleGroups, ...(technicalColumnsOpen ? [{ key: 'technical', columns: columnGroups.technicalColumns }] : [])].map((group) => (
-                  <div key={group.key} className={s.columnGroup}>
-                    <div className={s.columnGroupTitle}>
-                      {t(`wms.documents.workspace.columnGroups.${group.key}`, group.key)}
-                    </div>
-                    {group.columns.map((column) => {
-                      const visible = normalizedColumnState.visibility[column.key] !== false;
-                      const label = t(column.labelKey, column.fallbackLabel);
-                      const requiredTitle = t('wms.documents.workspace.requiredColumn', 'Required column');
-                      const contextLabel = column.contextLabelKey ? t(column.contextLabelKey, '') : '';
-                      const helper = column.required
-                        ? requiredTitle
-                        : column.helperKey ? t(column.helperKey, '') : '';
-                      return (
-                        <label
-                          key={column.key}
-                          className={`${s.columnCheck} ${column.required ? s.columnCheckDisabled : ''}`}
-                          title={column.required ? requiredTitle : helper || undefined}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={visible}
-                            disabled={column.required}
-                            onChange={(event) => setColumnVisibility(column, event.target.checked)}
-                          />
-                          <span>
-                            {label}
-                            {contextLabel ? <em className={s.columnContextBadge}>{contextLabel}</em> : null}
-                          </span>
-                          {helper ? <small>{helper}</small> : null}
-                        </label>
-                      );
-                    })}
-                  </div>
-                ))}
-                {columnGroups.technicalColumns.length ? (
-                  <button
-                    type="button"
-                    className={s.technicalToggle}
-                    onClick={() => setTechnicalColumnsOpen((current) => !current)}
-                    aria-expanded={technicalColumnsOpen}
-                  >
-                    {technicalColumnsOpen
-                      ? t('wms.documents.workspace.hideTechnicalColumns', 'Hide technical fields')
-                      : t('wms.documents.workspace.showTechnicalColumns', 'Show technical fields')}
-                  </button>
-                ) : null}
-              </div>
-              <div className={s.columnsMenuActions}>
-                <button type="button" onClick={showAllColumns}>
-                  {t('wms.documents.workspace.showAllColumns', 'Show all')}
-                </button>
-                <button type="button" onClick={resetColumns}>
-                  {t('wms.documents.workspace.resetColumns', 'Reset columns')}
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <main className={s.content}>
-        {loading ? (
-          <WmsLoadingState title={t('wms.documents.workspace.loading', 'Loading documents')} rows={6} />
-        ) : null}
-
-        {!loading && error ? (
-          <WmsErrorState
-            title={t('wms.documents.workspace.errorTitle', 'Failed to load documents')}
-            description={getErrorText(error)}
-            onRetry={retry}
-          />
-        ) : null}
-
-        {!loading && !error && rows.length === 0 ? (
-          <WmsEmptyState
-            title={view.type === 'MM' && isMmUnavailable ? mmUnavailableMessage : t('wms.documents.workspace.emptyTitle', 'No documents found')}
-            description={view.type === 'MM' && isMmUnavailable
-              ? t('wms.documents.mmGuard.description', 'Create a second warehouse to move goods between warehouses')
-              : t('wms.documents.workspace.emptyDescription', 'Adjust search or filters, or create a new WMS document.')}
-            action={view.type === 'MM' && isMmUnavailable
-              ? <AddButton onClick={() => navigate('/main/wms/setup?tab=warehouses')}>{t('wms.documents.mmGuard.openWarehouses', 'Open warehouses')}</AddButton>
-              : <AddButton onClick={onCreate}>{createLabel}</AddButton>}
-          />
-        ) : null}
-
-        {!loading && !error && rows.length > 0 && view.type === 'MM' && isMmUnavailable ? (
-          <WmsEmptyState
-            title={mmUnavailableMessage}
-            description={t('wms.documents.mmGuard.description', 'Create a second warehouse to move goods between warehouses')}
-            action={<AddButton onClick={() => navigate('/main/wms/setup?tab=warehouses')}>{t('wms.documents.mmGuard.openWarehouses', 'Open warehouses')}</AddButton>}
-          />
-        ) : null}
-
-        {!loading && !error && rows.length > 0 && !(view.type === 'MM' && isMmUnavailable) ? (
-          <div className={s.tableWrap}>
-            <table className={s.table} style={{ width: `${tableWidth}px` }}>
-              <colgroup>
-                {columns.map((column) => (
-                  <col key={column.key} style={{ width: `${column.width}px` }} />
-                ))}
-              </colgroup>
-              <thead>
-                <tr>
-                  {columns.map((column) => (
-                    <th
-                      key={column.key}
-                      data-column-key={column.key}
-                      className={`${column.numeric ? s.numeric : ''} ${dragOverColumnKey === column.key ? s.dragOverColumn : ''}`}
-                      draggable
-                      onMouseDown={(event) => startColumnMouseDrag(column, event)}
-                      onDragStart={(event) => {
-                        setDraggedColumnKey(column.key);
-                        event.dataTransfer.effectAllowed = 'move';
-                        event.dataTransfer.setData('text/plain', column.key);
-                      }}
-                      onDragOver={(event) => {
-                        event.preventDefault();
-                        setDragOverColumnKey(column.key);
-                      }}
-                      onDragLeave={() => setDragOverColumnKey('')}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        const fromKey = event.dataTransfer.getData('text/plain') || draggedColumnKey;
-                        moveColumn(fromKey, column.key);
-                        setDraggedColumnKey('');
-                        setDragOverColumnKey('');
-                      }}
-                      onDragEnd={() => {
-                        setDraggedColumnKey('');
-                        setDragOverColumnKey('');
-                      }}
-                      title={t('wms.documents.workspace.dragColumn', 'Drag to reorder column')}
-                    >
-                      <span className={s.columnHeaderLabel}>
-                        {t(column.labelKey, column.fallbackLabel)}
-                      </span>
-                      <span
-                        className={s.resizeHandle}
-                        role="separator"
-                        aria-orientation="vertical"
-                        aria-label={t('wms.documents.workspace.resizeColumn', 'Resize column')}
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          resizeColumn(column, event.clientX, column.width);
-                        }}
-                      />
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr
-                    key={`${row.type}:${row.id}`}
-                    className={`${s.documentRow} ${(selectedRowId || selectedIdParam) === row.id ? s.documentRowSelected : ''}`}
-                    tabIndex={row.route ? 0 : undefined}
-                    aria-label={`${row.type || ''} ${row.number || row.id || ''}`.trim()}
-                    aria-selected={(selectedRowId || selectedIdParam) === row.id}
-                    onClick={(event) => onRowClick(row, event)}
-                    onKeyDown={(event) => onRowKeyDown(row, event)}
-                  >
-                    {columns.map((column) => (
-                      <td key={column.key} className={column.numeric ? s.numeric : ''}>
-                        {renderCell(row, column, t, i18n.language)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-      </main>
-    </div>
+    <Workspace
+      title={title}
+      subtitle={t('wms.documents.workspace.subtitle', 'Warehouse document workspace')}
+      badge={activeChipLabel}
+      actions={actions}
+      controls={controls}
+      rows={rows}
+      columns={WMS_DOCUMENTS_DEFAULT_COLUMNS}
+      normalizeColumnState={normalizeDocumentsColumnState}
+      getVisibleColumns={getDocumentsTableColumns}
+      storageKey={WMS_DOCUMENTS_COLUMNS_STORAGE_KEY}
+      loading={loading}
+      error={error}
+      errorState={{
+        title: t('wms.documents.workspace.errorTitle', 'Failed to load documents'),
+        description: getErrorText(error),
+      }}
+      emptyState={emptyState}
+      guardState={guardState}
+      onRetry={retry}
+      loadingState={{
+        title: t('wms.documents.workspace.loading', 'Loading documents'),
+        rows: 6,
+      }}
+      renderCell={(row, column) => renderCell(row, column, t, i18n.language)}
+      getRowId={(row) => row.id}
+      getRowKey={(row) => `${row.type}:${row.id}`}
+      selectedRowId={selectedRowId}
+      selectedRowIdFallback={selectedIdParam}
+      onRowClick={onRowClick}
+      onRowKeyDown={onRowKeyDown}
+      labels={labels}
+      pagination={false}
+    />
   );
 }

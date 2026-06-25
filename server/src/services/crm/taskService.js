@@ -418,6 +418,55 @@ function parseListOrder(query = {}) {
   return [[sort, dirRaw]];
 }
 
+// buildListIncludes: joins display data after task ids have been paginated.
+function buildListIncludes(companyId) {
+  return [
+    {
+      model: User,
+      as: "creator",
+      attributes: ["id", "firstName", "lastName", "email"],
+    },
+    {
+      model: Counterparty,
+      as: "counterparty",
+      attributes: ["id", "shortName", "fullName", "type", "status"],
+      where: { companyId },
+      required: false,
+    },
+    {
+      model: Deal,
+      as: "deal",
+      attributes: ["id", "title", "status"],
+      where: { companyId },
+      required: false,
+    },
+    {
+      model: User,
+      as: "userParticipants",
+      attributes: ["id", "firstName", "lastName", "email"],
+      through: { attributes: ["role", "memberStatus"] },
+      include: [
+        {
+          model: UserCompany,
+          as: "memberships",
+          attributes: [],
+          where: { companyId },
+          required: true,
+        },
+      ],
+      required: false,
+    },
+    {
+      model: Contact,
+      as: "contacts",
+      attributes: ["id", "firstName", "lastName", "displayName", "email", "phone"],
+      through: { attributes: [] },
+      where: { companyId },
+      required: false,
+    },
+  ];
+}
+
 // pickAssigneeIds: выполняет вспомогательную бизнес-логику сервиса.
 function pickAssigneeIds(payload) {
   const ids = Array.isArray(payload.assigneeIds)
@@ -586,60 +635,32 @@ module.exports = {
     const where = buildListWhere({ companyId: cid, query });
     const order = parseListOrder(query);
 
-    const { rows, count } = await Task.findAndCountAll({
+    const count = await Task.count({
       where,
+      distinct: true,
+      col: "id",
+    });
+
+    const idRows = await Task.findAll({
+      where,
+      attributes: ["id"],
       order,
       limit,
       offset,
-      distinct: true,
-      include: [
-        {
-          model: User,
-          as: "creator",
-          attributes: ["id", "firstName", "lastName", "email"],
-        },
-        {
-          model: Counterparty,
-          as: "counterparty",
-          attributes: ["id", "shortName", "fullName", "type", "status"],
-          where: { companyId: cid },
-          required: false,
-        },
-        {
-          model: Deal,
-          as: "deal",
-          attributes: ["id", "title", "status"],
-          where: { companyId: cid },
-          required: false,
-        },
-        {
-          model: User,
-          as: "userParticipants",
-          attributes: ["id", "firstName", "lastName", "email"],
-          through: { attributes: ["role", "memberStatus"] },
-          include: [
-            {
-              model: UserCompany,
-              as: "memberships",
-              attributes: [],
-              where: { companyId: cid },
-              required: true,
-            },
-          ],
-          required: false,
-        },
-        {
-          model: Contact,
-          as: "contacts",
-          attributes: ["id", "firstName", "lastName", "displayName", "email", "phone"],
-          through: { attributes: [] },
-          where: { companyId: cid },
-          required: false,
-        },
-      ],
+      raw: true,
     });
 
-    return { rows: rows.map(toTaskDto), count, page, limit };
+    const ids = idRows.map((row) => row.id).filter(Boolean);
+    if (!ids.length) return { rows: [], count, page, limit };
+
+    const rows = await Task.findAll({
+      where: { companyId: cid, id: { [Op.in]: ids } },
+      include: buildListIncludes(cid),
+    });
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    const orderedRows = ids.map((id) => byId.get(id)).filter(Boolean);
+
+    return { rows: orderedRows.map(toTaskDto), count, page, limit };
   },
 
   // ---------- CALENDAR ----------
@@ -1169,4 +1190,3 @@ module.exports = {
     return await this.getById({ id, companyId: cid });
   },
 };
-

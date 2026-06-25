@@ -2,7 +2,10 @@ import React, { useRef, useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
-import ListPage from '../../../../components/data/ListPage';
+import {
+  Workspace,
+  useWorkspaceData,
+} from '../../../../components/workspace';
 import Modal from '../../../../components/Modal';
 import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
 import CounterpartyForm from '../../CounterpartyForm';
@@ -13,11 +16,12 @@ import useAclPermissions from '../../../../hooks/useAclPermissions';
 
 import LinkCell from '../../../../components/cells/LinkCell';
 import AddressCell from '../../../../components/cells/AddressCell';
-import FilterToolbar from '../../../../components/filters/FilterToolbar';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
+import { SearchField, SelectField } from '../../../../components/ui/fields';
 
 import {
   useCreateCounterpartyMutation,
+  useListCounterpartiesQuery,
   useRemoveCounterpartyMutation,
 } from '../../../../store/rtk/counterpartyApi';
 import { useListDepartmentsQuery } from '../../../../store/rtk/departmentsApi';
@@ -26,6 +30,10 @@ import s from './CounterpartiesPage.module.css';
 
 // контрагенты на этой странице: только партнёры / поставщики / производители
 const CONTRAGENT_TYPES = ['partner', 'supplier', 'manufacturer'];
+
+const sanitizeCounterpartyQuery = (query = {}) => Object.fromEntries(
+  Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== '')
+);
 
 function DepartmentChip({ department, fallback }) {
   if (!department) {
@@ -58,14 +66,9 @@ export default function CounterpartiesPage() {
     colWidths,
     colOrder,
     colVisibility,
-    savedViews,
-    activeViewId,
     onColumnResize,
     onColumnOrderChange,
     onColumnVisibilityChange,
-    onSavedViewsChange,
-    onActiveViewChange,
-    resetGridPrefs,
   } = useGridPrefs('crm.counterparties');
 
   const [createCounterparty, { isLoading: creating }] = useCreateCounterpartyMutation();
@@ -188,6 +191,7 @@ render: (r) => r.mainResponsibleUser || '—',
   // ❗ по умолчанию всегда просим бэкенд скрыть lead и client
   const defaultQuery = useMemo(
     () => ({
+      page: 1,
       sort: 'createdAt',
       dir: 'DESC',
       limit: 25,
@@ -195,6 +199,58 @@ render: (r) => r.mainResponsibleUser || '—',
     }),
     []
   );
+  const [query, setQuery] = useState(defaultQuery);
+  const apiQuery = useMemo(() => sanitizeCounterpartyQuery(query), [query]);
+  const {
+    data: counterpartiesData,
+    isFetching: counterpartiesLoading,
+    error: counterpartiesError,
+    refetch: refetchCounterparties,
+  } = useListCounterpartiesQuery(apiQuery);
+
+  const loadedCounterparties = useMemo(() => {
+    if (Array.isArray(counterpartiesData)) return counterpartiesData;
+    if (Array.isArray(counterpartiesData?.items)) return counterpartiesData.items;
+    if (Array.isArray(counterpartiesData?.data)) return counterpartiesData.data;
+    return [];
+  }, [counterpartiesData]);
+  const counterpartiesTotal = Number(counterpartiesData?.total ?? loadedCounterparties.length ?? 0);
+  const hasAnyFilter = Boolean(query.search || query.type || query.status || query.departmentId);
+
+  const workspaceData = useWorkspaceData({
+    externalData: loadedCounterparties,
+    externalMeta: {
+      total: counterpartiesTotal,
+      page: counterpartiesData?.page || query.page || defaultQuery.page,
+      limit: counterpartiesData?.limit || query.limit || defaultQuery.limit,
+    },
+    externalLoading: counterpartiesLoading,
+    externalError: counterpartiesError,
+    onExternalRefetch: refetchCounterparties,
+    query,
+    onQueryChange: setQuery,
+    defaultQuery,
+  });
+
+  const updateFilter = useCallback((key, value) => {
+    setQuery((prev) => ({
+      ...prev,
+      [key]: value || undefined,
+      page: 1,
+    }));
+  }, []);
+
+  const columnState = useMemo(() => ({
+    widths: colWidths,
+    order: colOrder,
+    visibility: colVisibility,
+  }), [colOrder, colVisibility, colWidths]);
+
+  const handleColumnStateChange = useCallback((next = {}) => {
+    onColumnResize(next.widths || {});
+    onColumnOrderChange(Array.isArray(next.order) ? next.order : []);
+    onColumnVisibilityChange(next.visibility || {});
+  }, [onColumnOrderChange, onColumnResize, onColumnVisibilityChange]);
 
   const actions = useMemo(
     () => canCreateCounterparty ? (
@@ -228,50 +284,134 @@ render: (r) => r.mainResponsibleUser || '—',
     ),
     [canDeleteCounterparty, deleting, openDetail, t]
   );
-  const toolbarControls = useMemo(() => {
+  const workspaceColumns = useMemo(() => [
+    ...columns.map((column) => ({
+      ...column,
+      fallbackLabel: column.title,
+      minWidth: Math.max(110, Math.min(Number(column.width) || 180, 180)),
+      maxWidth: 560,
+      category: column.category || 'core',
+      required: column.key === 'shortName',
+    })),
+    {
+      key: 'actions',
+      fallbackLabel: t('common.actions', 'Actions'),
+      width: 170,
+      minWidth: 150,
+      maxWidth: 220,
+      category: 'context',
+      required: true,
+      render: rowActions,
+    },
+  ], [columns, rowActions, t]);
+
+  const renderCell = useCallback((row, column) => {
+    if (typeof column.render === 'function') return column.render(row);
+    const value = row?.[column.key];
+    return value == null || value === '' ? '—' : String(value);
+  }, []);
+
+  const workspaceControls = useMemo(() => {
     const controls = [
       {
-        type: 'search',
         key: 'search',
-        placeholder: t('crm.filters.searchPlaceholder'),
-        debounce: 400,
+        kind: 'search',
+        label: t('common.search', 'Search'),
+        control: (
+          <SearchField
+            value={query.search || ''}
+            onValueChange={(value) => updateFilter('search', value)}
+            placeholder={t('crm.filters.searchPlaceholder')}
+            size="sm"
+            clearable
+            fullWidth={false}
+          />
+        ),
       },
-      // 🔙 вернули фильтр по типу, но только по "контрагентским" типам
       {
-        type: 'select',
         key: 'type',
         label: t('crm.table.columns.type'),
-        options: [
-          { value: '', label: t('crm.filters.allTypes') },
-          { value: 'partner', label: t('crm.enums.type.partner') },
-          { value: 'supplier', label: t('crm.enums.type.supplier') },
-          { value: 'manufacturer', label: t('crm.enums.type.manufacturer') },
-        ],
+        control: (
+          <SelectField
+            value={query.type || ''}
+            onValueChange={(value) => updateFilter('type', value)}
+            options={[
+              { value: '', label: t('crm.filters.allTypes') },
+              { value: 'partner', label: t('crm.enums.type.partner') },
+              { value: 'supplier', label: t('crm.enums.type.supplier') },
+              { value: 'manufacturer', label: t('crm.enums.type.manufacturer') },
+            ]}
+            size="sm"
+            fullWidth={false}
+          />
+        ),
       },
       {
-        type: 'select',
         key: 'status',
         label: t('crm.table.columns.status'),
-        options: [
-          { value: '', label: t('crm.filters.allStatuses') },
-          { value: 'potential', label: t('crm.enums.status.potential') },
-          { value: 'active', label: t('crm.enums.status.active') },
-          { value: 'inactive', label: t('crm.enums.status.inactive') },
-        ],
+        control: (
+          <SelectField
+            value={query.status || ''}
+            onValueChange={(value) => updateFilter('status', value)}
+            options={[
+              { value: '', label: t('crm.filters.allStatuses') },
+              { value: 'potential', label: t('crm.enums.status.potential') },
+              { value: 'active', label: t('crm.enums.status.active') },
+              { value: 'inactive', label: t('crm.enums.status.inactive') },
+            ]}
+            size="sm"
+            fullWidth={false}
+          />
+        ),
       },
     ];
 
     if (canReadDepartments) {
       controls.push({
-        type: 'select',
         key: 'departmentId',
         label: t('crm.table.columns.department'),
-        options: departmentFilterOptions,
+        control: (
+          <SelectField
+            value={query.departmentId || ''}
+            onValueChange={(value) => updateFilter('departmentId', value)}
+            options={departmentFilterOptions}
+            size="sm"
+            fullWidth={false}
+          />
+        ),
       });
     }
 
     return controls;
-  }, [canReadDepartments, departmentFilterOptions, t]);
+  }, [
+    canReadDepartments,
+    departmentFilterOptions,
+    query.departmentId,
+    query.search,
+    query.status,
+    query.type,
+    t,
+    updateFilter,
+  ]);
+
+  const workspaceLabels = useMemo(() => ({
+    loading: t('common.loading', 'Loading'),
+    errorTitle: t('crm.counterparties.errorTitle', 'Не удалось загрузить контрагентов'),
+    retry: t('list.refresh', 'Refresh'),
+    resetColumns: t('list.columns.reset', 'Reset'),
+    columnsMenu: t('list.columns.configureShort', 'Columns'),
+    showAllColumns: t('list.columns.configure', 'Show all'),
+    showTechnicalColumns: t('list.columns.groupSystem', 'System'),
+    hideTechnicalColumns: t('list.columns.hideAdditional', 'Hide extra'),
+    requiredColumn: t('list.columns.recommended', 'Recommended'),
+    visibleColumns: (count) => t('list.columns.visibleCount', { count }),
+    groupLabel: (group) => {
+      if (group === 'context') return t('list.columns.groupAdditional', 'Additional');
+      if (group === 'technical') return t('list.columns.groupSystem', 'System');
+      return t('list.columns.groupMain', 'Main');
+    },
+    columnLabel: (column) => column.fallbackLabel || column.title || column.key,
+  }), [t]);
 
   const confirmDelete = useCallback(async () => {
     if (!deleteTarget?.id) return;
@@ -300,34 +440,52 @@ render: (r) => r.mainResponsibleUser || '—',
 
   return (
     <>
-      <ListPage
+      <Workspace
         ref={listRef}
-        /** 🔹 контрагенты — без лидов и клиентов */
-        source="counterparties"
         title={t('crm.titles.counterparties')}
-        endpoint="/counterparties"
-        columns={columns}
-        defaultQuery={defaultQuery}
+        badge={t('crm.counterparties.workspaceCount', {
+          count: workspaceData.total,
+          defaultValue: `${workspaceData.total}`,
+        })}
         actions={actions}
-        rowActions={rowActions}
-        rowActionsWidth={170}
-        columnWidths={colWidths}
-        onColumnResize={onColumnResize}
-        columnOrder={colOrder}
-        onColumnOrderChange={onColumnOrderChange}
-        columnVisibility={colVisibility}
-        onColumnVisibilityChange={onColumnVisibilityChange}
-        savedViews={savedViews}
-        activeViewId={activeViewId}
-        onSavedViewsChange={onSavedViewsChange}
-        onActiveViewChange={onActiveViewChange}
-        onResetColumns={resetGridPrefs}
-        ToolbarComponent={(props) => (
-          <FilterToolbar
-            {...props}
-            controls={toolbarControls}
-          />
-        )}
+        controls={workspaceControls}
+        rows={workspaceData.rows}
+        columns={workspaceColumns}
+        loading={workspaceData.loading}
+        error={workspaceData.error}
+        onRetry={workspaceData.refetch}
+        onRefetch={workspaceData.refetch}
+        renderCell={renderCell}
+        getRowId={(row) => row?.id}
+        getRowKey={(row) => String(row?.id || row?.shortName || row?.fullName || '')}
+        onRowClick={(row) => row?.id && openDetail(row.id)}
+        sortKey={workspaceData.query.sort}
+        sortDir={workspaceData.query.dir}
+        onSort={workspaceData.setSort}
+        columnState={columnState}
+        onColumnStateChange={handleColumnStateChange}
+        emptyState={{
+          title: t(
+            hasAnyFilter ? 'crm.counterparties.emptyFilteredTitle' : 'crm.counterparties.emptyTitle',
+            hasAnyFilter ? 'Контрагенты не найдены' : 'Нет контрагентов'
+          ),
+          description: t(
+            hasAnyFilter ? 'crm.counterparties.emptyFilteredText' : 'crm.counterparties.emptyText',
+            hasAnyFilter ? 'Измените поиск или фильтры.' : 'Создайте первого контрагента.'
+          ),
+        }}
+        errorState={{
+          title: t('crm.counterparties.errorTitle', 'Не удалось загрузить контрагентов'),
+          description: String(
+            counterpartiesError?.data?.message
+            || counterpartiesError?.data?.error
+            || counterpartiesError?.message
+            || t('common.error', 'Error')
+          ),
+          retryLabel: t('list.refresh', 'Refresh'),
+        }}
+        labels={workspaceLabels}
+        pagination={workspaceData.pagination}
       />
 
       {canCreateCounterparty ? (

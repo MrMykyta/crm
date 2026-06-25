@@ -2,10 +2,9 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import AddButton from '../../../components/buttons/AddButton/AddButton';
-import FilterToolbar from '../../../components/filters/FilterToolbar';
-import ListPage from '../../../components/data/ListPage';
+import { Workspace } from '../../../components/workspace';
 import { WmsEmptyState } from '../../../components/wms/ui';
-import { createWmsLocationsColumns } from '../../../components/data/ListPage/columnSchemas/wmsLocationsColumns';
+import { createWmsLocationsColumns } from '../../../components/workspace/columnSchemas/wmsLocationsColumns';
 import { SelectField, TextField } from '../../../components/ui/fields';
 import useAclPermissions from '../../../hooks/useAclPermissions';
 import useGridPrefs from '../../../hooks/useGridPrefs';
@@ -361,7 +360,7 @@ export default function LocationsPage() {
               </div>
             </div>
           </section>
-          <ListPage
+          <Workspace
             source="wmsLocations"
             externalData={pagedLocations}
             externalMeta={{
@@ -422,10 +421,7 @@ export default function LocationsPage() {
             onSavedViewsChange={onSavedViewsChange}
             onActiveViewChange={onActiveViewChange}
             onResetColumns={resetGridPrefs}
-            ToolbarComponent={(props) => (
-              <FilterToolbar
-                {...props}
-                controls={[
+            filterControls={[
                   {
                     type: 'search',
                     key: 'search',
@@ -439,8 +435,6 @@ export default function LocationsPage() {
                     options: warehouseOptions,
                   },
                 ]}
-              />
-            )}
           />
         </div>
 

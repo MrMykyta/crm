@@ -32,6 +32,7 @@ export default function SelectField({
   description,
   className = "",
   inputClassName = "",
+  contentClassName = "",
   fullWidth = true,
   size = "md",
   loading = false,
@@ -109,6 +110,7 @@ export default function SelectField({
         placeholder={placeholder}
         size={radixSize}
         className={inputClassName}
+        contentClassName={contentClassName}
         disabled={disabled || readOnly}
         searchable={isSearchable}
         searchPlaceholder={searchPlaceholder}

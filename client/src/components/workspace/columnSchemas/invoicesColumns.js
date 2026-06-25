@@ -1,6 +1,6 @@
-import LinkCell from '../../../cells/LinkCell';
-import StatusBadge from '../../../shared/StatusBadge';
-import { asText, formatDate, formatMoney } from '../../../../lib/format';
+import LinkCell from '../../cells/LinkCell';
+import StatusBadge from '../../shared/StatusBadge';
+import { asText, formatDate, formatMoney } from '../../../lib/format';
 
 const DATE_OPTIONS = {
   year: 'numeric',

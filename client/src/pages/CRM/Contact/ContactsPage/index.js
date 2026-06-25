@@ -2,13 +2,16 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
-import ListPage from '../../../../components/data/ListPage';
-import FilterToolbar from '../../../../components/filters/FilterToolbar';
+import {
+  Workspace,
+  useWorkspaceData,
+} from '../../../../components/workspace';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import Modal from '../../../../components/Modal';
 import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
 import LinkCell from '../../../../components/cells/LinkCell';
 import ContactForm from '../../../../components/contacts/ContactForm';
+import { SearchField, SelectField } from '../../../../components/ui/fields';
 import useGridPrefs from '../../../../hooks/useGridPrefs';
 import useOpenAsModal from '../../../../hooks/useOpenAsModal';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
@@ -16,12 +19,17 @@ import useAclPermissions from '../../../../hooks/useAclPermissions';
 import {
   useCreateContactMutation,
   useDeleteContactMutation,
+  useGetContactsQuery,
   useSetMainContactMutation,
   useUpdateContactMutation,
 } from '../../../../store/rtk/contactsApi';
 import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
 
 import s from './ContactsPage.module.css';
+
+const sanitizeContactsQuery = (query = {}) => Object.fromEntries(
+  Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== '')
+);
 
 // fullName: вспомогательная логика компонента.
 function fullName(contact) {
@@ -58,14 +66,9 @@ export default function ContactsPage() {
     colWidths,
     colOrder,
     colVisibility,
-    savedViews,
-    activeViewId,
     onColumnResize,
     onColumnOrderChange,
     onColumnVisibilityChange,
-    onSavedViewsChange,
-    onActiveViewChange,
-    resetGridPrefs,
   } = useGridPrefs('crm.contacts');
 
   const [createContact] = useCreateContactMutation();
@@ -263,9 +266,154 @@ const onFormSubmit = async (payload) => {
   };
 
   const defaultQuery = useMemo(
-    () => ({ sort: 'createdAt', dir: 'DESC', limit: 25 }),
+    () => ({ page: 1, sort: 'createdAt', dir: 'DESC', limit: 25 }),
     []
   );
+  const [query, setQuery] = useState(defaultQuery);
+  const apiQuery = useMemo(() => sanitizeContactsQuery(query), [query]);
+  const {
+    data: contactsData,
+    isFetching: contactsLoading,
+    error: contactsError,
+    refetch: refetchContacts,
+  } = useGetContactsQuery(apiQuery);
+  const loadedContacts = useMemo(() => {
+    if (Array.isArray(contactsData)) return contactsData;
+    if (Array.isArray(contactsData?.items)) return contactsData.items;
+    if (Array.isArray(contactsData?.data)) return contactsData.data;
+    return [];
+  }, [contactsData]);
+  const contactsTotal = Number(contactsData?.total ?? loadedContacts.length ?? 0);
+  const hasAnyFilter = Boolean(query.search || query.counterpartyId || query.isMain);
+
+  const workspaceData = useWorkspaceData({
+    externalData: loadedContacts,
+    externalMeta: {
+      total: contactsTotal,
+      page: contactsData?.page || query.page || defaultQuery.page,
+      limit: contactsData?.limit || query.limit || defaultQuery.limit,
+    },
+    externalLoading: contactsLoading,
+    externalError: contactsError,
+    onExternalRefetch: refetchContacts,
+    query,
+    onQueryChange: setQuery,
+    defaultQuery,
+  });
+
+  const updateFilter = useCallback((key, value) => {
+    setQuery((prev) => ({
+      ...prev,
+      [key]: value || undefined,
+      page: 1,
+    }));
+  }, []);
+
+  const columnState = useMemo(() => ({
+    widths: colWidths,
+    order: colOrder,
+    visibility: colVisibility,
+  }), [colOrder, colVisibility, colWidths]);
+
+  const handleColumnStateChange = useCallback((next = {}) => {
+    onColumnResize(next.widths || {});
+    onColumnOrderChange(Array.isArray(next.order) ? next.order : []);
+    onColumnVisibilityChange(next.visibility || {});
+  }, [onColumnOrderChange, onColumnResize, onColumnVisibilityChange]);
+
+  const workspaceColumns = useMemo(() => [
+    ...columns.map((column) => ({
+      ...column,
+      fallbackLabel: column.title,
+      minWidth: Math.max(110, Math.min(Number(column.width) || 180, 180)),
+      maxWidth: 560,
+      category: column.category || 'core',
+      required: column.key === 'firstName',
+    })),
+    {
+      key: 'actions',
+      fallbackLabel: t('common.actions', 'Actions'),
+      width: 300,
+      minWidth: 240,
+      maxWidth: 380,
+      category: 'context',
+      required: true,
+      render: rowActions,
+    },
+  ], [columns, rowActions, t]);
+
+  const renderCell = useCallback((row, column) => {
+    if (typeof column.render === 'function') return column.render(row);
+    const value = row?.[column.key];
+    return value == null || value === '' ? '—' : String(value);
+  }, []);
+
+  const workspaceControls = useMemo(() => [
+    {
+      key: 'search',
+      kind: 'search',
+      label: t('common.search', 'Search'),
+      control: (
+        <SearchField
+          value={query.search || ''}
+          onValueChange={(value) => updateFilter('search', value)}
+          placeholder={t('contacts.filters.search', 'Поиск: имя, email, телефон')}
+          size="sm"
+          clearable
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'counterpartyId',
+      label: t('contacts.filters.counterparty', 'Контрагент'),
+      control: (
+        <SelectField
+          value={query.counterpartyId || ''}
+          onValueChange={(value) => updateFilter('counterpartyId', value)}
+          options={counterpartyOptions}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'isMain',
+      label: t('contacts.filters.main', 'Основной'),
+      control: (
+        <SelectField
+          value={query.isMain || ''}
+          onValueChange={(value) => updateFilter('isMain', value)}
+          options={[
+            { value: '', label: t('contacts.filters.allMain', 'Все') },
+            { value: 'true', label: t('contacts.values.main', 'Основной') },
+            { value: 'false', label: t('contacts.values.no', 'Не основной') },
+          ]}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+  ], [counterpartyOptions, query.counterpartyId, query.isMain, query.search, t, updateFilter]);
+
+  const workspaceLabels = useMemo(() => ({
+    loading: t('common.loading', 'Loading'),
+    errorTitle: t('contacts.errorTitle', 'Не удалось загрузить контакты'),
+    retry: t('list.refresh', 'Refresh'),
+    resetColumns: t('list.columns.reset', 'Reset'),
+    columnsMenu: t('list.columns.configureShort', 'Columns'),
+    showAllColumns: t('list.columns.configure', 'Show all'),
+    showTechnicalColumns: t('list.columns.groupSystem', 'System'),
+    hideTechnicalColumns: t('list.columns.hideAdditional', 'Hide extra'),
+    requiredColumn: t('list.columns.recommended', 'Recommended'),
+    visibleColumns: (count) => t('list.columns.visibleCount', { count }),
+    groupLabel: (group) => {
+      if (group === 'context') return t('list.columns.groupAdditional', 'Additional');
+      if (group === 'technical') return t('list.columns.groupSystem', 'System');
+      return t('list.columns.groupMain', 'Main');
+    },
+    columnLabel: (column) => column.fallbackLabel || column.title || column.key,
+  }), [t]);
 
   const modalFooter = useMemo(
     () => (
@@ -285,58 +433,56 @@ const onFormSubmit = async (payload) => {
 
   return (
     <>
-      <ListPage
+      <Workspace
         ref={listRef}
-        source="contacts"
         title={t('contacts.title', 'Контактные лица')}
-        columns={columns}
-        rowActions={rowActions}
-        defaultQuery={defaultQuery}
+        badge={t('contacts.workspaceCount', {
+          count: workspaceData.total,
+          defaultValue: `${workspaceData.total}`,
+        })}
         actions={(
           <AddButton onClick={openCreate} title={t('contacts.actions.add', 'Добавить контакт')}>
             {t('contacts.actions.add', 'Добавить контакт')}
           </AddButton>
         )}
-        columnWidths={colWidths}
-        onColumnResize={onColumnResize}
-        columnOrder={colOrder}
-        onColumnOrderChange={onColumnOrderChange}
-        columnVisibility={colVisibility}
-        onColumnVisibilityChange={onColumnVisibilityChange}
-        savedViews={savedViews}
-        activeViewId={activeViewId}
-        onSavedViewsChange={onSavedViewsChange}
-        onActiveViewChange={onActiveViewChange}
-        onResetColumns={resetGridPrefs}
-        ToolbarComponent={(props) => (
-          <FilterToolbar
-            {...props}
-            controls={[
-              {
-                type: 'search',
-                key: 'search',
-                placeholder: t('contacts.filters.search', 'Поиск: имя, email, телефон'),
-                debounce: 350,
-              },
-              {
-                type: 'select',
-                key: 'counterpartyId',
-                label: t('contacts.filters.counterparty', 'Контрагент'),
-                options: counterpartyOptions,
-              },
-              {
-                type: 'select',
-                key: 'isMain',
-                label: t('contacts.filters.main', 'Основной'),
-                options: [
-                  { value: '', label: t('contacts.filters.allMain', 'Все') },
-                  { value: 'true', label: t('contacts.values.main', 'Основной') },
-                  { value: 'false', label: t('contacts.values.no', 'Не основной') },
-                ],
-              },
-            ]}
-          />
-        )}
+        controls={workspaceControls}
+        rows={workspaceData.rows}
+        columns={workspaceColumns}
+        loading={workspaceData.loading}
+        error={workspaceData.error}
+        onRetry={workspaceData.refetch}
+        onRefetch={workspaceData.refetch}
+        renderCell={renderCell}
+        getRowId={(row) => row?.id}
+        getRowKey={(row) => String(row?.id || fullName(row))}
+        onRowClick={(row) => row?.id && openDetail(row.id)}
+        sortKey={workspaceData.query.sort}
+        sortDir={workspaceData.query.dir}
+        onSort={workspaceData.setSort}
+        columnState={columnState}
+        onColumnStateChange={handleColumnStateChange}
+        emptyState={{
+          title: t(
+            hasAnyFilter ? 'contacts.emptyFilteredTitle' : 'contacts.emptyTitle',
+            hasAnyFilter ? 'Контакты не найдены' : 'Нет контактов'
+          ),
+          description: t(
+            hasAnyFilter ? 'contacts.emptyFilteredText' : 'contacts.emptyText',
+            hasAnyFilter ? 'Измените поиск или фильтры.' : 'Добавьте первый контакт.'
+          ),
+        }}
+        errorState={{
+          title: t('contacts.errorTitle', 'Не удалось загрузить контакты'),
+          description: String(
+            contactsError?.data?.message
+            || contactsError?.data?.error
+            || contactsError?.message
+            || t('common.error', 'Error')
+          ),
+          retryLabel: t('list.refresh', 'Refresh'),
+        }}
+        labels={workspaceLabels}
+        pagination={workspaceData.pagination}
       />
 
       <Modal

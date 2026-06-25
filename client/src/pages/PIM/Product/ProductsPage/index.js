@@ -1,21 +1,24 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import ListPage from '../../../../components/data/ListPage';
-import FilterToolbar from '../../../../components/filters/FilterToolbar';
+import {
+  Workspace,
+  useWorkspaceData,
+} from '../../../../components/workspace';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import Modal from '../../../../components/Modal';
 import useGridPrefs from '../../../../hooks/useGridPrefs';
 import useOpenAsModal from '../../../../hooks/useOpenAsModal';
-import { createProductListColumns } from '../../../../components/data/ListPage/columnSchemas/productsColumns';
+import { createProductListColumns } from '../../../../components/workspace/columnSchemas/productsColumns';
 import {
   useCreateBrandLookupMutation,
   useCreateCategoryLookupMutation,
   useCreateProductMutation,
+  useListProductsQuery,
   useListBrandsLookupQuery,
   useListCategoriesLookupQuery,
 } from '../../../../store/rtk/productsApi';
-import { AutocompleteField, TextField } from '../../../../components/ui/fields';
+import { AutocompleteField, SearchField, SelectField, TextField } from '../../../../components/ui/fields';
 import s from './ProductsPage.module.css';
 
 const defaultCreate = {
@@ -38,6 +41,73 @@ function useDebouncedValue(value, delay = 280) {
 // normalizeText: нормализует данные для отображения и ввода.
 function normalizeText(value) {
   return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+const sanitizeProductsQuery = (query = {}) => Object.fromEntries(
+  Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== '')
+);
+
+function humanizeColumnKey(key) {
+  return String(key || '')
+    .replace(/^customFields\./, '')
+    .replace(/[._-]+/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function normalizeValueForCell(value) {
+  if (value == null || value === '') return '—';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) {
+    const chunks = value.map((item) => normalizeValueForCell(item)).filter((item) => item && item !== '—');
+    return chunks.length ? chunks.join(', ') : '—';
+  }
+  if (typeof value === 'object') {
+    const label = value.name || value.title || value.label || value.fullName || value.shortName || value.id || null;
+    if (label) return String(label);
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '—';
+    }
+  }
+  return String(value);
+}
+
+function buildCustomFieldColumns(rows = [], fixedColumns = []) {
+  const fixedKeys = new Set(fixedColumns.map((column) => column.key));
+  const customFields = new Set();
+
+  rows.slice(0, 120).forEach((row) => {
+    const fields = row?.customFields;
+    if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return;
+    Object.keys(fields).forEach((fieldKey) => {
+      const key = `customFields.${fieldKey}`;
+      if (!fixedKeys.has(key)) customFields.add(fieldKey);
+    });
+  });
+
+  return [...customFields]
+    .sort((a, b) => a.localeCompare(b))
+    .map((fieldKey) => {
+      const key = `customFields.${fieldKey}`;
+      const label = humanizeColumnKey(fieldKey);
+      return {
+        key,
+        title: label,
+        fallbackLabel: label,
+        category: 'custom',
+        defaultVisible: false,
+        sortable: false,
+        width: 190,
+        minWidth: 120,
+        maxWidth: 360,
+        render: (row) => normalizeValueForCell(row?.customFields?.[fieldKey]),
+      };
+    });
 }
 
 // Компонент ProductsPage: отвечает за отображение UI и обработку взаимодействий пользователя.
@@ -84,15 +154,64 @@ export default function ProductsPage() {
     colWidths,
     colOrder,
     colVisibility,
-    savedViews,
-    activeViewId,
     onColumnResize,
     onColumnOrderChange,
     onColumnVisibilityChange,
-    onSavedViewsChange,
-    onActiveViewChange,
-    resetGridPrefs,
   } = useGridPrefs('pim.products');
+
+  const defaultQuery = useMemo(() => ({ page: 1, sort: 'createdAt', dir: 'DESC', limit: 25 }), []);
+  const [query, setQuery] = useState(defaultQuery);
+  const apiQuery = useMemo(() => sanitizeProductsQuery(query), [query]);
+  const {
+    data: productsData,
+    isFetching: productsLoading,
+    error: productsError,
+    refetch: refetchProducts,
+  } = useListProductsQuery(apiQuery);
+
+  const loadedProducts = useMemo(() => {
+    if (Array.isArray(productsData)) return productsData;
+    if (Array.isArray(productsData?.items)) return productsData.items;
+    if (Array.isArray(productsData?.data)) return productsData.data;
+    return [];
+  }, [productsData]);
+  const productsTotal = Number(productsData?.total ?? loadedProducts.length ?? 0);
+  const hasAnyFilter = Boolean(query.search || query.categoryId || query.brandId || query.isSellable);
+
+  const workspaceData = useWorkspaceData({
+    externalData: loadedProducts,
+    externalMeta: {
+      total: productsTotal,
+      page: productsData?.page || query.page || defaultQuery.page,
+      limit: productsData?.limit || query.limit || defaultQuery.limit,
+    },
+    externalLoading: productsLoading,
+    externalError: productsError,
+    onExternalRefetch: refetchProducts,
+    query,
+    onQueryChange: setQuery,
+    defaultQuery,
+  });
+
+  const updateFilter = useCallback((key, value) => {
+    setQuery((prev) => ({
+      ...prev,
+      [key]: value || undefined,
+      page: 1,
+    }));
+  }, []);
+
+  const columnState = useMemo(() => ({
+    widths: colWidths,
+    order: colOrder,
+    visibility: colVisibility,
+  }), [colOrder, colVisibility, colWidths]);
+
+  const handleColumnStateChange = useCallback((next = {}) => {
+    onColumnResize(next.widths || {});
+    onColumnOrderChange(Array.isArray(next.order) ? next.order : []);
+    onColumnVisibilityChange(next.visibility || {});
+  }, [onColumnOrderChange, onColumnResize, onColumnVisibilityChange]);
 
   const categoryOptions = useMemo(() => {
     const items = Array.isArray(categoriesFilterData?.items) ? categoriesFilterData.items : [];
@@ -270,67 +389,179 @@ const onSubmitCreate = async (event) => {
     </div>
   ), [openDetail]);
 
+  const workspaceColumns = useMemo(() => {
+    const fixedColumns = columns.map((column) => ({
+      ...column,
+      fallbackLabel: column.title || column.managerLabel || column.key,
+      category: column.managerGroup || column.category || 'core',
+      defaultVisible: column.defaultVisible !== false,
+      required: column.canHide === false || column.key === 'name',
+      minWidth: Math.max(110, Math.min(Number(column.width) || 180, 180)),
+      maxWidth: 560,
+      numeric: column.align === 'right',
+    }));
+    return [
+      ...fixedColumns,
+      ...buildCustomFieldColumns(loadedProducts, fixedColumns),
+      {
+        key: 'actions',
+        fallbackLabel: t('common.actions', 'Actions'),
+        width: 150,
+        minWidth: 130,
+        maxWidth: 220,
+        category: 'context',
+        defaultVisible: true,
+        required: true,
+        render: rowActions,
+      },
+    ];
+  }, [columns, loadedProducts, rowActions, t]);
+
+  const renderCell = useCallback((row, column) => {
+    if (typeof column.render === 'function') return column.render(row);
+    const value = row?.[column.key];
+    return normalizeValueForCell(value);
+  }, []);
+
+  const workspaceControls = useMemo(() => [
+    {
+      key: 'search',
+      kind: 'search',
+      label: t('common.search', 'Search'),
+      control: (
+        <SearchField
+          value={query.search || ''}
+          onValueChange={(value) => updateFilter('search', value)}
+          placeholder="Поиск: название, SKU, EAN..."
+          size="sm"
+          clearable
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'categoryId',
+      label: 'Категория',
+      control: (
+        <SelectField
+          value={query.categoryId || ''}
+          onValueChange={(value) => updateFilter('categoryId', value)}
+          options={categoryOptions}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'brandId',
+      label: 'Производитель',
+      control: (
+        <SelectField
+          value={query.brandId || ''}
+          onValueChange={(value) => updateFilter('brandId', value)}
+          options={brandOptions}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'isSellable',
+      label: 'Продаётся',
+      control: (
+        <SelectField
+          value={query.isSellable || ''}
+          onValueChange={(value) => updateFilter('isSellable', value)}
+          options={[
+            { value: '', label: 'Любой' },
+            { value: 'true', label: 'Да' },
+            { value: 'false', label: 'Нет' },
+          ]}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+  ], [
+    brandOptions,
+    categoryOptions,
+    query.brandId,
+    query.categoryId,
+    query.isSellable,
+    query.search,
+    t,
+    updateFilter,
+  ]);
+
+  const workspaceLabels = useMemo(() => ({
+    loading: t('common.loading', 'Loading'),
+    errorTitle: t('pim.products.errorTitle', 'Не удалось загрузить товары'),
+    retry: t('list.refresh', 'Refresh'),
+    resetColumns: t('list.columns.reset', 'Reset'),
+    columnsMenu: t('list.columns.configureShort', 'Columns'),
+    showAllColumns: t('list.columns.configure', 'Show all'),
+    showTechnicalColumns: t('list.columns.groupSystem', 'System'),
+    hideTechnicalColumns: t('list.columns.hideAdditional', 'Hide extra'),
+    requiredColumn: t('list.columns.recommended', 'Recommended'),
+    visibleColumns: (count) => t('list.columns.visibleCount', { count }),
+    groupLabel: (group) => {
+      if (group === 'context') return t('list.columns.groupAdditional', 'Additional');
+      if (group === 'custom') return t('list.columns.groupCustom', 'Custom');
+      if (group === 'system') return t('list.columns.groupSystem', 'System');
+      if (group === 'technical') return t('list.columns.groupSystem', 'System');
+      if (group === 'logistics') return t('list.columns.groupLogistics', 'Logistics');
+      if (group === 'business') return t('list.columns.groupBusiness', 'Business');
+      return t('list.columns.groupMain', 'Main');
+    },
+    columnLabel: (column) => column.fallbackLabel || column.title || column.key,
+  }), [t]);
+
   return (
     <>
-      <ListPage
+      <Workspace
         ref={listRef}
-        source="products"
         title={t('menu.products', 'Товары')}
-        columns={columns}
-        rowActions={rowActions}
-        defaultQuery={{ sort: 'createdAt', dir: 'DESC', limit: 25 }}
+        badge={t('pim.products.workspaceCount', {
+          count: workspaceData.total,
+          defaultValue: `${workspaceData.total}`,
+        })}
         actions={(
           <AddButton onClick={() => setOpen(true)}>
             Добавить товар
           </AddButton>
         )}
-        columnWidths={colWidths}
-        onColumnResize={onColumnResize}
-        columnOrder={colOrder}
-        onColumnOrderChange={onColumnOrderChange}
-        columnVisibility={colVisibility}
-        onColumnVisibilityChange={onColumnVisibilityChange}
-        savedViews={savedViews}
-        activeViewId={activeViewId}
-        onSavedViewsChange={onSavedViewsChange}
-        onActiveViewChange={onActiveViewChange}
-        onResetColumns={resetGridPrefs}
-        dynamicColumnsMode="custom-only"
-        ToolbarComponent={(props) => (
-          <FilterToolbar
-            {...props}
-            controls={[
-              {
-                type: 'search',
-                key: 'search',
-                placeholder: 'Поиск: название, SKU, EAN...',
-                debounce: 350,
-              },
-              {
-                type: 'select',
-                key: 'categoryId',
-                label: 'Категория',
-                options: categoryOptions,
-              },
-              {
-                type: 'select',
-                key: 'brandId',
-                label: 'Производитель',
-                options: brandOptions,
-              },
-              {
-                type: 'select',
-                key: 'isSellable',
-                label: 'Продаётся',
-                options: [
-                  { value: '', label: 'Любой' },
-                  { value: 'true', label: 'Да' },
-                  { value: 'false', label: 'Нет' },
-                ],
-              },
-            ]}
-          />
-        )}
+        controls={workspaceControls}
+        rows={workspaceData.rows}
+        columns={workspaceColumns}
+        loading={workspaceData.loading}
+        error={workspaceData.error}
+        onRetry={workspaceData.refetch}
+        onRefetch={workspaceData.refetch}
+        renderCell={renderCell}
+        getRowId={(row) => row?.id}
+        getRowKey={(row) => String(row?.id || row?.name || '')}
+        onRowClick={(row) => row?.id && openDetail(row.id)}
+        sortKey={workspaceData.query.sort}
+        sortDir={workspaceData.query.dir}
+        onSort={workspaceData.setSort}
+        columnState={columnState}
+        onColumnStateChange={handleColumnStateChange}
+        emptyState={{
+          title: hasAnyFilter ? 'Товары не найдены' : 'Нет товаров',
+          description: hasAnyFilter ? 'Измените поиск или фильтры.' : 'Создайте первый товар.',
+        }}
+        errorState={{
+          title: t('pim.products.errorTitle', 'Не удалось загрузить товары'),
+          description: String(
+            productsError?.data?.message
+            || productsError?.data?.error
+            || productsError?.message
+            || t('common.error', 'Error')
+          ),
+          retryLabel: t('list.refresh', 'Refresh'),
+        }}
+        labels={workspaceLabels}
+        pagination={workspaceData.pagination}
       />
 
       <Modal

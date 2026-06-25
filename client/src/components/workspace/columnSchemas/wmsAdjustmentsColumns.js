@@ -1,4 +1,4 @@
-import LinkCell from '../../../cells/LinkCell';
+import LinkCell from '../../cells/LinkCell';
 
 function asText(value) {
   if (value === null || value === undefined) return '';
@@ -8,6 +8,11 @@ function asText(value) {
 function asDash(value) {
   const text = asText(value);
   return text || '—';
+}
+
+function asNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function formatDate(value, locale = 'en') {
@@ -28,7 +33,19 @@ function statusLabel(status, t) {
   return t(`statuses.${normalized}`, normalized);
 }
 
-const SHIPMENT_COLUMNS = [
+function typeLabel(documentType, t) {
+  const normalized = asText(documentType).toUpperCase();
+  if (!normalized) return '—';
+  return t(`wms.adjustments.types.${normalized}`, normalized);
+}
+
+function itemsCount(row) {
+  if (Number.isFinite(asNumber(row?.itemsCount, NaN))) return asNumber(row.itemsCount, 0);
+  if (Array.isArray(row?.items)) return row.items.length;
+  return null;
+}
+
+const ADJUSTMENT_COLUMNS = [
   {
     key: 'number',
     width: 220,
@@ -38,18 +55,26 @@ const SHIPMENT_COLUMNS = [
         primary={asDash(row?.number)}
         secondary={asDash(row?.warehouseId)}
         onClick={row?.id ? () => onOpenDetail?.(row.id) : undefined}
-        ariaLabel="Open shipment"
+        ariaLabel="Open adjustment"
       />
     ),
-    labelKey: 'wms.shipments.columns.number',
+    labelKey: 'wms.adjustments.columns.number',
     fallbackLabel: 'Number',
   },
   {
+    key: 'documentType',
+    width: 120,
+    align: 'left',
+    render: (row, { t }) => typeLabel(row?.documentType, t),
+    labelKey: 'wms.adjustments.columns.documentType',
+    fallbackLabel: 'Type',
+  },
+  {
     key: 'status',
-    width: 140,
+    width: 130,
     align: 'left',
     render: (row, { t }) => statusLabel(row?.status, t),
-    labelKey: 'wms.shipments.columns.status',
+    labelKey: 'wms.adjustments.columns.status',
     fallbackLabel: 'Status',
   },
   {
@@ -57,35 +82,54 @@ const SHIPMENT_COLUMNS = [
     width: 220,
     align: 'left',
     render: (row) => asDash(row?.warehouseId),
-    labelKey: 'wms.shipments.columns.warehouse',
+    labelKey: 'wms.adjustments.columns.warehouse',
     fallbackLabel: 'Warehouse',
   },
   {
-    key: 'order',
-    width: 210,
+    key: 'date',
+    width: 140,
     align: 'left',
-    render: (row) => asDash(row?.orderId),
-    labelKey: 'wms.shipments.columns.order',
-    fallbackLabel: 'Order',
+    render: (row, { locale }) => formatDate(row?.createdAt, locale),
+    labelKey: 'wms.adjustments.columns.date',
+    fallbackLabel: 'Date',
+  },
+  {
+    key: 'itemsCount',
+    width: 120,
+    align: 'right',
+    render: (row) => {
+      const count = itemsCount(row);
+      return count === null ? '—' : String(count);
+    },
+    labelKey: 'wms.adjustments.columns.itemsCount',
+    fallbackLabel: 'Items',
   },
   {
     key: 'createdAt',
-    width: 150,
+    width: 140,
     align: 'left',
     render: (row, { locale }) => formatDate(row?.createdAt, locale),
-    labelKey: 'wms.shipments.columns.createdAt',
+    labelKey: 'wms.adjustments.columns.createdAt',
     fallbackLabel: 'Created',
+  },
+  {
+    key: 'postedAt',
+    width: 140,
+    align: 'left',
+    render: (row, { locale }) => formatDate(row?.postedAt, locale),
+    labelKey: 'wms.adjustments.columns.postedAt',
+    fallbackLabel: 'Posted',
   },
 ];
 
-export function createWmsShipmentsColumns(options = {}) {
+export function createWmsAdjustmentsColumns(options = {}) {
   const {
     t = (key, fallback) => fallback || key,
     locale = 'en',
     onOpenDetail,
   } = options;
 
-  return SHIPMENT_COLUMNS.map((column) => ({
+  return ADJUSTMENT_COLUMNS.map((column) => ({
     key: column.key,
     title: t(column.labelKey, column.fallbackLabel),
     managerLabel: t(column.labelKey, column.fallbackLabel),

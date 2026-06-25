@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import FilterToolbar from '../../../components/filters/FilterToolbar';
-import ListPage from '../../../components/data/ListPage';
-import { createWmsSerialsColumns } from '../../../components/data/ListPage/columnSchemas/wmsSerialsColumns';
+import { Workspace } from '../../../components/workspace';
+import { createWmsSerialsColumns } from '../../../components/workspace/columnSchemas/wmsSerialsColumns';
 import { SearchField } from '../../../components/ui/fields';
 import useAclPermissions from '../../../hooks/useAclPermissions';
 import useGridPrefs from '../../../hooks/useGridPrefs';
@@ -66,7 +65,7 @@ export default function SerialsPage() {
   }
 
   return (
-    <ListPage
+    <Workspace
       source="wmsSerials"
       title={t('wms.serials.title', 'Serial numbers')}
       columns={columns}
@@ -83,10 +82,7 @@ export default function SerialsPage() {
       onSavedViewsChange={onSavedViewsChange}
       onActiveViewChange={onActiveViewChange}
       onResetColumns={resetGridPrefs}
-      ToolbarComponent={(props) => (
-        <FilterToolbar
-          {...props}
-          controls={[
+      filterControls={[
             {
               type: 'custom',
               render: ({ query, onChange }) => (
@@ -110,8 +106,6 @@ export default function SerialsPage() {
               ),
             },
           ]}
-        />
-      )}
     />
   );
 }

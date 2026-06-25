@@ -1,6 +1,6 @@
 import React from 'react';
-import LinkCell from '../../../cells/LinkCell';
-import { formatQuantity, getUomSymbol } from '../../../../utils/uom';
+import LinkCell from '../../cells/LinkCell';
+import { formatQuantity, getUomSymbol } from '../../../utils/uom';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('ru-RU');
 const DATE_TIME_FORMATTER = new Intl.DateTimeFormat('ru-RU', {

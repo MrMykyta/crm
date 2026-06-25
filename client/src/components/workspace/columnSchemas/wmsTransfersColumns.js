@@ -1,4 +1,4 @@
-import LinkCell from '../../../cells/LinkCell';
+import LinkCell from '../../cells/LinkCell';
 
 function asText(value) {
   if (value === null || value === undefined) return '';
@@ -28,64 +28,64 @@ function statusLabel(status, t) {
   return t(`statuses.${normalized}`, normalized);
 }
 
-const CYCLE_COUNT_COLUMNS = [
+const TRANSFER_COLUMNS = [
   {
-    key: 'id',
-    width: 230,
+    key: 'number',
+    width: 210,
     align: 'left',
     render: (row, { onOpenDetail }) => (
       <LinkCell
-        primary={asText(row?.id).slice(0, 8) || '—'}
-        secondary={asDash(row?.warehouseId)}
+        primary={asDash(row?.number)}
+        secondary={`${asDash(row?.fromWarehouseId)} → ${asDash(row?.toWarehouseId)}`}
         onClick={row?.id ? () => onOpenDetail?.(row.id) : undefined}
-        ariaLabel="Open cycle count"
+        ariaLabel="Open transfer"
       />
     ),
-    labelKey: 'wms.cycleCounts.columns.sheet',
-    fallbackLabel: 'Sheet',
+    labelKey: 'wms.transfers.columns.number',
+    fallbackLabel: 'Number',
   },
   {
     key: 'status',
-    width: 140,
+    width: 130,
     align: 'left',
     render: (row, { t }) => statusLabel(row?.status, t),
-    labelKey: 'wms.cycleCounts.columns.status',
+    labelKey: 'wms.transfers.columns.status',
     fallbackLabel: 'Status',
   },
   {
-    key: 'warehouse',
-    width: 220,
+    key: 'fromWarehouse',
+    width: 200,
     align: 'left',
-    render: (row) => asDash(row?.warehouseId),
-    labelKey: 'wms.cycleCounts.columns.warehouse',
-    fallbackLabel: 'Warehouse',
+    render: (row) => asDash(row?.fromWarehouseId),
+    labelKey: 'wms.transfers.columns.fromWarehouse',
+    fallbackLabel: 'From',
   },
   {
-    key: 'itemsCount',
-    width: 140,
-    align: 'right',
-    render: (row) => String(Array.isArray(row?.items) ? row.items.length : 0),
-    labelKey: 'wms.cycleCounts.columns.itemsCount',
-    fallbackLabel: 'Counted lines',
+    key: 'toWarehouse',
+    width: 200,
+    align: 'left',
+    render: (row) => asDash(row?.toWarehouseId),
+    labelKey: 'wms.transfers.columns.toWarehouse',
+    fallbackLabel: 'To',
   },
   {
     key: 'createdAt',
     width: 150,
     align: 'left',
     render: (row, { locale }) => formatDate(row?.createdAt, locale),
-    labelKey: 'wms.cycleCounts.columns.createdAt',
+    labelKey: 'wms.transfers.columns.createdAt',
     fallbackLabel: 'Created',
   },
 ];
 
-export function createWmsCycleCountsColumns(options = {}) {
+export function createWmsTransfersColumns(options = {}) {
   const {
     t = (key, fallback) => fallback || key,
     locale = 'en',
     onOpenDetail,
   } = options;
 
-  return CYCLE_COUNT_COLUMNS.map((column) => ({
+  return TRANSFER_COLUMNS.map((column) => ({
     key: column.key,
     title: t(column.labelKey, column.fallbackLabel),
     managerLabel: t(column.labelKey, column.fallbackLabel),
@@ -99,4 +99,3 @@ export function createWmsCycleCountsColumns(options = {}) {
     render: (row) => column.render(row, { t, locale, onOpenDetail }),
   }));
 }
-

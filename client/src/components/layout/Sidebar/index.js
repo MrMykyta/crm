@@ -5,8 +5,8 @@ import { useSelector } from "react-redux";
 import { MENU } from "../../../config/menu";
 import SidebarTooltip from "../SidebarTooltip";
 import CompanyMenu from "../../company/CompanyMenu";
-import WorkspaceViewsSidebarSection from "../../common/WorkspaceViews/WorkspaceViewsSidebarSection";
-import WorkspaceViewsFlyout from "../../common/WorkspaceViews/WorkspaceViewsFlyout";
+import ViewsSidebarSection from "../../common/WorkspaceViews/WorkspaceViewsSidebarSection";
+import ViewsFlyout from "../../common/WorkspaceViews/WorkspaceViewsFlyout";
 import { useSignedFileUrl } from "../../../hooks/useSignedFileUrl";
 import { useListWarehousesQuery } from "../../../store/rtk/wmsDocumentsApi";
 import useAclPermissions, { hasAclRequirements } from "../../../hooks/useAclPermissions";
@@ -312,7 +312,7 @@ function WorkspaceMenuItem({ item, Icon, label, collapsed, showTip, hideTip, onN
         {!collapsed && <span className={styles.label}>{label}</span>}
       </NavLink>
       {!collapsed && !hasNavigationFlyout ? (
-        <WorkspaceViewsSidebarSection
+        <ViewsSidebarSection
           module={item.workspaceViewsModule}
           routeBase={item.route}
           collapsed={collapsed}
@@ -335,7 +335,7 @@ function WorkspaceMenuItem({ item, Icon, label, collapsed, showTip, hideTip, onN
           onClose={() => setOpen(false)}
         />
       ) : (
-        <WorkspaceViewsFlyout
+        <ViewsFlyout
           open={open}
           anchorEl={anchorRef.current}
           module={item.workspaceViewsModule}

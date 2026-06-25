@@ -2144,7 +2144,9 @@
         "eyebrow": "Tasks workspace",
         "subtitle": "Plan work, follow deadlines, and keep daily task ownership visible.",
         "count": "{{count}} task",
-        "count_plural": "{{count}} tasks"
+        "count_plural": "{{count}} tasks",
+        "filteredCount": "{{count}} of {{total}} task",
+        "filteredCount_plural": "{{count}} of {{total}} tasks"
       },
       "kpi": {
         "title": "Task summary",

@@ -2186,7 +2186,9 @@
         "eyebrow": "Рабочая область задач",
         "subtitle": "Планируйте работу, отслеживайте сроки и держите ответственных в фокусе.",
         "count": "{{count}} задача",
-        "count_plural": "{{count}} задач"
+        "count_plural": "{{count}} задач",
+        "filteredCount": "{{count}} из {{total}} задач",
+        "filteredCount_plural": "{{count}} из {{total}} задач"
       },
       "kpi": {
         "title": "Сводка задач",

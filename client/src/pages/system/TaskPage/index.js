@@ -4,13 +4,15 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
-import ListPage from '../../../components/data/ListPage';
+import {
+  Workspace,
+  useWorkspaceData,
+} from '../../../components/workspace';
 import Modal from '../../../components/Modal';
 import AddButton from '../../../components/buttons/AddButton/AddButton';
 import ConfirmDialog from '../../../components/dialogs/ConfirmDialog';
 import LinkCell from '../../../components/cells/LinkCell';
-import FilterToolbar from '../../../components/filters/FilterToolbar';
-import useGridPrefs from '../../../hooks/useGridPrefs';
+import { SearchField, SelectField } from '../../../components/ui/fields';
 import useOpenAsModal from '../../../hooks/useOpenAsModal';
 
 import { TASK_STATUS, formatTaskDate } from '../../../schemas/task.schema';
@@ -82,22 +84,8 @@ export default function TasksPage(){
   const openAsModal = useOpenAsModal();
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteError, setDeleteError] = useState('');
-  const defaultQuery = useMemo(()=>({ sort:'createdAt', dir:'DESC', limit:100 }), []);
+  const defaultQuery = useMemo(()=>({ sort:'createdAt', dir:'DESC', limit:25 }), []);
   const [query, setQuery] = useState(defaultQuery);
-
-  const {
-    colWidths,
-    colOrder,
-    colVisibility,
-    savedViews,
-    activeViewId,
-    onColumnResize,
-    onColumnOrderChange,
-    onColumnVisibilityChange,
-    onSavedViewsChange,
-    onActiveViewChange,
-    resetGridPrefs,
-  } = useGridPrefs('crm.tasks');
 
   // lookups (users/departments/contacts/counterparties/deals) и текущий пользователь
   const members = useSelector((s) => s.bootstrap?.companyUsers || []);
@@ -116,7 +104,18 @@ export default function TasksPage(){
     return [{ value: '', label: t('crm.task.filters.allAssignees') }, ...options];
   }, [members, t]);
 
-  const apiQuery = useMemo(() => sanitizeTasksQuery(query), [query]);
+  const hasClientFilter = Boolean(
+    query.priorityBucket
+    || query.overdueOnly
+    || query.dueTodayOnly
+    || query.myTasks
+    || query.assigneeId
+  );
+
+  const apiQuery = useMemo(() => ({
+    ...sanitizeTasksQuery(query),
+    ...(hasClientFilter ? { page: 1, limit: 100 } : {}),
+  }), [hasClientFilter, query]);
   const {
     data: tasksData,
     isFetching: tasksLoading,
@@ -165,6 +164,37 @@ export default function TasksPage(){
     || query.myTasks
     || query.assigneeId
   );
+
+  const serverTotal = Number(tasksData?.total ?? loadedTasks.length ?? 0);
+  const workspaceRows = hasClientFilter ? filteredTasks : loadedTasks;
+  const workspaceTotal = hasClientFilter ? filteredTasks.length : serverTotal;
+  const workspaceBadge = hasAnyFilter && workspaceTotal !== serverTotal
+    ? t('crm.task.workspace.filteredCount', { count: workspaceTotal, total: serverTotal })
+    : t('crm.task.workspace.count', { count: workspaceTotal });
+
+  const workspaceData = useWorkspaceData({
+    externalData: workspaceRows,
+    externalMeta: {
+      total: workspaceTotal,
+      page: query.page || defaultQuery.page || 1,
+      limit: query.limit || defaultQuery.limit,
+    },
+    externalLoading: tasksLoading,
+    externalError: tasksError,
+    onExternalRefetch: refetchTasks,
+    query,
+    onQueryChange: setQuery,
+    defaultQuery,
+    clientPaginate: hasClientFilter,
+  });
+
+  const updateFilter = useCallback((key, value) => {
+    setQuery((prev) => ({
+      ...prev,
+      [key]: value || undefined,
+      page: 1,
+    }));
+  }, []);
 
   const resetClientFilters = useCallback(() => {
     setQuery((prev) => {
@@ -344,6 +374,173 @@ render:(r)=>{
     </div>
   ), [deletingTask, openDetail, requestDelete, t]);
 
+  const workspaceColumns = useMemo(() => [
+    ...columns.map((column) => ({
+      ...column,
+      fallbackLabel: column.title,
+      minWidth: Math.max(110, Math.min(Number(column.width) || 180, 180)),
+      maxWidth: 560,
+      category: column.category || 'core',
+      required: column.key === 'title',
+    })),
+    {
+      key: 'actions',
+      fallbackLabel: t('common.actions', 'Actions'),
+      width: 170,
+      minWidth: 150,
+      maxWidth: 220,
+      category: 'context',
+      required: true,
+      render: rowActions,
+    },
+  ], [columns, rowActions, t]);
+
+  const renderCell = useCallback((row, column) => {
+    if (typeof column.render === 'function') return column.render(row);
+    const value = row?.[column.key];
+    return value == null || value === '' ? '—' : String(value);
+  }, []);
+
+  const workspaceControls = useMemo(() => [
+    {
+      key: 'search',
+      kind: 'search',
+      label: t('common.search', 'Search'),
+      control: (
+        <SearchField
+          value={query.search || ''}
+          onValueChange={(value) => updateFilter('search', value)}
+          placeholder={t('crm.task.searchPlaceholder')}
+          size="sm"
+          clearable
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'status',
+      label: t('crm.task.fields.status'),
+      control: (
+        <SelectField
+          value={query.status || ''}
+          onValueChange={(value) => updateFilter('status', value)}
+          options={[
+            { value: '', label: t('crm.allStatuses', 'All statuses') },
+            ...TASK_STATUS.map((value) => ({ value, label: t(`crm.task.enums.status.${value}`) })),
+          ]}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'priorityBucket',
+      label: t('crm.task.filters.priority'),
+      control: (
+        <SelectField
+          value={query.priorityBucket || ''}
+          onValueChange={(value) => updateFilter('priorityBucket', value)}
+          options={[
+            { value: '', label: t('crm.task.filters.allPriorities') },
+            ...['low', 'normal', 'high', 'urgent'].map((value) => ({
+              value,
+              label: t(`crm.task.priorityBuckets.${value}`),
+            })),
+          ]}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    ...(memberOptions.length > 1 ? [{
+      key: 'assigneeId',
+      label: t('crm.task.filters.assignee'),
+      control: (
+        <SelectField
+          value={query.assigneeId || ''}
+          onValueChange={(value) => updateFilter('assigneeId', value)}
+          options={memberOptions}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    }] : []),
+    {
+      key: 'quickFilters',
+      kind: 'quick',
+      control: (
+        <div className={w.quickFilters}>
+          <button
+            type="button"
+            className={`${w.filterPill} ${query.overdueOnly ? w.filterPillActive : ''}`}
+            onClick={() => updateFilter('overdueOnly', query.overdueOnly ? undefined : true)}
+            title={t('crm.task.filters.overdueOnly')}
+          >
+            {t('crm.task.filters.overdueShort', 'Просроченные')}
+          </button>
+          <button
+            type="button"
+            className={`${w.filterPill} ${query.dueTodayOnly ? w.filterPillActive : ''}`}
+            onClick={() => updateFilter('dueTodayOnly', query.dueTodayOnly ? undefined : true)}
+            title={t('crm.task.filters.dueToday')}
+          >
+            {t('crm.task.filters.todayShort', 'Сегодня')}
+          </button>
+          {currentUserId ? (
+            <button
+              type="button"
+              className={`${w.filterPill} ${query.myTasks ? w.filterPillActive : ''}`}
+              onClick={() => updateFilter('myTasks', query.myTasks ? undefined : true)}
+              title={t('crm.task.filters.myTasks')}
+            >
+              {t('crm.task.filters.myShort', 'Мои')}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className={w.resetButton}
+            onClick={resetClientFilters}
+            title={t('crm.task.filters.resetClient')}
+          >
+            {t('common.reset', 'Сбросить')}
+          </button>
+        </div>
+      ),
+    },
+  ], [
+    currentUserId,
+    memberOptions,
+    query.assigneeId,
+    query.dueTodayOnly,
+    query.myTasks,
+    query.overdueOnly,
+    query.priorityBucket,
+    query.search,
+    query.status,
+    resetClientFilters,
+    t,
+    updateFilter,
+  ]);
+
+  const workspaceLabels = useMemo(() => ({
+    loading: t('common.loading', 'Loading'),
+    errorTitle: t('crm.task.states.errorTitle'),
+    retry: t('list.refresh', 'Refresh'),
+    resetColumns: t('list.columns.reset', 'Reset'),
+    columnsMenu: t('list.columns.configureShort', 'Columns'),
+    showAllColumns: t('list.columns.configure', 'Show all'),
+    showTechnicalColumns: t('list.columns.groupSystem', 'System'),
+    hideTechnicalColumns: t('list.columns.hideAdditional', 'Hide extra'),
+    requiredColumn: t('list.columns.recommended', 'Recommended'),
+    visibleColumns: (count) => t('list.columns.visibleCount', { count }),
+    groupLabel: (group) => {
+      if (group === 'context') return t('list.columns.groupAdditional', 'Additional');
+      if (group === 'technical') return t('list.columns.groupSystem', 'System');
+      return t('list.columns.groupMain', 'Main');
+    },
+    columnLabel: (column) => column.fallbackLabel || column.title || column.key,
+  }), [t]);
+
   const actions = useMemo(()=> (
     <AddButton onClick={()=>setOpen(true)} title={t('crm.task.addTask')}>
       {t('crm.task.addTask')}
@@ -361,22 +558,6 @@ render:(r)=>{
 
   return (
     <div className={w.workspace}>
-      <section className={w.header}>
-        <div className={w.headerCopy}>
-          <span className={w.eyebrow}>{t('crm.task.workspace.eyebrow')}</span>
-          <div className={w.titleRow}>
-            <h1>{t('crm.task.title')}</h1>
-            <span className={w.countBadge}>
-              {t('crm.task.workspace.count', { count: tasksData?.total ?? loadedTasks.length })}
-            </span>
-          </div>
-          <p>{t('crm.task.workspace.subtitle')}</p>
-        </div>
-        <div className={w.headerActions}>
-          {actions}
-        </div>
-      </section>
-
       <section className={w.kpiGrid} aria-label={t('crm.task.kpi.title')}>
         {kpis.map((item) => (
           <article key={item.key} className={`${w.kpiCard} ${w[`kpi_${item.tone}`]}`}>
@@ -387,107 +568,38 @@ render:(r)=>{
         ))}
       </section>
 
-      {tasksError ? (
-        <div className={w.errorState}>
-          <strong>{t('crm.task.states.errorTitle')}</strong>
-          <span>{String(tasksError?.data?.message || tasksError?.data?.error || tasksError?.message || t('crm.task.states.errorText'))}</span>
-        </div>
-      ) : null}
-
-      <ListPage
+      <Workspace
         ref={listRef}
         title={t('crm.task.title')}
-        source="tasks"
-        externalData={filteredTasks}
-        externalMeta={{ total: filteredTasks.length, page: query.page || 1, limit: query.limit || defaultQuery.limit }}
-        externalLoading={tasksLoading}
-        externalError={tasksError}
-        onExternalRefetch={refetchTasks}
-        query={query}
-        onQueryChange={setQuery}
-        columns={columns}
-        defaultQuery={defaultQuery}
-        actions={null}
-        className={w.listPage}
-        cardClassName={w.listCard}
-        toolbarShellClassName={w.toolbarShell}
-        tableRegionClassName={w.tableRegion}
-        metaBarClassName={w.metaBar}
-        emptyStateContent={(
-          <div className={w.emptyState}>
-            <strong>{t(hasAnyFilter ? 'crm.task.states.emptyFilteredTitle' : 'crm.task.states.emptyTitle')}</strong>
-            <span>{t(hasAnyFilter ? 'crm.task.states.emptyFilteredText' : 'crm.task.states.emptyText')}</span>
-          </div>
-        )}
-        columnWidths={colWidths}
-        onColumnResize={onColumnResize}
-        columnOrder={colOrder}
-        onColumnOrderChange={onColumnOrderChange}
-        columnVisibility={colVisibility}
-        onColumnVisibilityChange={onColumnVisibilityChange}
-        savedViews={savedViews}
-        activeViewId={activeViewId}
-        onSavedViewsChange={onSavedViewsChange}
-        onActiveViewChange={onActiveViewChange}
-        onResetColumns={resetGridPrefs}
-        rowActions={rowActions}
-        rowActionsWidth={160}
-        toolbarExtra={(
-          <button type="button" className={w.resetButton} onClick={resetClientFilters}>
-            {t('crm.task.filters.resetClient')}
-          </button>
-        )}
-        ToolbarComponent={(props)=> (
-          <FilterToolbar
-            {...props}
-            controls={[
-              { type:'search', key:'search', placeholder: t('crm.task.searchPlaceholder'), debounce:400 },
-              { type:'select', key:'status', label:t('crm.task.fields.status'), options:[
-                { value:'', label:t('common.selectAll', t('common.all', 'All')) },
-                ...TASK_STATUS.map(v=>({ value:v, label:t(`crm.task.enums.status.${v}`) }))
-              ]},
-              { type:'select', key:'priorityBucket', label:t('crm.task.filters.priority'), options:[
-                { value:'', label:t('crm.task.filters.allPriorities') },
-                ...['low', 'normal', 'high', 'urgent'].map((value) => ({
-                  value,
-                  label: t(`crm.task.priorityBuckets.${value}`),
-                })),
-              ]},
-              ...(memberOptions.length > 1 ? [{ type:'select', key:'assigneeId', label:t('crm.task.filters.assignee'), options: memberOptions }] : []),
-              { type:'dateRange', key:'range', fromKey:'from', toKey:'to', label:t('crm.task.filters.range') },
-              {
-                type: 'custom',
-                render: ({ query: toolbarQuery, onChange }) => (
-                  <div className={w.quickFilters}>
-                    <button
-                      type="button"
-                      className={`${w.filterPill} ${toolbarQuery.overdueOnly ? w.filterPillActive : ''}`}
-                      onClick={() => onChange((prev) => ({ ...prev, overdueOnly: prev.overdueOnly ? undefined : true, page: 1 }))}
-                    >
-                      {t('crm.task.filters.overdueOnly')}
-                    </button>
-                    <button
-                      type="button"
-                      className={`${w.filterPill} ${toolbarQuery.dueTodayOnly ? w.filterPillActive : ''}`}
-                      onClick={() => onChange((prev) => ({ ...prev, dueTodayOnly: prev.dueTodayOnly ? undefined : true, page: 1 }))}
-                    >
-                      {t('crm.task.filters.dueToday')}
-                    </button>
-                    {currentUserId ? (
-                      <button
-                        type="button"
-                        className={`${w.filterPill} ${toolbarQuery.myTasks ? w.filterPillActive : ''}`}
-                        onClick={() => onChange((prev) => ({ ...prev, myTasks: prev.myTasks ? undefined : true, page: 1 }))}
-                      >
-                        {t('crm.task.filters.myTasks')}
-                      </button>
-                    ) : null}
-                  </div>
-                ),
-              },
-            ]}
-          />
-        )}
+        subtitle={t('crm.task.workspace.subtitle')}
+        badge={workspaceBadge}
+        actions={actions}
+        controls={workspaceControls}
+        rows={workspaceData.rows}
+        columns={workspaceColumns}
+        loading={workspaceData.loading}
+        error={workspaceData.error}
+        onRetry={workspaceData.refetch}
+        onRefetch={workspaceData.refetch}
+        renderCell={renderCell}
+        getRowId={(row) => row?.id}
+        getRowKey={(row) => String(row?.id || row?.title || '')}
+        onRowClick={(row) => row?.id && openDetail(row.id)}
+        storageKey="workspace:crm.tasks.columns.v1"
+        sortKey={workspaceData.query.sort}
+        sortDir={workspaceData.query.dir}
+        onSort={workspaceData.setSort}
+        emptyState={{
+          title: t(hasAnyFilter ? 'crm.task.states.emptyFilteredTitle' : 'crm.task.states.emptyTitle'),
+          description: t(hasAnyFilter ? 'crm.task.states.emptyFilteredText' : 'crm.task.states.emptyText'),
+        }}
+        errorState={{
+          title: t('crm.task.states.errorTitle'),
+          description: String(tasksError?.data?.message || tasksError?.data?.error || tasksError?.message || t('crm.task.states.errorText')),
+          retryLabel: t('list.refresh', 'Refresh'),
+        }}
+        labels={workspaceLabels}
+        pagination={workspaceData.pagination}
       />
 
       <Modal open={open} onClose={()=>setOpen(false)} title={t('crm.task.newTask')} size="xl" footer={footer}>

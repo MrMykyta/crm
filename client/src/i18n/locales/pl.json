@@ -2121,7 +2121,9 @@
         "eyebrow": "Obszar zadań",
         "subtitle": "Planuj pracę, śledź terminy i widocznie przypisuj odpowiedzialność.",
         "count": "{{count}} zadanie",
-        "count_plural": "{{count}} zadań"
+        "count_plural": "{{count}} zadań",
+        "filteredCount": "{{count}} z {{total}} zadań",
+        "filteredCount_plural": "{{count}} z {{total}} zadań"
       },
       "kpi": {
         "title": "Podsumowanie zadań",

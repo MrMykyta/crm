@@ -1,4 +1,4 @@
-import LinkCell from '../../../cells/LinkCell';
+import LinkCell from '../../cells/LinkCell';
 
 function asText(value) {
   if (value === null || value === undefined) return '';
@@ -28,64 +28,56 @@ function statusLabel(status, t) {
   return t(`statuses.${normalized}`, normalized);
 }
 
-const TRANSFER_COLUMNS = [
+const RECEIPT_COLUMNS = [
   {
     key: 'number',
-    width: 210,
+    width: 220,
     align: 'left',
     render: (row, { onOpenDetail }) => (
       <LinkCell
         primary={asDash(row?.number)}
-        secondary={`${asDash(row?.fromWarehouseId)} → ${asDash(row?.toWarehouseId)}`}
+        secondary={asDash(row?.warehouseId)}
         onClick={row?.id ? () => onOpenDetail?.(row.id) : undefined}
-        ariaLabel="Open transfer"
+        ariaLabel="Open receipt"
       />
     ),
-    labelKey: 'wms.transfers.columns.number',
+    labelKey: 'wms.receipts.columns.number',
     fallbackLabel: 'Number',
   },
   {
     key: 'status',
-    width: 130,
+    width: 140,
     align: 'left',
     render: (row, { t }) => statusLabel(row?.status, t),
-    labelKey: 'wms.transfers.columns.status',
+    labelKey: 'wms.receipts.columns.status',
     fallbackLabel: 'Status',
   },
   {
-    key: 'fromWarehouse',
-    width: 200,
+    key: 'warehouse',
+    width: 220,
     align: 'left',
-    render: (row) => asDash(row?.fromWarehouseId),
-    labelKey: 'wms.transfers.columns.fromWarehouse',
-    fallbackLabel: 'From',
-  },
-  {
-    key: 'toWarehouse',
-    width: 200,
-    align: 'left',
-    render: (row) => asDash(row?.toWarehouseId),
-    labelKey: 'wms.transfers.columns.toWarehouse',
-    fallbackLabel: 'To',
+    render: (row) => asDash(row?.warehouseId),
+    labelKey: 'wms.receipts.columns.warehouse',
+    fallbackLabel: 'Warehouse',
   },
   {
     key: 'createdAt',
     width: 150,
     align: 'left',
     render: (row, { locale }) => formatDate(row?.createdAt, locale),
-    labelKey: 'wms.transfers.columns.createdAt',
+    labelKey: 'wms.receipts.columns.createdAt',
     fallbackLabel: 'Created',
   },
 ];
 
-export function createWmsTransfersColumns(options = {}) {
+export function createWmsReceiptsColumns(options = {}) {
   const {
     t = (key, fallback) => fallback || key,
     locale = 'en',
     onOpenDetail,
   } = options;
 
-  return TRANSFER_COLUMNS.map((column) => ({
+  return RECEIPT_COLUMNS.map((column) => ({
     key: column.key,
     title: t(column.labelKey, column.fallbackLabel),
     managerLabel: t(column.labelKey, column.fallbackLabel),

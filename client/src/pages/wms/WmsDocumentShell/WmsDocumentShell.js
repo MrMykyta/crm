@@ -1566,7 +1566,7 @@ export default function WmsDocumentShell({
 
           {(rowControllerEnabled || isReadonlyHeaderMode) ? (
             <main className="wmsShellWorkspace">
-              <div className="wmsShellWorkspaceHeader">
+              <div className="wmsShellItemsHeader">
                 <h2>{isCorrectionMode ? t('wms.corrections.title', 'Create correction') : t('wms.tabs.items', 'Items')}</h2>
                 <span>
                   {isCorrectionMode

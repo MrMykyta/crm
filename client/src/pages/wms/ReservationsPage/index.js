@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import FilterToolbar from '../../../components/filters/FilterToolbar';
-import ListPage from '../../../components/data/ListPage';
-import { createWmsReservationsColumns } from '../../../components/data/ListPage/columnSchemas/wmsReservationsColumns';
+import { Workspace } from '../../../components/workspace';
+import { createWmsReservationsColumns } from '../../../components/workspace/columnSchemas/wmsReservationsColumns';
 import { SearchField } from '../../../components/ui/fields';
 import useAclPermissions from '../../../hooks/useAclPermissions';
 import useGridPrefs from '../../../hooks/useGridPrefs';
@@ -76,7 +75,7 @@ export default function ReservationsPage() {
   }
 
   return (
-    <ListPage
+    <Workspace
       source="wmsReservations"
       title={t('wms.reservations.title', 'Reservations')}
       columns={columns}
@@ -93,10 +92,7 @@ export default function ReservationsPage() {
       onSavedViewsChange={onSavedViewsChange}
       onActiveViewChange={onActiveViewChange}
       onResetColumns={resetGridPrefs}
-      ToolbarComponent={(props) => (
-        <FilterToolbar
-          {...props}
-          controls={[
+      filterControls={[
             {
               type: 'select',
               key: 'status',
@@ -148,8 +144,6 @@ export default function ReservationsPage() {
               ),
             },
           ]}
-        />
-      )}
     />
   );
 }

@@ -1,6 +1,6 @@
-import LinkCell from "../../../cells/LinkCell";
-import { DOCUMENT_TYPE_CONFIG, getDocumentTypeConfig } from "../../../documents/documentTypeConfig";
-import { getDocumentStatusLabel } from "../../../documents/documentStatusConfig";
+import LinkCell from "../../cells/LinkCell";
+import { DOCUMENT_TYPE_CONFIG, getDocumentTypeConfig } from "../../documents/documentTypeConfig";
+import { getDocumentStatusLabel } from "../../documents/documentStatusConfig";
 
 const DATE_FORMATTER = new Intl.DateTimeFormat("ru-RU", {
   year: "numeric",

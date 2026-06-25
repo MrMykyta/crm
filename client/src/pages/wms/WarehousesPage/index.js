@@ -2,9 +2,8 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import AddButton from '../../../components/buttons/AddButton/AddButton';
-import FilterToolbar from '../../../components/filters/FilterToolbar';
-import ListPage from '../../../components/data/ListPage';
-import { createWmsWarehousesColumns } from '../../../components/data/ListPage/columnSchemas/wmsWarehousesColumns';
+import { Workspace } from '../../../components/workspace';
+import { createWmsWarehousesColumns } from '../../../components/workspace/columnSchemas/wmsWarehousesColumns';
 import { CheckboxField, TextField } from '../../../components/ui/fields';
 import useAclPermissions from '../../../hooks/useAclPermissions';
 import useGridPrefs from '../../../hooks/useGridPrefs';
@@ -172,7 +171,7 @@ export default function WarehousesPage() {
       ].filter(Boolean).join(' ')}
       >
         <div className={s.setupListPane}>
-          <ListPage
+          <Workspace
             source="wmsWarehouses"
             title={t('wms.warehouses.title', 'Warehouses')}
             columns={columns}
@@ -204,17 +203,12 @@ export default function WarehousesPage() {
             onSavedViewsChange={onSavedViewsChange}
             onActiveViewChange={onActiveViewChange}
             onResetColumns={resetGridPrefs}
-            ToolbarComponent={(props) => (
-              <FilterToolbar
-                {...props}
-                controls={[{
+            filterControls={[{
                   type: 'search',
                   key: 'search',
                   placeholder: t('wms.warehouses.search', 'Search by code or name...'),
                   debounce: 350,
                 }]}
-              />
-            )}
           />
         </div>
 

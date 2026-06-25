@@ -2,11 +2,10 @@ import { useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import ListPage from '../../../components/data/ListPage';
-import FilterToolbar from '../../../components/filters/FilterToolbar';
+import { Workspace } from '../../../components/workspace';
 import { CheckboxField } from '../../../components/ui/fields';
 import useGridPrefs from '../../../hooks/useGridPrefs';
-import { createStockBalancesColumns } from '../../../components/data/ListPage/columnSchemas/stockBalancesColumns';
+import { createStockBalancesColumns } from '../../../components/workspace/columnSchemas/stockBalancesColumns';
 
 export default function StockBalancesPage() {
   const { t, i18n } = useTranslation();
@@ -40,7 +39,7 @@ export default function StockBalancesPage() {
   );
 
   return (
-    <ListPage
+    <Workspace
       source="stockBalances"
       title={t('wms.stockBalances.title', 'Stany magazynowe')}
       columns={columns}
@@ -57,10 +56,7 @@ export default function StockBalancesPage() {
       onSavedViewsChange={onSavedViewsChange}
       onActiveViewChange={onActiveViewChange}
       onResetColumns={resetGridPrefs}
-      ToolbarComponent={(props) => (
-        <FilterToolbar
-          {...props}
-          controls={[
+      filterControls={[
             {
               type: 'search',
               key: 'search',
@@ -98,8 +94,6 @@ export default function StockBalancesPage() {
               },
             },
           ]}
-        />
-      )}
     />
   );
 }

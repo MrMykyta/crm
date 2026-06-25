@@ -703,7 +703,7 @@ string value model, без number coercion и без `undefined` emit.
 
 | File | Migrated controls |
 |---|---|
-| `components/data/ListPage/index.js` | saved-view selects → `SelectField`, view-name input → `TextField` |
+| `components/workspace/index.js` | saved-view selects → `SelectField`, view-name input → `TextField` |
 | `pages/system/NotificationsPage/index.js` | notification type filter select → `SelectField` |
 | `components/common/WorkspaceViews/WorkspaceViewEditor.jsx` | view-name input → `TextField` |
 | `components/common/WorkspaceViews/WorkspaceViewPicker.jsx` | dropdown search input → `SearchField` |
@@ -711,7 +711,7 @@ string value model, без number coercion и без `undefined` emit.
 | `pages/CRM/Deal/DealsListPage/index.js` | simple text/select controls → `TextField`/`SelectField`, counterparty picker → `AutocompleteField` |
 
 Сохранено:
-- debounce остаётся в потребителях (`FilterToolbar`, picker touch debounce, deal counterparty lookup debounce).
+- debounce остаётся в потребителях (`Workspace filter controls`, picker touch debounce, deal counterparty lookup debounce).
 - query/local state update callbacks не перенесены внутрь field components.
 - option values остаются строковыми; empty/all option semantics сохранены.
 - `DealsListPage` textarea/date/number controls оставлены без миграции в этой фазе, потому что `TextareaField`,
@@ -754,10 +754,10 @@ string value model, без number coercion и без `undefined` emit.
 Сохранено:
 - owner/query state остаётся в `NotesPage`: `ownerSearch`, `ownerSearchDebounced`,
   `toolbarOwnerSearch`, `toolbarOwnerSearchDebounced`, selected owner objects.
-- существующий 320ms debounce для owner lookup и 400ms `FilterToolbar` search config не переносились в fields.
+- существующий 320ms debounce для owner lookup и 400ms `Workspace filter controls` search config не переносились в fields.
 - owner autocomplete продолжает писать выбранный id в `ownerId`/query, а selected object остаётся отдельным state.
 - create/update/quick-edit payload assembly и API calls не менялись.
-- `FilterToolbar` internals и встроенные `type: "search"` / `type: "select"` controls не мигрировались в этой фазе.
+- `Workspace filter controls` internals и встроенные `type: "search"` / `type: "select"` controls не мигрировались в этой фазе.
 
 ## Phase 4B.4 EventModal migrated
 
@@ -862,9 +862,9 @@ autocomplete controls.
 - `toApiTask(values)`, payload converters, schemas/API/server, `TaskForm.module.css` и уже мигрированные
   simple/date/multiselect controls не менялись.
 
-## Phase 4C.1 FilterToolbar migrated
+## Phase 4C.1 Workspace filter controls migrated
 
-`components/filters/FilterToolbar/index.js` мигрирован внутри shared toolbar only.
+`components/filters/Workspace filter controls/index.js` мигрирован внутри shared toolbar only.
 
 | Control | Target |
 |---|---|
@@ -872,35 +872,35 @@ autocomplete controls.
 | select/mode `ThemedSelect` | `SelectField` |
 
 Сохранено:
-- external `FilterToolbar` props, `controls` schema API, query shape и query keys не менялись.
-- search debounce остаётся внутри FilterToolbar: `searchCfg.debounce || 400`, local `search` state и timer сохранены.
+- external `Workspace filter controls` props, `controls` schema API, query shape и query keys не менялись.
+- search debounce остаётся внутри Workspace filter controls: `searchCfg.debounce || 400`, local `search` state и timer сохранены.
 - `SearchField` не получает debounce и не включает новый clear button behavior.
 - search/select changes продолжают вызывать `onChange((q) => ({ ...q, [key]: value || undefined, page: 1 }))`
   через существующие helper paths.
 - `emptyAsUndefined` behavior остаётся в `handleSelect(...)`; mode select продолжает вызывать `onModeChange`
   со string value.
-- `custom` controls и все FilterToolbar consumers не менялись.
+- `custom` controls и все Workspace filter controls consumers не менялись.
 
-## Phase 4C.2 ListPage/WorkspaceViews controls migrated
+## Phase 4C.2 Workspace/WorkspaceViews controls migrated
 
 Shared column/saved-view controls migrated without changing data-filter query behavior.
 
 | File | Controls |
 |---|---|
-| `components/data/ListPage/ColumnViewEditor/index.js` | column search raw input → `SearchField` |
 | `components/common/WorkspaceViews/WorkspaceViewEditor.jsx` | description raw textarea → `TextareaField` |
 
 Already migrated before this phase and verified, not duplicated:
-- `components/data/ListPage/index.js` saved-view selects/name field use `SelectField`/`TextField`.
+- `components/workspace/Workspace.js` saved-view selects/name field use `SelectField`/`TextField`.
+- `components/workspace/Workspace column menu.js` uses inline WMS-style check controls and does not depend on the old modal column editor.
 - `components/common/WorkspaceViews/WorkspaceViewPicker.jsx` dropdown search uses `SearchField`.
 - `components/common/WorkspaceViews/WorkspaceViewsDrawer.jsx` rename input uses `TextField`.
 
 Сохранено:
-- `columnsSearch` state remains in ListPage and is still passed as `searchValue`/`onSearchChange`.
-- column filtering, active/available lists, drag/order behavior, add/remove/reset callbacks are unchanged.
+- Workspace saved-view behavior remains in `Workspace.js`.
+- column visibility/reset behavior is handled by `Workspace column menu`.
 - Workspace view create/edit/rename/delete/apply callbacks, selected view ids, local state, and persistence payloads
   are unchanged.
-- no debounce was added; FilterToolbar, DataTable, page consumers, query/filter schema API, components/inputs,
+- no debounce was added; Workspace filter controls, DataTable, page consumers, query/filter schema API, components/inputs,
   components/shared, server/API/migrations were not changed.
 
 ## Phase 4C.3 DealsListPage filters migrated
@@ -923,7 +923,7 @@ Already migrated before this phase and left unchanged:
 - clearing date range values still writes `undefined` and resets `page: 1` through the existing updater.
 - amount value remains a string in local form state; empty string is not converted to `0`.
 - description remains a string; create payload assembly remains unchanged.
-- FilterToolbar, ListPage, WorkspaceViews, DataTable, page consumers, schemas, components/inputs,
+- Workspace filter controls, Workspace, WorkspaceViews, DataTable, page consumers, schemas, components/inputs,
   components/shared, server/API/migrations were not changed.
 
 ## Phase 4C.4 ProductsPage filters migrated
@@ -944,7 +944,7 @@ Already migrated before this phase and left unchanged:
 - category/brand edit-away clear behavior remains: edited text clears `primaryCategoryId` / `brandId`.
 - selecting existing category/brand still writes `String(opt.id)`; create-action paths still use the existing
   created id behavior.
-- FilterToolbar query filters, categoryId/brandId filter option values, page reset behavior, API calls, schemas,
+- Workspace filter controls query filters, categoryId/brandId filter option values, page reset behavior, API calls, schemas,
   components/inputs, components/shared, server/API/migrations were not changed.
 
 ## Phase 4C.5A WMS report select filters migrated
@@ -1001,7 +1001,7 @@ Remaining WMS report text/product/variant filters migrated in:
 - existing lookup hooks, product search state, `queryArgs` `field || undefined`, validation/`skip`,
   and report RTK hooks are unchanged.
 - no autocomplete was introduced and no new lookup hooks were added.
-- select/date controls from 4C.5A/4C.5B, WMS/OMS editors, FilterToolbar, server/API/migrations were not changed.
+- select/date controls from 4C.5A/4C.5B, WMS/OMS editors, Workspace filter controls, server/API/migrations were not changed.
 - `StockValuationReportPage` still contains a disabled read-only "Coming soon" as-of placeholder; it is not a
   query-bound report filter.
 
@@ -1021,7 +1021,7 @@ WMS master-data create/edit form controls migrated in:
   `{ warehouseId, code, type }`.
 - `warehouseId`, `code`, `type`, `name` remain strings; `isActive` remains boolean.
 - Locations empty warehouse option and location type labels/order are unchanged.
-- WMS document editors, report pages, OMS pages, FilterToolbar, components/inputs, components/shared,
+- WMS document editors, report pages, OMS pages, Workspace filter controls, components/inputs, components/shared,
   server/API/migrations were not changed.
 
 ## Phase 4D.2 WMS/OMS picker/search/select controls migrated
@@ -1044,7 +1044,7 @@ Low/medium WMS/OMS picker and page-specific filter controls migrated in:
 - `WmsDocumentsWorkspace` type select remains raw because it has option-level `disabled` behavior
   (`disabledTypes[type]`) that must be preserved while `components/inputs/RadixSelect` is out of scope.
 - WMS document editors/cells, qty/money/number/date controls, report pages, OMS pages outside
-  `OmsProductPicker`, FilterToolbar, components/inputs, components/shared, server/API/migrations were not changed.
+  `OmsProductPicker`, Workspace filter controls, components/inputs, components/shared, server/API/migrations were not changed.
 
 ## Phase 4D.2B SelectField disabled options + WmsDocumentsWorkspace type select
 
@@ -1060,7 +1060,7 @@ Migrated:
 - empty/all option remains `""`; document type option values, labels, and order are unchanged.
 - `disabledTypes[type]` still blocks selecting unavailable document types.
 - existing `SelectField` usages without disabled options are unchanged.
-- `components/inputs/RadixSelect`, WMS document editors/cells, reports, OMS pages, FilterToolbar,
+- `components/inputs/RadixSelect`, WMS document editors/cells, reports, OMS pages, Workspace filter controls,
   server/API/migrations were not changed.
 
 ## Phase 4D.3 WMS document shell header fields migrated
@@ -1523,7 +1523,7 @@ Migrated direct chat info `ImagePicker` consumers:
 - **Phase 3D** — `RadioGroupField` added; `ContactsEditor` migrated to `SelectField`/`TextField`
   with native row-level primary radio.
 - **Phase 4B.0** — `PriorityField` added; `SearchField` added/verified for Task/System prerequisites.
-- **Phase 4B.1** — safe ListPage, NotificationsPage, WorkspaceViews, DealsListPage controls migrated.
+- **Phase 4B.1** — safe Workspace, NotificationsPage, WorkspaceViews, DealsListPage controls migrated.
 - **Phase 4B.2** — `CreateTaskModal` controls migrated to `TextField`, `TextareaField`,
   `SelectField`, `CheckboxField`, `DateField`, and `DateTimeField`.
 - **Phase 4B.3** — `NotesPage` controls migrated to `SelectField`, `AutocompleteField`,
@@ -1535,8 +1535,8 @@ Migrated direct chat info `ImagePicker` consumers:
 - **Phase 4B.6C** — `TaskForm` assignees/watchers multiselects migrated to `MultiSelectField`.
 - **Phase 4B.6D** — `TaskForm` counterparty/contacts autocompletes migrated to `AutocompleteField`;
   TaskForm migration complete.
-- **Phase 4C.1** — shared `FilterToolbar` migrated to `SearchField`/`SelectField`.
-- **Phase 4C.2** — shared ListPage column controls and WorkspaceViews remaining controls migrated.
+- **Phase 4C.1** — shared `Workspace filter controls` migrated to `SearchField`/`SelectField`.
+- **Phase 4C.2** — shared Workspace column controls and WorkspaceViews remaining controls migrated.
 - **Phase 4C.3** — DealsListPage page-specific filters migrated.
 - **Phase 4C.4** — ProductsPage page-specific filters migrated.
 - **Phase 4C.5A** — WMS report select filters migrated.

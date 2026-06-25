@@ -7,10 +7,10 @@ import React, {
 } from 'react';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import ListPage from '../../../components/data/ListPage';
-import FilterToolbar from '../../../components/filters/FilterToolbar';
+import { Workspace } from '../../../components/workspace';
 import Modal from '../../../components/Modal';
 import AddButton from '../../../components/buttons/AddButton/AddButton';
+import ConfirmDialog from '../../../components/dialogs/ConfirmDialog';
 import {
   AutocompleteField,
   CheckboxField,
@@ -295,6 +295,8 @@ export default function NotesPage() {
   const [quickEditValue, setQuickEditValue] = useState('');
   const [quickEditError, setQuickEditError] = useState('');
   const [quickEditSaving, setQuickEditSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
 
   const [createNote, { isLoading: creating }] = useCreateNoteMutation();
   const [updateNote, { isLoading: updating }] = useUpdateNoteMutation();
@@ -548,17 +550,28 @@ const handleSubmit = async (event) => {
     }
   };
 
-  const onDelete = useCallback(async (note) => {
+  const onDelete = useCallback((note) => {
     if (!note?.id) return;
-    if (!window.confirm(t('notes.messages.deleteConfirm'))) return;
+    setDeleteTarget(note);
+    setDeleteError('');
+  }, []);
 
+  const confirmDelete = useCallback(async () => {
+    if (!deleteTarget?.id || deleting) return;
+    setDeleteError('');
     try {
-      await deleteNote(note.id).unwrap();
+      await deleteNote(deleteTarget.id).unwrap();
+      setDeleteTarget(null);
       listRef.current?.refetch?.();
-    } catch {
-      // noop
+    } catch (error) {
+      setDeleteError(
+        error?.data?.message
+        || error?.data?.error
+        || error?.message
+        || t('notes.validation.saveFailed')
+      );
     }
-  }, [deleteNote, t]);
+  }, [deleteNote, deleteTarget?.id, deleting, t]);
 
   const onTogglePin = useCallback(async (note) => {
     if (!note?.id) return;
@@ -816,7 +829,7 @@ render: (row) => formatDate(row.updatedAt, i18n.language),
 
   return (
     <>
-      <ListPage
+      <Workspace
         ref={listRef}
         source="notes"
         title={t('notes.title')}
@@ -835,10 +848,7 @@ render: (row) => formatDate(row.updatedAt, i18n.language),
         onSavedViewsChange={onSavedViewsChange}
         onActiveViewChange={onActiveViewChange}
         onResetColumns={resetGridPrefs}
-        ToolbarComponent={(props) => (
-          <FilterToolbar
-            {...props}
-            controls={[
+        filterControls={[
               {
                 type: 'search',
                 key: 'search',
@@ -934,8 +944,6 @@ render: ({ onChange }) => (
                 options: pinnedFilterOptions,
               },
             ]}
-          />
-        )}
       />
 
       <Modal
@@ -966,6 +974,27 @@ render: ({ onChange }) => (
           error={formError}
         />
       </Modal>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={t('notes.actions.delete')}
+        text={(
+          <>
+            <div>{t('notes.messages.deleteConfirm')}</div>
+            {deleteError ? <div className={s.confirmError}>{deleteError}</div> : null}
+          </>
+        )}
+        danger
+        loading={deleting}
+        okText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        onOk={confirmDelete}
+        onCancel={() => {
+          if (deleting) return;
+          setDeleteTarget(null);
+          setDeleteError('');
+        }}
+      />
     </>
   );
 }

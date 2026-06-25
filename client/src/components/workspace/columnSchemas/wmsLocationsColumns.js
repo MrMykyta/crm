@@ -1,4 +1,4 @@
-import { WmsStatusChip } from '../../../wms/ui';
+import { WmsStatusChip } from '../../wms/ui';
 
 function asText(value) {
   if (value === null || value === undefined) return '';

@@ -1,4 +1,4 @@
-import LinkCell from '../../../cells/LinkCell';
+import LinkCell from '../../cells/LinkCell';
 
 function asText(value) {
   if (value === undefined || value === null) return '';

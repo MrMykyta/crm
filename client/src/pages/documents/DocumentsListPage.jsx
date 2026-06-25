@@ -1,12 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import ListPage from "../../components/data/ListPage";
-import FilterToolbar from "../../components/filters/FilterToolbar";
+import { Workspace } from '../../components/workspace';
 import AddButton from "../../components/buttons/AddButton/AddButton";
 import useGridPrefs from "../../hooks/useGridPrefs";
 import useAclPermissions from "../../hooks/useAclPermissions";
-import { createDocumentListColumns } from "../../components/data/ListPage/columnSchemas/documentsColumns";
+import { createDocumentListColumns } from "../../components/workspace/columnSchemas/documentsColumns";
 import { DOCUMENT_TYPE_OPTIONS } from "../../components/documents/documentTypeConfig";
 
 const TYPE_OPTIONS = [{ value: "", label: "Все типы" }, ...DOCUMENT_TYPE_OPTIONS];
@@ -51,7 +50,7 @@ export default function DocumentsListPage() {
   );
 
   return (
-    <ListPage
+    <Workspace
       source="documents"
       title={t("menu.documents", "Документы")}
       columns={columns}
@@ -73,10 +72,7 @@ export default function DocumentsListPage() {
       onActiveViewChange={onActiveViewChange}
       onResetColumns={resetGridPrefs}
       dynamicColumnsMode="custom-only"
-      ToolbarComponent={(props) => (
-        <FilterToolbar
-          {...props}
-          controls={[
+      filterControls={[
             {
               type: "search",
               key: "search",
@@ -96,8 +92,6 @@ export default function DocumentsListPage() {
               options: DIRECTION_OPTIONS,
             },
           ]}
-        />
-      )}
     />
   );
 }

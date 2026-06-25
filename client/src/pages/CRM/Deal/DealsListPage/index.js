@@ -2,8 +2,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import ListPage from '../../../../components/data/ListPage';
-import FilterToolbar from '../../../../components/filters/FilterToolbar';
+import {
+  Workspace,
+  useWorkspaceData,
+} from '../../../../components/workspace';
 import LinkCell from '../../../../components/cells/LinkCell';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import Modal from '../../../../components/Modal';
@@ -12,6 +14,7 @@ import {
   AutocompleteField,
   DateField,
   NumberField,
+  SearchField,
   SelectField,
   TextareaField,
   TextField,
@@ -24,6 +27,7 @@ import useAclPermissions from '../../../../hooks/useAclPermissions';
 import {
   useCreateDealMutation,
   useDeleteDealMutation,
+  useGetDealsQuery,
   useMarkWonMutation,
   useMarkLostMutation,
 } from '../../../../store/rtk/dealsApi';
@@ -38,6 +42,10 @@ const buildStatusLabels = (t) => ({
   won: t('deals.status.won', 'Won'),
   lost: t('deals.status.lost', 'Lost'),
 });
+
+const sanitizeDealsQuery = (query = {}) => Object.fromEntries(
+  Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== '')
+);
 
 // buildStatusOptions: собирает итоговую структуру данных в рамках UI-компонента.
 const buildStatusOptions = (t, labels, includeAll = false) => {
@@ -286,14 +294,9 @@ export default function DealsListPage() {
     colWidths,
     colOrder,
     colVisibility,
-    savedViews,
-    activeViewId,
     onColumnResize,
     onColumnOrderChange,
     onColumnVisibilityChange,
-    onSavedViewsChange,
-    onActiveViewChange,
-    resetGridPrefs,
   } = useGridPrefs('crm.deals');
 
   const [open, setOpen] = useState(false);
@@ -374,10 +377,64 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
   ]), [openDetail, statusLabels, t]);
 
   const defaultQuery = useMemo(() => ({
+    page: 1,
     sort: 'createdAt',
     dir: 'DESC',
     limit: 25,
   }), []);
+  const [query, setQuery] = useState(defaultQuery);
+  const apiQuery = useMemo(() => sanitizeDealsQuery(query), [query]);
+  const {
+    data: dealsData,
+    isFetching: dealsLoading,
+    error: dealsError,
+    refetch: refetchDeals,
+  } = useGetDealsQuery(apiQuery);
+  const loadedDeals = useMemo(() => {
+    if (Array.isArray(dealsData)) return dealsData;
+    if (Array.isArray(dealsData?.items)) return dealsData.items;
+    if (Array.isArray(dealsData?.data)) return dealsData.data;
+    return [];
+  }, [dealsData]);
+  const dealsTotal = Number(dealsData?.total ?? loadedDeals.length ?? 0);
+  const hasAnyFilter = Boolean(
+    query.q || query.pipelineId || query.stageId || query.responsibleId || query.status || query.dateFrom || query.dateTo
+  );
+
+  const workspaceData = useWorkspaceData({
+    externalData: loadedDeals,
+    externalMeta: {
+      total: dealsTotal,
+      page: dealsData?.page || query.page || defaultQuery.page,
+      limit: dealsData?.limit || query.limit || defaultQuery.limit,
+    },
+    externalLoading: dealsLoading,
+    externalError: dealsError,
+    onExternalRefetch: refetchDeals,
+    query,
+    onQueryChange: setQuery,
+    defaultQuery,
+  });
+
+  const updateFilter = useCallback((key, value) => {
+    setQuery((prev) => ({
+      ...prev,
+      [key]: value || undefined,
+      page: 1,
+    }));
+  }, []);
+
+  const columnState = useMemo(() => ({
+    widths: colWidths,
+    order: colOrder,
+    visibility: colVisibility,
+  }), [colOrder, colVisibility, colWidths]);
+
+  const handleColumnStateChange = useCallback((next = {}) => {
+    onColumnResize(next.widths || {});
+    onColumnOrderChange(Array.isArray(next.order) ? next.order : []);
+    onColumnVisibilityChange(next.visibility || {});
+  }, [onColumnOrderChange, onColumnResize, onColumnVisibilityChange]);
 
   const actions = useMemo(() => (
     <AddButton onClick={() => setOpen(true)} title={t('deals.actions.new', 'New deal')}>
@@ -426,6 +483,155 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
     );
   }, [canDeleteDeal, deleting, markLost, markWon, openDetail, t]);
 
+  const workspaceColumns = useMemo(() => [
+    ...columns.map((column) => ({
+      ...column,
+      fallbackLabel: column.title,
+      minWidth: Math.max(110, Math.min(Number(column.width) || 180, 180)),
+      maxWidth: 560,
+      category: column.category || 'core',
+      required: column.key === 'title',
+      numeric: column.key === 'value',
+    })),
+    {
+      key: 'actions',
+      fallbackLabel: t('common.actions', 'Actions'),
+      width: 280,
+      minWidth: 240,
+      maxWidth: 360,
+      category: 'context',
+      required: true,
+      render: rowActions,
+    },
+  ], [columns, rowActions, t]);
+
+  const renderCell = useCallback((row, column) => {
+    if (typeof column.render === 'function') return column.render(row);
+    const value = row?.[column.key];
+    return value == null || value === '' ? '—' : String(value);
+  }, []);
+
+  const workspaceControls = useMemo(() => [
+    {
+      key: 'q',
+      kind: 'search',
+      label: t('common.search', 'Search'),
+      control: (
+        <SearchField
+          value={query.q || ''}
+          onValueChange={(value) => updateFilter('q', value)}
+          placeholder={t('deals.filters.searchPlaceholder', 'Search deals')}
+          size="sm"
+          clearable
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'pipelineId',
+      label: t('deals.filters.pipeline', 'Pipeline'),
+      control: (
+        <SelectField
+          value={query.pipelineId || ''}
+          onValueChange={(value) => updateFilter('pipelineId', value)}
+          options={[{ value: '', label: t('deals.filters.allPipelines', 'All pipelines') }]}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'stageId',
+      label: t('deals.filters.stage', 'Stage'),
+      control: (
+        <SelectField
+          value={query.stageId || ''}
+          onValueChange={(value) => updateFilter('stageId', value)}
+          options={[{ value: '', label: t('deals.filters.allStages', 'All stages') }]}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'responsibleId',
+      label: t('deals.filters.owner', 'Owner'),
+      control: (
+        <SelectField
+          value={query.responsibleId || ''}
+          onValueChange={(value) => updateFilter('responsibleId', value)}
+          options={[{ value: '', label: t('deals.filters.allOwners', 'All owners') }, ...ownerOptions]}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'status',
+      label: t('deals.filters.status', 'Status'),
+      control: (
+        <SelectField
+          value={query.status || ''}
+          onValueChange={(value) => updateFilter('status', value)}
+          options={statusOptions}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'dateRange',
+      label: t('deals.filters.dateRange', 'Date range'),
+      control: (
+        <div className={s.dateRange}>
+          <DateField
+            inputClassName={s.dateInput}
+            value={query.dateFrom || ''}
+            onValueChange={(value) => updateFilter('dateFrom', value)}
+            fullWidth={false}
+          />
+          <DateField
+            inputClassName={s.dateInput}
+            value={query.dateTo || ''}
+            onValueChange={(value) => updateFilter('dateTo', value)}
+            fullWidth={false}
+          />
+        </div>
+      ),
+    },
+  ], [
+    ownerOptions,
+    query.dateFrom,
+    query.dateTo,
+    query.pipelineId,
+    query.q,
+    query.responsibleId,
+    query.stageId,
+    query.status,
+    statusOptions,
+    t,
+    updateFilter,
+  ]);
+
+  const workspaceLabels = useMemo(() => ({
+    loading: t('common.loading', 'Loading'),
+    errorTitle: t('deals.errorTitle', 'Не удалось загрузить сделки'),
+    retry: t('list.refresh', 'Refresh'),
+    resetColumns: t('list.columns.reset', 'Reset'),
+    columnsMenu: t('list.columns.configureShort', 'Columns'),
+    showAllColumns: t('list.columns.configure', 'Show all'),
+    showTechnicalColumns: t('list.columns.groupSystem', 'System'),
+    hideTechnicalColumns: t('list.columns.hideAdditional', 'Hide extra'),
+    requiredColumn: t('list.columns.recommended', 'Recommended'),
+    visibleColumns: (count) => t('list.columns.visibleCount', { count }),
+    groupLabel: (group) => {
+      if (group === 'context') return t('list.columns.groupAdditional', 'Additional');
+      if (group === 'technical') return t('list.columns.groupSystem', 'System');
+      return t('list.columns.groupMain', 'Main');
+    },
+    columnLabel: (column) => column.fallbackLabel || column.title || column.key,
+  }), [t]);
+
   const confirmDelete = useCallback(async () => {
     if (!deleteTarget?.id) return;
     await deleteDeal(deleteTarget.id).unwrap();
@@ -435,91 +641,52 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
 
   return (
     <>
-      <ListPage
+      <Workspace
         ref={listRef}
         title={t('deals.title', 'Deals')}
-        source="deals"
-        columns={columns}
-        defaultQuery={defaultQuery}
+        badge={t('deals.workspaceCount', {
+          count: workspaceData.total,
+          defaultValue: `${workspaceData.total}`,
+        })}
         actions={actions}
-        rowActions={rowActions}
-        rowActionsWidth={280}
-        columnWidths={colWidths}
-        onColumnResize={onColumnResize}
-        columnOrder={colOrder}
-        onColumnOrderChange={onColumnOrderChange}
-        columnVisibility={colVisibility}
-        onColumnVisibilityChange={onColumnVisibilityChange}
-        savedViews={savedViews}
-        activeViewId={activeViewId}
-        onSavedViewsChange={onSavedViewsChange}
-        onActiveViewChange={onActiveViewChange}
-        onResetColumns={resetGridPrefs}
-        ToolbarComponent={(props) => (
-          <FilterToolbar
-            {...props}
-            controls={[
-              {
-                type: 'search',
-                key: 'q',
-                placeholder: t('deals.filters.searchPlaceholder', 'Search deals'),
-                debounce: 400,
-              },
-              {
-                type: 'select',
-                key: 'pipelineId',
-                label: t('deals.filters.pipeline', 'Pipeline'),
-                options: [{ value: '', label: t('deals.filters.allPipelines', 'All pipelines') }],
-              },
-              {
-                type: 'select',
-                key: 'stageId',
-                label: t('deals.filters.stage', 'Stage'),
-                options: [{ value: '', label: t('deals.filters.allStages', 'All stages') }],
-              },
-              {
-                type: 'select',
-                key: 'responsibleId',
-                label: t('deals.filters.owner', 'Owner'),
-                options: [{ value: '', label: t('deals.filters.allOwners', 'All owners') }, ...ownerOptions],
-              },
-              {
-                type: 'select',
-                key: 'status',
-                label: t('deals.filters.status', 'Status'),
-                options: statusOptions,
-              },
-              {
-                type: 'custom',
-                                // render: описывает рендер соответствующего блока UI.
-render: ({ query, onChange }) => (
-                  <div className={s.dateRange}>
-                    <DateField
-                      inputClassName={s.dateInput}
-                      value={query.dateFrom || ''}
-                      onValueChange={(value) => onChange((q) => ({
-                        ...q,
-                        dateFrom: value || undefined,
-                        page: 1,
-                      }))}
-                      fullWidth={false}
-                    />
-                    <DateField
-                      inputClassName={s.dateInput}
-                      value={query.dateTo || ''}
-                      onValueChange={(value) => onChange((q) => ({
-                        ...q,
-                        dateTo: value || undefined,
-                        page: 1,
-                      }))}
-                      fullWidth={false}
-                    />
-                  </div>
-                ),
-              },
-            ]}
-          />
-        )}
+        controls={workspaceControls}
+        rows={workspaceData.rows}
+        columns={workspaceColumns}
+        loading={workspaceData.loading}
+        error={workspaceData.error}
+        onRetry={workspaceData.refetch}
+        onRefetch={workspaceData.refetch}
+        renderCell={renderCell}
+        getRowId={(row) => row?.id}
+        getRowKey={(row) => String(row?.id || row?.title || '')}
+        onRowClick={(row) => row?.id && openDetail(row.id)}
+        sortKey={workspaceData.query.sort}
+        sortDir={workspaceData.query.dir}
+        onSort={workspaceData.setSort}
+        columnState={columnState}
+        onColumnStateChange={handleColumnStateChange}
+        emptyState={{
+          title: t(
+            hasAnyFilter ? 'deals.emptyFilteredTitle' : 'deals.emptyTitle',
+            hasAnyFilter ? 'Deals not found' : 'No deals'
+          ),
+          description: t(
+            hasAnyFilter ? 'deals.emptyFilteredText' : 'deals.emptyText',
+            hasAnyFilter ? 'Change search or filters.' : 'Create the first deal.'
+          ),
+        }}
+        errorState={{
+          title: t('deals.errorTitle', 'Не удалось загрузить сделки'),
+          description: String(
+            dealsError?.data?.message
+            || dealsError?.data?.error
+            || dealsError?.message
+            || t('common.error', 'Error')
+          ),
+          retryLabel: t('list.refresh', 'Refresh'),
+        }}
+        labels={workspaceLabels}
+        pagination={workspaceData.pagination}
       />
 
       <Modal
