@@ -1,0 +1,16 @@
+export { default as DetailLayout } from './DetailLayout';
+export { default as DetailHeader } from './DetailHeader';
+export { default as DetailActions } from './DetailActions';
+export { default as DetailSidebar } from './DetailSidebar';
+export { default as DetailContent } from './DetailContent';
+export { default as DetailTabs } from './DetailTabs';
+export { default as DetailSection } from './DetailSection';
+export { default as DetailCard } from './DetailCard';
+export { default as DetailMeta, DetailMetaRow } from './DetailMeta';
+export { default as DetailStatusChip } from './DetailStatusChip';
+export { default as DetailTimeline } from './DetailTimeline';
+export { default as DetailFiles } from './DetailFiles';
+export { default as DetailRelations } from './DetailRelations';
+export { default as DetailComments } from './DetailComments';
+export { default as DetailAutomation } from './DetailAutomation';
+export { default as useDetailData } from './useDetailData';

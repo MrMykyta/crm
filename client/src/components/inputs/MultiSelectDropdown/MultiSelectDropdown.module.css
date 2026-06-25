@@ -26,62 +26,91 @@
 }
 /* стрелка */
 .caret{
-  position:absolute; right:12px; top:50%;
-  width:0; height:0;
-  border-left:6px solid transparent; border-right:6px solid transparent; border-top:7px solid var(--text);
-  transform:translateY(-25%); opacity:.9;
+  position:absolute;
+  right:12px;
+  top:50%;
+  width:14px;
+  height:14px;
+  transform:translateY(-50%) rotate(0deg);
+  opacity:.86;
+  color: color-mix(in srgb, var(--text) 88%, transparent);
+  pointer-events:none;
+  transition: transform .16s ease, opacity .16s ease, color .16s ease;
+}
+.caret::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:0;
+  height:0;
+  border-left:6px solid transparent;
+  border-right:6px solid transparent;
+  border-top:7px solid currentColor;
+  transform:translate(-50%, -25%);
+}
+.caretOpen{
+  transform:translateY(-50%) rotate(180deg);
+  opacity:1;
 }
 
 /* Портальное меню */
 .menuFixed{
   color:var(--text, #e8e8e8);
   position:fixed; z-index:9999;
-  background: var(--ui-overlay-bg);
-  border:1px solid var(--ui-overlay-border);
-  border-radius:12px;
-  box-shadow: var(--ui-overlay-shadow);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  background:
+    radial-gradient(130% 90% at 100% 0%, color-mix(in srgb, var(--primary-start) 13%, transparent) 0%, transparent 56%),
+    radial-gradient(110% 100% at 0% 100%, color-mix(in srgb, var(--focus) 8%, transparent) 0%, transparent 58%),
+    color-mix(in srgb, var(--ui-surface-3, #111827) 98%, #05070c 2%),
+    rgba(8, 13, 23, .96);
+  background-color: rgba(8, 13, 23, .96);
+  border:1px solid color-mix(in srgb, var(--ui-border-strong, var(--ui-overlay-border)) 88%, rgba(255,255,255,.14));
+  border-radius:14px;
+  box-shadow: 0 24px 58px rgba(0,0,0,.44), 0 0 0 1px color-mix(in srgb, #fff 6%, transparent) inset;
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  backdrop-filter: blur(18px) saturate(1.08);
   overflow:hidden;
 }
 
 /* Поиск */
 .searchRow{
   display:flex; align-items:center; gap:6px;
-  padding:8px; border-bottom:1px solid color-mix(in srgb, var(--ui-overlay-border) 80%, transparent);
-  background:inherit;
+  padding:8px; border-bottom:1px solid color-mix(in srgb, var(--ui-overlay-border) 86%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-2, var(--ui-overlay-bg)) 94%, transparent);
 }
 .searchInput{
   flex:1; height:34px; padding:6px 8px;
   border-radius:10px; outline:none;
-  border:1px solid color-mix(in srgb, var(--ui-overlay-border) 82%, transparent);
-  background: var(--ui-overlay-bg-strong);
+  border:1px solid color-mix(in srgb, var(--ui-overlay-border) 90%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-1, var(--ui-overlay-bg-strong)) 96%, #05070c 4%);
   color: var(--ui-text-1);
 }
 .searchInput:focus{ border-color: var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 24%, transparent); }
 .clearBtn{
   height:34px; min-width:34px;
   border-radius:10px; border:1px solid color-mix(in srgb, var(--ui-overlay-border) 82%, transparent);
-  background: var(--ui-overlay-bg-strong);
+  background: color-mix(in srgb, var(--ui-surface-1, var(--ui-overlay-bg-strong)) 96%, #05070c 4%);
   color: var(--ui-text-1); cursor:pointer;
 }
 
 /* Ряд "Выбрать всех" */
 .allRow{
   position:sticky; top:0; z-index:1;
-  background:inherit; padding:8px;
-  border-bottom:1px solid color-mix(in srgb, var(--ui-overlay-border) 80%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-2, var(--ui-overlay-bg)) 94%, transparent);
+  padding:8px;
+  border-bottom:1px solid color-mix(in srgb, var(--ui-overlay-border) 86%, transparent);
 }
 .singleClearRow{
   padding: 8px;
   border-bottom:1px solid color-mix(in srgb, var(--ui-overlay-border) 80%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-2, var(--ui-overlay-bg)) 94%, transparent);
 }
 .singleClearBtn{
   width: 100%;
   min-height: 32px;
   border-radius: 10px;
   border: 1px solid color-mix(in srgb, var(--ui-overlay-border) 82%, transparent);
-  background: var(--ui-overlay-bg-strong);
+  background: color-mix(in srgb, var(--ui-surface-1, var(--ui-overlay-bg-strong)) 96%, #05070c 4%);
   color: color-mix(in srgb, var(--ui-text-1) 88%, transparent);
   font-size: var(--font-size-12);
   cursor: pointer;
@@ -116,12 +145,21 @@
 }
 .item{
   display:flex; align-items:center; gap:10px;
-  padding:8px 6px; border-radius:8px; cursor:pointer;
+  padding:9px 8px; border-radius:10px; cursor:pointer;
   border: 1px solid transparent;
+  color: color-mix(in srgb, var(--ui-text-1) 94%, transparent);
+  transition: background .14s ease, border-color .14s ease, color .14s ease;
+}
+.item input[type="checkbox"]{
+  accent-color: var(--focus);
 }
 .item:hover{
   border-color: color-mix(in srgb, var(--ui-border-focus) 66%, transparent);
   background: var(--ui-overlay-hover);
+}
+.item:has(input:checked){
+  border-color: color-mix(in srgb, var(--focus) 42%, transparent);
+  background: color-mix(in srgb, var(--focus) 13%, var(--ui-surface-2, transparent));
 }
 .itemBody{
   flex: 1 1 auto;

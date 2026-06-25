@@ -84,7 +84,8 @@
     "no": "Nie",
     "all": "Wszystkie",
     "clear": "Wyczyść",
-    "refresh": "Odśwież"
+    "refresh": "Odśwież",
+    "hide": "Ukryj"
   },
   "productPicker": {
     "placeholder": "Szukaj produktu, wariantu, SKU, kodu kreskowego, EAN lub kodu zewnętrznego",
@@ -103,6 +104,35 @@
     "barcode": "Kod kreskowy",
     "noBarcode": "Brak kodu kreskowego",
     "available": "Dostępne"
+  },
+  "visibility": {
+    "label": "Widoczność",
+    "filterLabel": "Widoczność",
+    "all": "Wszystkie widoczne",
+    "private": "Osobista",
+    "company": "Firmowa",
+    "department": "Dział",
+    "change": "Zmień",
+    "taskHint": "Kto może widzieć to zadanie",
+    "departmentSelect": "Dział",
+    "departmentRequired": "Wybierz dział.",
+    "noDepartment": "Widoczność działu jest niedostępna, dopóki nie istnieje dział.",
+    "tooltip": {
+      "private": "Widoczne tylko dla Ciebie i jawnie przypisanych uczestników.",
+      "company": "Widoczne dla użytkowników firmy z dostępem.",
+      "department": "Widoczne dla członków wybranego działu."
+    }
+  },
+  "notes": {
+    "modal": {
+      "createTitle": "Nowa notatka",
+      "editTitle": "Edytuj notatkę",
+      "subtitle": "Zachowaj kontekst zadania dla zespołu."
+    },
+    "confirm": {
+      "deleteTitle": "Usunąć notatkę?",
+      "deleteText": "Tej akcji nie można cofnąć."
+    }
   },
   "pim": {
     "stock": {
@@ -2149,11 +2179,74 @@
         "deleteText": "Tej operacji nie można cofnąć."
       },
       "detail": {
+        "untitled": "Zadanie bez tytułu",
+        "subtitle": "{{status}} · Przypisani: {{assignees}}",
+        "priorityValue": "Priorytet {{value}}",
         "tabs": {
+          "overview": "Opis",
           "description": "Opis",
-          "notes": "Notatki"
+          "notes": "Notatki",
+          "participants": "Uczestnicy",
+          "relations": "Powiązania",
+          "additional": "Dodatkowe"
         },
-        "notesTitle": "Notatki zadania"
+        "notesTitle": "Notatki zadania",
+        "actions": {
+          "back": "Wróć do zadań"
+        },
+        "sections": {
+          "basic": "Podstawowe",
+          "planning": "Planowanie",
+          "participants": "Uczestnicy",
+          "relations": "Powiązania",
+          "advanced": "Zaawansowane / metadane",
+          "advancedSubtitle": "Pola systemowe i opcje zaawansowane",
+          "meta": "Metadane",
+          "danger": "Strefa ryzyka",
+          "dangerSubtitle": "Akcje destrukcyjne"
+        },
+        "groups": {
+          "planned": "Planowane",
+          "actual": "Rzeczywiste"
+        },
+        "summary": {
+          "hasActualDates": "Daty rzeczywiste ustawione",
+          "noActualDates": "Brak dat rzeczywistych",
+          "participantsAssigned": "Uczestnicy przypisani",
+          "noParticipants": "Brak przypisanych i obserwujących",
+          "unassigned": "Nieprzypisane",
+          "noWatchers": "Brak",
+          "relationsAssigned": "Powiązane rekordy wybrane"
+        },
+        "fields": {
+          "assignee": "Wykonawca",
+          "taskId": "ID zadania",
+          "createdAt": "Utworzono",
+          "updatedAt": "Zaktualizowano"
+        },
+        "placeholders": {
+          "addDate": "Dodaj datę"
+        },
+        "empty": {
+          "relations": "Brak powiązanych rekordów"
+        },
+        "messages": {
+          "saved": "Zapisano",
+          "saveFailed": "Nie udało się zapisać zadania"
+        },
+        "validation": {
+          "titleRequired": "Tytuł jest wymagany"
+        },
+        "description": {
+          "title": "Opis",
+          "placeholder": "Opisz zadanie: cel, kroki, linki, lista kontrolna...",
+          "emptyText": "Opis jest pusty. Kliknij Edytuj, aby dodać opis."
+        },
+        "notes": {
+          "emptyTitle": "Brak notatek",
+          "emptyText": "Dodaj pierwszą notatkę, aby zachować kontekst.",
+          "addFirst": "Dodaj notatkę"
+        }
       },
       "sections": {
         "basic": "Podstawowe",

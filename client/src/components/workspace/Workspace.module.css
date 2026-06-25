@@ -3,6 +3,7 @@
   gap: 8px;
   padding: 12px 16px 18px;
   color: var(--ui-text);
+  --workspace-control-height: 34px;
   --gw-surface: var(--gw-work-surface-bg, var(--wms-work-surface-bg, color-mix(in srgb, var(--ui-surface-1, #0f172a) 90%, #020617)));
   --gw-surface-soft: var(--gw-work-surface-soft-bg, var(--wms-work-surface-soft-bg, color-mix(in srgb, var(--ui-surface-2, #111827) 86%, #020617)));
   --gw-border: var(--gw-work-surface-border, var(--wms-work-surface-border, color-mix(in srgb, var(--ui-border, #334155) 82%, rgba(255, 255, 255, 0.08))));
@@ -69,7 +70,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   padding: 6px;
   border: 1px solid var(--gw-border);
   border-radius: 8px;
@@ -85,7 +86,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
+  min-height: var(--workspace-control-height);
+  height: var(--workspace-control-height);
   padding: 0 10px;
   border: 1px solid var(--gw-border);
   border-radius: var(--radius-md);
@@ -108,31 +110,31 @@
 }
 
 .searchBox {
-  flex: 1 1 360px;
-  width: min(440px, 100%);
-  max-width: 480px;
+  flex: 1 1 300px;
+  width: min(360px, 100%);
+  max-width: 360px;
 }
 
 .searchBox > :last-child {
   flex: 1 1 auto;
-  min-width: 220px;
+  min-width: 190px;
 }
 
 .filterBox {
-  flex: 0 1 170px;
-  width: 170px;
+  flex: 0 0 220px;
+  width: 220px;
   min-width: 0;
   justify-content: space-between;
   overflow: hidden;
 }
 
 .quickBox {
-  flex: 1 1 360px;
+  flex: 0 1 auto;
   width: auto;
   max-width: 100%;
-  min-width: min(100%, 320px);
-  padding: 2px;
-  background: color-mix(in srgb, var(--gw-surface) 64%, transparent);
+  min-width: 0;
+  padding: 0 8px;
+  background: color-mix(in srgb, var(--gw-surface) 74%, transparent);
 }
 
 .quickBox > :last-child {
@@ -145,6 +147,13 @@
   overflow: hidden;
 }
 
+.quickBox button {
+  min-height: calc(var(--workspace-control-height) - 8px);
+  padding: 0 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
 .filterBox > :last-child {
   flex: 1 1 0;
   min-width: 0;
@@ -154,6 +163,16 @@
 .pageSizeTopControl button[role="combobox"] {
   width: 100%;
   min-width: 0;
+}
+
+.filterBox button[role="combobox"] > span:first-child,
+.pageSizeTopControl button[role="combobox"] > span:first-child {
+  max-width: calc(100% - 24px);
+}
+
+.filterBox button[role="combobox"] [class*="RadixSelect_icon"],
+.pageSizeTopControl button[role="combobox"] [class*="RadixSelect_icon"] {
+  right: 2px;
 }
 
 .pageSizeTopControl > :last-child {
@@ -177,7 +196,7 @@
 }
 
 .controlSearchInput {
-  min-height: 32px !important;
+  min-height: calc(var(--workspace-control-height) - 2px) !important;
   padding: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
@@ -187,7 +206,7 @@
 }
 
 .searchBox input {
-  min-height: 32px !important;
+  min-height: calc(var(--workspace-control-height) - 2px) !important;
   padding: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
@@ -204,8 +223,8 @@
 }
 
 .controlSelectTrigger {
-  min-height: 32px !important;
-  padding: 0 20px 0 0 !important;
+  min-height: calc(var(--workspace-control-height) - 2px) !important;
+  padding: 0 28px 0 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
@@ -215,8 +234,8 @@
 
 .filterBox button[role="combobox"],
 .pageSizeTopControl button[role="combobox"] {
-  min-height: 32px !important;
-  padding: 0 20px 0 0 !important;
+  min-height: calc(var(--workspace-control-height) - 2px) !important;
+  padding: 0 28px 0 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
@@ -243,10 +262,10 @@
   text-overflow: clip;
 }
 
-.filterBox span {
+.filterBox > span {
   flex: 0 0 auto;
   min-width: 0;
-  max-width: 70px;
+  max-width: 82px;
   overflow: hidden;
   color: var(--ui-text-muted);
   font-size: 11px;
@@ -256,7 +275,7 @@
   white-space: nowrap;
 }
 
-.searchBox span {
+.searchBox > span {
   flex: 0 0 auto;
   max-width: 58px;
   overflow: hidden;
@@ -267,11 +286,11 @@
   white-space: nowrap;
 }
 
-.searchBox span::after {
+.searchBox > span::after {
   content: ":";
 }
 
-.filterBox span::after,
+.filterBox > span::after,
 .pageSizeTopLabel::after {
   content: ":";
 }
@@ -292,7 +311,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
+  min-height: var(--workspace-control-height);
+  height: var(--workspace-control-height);
   padding: 0 8px;
   border: 1px solid var(--gw-border);
   border-radius: var(--radius-md);
@@ -320,7 +340,8 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  min-height: 36px;
+  min-height: var(--workspace-control-height);
+  height: var(--workspace-control-height);
   margin-left: 0;
   flex: 0 0 160px;
   width: 160px;
@@ -543,6 +564,8 @@
 
 .table th {
   position: relative;
+  height: 34px;
+  padding: 0 18px 0 10px;
   color: var(--ui-text-muted);
   font-size: 11.5px;
   font-weight: 700;
@@ -551,6 +574,12 @@
   background: color-mix(in srgb, var(--gw-surface) 94%, #020617);
   user-select: none;
   cursor: grab;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.table th:hover {
+  color: color-mix(in srgb, var(--ui-text-muted) 45%, var(--ui-text));
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 5%, var(--gw-surface));
 }
 
 .table th:active {
@@ -558,12 +587,25 @@
 }
 
 .columnHeaderLabel {
-  display: inline-block;
-  max-width: calc(100% - 18px);
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  vertical-align: middle;
   white-space: nowrap;
+}
+
+.columnHeaderInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .sortableColumn {
@@ -571,15 +613,16 @@
 }
 
 .columnSortButton {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
   min-width: 0;
-  width: calc(100% - 12px);
-  max-width: calc(100% - 12px);
+  width: 100%;
+  height: 34px;
+  max-width: 100%;
   padding: 0;
-  border: 0;
-  background: transparent;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
   color: inherit;
   font: inherit;
   font-size: inherit;
@@ -587,26 +630,50 @@
   letter-spacing: inherit;
   text-transform: inherit;
   cursor: pointer;
+  appearance: none;
+  box-shadow: none !important;
 }
 
 .columnSortButton:hover,
+.columnSortButton:focus,
 .columnSortButton:focus-visible {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
   color: var(--ui-text);
-  outline: none;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.columnSortButton:active {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .sortIndicator {
-  color: color-mix(in srgb, var(--ui-text-muted) 72%, transparent);
+  flex: 0 0 auto;
+  min-width: 16px;
+  color: color-mix(in srgb, var(--ui-text-muted) 66%, transparent);
   font-size: 11px;
   line-height: 1;
+  text-align: right;
+  transition: color 140ms ease, opacity 140ms ease;
+}
+
+.table th:hover .sortIndicator,
+.columnSortButton:focus-visible .sortIndicator {
+  color: color-mix(in srgb, var(--focus, #6aa8ff) 62%, var(--ui-text));
 }
 
 .resizeHandle {
   position: absolute;
-  top: 7px;
-  right: 0;
-  bottom: 7px;
-  width: 9px;
+  top: 0;
+  right: -7px;
+  bottom: 0;
+  z-index: 2;
+  width: 16px;
   cursor: col-resize;
   touch-action: none;
 }
@@ -614,17 +681,24 @@
 .resizeHandle::after {
   content: "";
   position: absolute;
-  top: 0;
-  right: 3px;
-  bottom: 0;
+  top: 6px;
+  right: 7px;
+  bottom: 6px;
   width: 1px;
-  background: color-mix(in srgb, var(--ui-text-muted) 32%, transparent);
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.46);
+  opacity: 0.95;
+  transition: background 140ms ease, width 140ms ease, opacity 140ms ease;
+}
+
+.table th:hover .resizeHandle::after {
+  background: rgba(106, 168, 255, 0.72);
 }
 
 .resizeHandle:hover::after,
 .resizeHandle:focus-visible::after {
   width: 2px;
-  background: var(--focus, #6aa8ff);
+  background: #6aa8ff;
 }
 
 .dragOverColumn {

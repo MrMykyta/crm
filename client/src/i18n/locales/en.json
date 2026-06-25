@@ -84,7 +84,26 @@
     "no": "No",
     "all": "All",
     "clear": "Clear",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "hide": "Hide"
+  },
+  "visibility": {
+    "label": "Visibility",
+    "filterLabel": "Visibility",
+    "all": "All visible",
+    "private": "Personal",
+    "company": "Company",
+    "department": "Department",
+    "change": "Change",
+    "taskHint": "Who can see this task",
+    "departmentSelect": "Department",
+    "departmentRequired": "Select a department.",
+    "noDepartment": "Department visibility is unavailable until a department exists.",
+    "tooltip": {
+      "private": "Only you and explicitly assigned participants can see it.",
+      "company": "Visible to company users with access.",
+      "department": "Visible to members of the selected department."
+    }
   },
   "productPicker": {
     "placeholder": "Search product, variant, SKU, barcode, EAN or external code",
@@ -1902,7 +1921,8 @@
     },
     "visibility": {
       "company": "Company",
-      "private": "Private"
+      "private": "Private",
+      "department": "Department"
     },
     "values": {
       "yes": "Yes",
@@ -1926,7 +1946,12 @@
     },
     "modal": {
       "createTitle": "New note",
-      "editTitle": "Edit note"
+      "editTitle": "Edit note",
+      "subtitle": "Keep task context visible for the team."
+    },
+    "confirm": {
+      "deleteTitle": "Delete note?",
+      "deleteText": "This action cannot be undone."
     },
     "messages": {
       "typeToSearch": "Start typing to search",
@@ -2172,11 +2197,74 @@
         "deleteText": "This action cannot be undone."
       },
       "detail": {
+        "untitled": "Untitled task",
+        "subtitle": "{{status}} · Assignees: {{assignees}}",
+        "priorityValue": "Priority {{value}}",
         "tabs": {
+          "overview": "Description",
           "description": "Description",
-          "notes": "Notes"
+          "notes": "Notes",
+          "participants": "Participants",
+          "relations": "Relations",
+          "additional": "Additional"
         },
-        "notesTitle": "Task notes"
+        "notesTitle": "Task notes",
+        "actions": {
+          "back": "Back to tasks"
+        },
+        "sections": {
+          "basic": "Basic",
+          "planning": "Planning",
+          "participants": "Participants",
+          "relations": "Relations",
+          "advanced": "Advanced / Metadata",
+          "advancedSubtitle": "System fields and advanced options",
+          "meta": "Metadata",
+          "danger": "Danger zone",
+          "dangerSubtitle": "Destructive actions"
+        },
+        "groups": {
+          "planned": "Planned",
+          "actual": "Actual"
+        },
+        "summary": {
+          "hasActualDates": "Actual dates set",
+          "noActualDates": "No actual dates",
+          "participantsAssigned": "Participants assigned",
+          "noParticipants": "No assignees or watchers",
+          "unassigned": "Unassigned",
+          "noWatchers": "None",
+          "relationsAssigned": "Linked records selected"
+        },
+        "fields": {
+          "assignee": "Assignee",
+          "taskId": "Task ID",
+          "createdAt": "Created",
+          "updatedAt": "Updated"
+        },
+        "placeholders": {
+          "addDate": "Add date"
+        },
+        "empty": {
+          "relations": "No linked records"
+        },
+        "messages": {
+          "saved": "Saved",
+          "saveFailed": "Failed to save task"
+        },
+        "validation": {
+          "titleRequired": "Title is required"
+        },
+        "description": {
+          "title": "Description",
+          "placeholder": "Describe the task: goal, steps, links, checklist...",
+          "emptyText": "Description is empty. Click Edit to add a description."
+        },
+        "notes": {
+          "emptyTitle": "No notes yet",
+          "emptyText": "Add the first note to keep context here.",
+          "addFirst": "Add note"
+        }
       },
       "sections": {
         "basic": "Basic",

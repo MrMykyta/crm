@@ -117,6 +117,7 @@ const PANEL_WIDTH = 332;
 const BASE_PANEL_HEIGHT = 348;
 const TIME_PANEL_HEIGHT = 84;
 const TOGGLE_ROW_HEIGHT = 42;
+const VIEWPORT_MARGIN = 8;
 
 // estimatePanelHeight: вспомогательная логика компонента.
 function estimatePanelHeight({ withTime, allowTimeToggle }) {
@@ -157,15 +158,6 @@ function buildCells(viewDate) {
   return cells;
 }
 
-// Компонент CalendarIcon: отвечает за отображение UI и обработку взаимодействий пользователя.
-function CalendarIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M7 3V5M17 3V5M4 9H20M5 5H19C19.5523 5 20 5.44772 20 6V20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V6C4 5.44772 4.44772 5 5 5Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
 // Компонент DateTimePicker: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function DateTimePicker({
   id,
@@ -180,7 +172,6 @@ export default function DateTimePicker({
   clearLabel = 'Clear',
   previousMonthLabel = 'Previous month',
   nextMonthLabel = 'Next month',
-  openCalendarLabel = 'Open calendar',
   weekdayLabels,
   className = '',
   disabled = false,
@@ -231,17 +222,25 @@ export default function DateTimePicker({
 
     const panelHeight = estimatePanelHeight({ withTime, allowTimeToggle });
     const spaceBelow = vh - r.bottom;
-    const autoPlaceAbove = spaceBelow < panelHeight + 14;
+    const spaceAbove = r.top;
+    const fieldBelowMiddle = (r.top + (r.height / 2)) > (vh / 2);
+    const hasRoomAbove = spaceAbove >= panelHeight + 14;
+    const hasRoomBelow = spaceBelow >= panelHeight + 14;
+    const autoPlaceAbove = (fieldBelowMiddle && hasRoomAbove) || (!hasRoomBelow && hasRoomAbove);
     const placeAbove = forcedPlacement != null
       ? forcedPlacement
       : (placementLocked === null ? autoPlaceAbove : placementLocked);
 
-    const left = Math.min(Math.max(8, r.left), Math.max(8, vw - PANEL_WIDTH - 8));
+    const width = Math.min(PANEL_WIDTH, Math.max(260, vw - (VIEWPORT_MARGIN * 2)));
+    const left = Math.min(
+      Math.max(VIEWPORT_MARGIN, r.left),
+      Math.max(VIEWPORT_MARGIN, vw - width - VIEWPORT_MARGIN)
+    );
 
     setPos({
       top: placeAbove ? r.top : r.bottom,
       left,
-      width: PANEL_WIDTH,
+      width,
       placeAbove,
     });
 
@@ -257,11 +256,16 @@ export default function DateTimePicker({
     const r = el.getBoundingClientRect();
     const vh = window.innerHeight || document.documentElement.clientHeight;
     const panelHeight = estimatePanelHeight({ withTime, allowTimeToggle });
-    const placeAbove = (vh - r.bottom) < panelHeight + 14;
+    const spaceBelow = vh - r.bottom;
+    const spaceAbove = r.top;
+    const fieldBelowMiddle = (r.top + (r.height / 2)) > (vh / 2);
+    const hasRoomAbove = spaceAbove >= panelHeight + 14;
+    const hasRoomBelow = spaceBelow >= panelHeight + 14;
+    const placeAbove = (fieldBelowMiddle && hasRoomAbove) || (!hasRoomBelow && hasRoomAbove);
 
     setPlacementLocked(placeAbove);
-    setOpen(true);
     computePosition(placeAbove);
+    setOpen(true);
   }, [allowTimeToggle, computePosition, disabled, withTime]);
 
   useLayoutEffect(() => {
@@ -522,22 +526,6 @@ const onToday = () => {
         placeholder={placeholder || (withTime ? 'yyyy-mm-dd hh:mm' : 'yyyy-mm-dd')}
         disabled={disabled}
       />
-      <button
-        type="button"
-        className={s.toggleBtn}
-        onClick={() => {
-          if (disabled) return;
-          if (open) {
-            setOpen(false);
-            return;
-          }
-          openMenu();
-        }}
-        tabIndex={-1}
-        aria-label={openCalendarLabel}
-      >
-        <CalendarIcon />
-      </button>
       {open && menuNode ? createPortal(menuNode, document.body) : null}
     </div>
   );

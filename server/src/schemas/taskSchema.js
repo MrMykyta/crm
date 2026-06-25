@@ -4,6 +4,7 @@ const { Joi, uuid } = require('./_common');
 
 const STATUS_VALUES = ['todo', 'in_progress', 'done', 'blocked', 'canceled'];
 const MODE_VALUES = ['none', 'all', 'lists'];
+const VISIBILITY_VALUES = ['private', 'company', 'department'];
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const isoOrDateOnly = Joi.alternatives().try(
@@ -19,6 +20,8 @@ const base = {
   description: Joi.string().trim().max(10000).allow('', null),
   status: Joi.string().valid(...STATUS_VALUES),
   priority: Joi.number().integer().min(0).max(100),
+  visibility: Joi.string().valid(...VISIBILITY_VALUES),
+  visibilityDepartmentId: uuid.allow(null, ''),
 
   startAt: nullableDateInput,
   endAt: nullableDateInput,
@@ -66,6 +69,8 @@ module.exports.create = Joi.object({
   description: base.description,
   status: base.status.default('todo'),
   priority: base.priority.default(50),
+  visibility: base.visibility.default('company'),
+  visibilityDepartmentId: base.visibilityDepartmentId,
 
   startAt: base.startAt,
   endAt: base.endAt,
@@ -105,6 +110,8 @@ module.exports.update = Joi.object({
   description: base.description,
   status: base.status,
   priority: base.priority,
+  visibility: base.visibility,
+  visibilityDepartmentId: base.visibilityDepartmentId,
 
   startAt: base.startAt,
   endAt: base.endAt,
@@ -143,6 +150,7 @@ module.exports.listQuery = Joi.object({
   category: Joi.string().trim().max(64),
   counterpartyId: uuid,
   dealId: uuid,
+  visibility: Joi.string().valid(...VISIBILITY_VALUES),
 
   date: isoOrDateOnly,
   from: isoOrDateOnly,
@@ -161,4 +169,3 @@ module.exports.calendarQuery = Joi.object({
   from: isoOrDateOnly.required(),
   to: isoOrDateOnly.required(),
 });
-

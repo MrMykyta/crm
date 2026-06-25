@@ -62,6 +62,11 @@ const getPriorityBucket = (priority) => {
   return 'urgent';
 };
 
+const getVisibilityValue = (value) => {
+  const normalized = String(value || 'company').trim().toLowerCase();
+  return ['private', 'company', 'department'].includes(normalized) ? normalized : 'company';
+};
+
 const getTaskAssigneeIds = (task = {}) => {
   const participants = Array.isArray(task.userParticipants) ? task.userParticipants : [];
   return participants
@@ -156,6 +161,7 @@ export default function TasksPage(){
   const hasAnyFilter = Boolean(
     query.search
     || query.status
+    || query.visibility
     || query.from
     || query.to
     || query.priorityBucket
@@ -255,6 +261,35 @@ render:(r)=> {
           <span className={`${s.priorityChip} ${s[`priority_${bucket}`]}`}>
             {t(`crm.task.priorityBuckets.${bucket}`)}
             <span className={s.priorityValue}>{Number(r.priority ?? 50)}</span>
+          </span>
+        );
+      },
+    },
+    {
+      key: 'visibility',
+      title: t('visibility.label'),
+      sortable: true,
+      width: 170,
+      defaultVisible: false,
+      category: 'technical',
+      render: (r) => {
+        const visibility = getVisibilityValue(r.visibility);
+        const departmentName = r.visibilityDepartment?.name
+          || r.department?.name
+          || r.visibilityDepartmentName
+          || r.visibility_department_name
+          || r.visibilityDepartmentId
+          || r.visibility_department_id
+          || '';
+        const label = visibility === 'department' && departmentName
+          ? `${t('visibility.department')} · ${departmentName}`
+          : t(`visibility.${visibility}`, t('visibility.company'));
+        return (
+          <span
+            className={`${s.visibilityChip} ${s[`visibility_${visibility}`]}`}
+            title={t(`visibility.tooltip.${visibility}`)}
+          >
+            {label}
           </span>
         );
       },
@@ -434,6 +469,24 @@ render:(r)=>{
       ),
     },
     {
+      key: 'visibility',
+      label: t('visibility.filterLabel'),
+      control: (
+        <SelectField
+          value={query.visibility || ''}
+          onValueChange={(value) => updateFilter('visibility', value)}
+          options={[
+            { value: '', label: t('visibility.all') },
+            { value: 'private', label: t('visibility.private') },
+            { value: 'company', label: t('visibility.company') },
+            { value: 'department', label: t('visibility.department') },
+          ]}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
       key: 'priorityBucket',
       label: t('crm.task.filters.priority'),
       control: (
@@ -517,6 +570,7 @@ render:(r)=>{
     query.priorityBucket,
     query.search,
     query.status,
+    query.visibility,
     resetClientFilters,
     t,
     updateFilter,

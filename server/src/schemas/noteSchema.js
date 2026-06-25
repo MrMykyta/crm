@@ -15,7 +15,7 @@ const ownerType = Joi.string().valid(
   'department'
 );
 
-const visibility = Joi.string().valid('private', 'company');
+const visibility = Joi.string().valid('private', 'company', 'department');
 
 module.exports.listQuery = paging.keys({
   companyId: Joi.forbidden(),
@@ -24,6 +24,7 @@ module.exports.listQuery = paging.keys({
   search: Joi.string().max(1000).allow('', null),
   q: Joi.string().max(1000).allow('', null),
   visibility: visibility.optional(),
+  visibilityDepartmentId: uuid.optional(),
   pinned: Joi.boolean().optional(),
   sort: Joi.string()
     .valid('createdAt', 'updatedAt', 'pinned', 'created_at', 'updated_at')
@@ -43,6 +44,7 @@ module.exports.create = Joi.object({
   ownerId: uuid.required(),
   content: Joi.string().trim().min(1).max(10000).required(),
   visibility: visibility.default('company'),
+  visibilityDepartmentId: uuid.allow(null, ''),
   pinned: Joi.boolean().default(false),
 });
 
@@ -52,5 +54,6 @@ module.exports.update = Joi.object({
   ownerId: uuid.optional(),
   content: Joi.string().trim().min(1).max(10000).optional(),
   visibility: visibility.optional(),
+  visibilityDepartmentId: uuid.allow(null, '').optional(),
   pinned: Joi.boolean().optional(),
 }).min(1);

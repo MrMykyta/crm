@@ -16,6 +16,7 @@ import {
   CheckboxField,
   SelectField,
   TextareaField,
+  VisibilityField,
 } from '../../../components/ui/fields';
 import useGridPrefs from '../../../hooks/useGridPrefs';
 import {
@@ -24,6 +25,7 @@ import {
   useDeleteNoteMutation,
   useGetNoteOwnerOptionsQuery,
 } from '../../../store/rtk/notesApi';
+import { useListDepartmentsQuery } from '../../../store/rtk/departmentsApi';
 import s from './NotesPage.module.css';
 
 const OWNER_TYPES = [
@@ -42,7 +44,8 @@ const OWNER_TYPES = [
 const emptyForm = {
   ownerType: '',
   ownerId: '',
-  visibility: 'company',
+  visibility: 'private',
+  visibilityDepartmentId: '',
   pinned: false,
   content: '',
 };
@@ -178,6 +181,7 @@ function NoteForm({
   ownerSearch,
   ownerOptions,
   ownerLoading,
+  departments,
   selectedOwner,
   onOwnerSearchChange,
   onOwnerSelect,
@@ -236,17 +240,16 @@ function NoteForm({
       </div>
 
       <div className={s.row2}>
-        <SelectField
+        <VisibilityField
           className={s.field}
           inputClassName={s.select}
-          label={t('notes.fields.visibility')}
           value={values.visibility}
-          onValueChange={(value) => onChange('visibility', value)}
-          options={[
-            { value: 'company', label: t('notes.visibility.company') },
-            { value: 'private', label: t('notes.visibility.private') },
-          ]}
-          placeholder={t('notes.fields.visibility')}
+          departmentId={values.visibilityDepartmentId}
+          departments={departments}
+          onChange={({ visibility, visibilityDepartmentId }) => {
+            onChange('visibility', visibility);
+            onChange('visibilityDepartmentId', visibilityDepartmentId);
+          }}
           size="md"
         />
 
@@ -301,6 +304,7 @@ export default function NotesPage() {
   const [createNote, { isLoading: creating }] = useCreateNoteMutation();
   const [updateNote, { isLoading: updating }] = useUpdateNoteMutation();
   const [deleteNote, { isLoading: deleting }] = useDeleteNoteMutation();
+  const { data: departmentsData } = useListDepartmentsQuery({ limit: 100 });
   const {
     colWidths,
     colOrder,
@@ -316,6 +320,14 @@ export default function NotesPage() {
   } = useGridPrefs('crm.notes');
 
   const saving = creating || updating;
+  const departments = useMemo(
+    () => (Array.isArray(departmentsData) ? departmentsData : []),
+    [departmentsData]
+  );
+  const departmentById = useMemo(
+    () => new Map(departments.map((department) => [String(department.id), department])),
+    [departments]
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -351,9 +363,10 @@ export default function NotesPage() {
 
   const visibilityFilterOptions = useMemo(
     () => [
-      { value: '', label: t('notes.filters.allVisibility') },
-      { value: 'company', label: t('notes.visibility.company') },
-      { value: 'private', label: t('notes.visibility.private') },
+      { value: '', label: t('visibility.all') },
+      { value: 'company', label: t('visibility.company') },
+      { value: 'private', label: t('visibility.private') },
+      { value: 'department', label: t('visibility.department') },
     ],
     [t]
   );
@@ -450,6 +463,7 @@ export default function NotesPage() {
       ownerType,
       ownerId,
       visibility: note?.visibility || 'company',
+      visibilityDepartmentId: note?.visibilityDepartmentId || note?.visibility_department_id || '',
       pinned: Boolean(note?.pinned),
       content: note?.content || '',
     });
@@ -518,6 +532,11 @@ const handleSubmit = async (event) => {
       pinned: Boolean(form.pinned),
       content: String(form.content || '').trim(),
     };
+    if (payload.visibility === 'department') {
+      payload.visibilityDepartmentId = form.visibilityDepartmentId || null;
+    } else {
+      payload.visibilityDepartmentId = null;
+    }
 
     if (!payload.ownerType) {
       setFormError(t('notes.validation.ownerTypeRequired'));
@@ -529,6 +548,10 @@ const handleSubmit = async (event) => {
     }
     if (!payload.content) {
       setFormError(t('notes.validation.contentRequired'));
+      return;
+    }
+    if (payload.visibility === 'department' && !payload.visibilityDepartmentId) {
+      setFormError(t('visibility.departmentRequired'));
       return;
     }
 
@@ -687,11 +710,21 @@ render: (row) => {
       {
         key: 'visibility',
         title: t('notes.table.visibility'),
-        width: 130,
+        width: 170,
                 // render: описывает рендер соответствующего блока UI.
 render: (row) => (
-          <span className={`${s.badge} ${row.visibility === 'private' ? s.badgePrivate : s.badgeCompany}`}>
-            {row.visibility === 'private' ? t('notes.visibility.private') : t('notes.visibility.company')}
+          <span
+            className={`${s.badge} ${row.visibility === 'private' ? s.badgePrivate : row.visibility === 'department' ? s.badgeDepartment : s.badgeCompany}`}
+            title={t(`visibility.tooltip.${row.visibility || 'company'}`, '')}
+          >
+            {row.visibility === 'department'
+              ? `${t('visibility.department')}${(() => {
+                const departmentId = row.visibilityDepartmentId || row.visibility_department_id || '';
+                const department = row.visibilityDepartment || row.department || departmentById.get(String(departmentId));
+                const name = department?.name || department?.code || departmentId;
+                return name ? ` · ${name}` : '';
+              })()}`
+              : t(`visibility.${row.visibility || 'company'}`, t('visibility.company'))}
           </span>
         ),
       },
@@ -735,6 +768,7 @@ render: (row) => formatDate(row.updatedAt, i18n.language),
       t,
       i18n.language,
       ownerTypeLabelMap,
+      departmentById,
       quickEditId,
       quickEditValue,
       quickEditError,
@@ -934,7 +968,7 @@ render: ({ onChange }) => (
               {
                 type: 'select',
                 key: 'visibility',
-                label: t('notes.fields.visibility'),
+                label: t('visibility.filterLabel'),
                 options: visibilityFilterOptions,
               },
               {
@@ -960,6 +994,7 @@ render: ({ onChange }) => (
           ownerSearch={ownerSearch}
           ownerOptions={ownerOptions}
           ownerLoading={ownerLookupLoading}
+          departments={departments}
           selectedOwner={selectedOwner}
           onOwnerSearchChange={handleOwnerInputChange}
           onOwnerSelect={handleOwnerSelect}

@@ -1,5 +1,9 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import styles from "./NumericWithPresets.module.css";
+
+const VIEWPORT_MARGIN = 8;
+const ITEM_HEIGHT = 40;
 
 // Компонент NumericWithPresets: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function NumericWithPresets({
@@ -19,7 +23,44 @@ export default function NumericWithPresets({
   style,
 }) {
   const [open, setOpen] = React.useState(false);
+  const [pos, setPos] = React.useState({ top: 0, left: 0, width: 0, placeAbove: false });
   const ref = React.useRef(null);
+  const portalId = React.useRef(`numeric-presets-${Math.random().toString(36).slice(2)}`);
+
+  const computePosition = React.useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    const vw = window.innerWidth || document.documentElement.clientWidth;
+    const menuHeight = Math.min(Math.max((presets.length || 1) * ITEM_HEIGHT + 12, 52), 260);
+    const spaceBelow = vh - r.bottom;
+    const spaceAbove = r.top;
+    const fieldBelowMiddle = (r.top + (r.height / 2)) > (vh / 2);
+    const hasRoomAbove = spaceAbove >= menuHeight + 8;
+    const hasRoomBelow = spaceBelow >= menuHeight + 8;
+    const placeAbove = (fieldBelowMiddle && hasRoomAbove) || (!hasRoomBelow && hasRoomAbove);
+    const width = Math.min(
+      Math.max(r.width, 120),
+      Math.max(120, vw - (VIEWPORT_MARGIN * 2))
+    );
+    const left = Math.min(
+      Math.max(VIEWPORT_MARGIN, r.left),
+      Math.max(VIEWPORT_MARGIN, vw - width - VIEWPORT_MARGIN)
+    );
+    setPos({
+      top: placeAbove ? r.top : r.bottom,
+      left,
+      width,
+      placeAbove,
+    });
+  }, [presets.length]);
+
+  const openMenu = React.useCallback(() => {
+    if (disabled) return;
+    computePosition();
+    setOpen(true);
+  }, [computePosition, disabled]);
 
     // parse: парсит входные данные для UI.
 const parse = (raw) => {
@@ -31,6 +72,7 @@ const parse = (raw) => {
     // handleChange: обработчик пользовательского действия.
 const handleChange = (e) => {
     const next = parse(e.target.value);
+    openMenu();
     onChange(next);
   };
 
@@ -44,16 +86,54 @@ const handleBlur = () => {
     if (n !== value) onChange(n);
   };
 
-  // клик вне меню
   React.useEffect(() => {
-        // onDoc: вспомогательная логика компонента.
-const onDoc = (e) => {
+    const onDoc = (e) => {
       if (!ref.current) return;
-      if (!ref.current.contains(e.target)) setOpen(false);
+      const menu = document.getElementById(portalId.current);
+      const insideControl = ref.current.contains(e.target);
+      const insideMenu = menu && menu.contains(e.target);
+      if (!insideControl && !insideMenu) setOpen(false);
     };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
+    document.addEventListener("pointerdown", onDoc, true);
+    return () => document.removeEventListener("pointerdown", onDoc, true);
   }, []);
+
+  React.useEffect(() => {
+    if (!open) return undefined;
+    computePosition();
+    const onRecalc = () => computePosition();
+    window.addEventListener("resize", onRecalc);
+    window.addEventListener("scroll", onRecalc, true);
+    return () => {
+      window.removeEventListener("resize", onRecalc);
+      window.removeEventListener("scroll", onRecalc, true);
+    };
+  }, [computePosition, open]);
+
+  const menuNode = open ? (
+    <div
+      id={portalId.current}
+      className={styles.menu}
+      style={{
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        transform: pos.placeAbove ? "translateY(calc(-100% - 6px))" : "translateY(6px)",
+        visibility: pos.width ? "visible" : "hidden",
+      }}
+    >
+      {presets.map((p) => (
+        <button
+          key={p}
+          type="button"
+          className={`${styles.item} ${Number(value) === p ? styles.active : ""}`}
+          onClick={() => { onChange(p); setOpen(false); }}
+        >
+          {p}
+        </button>
+      ))}
+    </div>
+  ) : null;
 
   return (
     <div className={`${styles.wrap} ${styles[size]} ${className}`} ref={ref} style={style}>
@@ -64,34 +144,19 @@ const onDoc = (e) => {
           className={styles.input}
           value={value}
           onChange={handleChange}
+          onFocus={openMenu}
+          onClick={openMenu}
           onBlur={handleBlur}
           placeholder={placeholder}
           disabled={disabled}
         />
-        <button
-          type="button"
-          className={styles.arrowBtn}
-          onClick={() => setOpen(o => !o)}
-          disabled={disabled}
-        >
-          ▾
-        </button>
+        <span
+          className={`${styles.arrowBtn} ${open ? styles.arrowBtnOpen : ""}`}
+          aria-hidden="true"
+        />
       </div>
 
-      {open && (
-        <div className={styles.menu}>
-          {presets.map((p) => (
-            <button
-              key={p}
-              type="button"
-              className={`${styles.item} ${Number(value) === p ? styles.active : ""}`}
-              onClick={() => { onChange(p); setOpen(false); }}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      )}
+      {open && menuNode ? createPortal(menuNode, document.body) : null}
     </div>
   );
 }

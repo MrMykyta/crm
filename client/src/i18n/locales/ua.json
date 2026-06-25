@@ -83,7 +83,8 @@
     "no": "Ні",
     "all": "Усі",
     "clear": "Очистити",
-    "refresh": "Оновити"
+    "refresh": "Оновити",
+    "hide": "Сховати"
   },
   "productPicker": {
     "placeholder": "Пошук за товаром, варіантом, SKU, штрихкодом, EAN або зовнішнім кодом",
@@ -102,6 +103,35 @@
     "barcode": "Штрихкод",
     "noBarcode": "Без штрихкоду",
     "available": "Доступно"
+  },
+  "visibility": {
+    "label": "Видимість",
+    "filterLabel": "Видимість",
+    "all": "Усі доступні",
+    "private": "Особиста",
+    "company": "Компанія",
+    "department": "Відділ",
+    "change": "Змінити",
+    "taskHint": "Хто може бачити цю задачу",
+    "departmentSelect": "Відділ",
+    "departmentRequired": "Виберіть відділ.",
+    "noDepartment": "Видимість відділу недоступна, доки немає відділу.",
+    "tooltip": {
+      "private": "Видно тільки вам і явно призначеним учасникам.",
+      "company": "Видно користувачам компанії з доступом.",
+      "department": "Видно учасникам вибраного відділу."
+    }
+  },
+  "notes": {
+    "modal": {
+      "createTitle": "Нова нотатка",
+      "editTitle": "Редагувати нотатку",
+      "subtitle": "Збережіть контекст задачі для команди."
+    },
+    "confirm": {
+      "deleteTitle": "Видалити нотатку?",
+      "deleteText": "Цю дію не можна скасувати."
+    }
   },
   "pim": {
     "stock": {
@@ -2090,11 +2120,74 @@
         "deleteText": "Цю дію не можна скасувати."
       },
       "detail": {
+        "untitled": "Задача без назви",
+        "subtitle": "{{status}} · Відповідальні: {{assignees}}",
+        "priorityValue": "Пріоритет {{value}}",
         "tabs": {
+          "overview": "Опис",
           "description": "Опис",
-          "notes": "Нотатки"
+          "notes": "Нотатки",
+          "participants": "Учасники",
+          "relations": "Зв'язки",
+          "additional": "Додатково"
         },
-        "notesTitle": "Нотатки задачі"
+        "notesTitle": "Нотатки задачі",
+        "actions": {
+          "back": "Назад до задач"
+        },
+        "sections": {
+          "basic": "Основне",
+          "planning": "Планування",
+          "participants": "Учасники",
+          "relations": "Зв'язки",
+          "advanced": "Додатково / метадані",
+          "advancedSubtitle": "Системні поля та розширені налаштування",
+          "meta": "Метадані",
+          "danger": "Небезпечна зона",
+          "dangerSubtitle": "Незворотні дії"
+        },
+        "groups": {
+          "planned": "Планові дати",
+          "actual": "Фактичні дати"
+        },
+        "summary": {
+          "hasActualDates": "Фактичні дати задано",
+          "noActualDates": "Фактичні дати не задано",
+          "participantsAssigned": "Учасники призначені",
+          "noParticipants": "Немає виконавців і спостерігачів",
+          "unassigned": "Не призначено",
+          "noWatchers": "Немає",
+          "relationsAssigned": "Пов'язані записи вибрано"
+        },
+        "fields": {
+          "assignee": "Виконавець",
+          "taskId": "ID задачі",
+          "createdAt": "Створено",
+          "updatedAt": "Оновлено"
+        },
+        "placeholders": {
+          "addDate": "Додати дату"
+        },
+        "empty": {
+          "relations": "Пов'язаних записів немає"
+        },
+        "messages": {
+          "saved": "Збережено",
+          "saveFailed": "Не вдалося зберегти задачу"
+        },
+        "validation": {
+          "titleRequired": "Назва обов'язкова"
+        },
+        "description": {
+          "title": "Опис",
+          "placeholder": "Опишіть задачу: ціль, кроки, посилання, чек-лист...",
+          "emptyText": "Опис поки порожній. Натисніть «Редагувати», щоб додати опис."
+        },
+        "notes": {
+          "emptyTitle": "Нотаток немає",
+          "emptyText": "Додайте першу нотатку, щоб зберегти контекст.",
+          "addFirst": "Додати нотатку"
+        }
       },
       "sections": {
         "basic": "Основне",

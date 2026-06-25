@@ -200,6 +200,10 @@
   background: color-mix(in srgb, var(--danger) 20%, transparent);
 }
 
+.badgeDepartment {
+  background: color-mix(in srgb, var(--success, #22c55e) 18%, transparent);
+}
+
 .badgePinned {
   background: color-mix(in srgb, var(--warning, #c58a1e) 24%, transparent);
 }

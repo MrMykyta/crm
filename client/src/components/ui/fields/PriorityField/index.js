@@ -66,7 +66,7 @@ export default function PriorityField({
       size={size}
       float={float}
       isFilled={isFilled}
-      className={className}
+      className={cx(s.priorityField, className)}
     >
       <div onBlur={onBlur}>
         <PriorityInput

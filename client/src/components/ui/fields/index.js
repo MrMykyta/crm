@@ -28,6 +28,7 @@ export { default as DateField } from "./DateField";
 export { default as TimeField } from "./TimeField";
 export { default as DateTimeField } from "./DateTimeField";
 export { default as PriorityField } from "./PriorityField";
+export { default as VisibilityField } from "./VisibilityField";
 export { default as FileField } from "./FileField";
 export { default as CountryField } from "./CountryField";
 export { default as FormActions } from "./FormActions";

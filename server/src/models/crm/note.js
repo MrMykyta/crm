@@ -27,6 +27,10 @@ static associate(models) {
         foreignKey: 'authorUserId',
         as: 'author',
       });
+      Note.belongsTo(models.CompanyDepartment, {
+        foreignKey: { name: 'visibilityDepartmentId', field: 'visibility_department_id' },
+        as: 'visibilityDepartment',
+      });
     }
   }
 
@@ -68,9 +72,14 @@ static associate(models) {
         field: 'responsible_id',
       },
       visibility: {
-        type: DataTypes.ENUM('private', 'company'),
+        type: DataTypes.ENUM('private', 'company', 'department'),
         allowNull: false,
         defaultValue: 'company',
+      },
+      visibilityDepartmentId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        field: 'visibility_department_id',
       },
       content: {
         type: DataTypes.TEXT,
@@ -106,9 +115,15 @@ static associate(models) {
       underscored: true,
       paranoid: true,
       timestamps: true,
+      validate: {
+        visibilityDepartmentRequired() {
+          if (this.visibility === 'department' && !this.visibilityDepartmentId) {
+            throw new Error('visibilityDepartmentId is required when visibility is department');
+          }
+        },
+      },
     }
   );
 
   return Note;
 };
-

@@ -113,16 +113,20 @@ export default function WorkspaceTable({
                       onSort(column.key, nextDir);
                     }}
                   >
-                    <span className={s.columnHeaderLabel}>
-                      {labels.columnLabel ? labels.columnLabel(column) : column.fallbackLabel || column.key}
-                    </span>
-                    <span className={s.sortIndicator} aria-hidden="true">
-                      {String(sortKey || '') === String(column.key) ? (sortDir === 'ASC' ? '↑' : '↓') : '↕'}
+                    <span className={s.columnHeaderInner}>
+                      <span className={s.columnHeaderLabel}>
+                        {labels.columnLabel ? labels.columnLabel(column) : column.fallbackLabel || column.key}
+                      </span>
+                      <span className={s.sortIndicator} aria-hidden="true">
+                        {String(sortKey || '') === String(column.key) ? (sortDir === 'ASC' ? '↑' : '↓') : '↕'}
+                      </span>
                     </span>
                   </button>
                 ) : (
-                  <span className={s.columnHeaderLabel}>
-                    {labels.columnLabel ? labels.columnLabel(column) : column.fallbackLabel || column.key}
+                  <span className={s.columnHeaderInner}>
+                    <span className={s.columnHeaderLabel}>
+                      {labels.columnLabel ? labels.columnLabel(column) : column.fallbackLabel || column.key}
+                    </span>
                   </span>
                 )}
                 <span

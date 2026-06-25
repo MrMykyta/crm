@@ -25,6 +25,11 @@ static associate(models) {
         as: 'deal',
       });
 
+      Task.belongsTo(models.CompanyDepartment, {
+        foreignKey: { name: 'visibilityDepartmentId', field: 'visibility_department_id' },
+        as: 'visibilityDepartment',
+      });
+
       // пользователи-участники (исполнители/наблюдатели)
       Task.belongsToMany(models.User, {
         as: 'userParticipants',
@@ -83,6 +88,17 @@ get isAllDay() {
         allowNull: false,
         defaultValue: 50,
         validate: { min: 0, max: 100 },
+      },
+
+      visibility: {
+        type: DataTypes.ENUM('private', 'company', 'department'),
+        allowNull: false,
+        defaultValue: 'company',
+      },
+      visibilityDepartmentId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        field: 'visibility_department_id',
       },
 
       startAt:   { type: DataTypes.DATE, allowNull: true, field: 'start_at' },
@@ -172,6 +188,11 @@ actualEndAfterStart() {
           }
 
           if (!(end > start)) throw new Error('actualEndAt must be greater than actualStartAt');
+        },
+        visibilityDepartmentRequired() {
+          if (this.visibility === 'department' && !this.visibilityDepartmentId) {
+            throw new Error('visibilityDepartmentId is required when visibility is department');
+          }
         },
       },
     }

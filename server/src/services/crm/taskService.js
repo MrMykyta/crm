@@ -21,6 +21,7 @@ const LIMIT = 20;
 
 const STATUS_VALUES = ["todo", "in_progress", "done", "blocked", "canceled"];
 const MEMBER_STATUS_VALUES = STATUS_VALUES;
+const VISIBILITY_VALUES = ["private", "company", "department"];
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // normalizeBoolean: приводит значения к единому формату для сервиса.
@@ -261,6 +262,102 @@ function normalizeIds(value) {
   return [...new Set(ids)];
 }
 
+function normalizeVisibility(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return VISIBILITY_VALUES.includes(normalized) ? normalized : null;
+}
+
+function pushWhereAnd(where, condition) {
+  if (!condition) return where;
+  const existing = where[Op.and];
+  if (Array.isArray(existing)) {
+    where[Op.and] = [...existing, condition];
+  } else if (existing) {
+    where[Op.and] = [existing, condition];
+  } else {
+    where[Op.and] = [condition];
+  }
+  return where;
+}
+
+function isOwnerOrAdminRole(role) {
+  const normalized = String(role || "").trim().toLowerCase();
+  return normalized === "owner" || normalized === "admin";
+}
+
+async function resolveTaskAccessContext({ companyId, user }) {
+  const userId = user?.id || user?.userId || null;
+  if (!userId) {
+    const err = new Error("User context is required");
+    err.status = 401;
+    throw err;
+  }
+
+  const membership = await UserCompany.findOne({
+    where: { companyId, userId },
+    attributes: ["userId", "companyId", "role", "departmentId", "status"],
+    raw: true,
+  });
+
+  if (!membership) {
+    const err = new Error("Forbidden");
+    err.status = 403;
+    throw err;
+  }
+
+  return {
+    userId,
+    role: membership.role || user?.role || null,
+    departmentId: membership.departmentId || null,
+    bypassVisibility: isOwnerOrAdminRole(membership.role || user?.role),
+  };
+}
+
+function buildTaskVisibilityLiteral({ companyId, access, taskAlias = '"Task"' }) {
+  if (access?.bypassVisibility) return null;
+
+  const escapedCompanyId = Task.sequelize.escape(companyId);
+  const escapedUserId = Task.sequelize.escape(access.userId);
+  const escapedDepartmentId = access.departmentId
+    ? Task.sequelize.escape(access.departmentId)
+    : null;
+
+  const departmentSql = escapedDepartmentId
+    ? `(
+        ${taskAlias}.visibility = 'department'
+        AND ${taskAlias}.visibility_department_id = ${escapedDepartmentId}
+        AND EXISTS (
+          SELECT 1
+          FROM company_departments cd
+          WHERE cd.id = ${taskAlias}.visibility_department_id
+            AND cd.company_id = ${escapedCompanyId}
+            AND cd.is_active = true
+            AND cd.deleted_at IS NULL
+        )
+      )`
+    : "FALSE";
+
+  return Task.sequelize.literal(`(
+    ${taskAlias}.created_by = ${escapedUserId}
+    OR ${taskAlias}.visibility = 'company'
+    OR ${departmentSql}
+    OR EXISTS (
+      SELECT 1
+      FROM task_user_participants tup
+      WHERE tup.task_id = ${taskAlias}.id
+        AND tup.user_id = ${escapedUserId}
+    )
+  )`);
+}
+
+async function buildTaskVisibilityWhere({ companyId, user }) {
+  const access = await resolveTaskAccessContext({ companyId, user });
+  return {
+    access,
+    condition: buildTaskVisibilityLiteral({ companyId, access }),
+  };
+}
+
 // assertCounterpartyInCompany: выполняет вспомогательную бизнес-логику сервиса.
 async function assertCounterpartyInCompany(counterpartyId, companyId) {
   if (!counterpartyId) return;
@@ -325,6 +422,42 @@ async function assertDepartmentIdsInCompany(departmentIds, companyId) {
   }
 }
 
+async function assertVisibilityDepartmentInCompany(departmentId, companyId) {
+  if (!departmentId) {
+    const err = new Error("visibilityDepartmentId is required");
+    err.status = 400;
+    throw err;
+  }
+  const row = await CompanyDepartment.findOne({
+    where: { id: departmentId, companyId, isActive: true },
+    attributes: ["id"],
+  });
+  if (!row) {
+    const err = new Error("visibilityDepartmentId is invalid");
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function resolveVisibilityPatch(payload, companyId, existing = null) {
+  const hasVisibility = Object.prototype.hasOwnProperty.call(payload, "visibility");
+  const hasDepartment = Object.prototype.hasOwnProperty.call(payload, "visibilityDepartmentId");
+  const currentVisibility = existing?.visibility || "company";
+  const visibility = hasVisibility
+    ? (normalizeVisibility(payload.visibility) || "company")
+    : currentVisibility;
+
+  if (visibility === "department") {
+    const visibilityDepartmentId = hasDepartment
+      ? (payload.visibilityDepartmentId || null)
+      : (existing?.visibilityDepartmentId || null);
+    await assertVisibilityDepartmentInCompany(visibilityDepartmentId, companyId);
+    return { visibility, visibilityDepartmentId };
+  }
+
+  return { visibility, visibilityDepartmentId: null };
+}
+
 // assertMemberIdsInCompany: выполняет вспомогательную бизнес-логику сервиса.
 async function assertMemberIdsInCompany(userIds, companyId, label = "userIds") {
   const ids = normalizeIds(userIds);
@@ -358,6 +491,8 @@ function buildListWhere({ companyId, query }) {
   if (query.category) where.category = query.category;
   if (query.counterpartyId) where.counterpartyId = query.counterpartyId;
   if (query.dealId) where.dealId = query.dealId;
+  const visibility = normalizeVisibility(query.visibility);
+  if (visibility) where.visibility = visibility;
   const search = String(query.search || query.q || "").trim();
   if (search) where.title = { [Op.iLike]: `%${search}%` };
 
@@ -626,13 +761,18 @@ async function recomputeTaskStatusIfNeeded({ taskId, companyId }) {
 
 module.exports = {
   // ---------- LIST ----------
-  async list({ query, companyId /*, user*/ }) {
+  async list({ query, companyId, user }) {
     const cid = requireCompanyId(companyId);
     const { page, limit, offset } = parsePagination(query);
     if (query.counterpartyId)
       await assertCounterpartyInCompany(query.counterpartyId, cid);
     if (query.dealId) await assertDealInCompany(query.dealId, cid);
     const where = buildListWhere({ companyId: cid, query });
+    const { condition: visibilityCondition } = await buildTaskVisibilityWhere({
+      companyId: cid,
+      user,
+    });
+    pushWhereAnd(where, visibilityCondition);
     const order = parseListOrder(query);
 
     const count = await Task.count({
@@ -664,7 +804,7 @@ module.exports = {
   },
 
   // ---------- CALENDAR ----------
-  async listCalendar({ query, companyId /*, user*/ }) {
+  async listCalendar({ query, companyId, user }) {
     const cid = requireCompanyId(companyId);
     // обязательный диапазон
     const start = query.from ? new Date(query.from) : null;
@@ -683,6 +823,11 @@ module.exports = {
         { [Op.or]: [{ endAt: null }, { endAt: { [Op.gt]: start } }] },
       ],
     };
+    const { condition: visibilityCondition } = await buildTaskVisibilityWhere({
+      companyId: cid,
+      user,
+    });
+    pushWhereAnd(where, visibilityCondition);
 
     const items = await Task.findAll({
       where,
@@ -698,6 +843,8 @@ module.exports = {
         "priority",
         "category",
         "createdBy",
+        "visibility",
+        "visibilityDepartmentId",
       ],
       order: [
         ["startAt", "ASC"],
@@ -730,10 +877,16 @@ module.exports = {
   },
 
   // ---------- GET ----------
-  async getById({ id, companyId /*, user*/ }) {
+  async getById({ id, companyId, user }) {
     const cid = requireCompanyId(companyId);
+    const where = { id, companyId: cid };
+    const { condition: visibilityCondition } = await buildTaskVisibilityWhere({
+      companyId: cid,
+      user,
+    });
+    pushWhereAnd(where, visibilityCondition);
     const item = await Task.findOne({
-      where: { id, companyId: cid },
+      where,
       include: [
         {
           model: User,
@@ -870,6 +1023,7 @@ module.exports = {
       existingHasTime: true,
       label: "actualEndAt",
     });
+    const visibilityPatch = await resolveVisibilityPatch(payload, cid);
 
     validateRange({
       startValue: plannedStart.value,
@@ -902,6 +1056,8 @@ module.exports = {
       priority: Number.isInteger(payload.priority)
         ? Math.min(100, Math.max(0, payload.priority))
         : 50,
+      visibility: visibilityPatch.visibility,
+      visibilityDepartmentId: visibilityPatch.visibilityDepartmentId,
       startAt: plannedStart.value || null,
       endAt: plannedEnd.value || null,
       actualStartAt: actualStart.value || null,
@@ -967,13 +1123,19 @@ module.exports = {
       console.error("[taskService.create] notify error", e);
     }
 
-    return await this.getById({ id: task.id, companyId: cid });
+    return await this.getById({ id: task.id, companyId: cid, user });
   },
 
   // ---------- UPDATE ----------
   async update({ id, payload, companyId, user }) {
     const cid = requireCompanyId(companyId);
-    const task = await Task.findOne({ where: { id, companyId: cid } });
+    const where = { id, companyId: cid };
+    const { condition: visibilityCondition } = await buildTaskVisibilityWhere({
+      companyId: cid,
+      user,
+    });
+    pushWhereAnd(where, visibilityCondition);
+    const task = await Task.findOne({ where });
     if (!task) throw new Error("Task not found");
 
     const originalStatus = task.status; // запоминаем старый статус
@@ -1043,6 +1205,10 @@ module.exports = {
       existingHasTime: task.actualEndHasTime,
       label: "actualEndAt",
     });
+    const visibilityPatch =
+      payload.visibility !== undefined || payload.visibilityDepartmentId !== undefined
+        ? await resolveVisibilityPatch(payload, cid, task)
+        : null;
 
     validateRange({
       startValue: plannedStart.value,
@@ -1087,6 +1253,10 @@ module.exports = {
     if (payload.counterpartyId !== undefined)
       next.counterpartyId = payload.counterpartyId || null;
     if (payload.dealId !== undefined) next.dealId = payload.dealId || null;
+    if (visibilityPatch) {
+      next.visibility = visibilityPatch.visibility;
+      next.visibilityDepartmentId = visibilityPatch.visibilityDepartmentId;
+    }
 
     if (payload.status && STATUS_VALUES.includes(payload.status)) {
       next.status = payload.status;
@@ -1130,7 +1300,7 @@ module.exports = {
     await recomputeTaskStatusIfNeeded({ taskId: task.id, companyId: cid });
 
     try {
-      const updated = await this.getById({ id: task.id, companyId: cid });
+      const updated = await this.getById({ id: task.id, companyId: cid, user });
 
       // если статус поменяли — уведомим всех
       if (
@@ -1171,22 +1341,36 @@ module.exports = {
       return updated;
     } catch (e) {
       console.error("[taskService.update] notify error", e);
-      return await this.getById({ id: task.id, companyId: cid });
+      return await this.getById({ id: task.id, companyId: cid, user });
     }
   },
 
   // ---------- REMOVE (soft) ----------
-  async remove({ id, companyId }) {
+  async remove({ id, companyId, user }) {
     const cid = requireCompanyId(companyId);
-    const task = await Task.findOne({ where: { id, companyId: cid } });
+    const where = { id, companyId: cid };
+    const { condition: visibilityCondition } = await buildTaskVisibilityWhere({
+      companyId: cid,
+      user,
+    });
+    pushWhereAnd(where, visibilityCondition);
+    const task = await Task.findOne({ where });
     if (!task) throw new Error("Task not found");
     await task.destroy();
   },
 
   // ---------- RESTORE ----------
-  async restore({ id, companyId }) {
+  async restore({ id, companyId, user }) {
     const cid = requireCompanyId(companyId);
+    const where = { id, companyId: cid };
+    const { condition: visibilityCondition } = await buildTaskVisibilityWhere({
+      companyId: cid,
+      user,
+    });
+    pushWhereAnd(where, visibilityCondition);
+    const task = await Task.findOne({ where, paranoid: false });
+    if (!task) throw new Error("Task not found");
     await Task.restore({ where: { id, companyId: cid } });
-    return await this.getById({ id, companyId: cid });
+    return await this.getById({ id, companyId: cid, user });
   },
 };

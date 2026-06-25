@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import HtmlDescriptionSection from '../../../../../components/data/HtmlDescriptionSection';
 import { useUpdateTaskMutation } from '../../../../../store/rtk/tasksApi';
 
@@ -18,7 +19,8 @@ const normalizeHtml = (html = '') => {
 };
 
 // Компонент DescriptionForm: отвечает за отображение UI и обработку взаимодействий пользователя.
-export default function DescriptionForm({ taskId, initialHtml = '', onSaved }) {
+export default function DescriptionForm({ taskId, initialHtml = '', onSaved, className = '' }) {
+  const { t } = useTranslation();
   const [updateTask, { isLoading }] = useUpdateTaskMutation();
 
   const [value, setValue] = useState(initialHtml || '');
@@ -44,14 +46,14 @@ const save = async (nextHtml) => {
 
   return (
     <HtmlDescriptionSection
-      title="Описание"
+      title={t('crm.task.detail.description.title')}
+      className={className}
       value={value}
       onSave={save}
-      placeholder="Опишите задачу: цель, шаги, ссылки, чек-лист…"
-      emptyText="Описание пока пустое. Нажмите «Редактировать», чтобы добавить HTML-описание."
-      minHeight={320}
+      placeholder={t('crm.task.detail.description.placeholder')}
+      emptyText={t('crm.task.detail.description.emptyText')}
+      minHeight={180}
       editable={!isLoading}
     />
   );
 }
-

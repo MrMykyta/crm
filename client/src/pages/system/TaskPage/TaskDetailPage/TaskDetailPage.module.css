@@ -1,102 +1,349 @@
-.layout {
-  grid-template-columns: minmax(620px, 1.35fr) minmax(420px, 1fr);
-  gap: 18px;
-  height: 100%;
-  min-height: 0;
-}
-
-.leftPane {
-  padding: 16px;
-}
-
-.leftPane :global(.grid) {
-  gap: 14px;
-}
-
-.relatedPanel {
-  margin-bottom: 14px;
-  display: grid;
-  gap: 10px;
-  border: 1px solid color-mix(in srgb, var(--card-brd) 72%, transparent);
-  border-radius: 12px;
-  padding: 12px;
-  background: color-mix(in srgb, var(--card-bg) 90%, transparent);
-}
-
-.relatedBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.relatedLabel {
-  font-size: var(--font-size-12);
-  letter-spacing: 0.2px;
-  color: color-mix(in srgb, var(--muted) 86%, transparent);
-}
-
-.relatedEmpty {
-  font-size: var(--font-size-13);
-  color: color-mix(in srgb, var(--muted) 86%, transparent);
-}
-
-.entityChipList {
-  display: flex;
-  flex-wrap: wrap;
+.detailLayout {
+  min-width: 0;
   gap: 8px;
 }
 
-.entityChip {
-  height: 30px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
-  background: color-mix(in srgb, var(--card-bg) 95%, transparent);
-  color: color-mix(in srgb, var(--text) 92%, transparent);
+.detailLayout :global([class*="DetailLayout_bodyGrid"]) {
+  gap: 8px;
+}
+
+.detailLayout :global([class*="DetailLayout_card"]) {
+  border-radius: 14px;
+}
+
+.detailLayout :global([class*="DetailLayout_cardHeader"]) {
+  padding: 10px 12px 0;
+}
+
+.detailLayout :global([class*="DetailLayout_cardBody"]) {
+  padding: 10px 12px 12px;
+}
+
+.detailLayout :global([class*="DetailLayout_sectionToggle"]) {
+  min-height: 36px;
   padding: 0 12px;
-  font-size: var(--font-size-13);
+}
+
+.sidebar {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.formStack {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.field {
+  min-width: 0;
+}
+
+.twoColumn {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.descriptionSection {
+  border-color: color-mix(in srgb, var(--detail-border, var(--card-brd)) 88%, transparent);
+  background: var(--detail-surface);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  padding: 12px;
+  -webkit-backdrop-filter: blur(16px) saturate(1.04);
+  backdrop-filter: blur(16px) saturate(1.04);
+}
+
+.descriptionSection :global([class*="HtmlDescriptionSection_emptyState"]),
+.descriptionSection :global([class*="HtmlDescriptionSection_htmlView"]) {
+  min-height: 150px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 74%, transparent);
+}
+
+.descriptionSection :global([class*="HtmlDescriptionSection_headerRow"]) {
+  gap: 8px;
+}
+
+.descriptionSection :global([class*="HtmlDescriptionSection_ghostBtn"]),
+.descriptionSection :global([class*="HtmlDescriptionSection_primaryBtn"]) {
+  height: 30px;
+  padding: 0 11px;
+}
+
+.tabStack {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tabStack :global([class*="DetailLayout_card"]) {
+  border-color: color-mix(in srgb, var(--detail-border, var(--card-brd)) 90%, transparent);
+  background: color-mix(in srgb, var(--detail-surface, var(--card-bg)) 96%, #05070c 4%);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+.dateGroup {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 58%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 70%, transparent);
+  padding: 9px;
+}
+
+.groupLabel {
+  color: color-mix(in srgb, var(--muted) 88%, transparent);
+  font-size: var(--font-size-11);
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.datePickerField {
+  min-width: 0;
+}
+
+.dateControl {
+  min-height: 34px;
+}
+
+.inlineDetails {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 58%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 72%, transparent);
+  overflow: hidden;
+}
+
+.inlineDetails summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 34px;
+  padding: 0 10px;
+  color: color-mix(in srgb, var(--text) 90%, transparent);
+  cursor: pointer;
+  font-size: var(--font-size-12);
+  font-weight: 800;
+  list-style: none;
+}
+
+.inlineDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.inlineDetails summary em {
+  min-width: 0;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--muted) 88%, transparent);
+  font-size: var(--font-size-11);
+  font-style: normal;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inlineDetails[open] {
+  padding-bottom: 8px;
+}
+
+.inlineDetails[open] .twoColumn {
+  padding: 0 8px;
+}
+
+.compactSummary {
+  display: grid;
+  grid-template-columns: minmax(84px, auto) minmax(0, 1fr);
+  gap: 5px 10px;
+  border: 1px dashed color-mix(in srgb, var(--detail-border, var(--card-brd)) 62%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 58%, transparent);
+  padding: 8px 9px;
+  color: color-mix(in srgb, var(--muted) 90%, transparent);
+  font-size: var(--font-size-12);
+}
+
+.compactSummary strong {
+  min-width: 0;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--text) 92%, transparent);
+  font-size: var(--font-size-12);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emptyInline {
+  border: 1px dashed color-mix(in srgb, var(--detail-border, var(--card-brd)) 64%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 56%, transparent);
+  color: color-mix(in srgb, var(--muted) 92%, transparent);
+  font-size: var(--font-size-12);
+  font-weight: 650;
+  line-height: 1.35;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+}
+
+.visibilityCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 58%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 72%, transparent);
+  padding: 10px;
+}
+
+.visibilityCopy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.visibilityCopy span {
+  color: color-mix(in srgb, var(--muted) 90%, transparent);
+  font-size: var(--font-size-12);
+  font-weight: 700;
+}
+
+.visibilityChip {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  min-height: 26px;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 76%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--detail-surface, var(--card-bg)) 86%, transparent);
+  padding: 0 10px;
+  color: color-mix(in srgb, var(--text) 94%, transparent);
+  font-size: var(--font-size-12);
+  font-weight: 760;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visibility_private {
+  border-color: color-mix(in srgb, var(--warning, #f59e0b) 34%, transparent);
+  background: color-mix(in srgb, var(--warning, #f59e0b) 13%, var(--detail-surface, var(--card-bg)));
+}
+
+.visibility_company {
+  border-color: color-mix(in srgb, #67c7ff 30%, transparent);
+  background: color-mix(in srgb, #2679c8 14%, var(--detail-surface, var(--card-bg)));
+}
+
+.visibility_department {
+  border-color: color-mix(in srgb, var(--success, #22c55e) 34%, transparent);
+  background: color-mix(in srgb, var(--success, #22c55e) 12%, var(--detail-surface, var(--card-bg)));
+}
+
+.visibilityControl {
+  flex: 0 1 260px;
+  width: min(260px, 100%);
+}
+
+.visibilitySelect {
+  min-height: 34px;
+}
+
+.visibilityDepartment {
+  margin-top: 6px;
+}
+
+.compactCheckbox {
+  margin: 0;
+}
+
+.statusAggregateRow {
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 54%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 60%, transparent);
+  margin: 0;
+  padding: 8px 10px;
+}
+
+.relationChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.entityChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  max-width: 100%;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 78%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 92%, transparent);
+  color: color-mix(in srgb, var(--text) 92%, transparent);
+  padding: 0 11px;
+  font: inherit;
+  font-size: var(--font-size-12);
+  font-weight: 700;
+  text-decoration: none;
   cursor: pointer;
   transition: border-color .15s ease, background .15s ease, transform .06s ease;
 }
 
 .entityChip:hover {
-  border-color: color-mix(in srgb, var(--focus) 66%, transparent);
-  background: color-mix(in srgb, var(--sidebar-hover) 66%, transparent);
+  border-color: color-mix(in srgb, var(--focus) 58%, var(--detail-border, var(--card-brd)));
+  background: color-mix(in srgb, var(--focus) 10%, var(--detail-surface-soft, var(--card-bg)));
 }
 
 .entityChip:active {
   transform: translateY(1px);
 }
 
-.rightPane {
-  padding: 12px;
-  gap: 12px;
+.metaRows {
+  display: grid;
+  grid-template-columns: minmax(86px, auto) minmax(0, 1fr);
+  gap: 6px 12px;
+  align-items: baseline;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 48%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 60%, transparent);
+  color: color-mix(in srgb, var(--text) 90%, transparent);
+  font-size: var(--font-size-13);
+  padding: 10px;
+}
+
+.metaRows span {
+  color: color-mix(in srgb, var(--muted) 88%, transparent);
+  font-size: var(--font-size-12);
+  font-weight: 700;
+}
+
+.metaRows strong {
+  min-width: 0;
   overflow: hidden;
-}
-
-.tabsArea {
-  top: 0;
-  margin: 0;
-}
-
-.panel {
-  flex: 1 1 auto;
-  min-height: 0;
-  width: 100%;
-  padding: 0;
-  gap: 0;
-  background: color-mix(in srgb, var(--card-bg) 72%, #000 28%);
+  color: color-mix(in srgb, var(--text) 94%, transparent);
+  font-size: var(--font-size-13);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dangerZone {
-  margin-top: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--card-brd));
+  border: 1px solid color-mix(in srgb, var(--danger) 18%, var(--detail-border, var(--card-brd)));
   border-radius: 12px;
-  padding: 12px;
-  background: color-mix(in srgb, var(--danger-weak, transparent) 36%, var(--card-bg) 64%);
+  background: color-mix(in srgb, var(--danger-weak, transparent) 10%, var(--detail-surface-soft, var(--card-bg)) 90%);
+  padding: 10px;
 }
 
 .dangerZone strong {
@@ -115,13 +362,15 @@
 
 .deleteButton {
   flex: 0 0 auto;
-  min-height: 32px;
+  min-height: 30px;
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, transparent);
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--danger) 42%, transparent);
-  background: color-mix(in srgb, var(--danger-weak, transparent) 52%, var(--card-bg) 48%);
+  background: color-mix(in srgb, var(--danger-weak, transparent) 28%, var(--card-bg) 72%);
   color: var(--danger);
-  padding: 0 12px;
-  font-size: var(--font-size-13);
+  padding: 0 11px;
+  font: inherit;
+  font-size: var(--font-size-12);
+  font-weight: 760;
   cursor: pointer;
 }
 
@@ -131,8 +380,8 @@
 }
 
 .deleteButton:disabled {
-  opacity: 0.55;
   cursor: default;
+  opacity: 0.55;
 }
 
 .deleteError {
@@ -141,28 +390,90 @@
   font-size: var(--font-size-13);
 }
 
-@media (max-width: 1260px) {
-  .layout {
+.notesCompact {
+  min-width: 0;
+}
+
+.notesCompact :global([class*="EntityNotesSection_wrap"]) {
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 88%, transparent);
+  border-radius: 14px;
+  background: var(--detail-surface);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  padding: 12px;
+  -webkit-backdrop-filter: blur(16px) saturate(1.04);
+  backdrop-filter: blur(16px) saturate(1.04);
+}
+
+.notesCompact :global([class*="EntityNotesSection_headerRow"]) {
+  align-items: center;
+}
+
+.notesCompact :global([class*="EntityNotesSection_title"]) {
+  font-size: var(--font-size-14);
+}
+
+.notesCompact :global([class*="EntityNotesSection_headerActions"]) {
+  gap: 6px;
+}
+
+.notesCompact :global([class*="EntityNotesSection_filters"]) {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, auto) minmax(150px, auto);
+  gap: 8px;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 58%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 70%, transparent);
+  padding: 8px;
+}
+
+.notesCompact :global([class*="EntityNotesSection_card"]),
+.notesCompact :global([class*="EntityNotesSection_composerCard"]) {
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 58%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 74%, transparent);
+  padding: 10px;
+  box-shadow: none;
+}
+
+.notesCompact :global([class*="EntityNotesSection_empty"]) {
+  border: 1px dashed color-mix(in srgb, var(--detail-border, var(--card-brd)) 58%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 68%, transparent);
+  padding: 20px;
+}
+
+.notesCompact :global([class*="EntityNotesSection_pager"]) {
+  padding-top: 2px;
+}
+
+@media (max-width: 980px) {
+  .twoColumn {
     grid-template-columns: minmax(0, 1fr);
-    height: auto;
   }
 
-  .rightPane {
-    min-height: 520px;
+  .notesCompact :global([class*="EntityNotesSection_filters"]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .visibilityCard {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .visibilityControl {
+    width: 100%;
   }
 }
 
 @media (max-width: 760px) {
-  .leftPane {
-    padding: 12px;
-  }
-
-  .rightPane {
-    padding: 10px;
-  }
-
   .dangerZone {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .deleteButton {
+    width: 100%;
   }
 }

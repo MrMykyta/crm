@@ -1,4 +1,5 @@
 export const TASK_STATUS = ['todo', 'in_progress', 'done', 'blocked', 'canceled'];
+export const TASK_VISIBILITY = ['private', 'company', 'department'];
 
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -179,6 +180,8 @@ export function toFormTask(data = {}) {
       : '',
 
     statusAggregate: !!data.statusAggregate,
+    visibility: TASK_VISIBILITY.includes(data.visibility) ? data.visibility : 'company',
+    visibilityDepartmentId: data.visibilityDepartmentId ?? data.visibility_department_id ?? null,
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
   };
@@ -224,6 +227,8 @@ export function toApiTask(values = {}) {
     counterpartyId: values.counterpartyId || null,
     dealId: values.dealId || null,
     statusAggregate: !!values.statusAggregate,
+    visibility: TASK_VISIBILITY.includes(values.visibility) ? values.visibility : 'company',
+    visibilityDepartmentId: values.visibility === 'department' ? (values.visibilityDepartmentId || null) : null,
   };
 }
 
@@ -364,5 +369,4 @@ options: () => dealOptions, cols: 2 },
     },
   ];
 }
-
 

@@ -4,6 +4,10 @@
   min-width: 0;
 }
 
+.compact {
+  gap: 0.625rem;
+}
+
 .headerRow {
   display: flex;
   align-items: center;
@@ -22,6 +26,14 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+.compact .headerRow {
+  padding-bottom: 2px;
+}
+
+.compact .headerActions {
+  gap: 6px;
 }
 
 .filters {
@@ -85,11 +97,28 @@
   gap: var(--space-2);
 }
 
+.compact .list {
+  gap: 8px;
+}
+
+.compact .card {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  border-color: color-mix(in srgb, var(--card-brd) 72%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 94%, #05070c 6%);
+  padding: 10px 12px;
+}
+
 .cardTop {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-2);
+}
+
+.compact .cardTop {
+  align-items: center;
 }
 
 .badges {
@@ -111,6 +140,21 @@
   background: color-mix(in srgb, var(--input-bg) 86%, transparent);
 }
 
+.badgeCompany {
+  border-color: color-mix(in srgb, var(--info, #60a5fa) 32%, var(--card-brd));
+  background: color-mix(in srgb, var(--info, #60a5fa) 12%, var(--input-bg));
+}
+
+.badgePrivate {
+  border-color: color-mix(in srgb, var(--warning, #f59e0b) 34%, var(--card-brd));
+  background: color-mix(in srgb, var(--warning, #f59e0b) 13%, var(--input-bg));
+}
+
+.badgeDepartment {
+  border-color: color-mix(in srgb, var(--success, #22c55e) 34%, var(--card-brd));
+  background: color-mix(in srgb, var(--success, #22c55e) 12%, var(--input-bg));
+}
+
 .badgePinned {
   background: color-mix(in srgb, var(--primary-start) 26%, transparent);
 }
@@ -118,6 +162,12 @@
 .content {
   white-space: pre-wrap;
   line-height: var(--lh-normal);
+}
+
+.compact .content {
+  color: color-mix(in srgb, var(--text) 94%, transparent);
+  font-size: var(--font-size-13, var(--fs-sm));
+  line-height: 1.45;
 }
 
 .meta {
@@ -134,6 +184,10 @@
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
+}
+
+.compact .rowActions {
+  gap: 4px;
 }
 
 .link,
@@ -155,6 +209,29 @@
   text-decoration: underline;
   text-underline-offset: 2px;
   -webkit-tap-highlight-color: transparent;
+}
+
+.compact .link,
+.compact .linkDanger {
+  min-height: 26px !important;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent) !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--input-bg) 72%, transparent) !important;
+  padding: 0 8px !important;
+  color: color-mix(in srgb, var(--text) 86%, transparent);
+  font-size: var(--font-size-12, var(--fs-xs));
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.compact .linkDanger {
+  color: color-mix(in srgb, var(--danger) 86%, var(--text));
+}
+
+.compact .link:hover,
+.compact .linkDanger:hover {
+  border-color: color-mix(in srgb, var(--focus) 42%, var(--card-brd)) !important;
+  background: color-mix(in srgb, var(--focus) 8%, var(--input-bg)) !important;
 }
 
 .link {
@@ -225,10 +302,24 @@
   padding: var(--space-3);
 }
 
+.composerHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
 .composerTitle {
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
   color: var(--text);
+}
+
+.composerHeader p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: var(--font-size-12, var(--fs-xs));
+  line-height: 1.35;
 }
 
 .composerActions {
@@ -267,11 +358,66 @@
 }
 
 .empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.375rem;
   border: 1px dashed var(--card-brd);
   border-radius: var(--radius-md);
   padding: var(--space-4);
   text-align: center;
   color: var(--muted);
+}
+
+.empty strong {
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.empty span {
+  max-width: 24rem;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+}
+
+.compact .headerRow {
+  align-items: center;
+}
+
+.compact .title {
+  font-size: var(--fs-md);
+}
+
+.compact .filters {
+  border: 1px solid color-mix(in srgb, var(--card-brd) 70%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--input-bg) 76%, transparent);
+  padding: 0.5rem;
+}
+
+.compactFilters {
+  gap: 6px;
+}
+
+.compact .card,
+.compact .composerCard {
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+  padding: 0.625rem;
+}
+
+.compact .content {
+  font-size: var(--fs-sm);
+}
+
+.compact .empty {
+  min-height: 8.5rem;
+  padding: 1.375rem;
+}
+
+.compact .pager {
+  padding-top: 0;
 }
 
 .error {
@@ -282,6 +428,29 @@
   color: var(--danger);
 }
 
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  background: rgba(3, 6, 12, 0.52);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  padding: 24px;
+}
+
+.modalCard {
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 88%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card-bg) 96%, #05070c 4%);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  padding: 16px;
+}
+
 @media (max-width: 820px) {
   .row2 {
     grid-template-columns: 1fr;
@@ -289,5 +458,16 @@
 
   .input {
     max-width: 100%;
+  }
+
+  .modalOverlay {
+    align-items: end;
+    padding: 12px;
+  }
+
+  .modalCard {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    border-radius: 16px 16px 10px 10px;
   }
 }

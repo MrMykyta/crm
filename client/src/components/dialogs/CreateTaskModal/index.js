@@ -5,12 +5,14 @@ import s from "../../../pages/styles/CrmUsers.module.css";
 import dt from "./CreateTaskModal.module.css";
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from "../../../config/taskOptions";
 import { useListCompanyUsersQuery } from "../../../store/rtk/companyUsersApi";
+import { useListDepartmentsQuery } from "../../../store/rtk/departmentsApi";
 import {
   DatePickerField,
   SelectField,
   TextField,
   TextareaField,
   TimePickerField,
+  VisibilityField,
 } from "../../ui/fields";
 
 const TIME_STEP_MINUTES = 15;
@@ -121,6 +123,8 @@ function buildInitialForm(initialValues = {}) {
     endTime: schedule.endTime,
     startAt: initialValues.startAt || "",
     endAt: initialValues.endAt || "",
+    visibility: initialValues.visibility || "company",
+    visibilityDepartmentId: initialValues.visibilityDepartmentId || initialValues.visibility_department_id || "",
   };
 }
 
@@ -154,6 +158,7 @@ export default function CreateTaskModal({ onSubmit, onClose, currentUser, initia
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState("");
   const [titleError, setTitleError] = useState("");
+  const [visibilityError, setVisibilityError] = useState("");
   const [scheduleErrorKey, setScheduleErrorKey] = useState(() => getScheduleErrorKey(buildInitialForm(initialValues)));
   const { data: usersData, isLoading: usersLoading } = useListCompanyUsersQuery({
     page: 1,
@@ -161,6 +166,7 @@ export default function CreateTaskModal({ onSubmit, onClose, currentUser, initia
     sort: "lastName",
     dir: "ASC",
   });
+  const { data: departmentsData } = useListDepartmentsQuery({ limit: 100 });
 
     // change: вспомогательная логика компонента.
 const change = (k, v) => {
@@ -171,6 +177,9 @@ const change = (k, v) => {
     }
     if (["planOpen", "isAllDay", "eventDate", "startTime", "endTime"].includes(k)) {
       setScheduleErrorKey(getScheduleErrorKey(next));
+    }
+    if (["visibility", "visibilityDepartmentId"].includes(k)) {
+      setVisibilityError("");
     }
   };
 
@@ -215,6 +224,19 @@ const change = (k, v) => {
 
     return [{ value: "", label: t("crm.task.placeholders.noAssignee") }, ...options];
   }, [currentUser, t, usersData]);
+  const departments = useMemo(
+    () => (Array.isArray(departmentsData) ? departmentsData : []),
+    [departmentsData]
+  );
+
+  const updateVisibility = ({ visibility, visibilityDepartmentId }) => {
+    setForm((prev) => ({
+      ...prev,
+      visibility: visibility || "company",
+      visibilityDepartmentId: visibility === "department" ? (visibilityDepartmentId || "") : "",
+    }));
+    setVisibilityError("");
+  };
 
     // validateTitle: валидирует введённые данные.
 const validateTitle = (v) => {
@@ -236,7 +258,12 @@ const buildPayload = () => {
       counterpartyId: form.counterpartyId || null,
       dealId: form.dealId || null,
       participantMode: "none",
+      visibility: form.visibility || "company",
     };
+
+    if (form.visibility === "department") {
+      payload.visibilityDepartmentId = form.visibilityDepartmentId || null;
+    }
 
     if (assigneeId) {
       payload.assigneeIds = [assigneeId];
@@ -281,6 +308,10 @@ const submit = async (e) => {
     const okTitle = validateTitle(form.title);
     const nextScheduleErrorKey = getScheduleErrorKey(form);
     setScheduleErrorKey(nextScheduleErrorKey);
+    if (form.visibility === "department" && !form.visibilityDepartmentId) {
+      setVisibilityError(t("visibility.departmentRequired"));
+      return;
+    }
     if (!okTitle || nextScheduleErrorKey) return;
     if (busy) return;
 
@@ -441,6 +472,17 @@ const submit = async (e) => {
             disabled={busy}
           />
         </div>
+
+        <VisibilityField
+          className={s.label}
+          inputClassName={`${s.select} ${s.taskSelect}`}
+          value={form.visibility}
+          departmentId={form.visibilityDepartmentId}
+          departments={departments}
+          onChange={updateVisibility}
+          error={visibilityError}
+          disabled={busy}
+        />
 
         <TextField
           className={s.label}

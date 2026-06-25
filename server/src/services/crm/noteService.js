@@ -83,7 +83,7 @@ function normalizeDir(value) {
 function normalizeVisibility(value) {
   if (!value) return undefined;
   const v = String(value).trim();
-  if (v === 'private' || v === 'company') return v;
+  if (v === 'private' || v === 'company' || v === 'department') return v;
   return undefined;
 }
 
@@ -543,17 +543,44 @@ const softDeleteIsNull = (alias) =>
   )`;
 }
 
+// buildDepartmentVisibilityAccessSql: limits department visibility by user's active department and owner access.
+function buildDepartmentVisibilityAccessSql(noteAlias, escapedCompanyId, escapedUserId) {
+  const n = noteAlias;
+  const cid = escapedCompanyId;
+  const uid = escapedUserId;
+  const companySql = buildCompanyVisibilityAccessSql(noteAlias, escapedCompanyId, escapedUserId);
+
+  return `(
+    ${n}.visibility = 'department'
+    AND ${n}.visibility_department_id IS NOT NULL
+    AND EXISTS (
+      SELECT 1
+      FROM user_companies uc
+      JOIN company_departments cd ON cd.id = uc.department_id
+      WHERE uc.user_id = ${uid}
+        AND uc.company_id = ${cid}
+        AND uc.status = 'active'
+        AND uc.deleted_at IS NULL
+        AND cd.company_id = ${cid}
+        AND cd.is_active = true
+        AND cd.deleted_at IS NULL
+        AND uc.department_id = ${n}.visibility_department_id
+    )
+    AND ${companySql}
+  )`;
+}
+
 // buildNoteAccessLiteral: собирает служебную структуру для выполнения запроса.
 function buildNoteAccessLiteral({ companyId, userId, noteAlias = '"Note"' }) {
   const escapedCompanyId = Note.sequelize.escape(companyId);
   const escapedUserId = Note.sequelize.escape(userId);
-  const relatedSql = buildRelatedEntityAccessSql(noteAlias, escapedCompanyId, escapedUserId);
   const companySql = buildCompanyVisibilityAccessSql(noteAlias, escapedCompanyId, escapedUserId);
+  const departmentSql = buildDepartmentVisibilityAccessSql(noteAlias, escapedCompanyId, escapedUserId);
 
   return literal(`(
     ${noteAlias}.created_by = ${escapedUserId}
-    OR ${relatedSql}
     OR (${noteAlias}.visibility = 'company' AND ${companySql})
+    OR ${departmentSql}
   )`);
 }
 
@@ -620,6 +647,47 @@ async function assertOwnerInCompany({ companyId, ownerType, ownerId }) {
     err.status = 400;
     throw err;
   }
+}
+
+async function assertVisibilityDepartmentInCompany({ companyId, departmentId }) {
+  if (!departmentId) {
+    const err = new Error('visibilityDepartmentId is required');
+    err.status = 400;
+    throw err;
+  }
+
+  const row = await CompanyDepartment.findOne({
+    where: {
+      id: departmentId,
+      companyId,
+      isActive: true,
+    },
+    attributes: ['id'],
+  });
+
+  if (!row) {
+    const err = new Error('visibilityDepartmentId is invalid');
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function resolveVisibilityPatch({ companyId, payload = {}, existing = null }) {
+  const hasVisibility = Object.prototype.hasOwnProperty.call(payload, 'visibility');
+  const hasDepartment = Object.prototype.hasOwnProperty.call(payload, 'visibilityDepartmentId');
+  const visibility = hasVisibility
+    ? (normalizeVisibility(payload.visibility) || 'company')
+    : (existing?.visibility || 'company');
+
+  if (visibility === 'department') {
+    const visibilityDepartmentId = hasDepartment
+      ? (payload.visibilityDepartmentId || null)
+      : (existing?.visibilityDepartmentId || null);
+    await assertVisibilityDepartmentInCompany({ companyId, departmentId: visibilityDepartmentId });
+    return { visibility, visibilityDepartmentId };
+  }
+
+  return { visibility, visibilityDepartmentId: null };
 }
 
 // hasRelatedEntityAccess: проверяет наличие данных и возвращает результат проверки.
@@ -1171,7 +1239,7 @@ async create({ companyId, userId, payload = {} }) {
 
     const ownerType = normalizeOwnerType(payload.ownerType);
     const ownerId = payload.ownerId;
-    const visibility = normalizeVisibility(payload.visibility) || 'company';
+    const visibilityPatch = await resolveVisibilityPatch({ companyId: cid, payload });
 
     if (!ownerType || !ownerId) {
       const err = new Error('ownerType and ownerId are required');
@@ -1187,7 +1255,8 @@ async create({ companyId, userId, payload = {} }) {
       authorUserId: userId,
       ownerType,
       ownerId,
-      visibility,
+      visibility: visibilityPatch.visibility,
+      visibilityDepartmentId: visibilityPatch.visibilityDepartmentId,
       content: String(payload.content || '').trim(),
       pinned: Boolean(payload.pinned),
       updatedBy: userId,
@@ -1214,7 +1283,10 @@ async update({ id, companyId, user, payload = {} }) {
 
     const nextOwnerType = normalizeOwnerType(payload.ownerType) || note.ownerType;
     const nextOwnerId = payload.ownerId || note.ownerId;
-    const nextVisibility = normalizeVisibility(payload.visibility) || note.visibility;
+    const visibilityPatch =
+      payload.visibility !== undefined || payload.visibilityDepartmentId !== undefined
+        ? await resolveVisibilityPatch({ companyId: cid, payload, existing: note })
+        : null;
 
     await assertOwnerInCompany({ companyId: cid, ownerType: nextOwnerType, ownerId: nextOwnerId });
     await assertUserCanReadOwner({
@@ -1226,7 +1298,10 @@ async update({ id, companyId, user, payload = {} }) {
 
     const patch = { updatedBy: userId };
     if (payload.content !== undefined) patch.content = String(payload.content).trim();
-    if (payload.visibility !== undefined) patch.visibility = nextVisibility;
+    if (visibilityPatch) {
+      patch.visibility = visibilityPatch.visibility;
+      patch.visibilityDepartmentId = visibilityPatch.visibilityDepartmentId;
+    }
     if (payload.pinned !== undefined) patch.pinned = Boolean(payload.pinned);
     if (payload.ownerType !== undefined) patch.ownerType = nextOwnerType;
     if (payload.ownerId !== undefined) patch.ownerId = nextOwnerId;

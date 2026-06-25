@@ -121,7 +121,26 @@
     "yes": "Да",
     "no": "Нет",
     "all": "Все",
-    "refresh": "Обновить"
+    "refresh": "Обновить",
+    "hide": "Скрыть"
+  },
+  "visibility": {
+    "label": "Видимость",
+    "filterLabel": "Видимость",
+    "all": "Все доступные",
+    "private": "Личная",
+    "company": "Компания",
+    "department": "Отдел",
+    "change": "Изменить",
+    "taskHint": "Кто может видеть эту задачу",
+    "departmentSelect": "Отдел",
+    "departmentRequired": "Выберите отдел.",
+    "noDepartment": "Видимость отдела недоступна, пока нет отдела.",
+    "tooltip": {
+      "private": "Видно только вам и явно назначенным участникам.",
+      "company": "Видно пользователям компании с доступом.",
+      "department": "Видно участникам выбранного отдела."
+    }
   },
   "productPicker": {
     "placeholder": "Поиск по товару, варианту, SKU, штрихкоду, EAN или внешнему коду",
@@ -423,6 +442,7 @@
     "contacts": "Контактные лица",
     "contactsperson": "Контактные лица",
     "calendar": "Календарь",
+    "chat": "Чат",
     "oms": "OMS",
     "invoices": "Счета",
     "receipts": "Квитанции",
@@ -1943,7 +1963,8 @@
     },
     "visibility": {
       "company": "Компания",
-      "private": "Личная"
+      "private": "Личная",
+      "department": "Отдел"
     },
     "values": {
       "yes": "Да",
@@ -1967,7 +1988,12 @@
     },
     "modal": {
       "createTitle": "Новая заметка",
-      "editTitle": "Редактировать заметку"
+      "editTitle": "Редактировать заметку",
+      "subtitle": "Сохраните контекст задачи для команды."
+    },
+    "confirm": {
+      "deleteTitle": "Удалить заметку?",
+      "deleteText": "Это действие нельзя отменить."
     },
     "messages": {
       "typeToSearch": "Начните вводить название",
@@ -2214,11 +2240,74 @@
         "deleteText": "Это действие нельзя отменить."
       },
       "detail": {
+        "untitled": "Задача без названия",
+        "subtitle": "{{status}} · Ответственные: {{assignees}}",
+        "priorityValue": "Приоритет {{value}}",
         "tabs": {
+          "overview": "Описание",
           "description": "Описание",
-          "notes": "Заметки"
+          "notes": "Заметки",
+          "participants": "Участники",
+          "relations": "Связи",
+          "additional": "Дополнительно"
         },
-        "notesTitle": "Заметки задачи"
+        "notesTitle": "Заметки задачи",
+        "actions": {
+          "back": "Назад к задачам"
+        },
+        "sections": {
+          "basic": "Основное",
+          "planning": "Планирование",
+          "participants": "Участники",
+          "relations": "Связи",
+          "advanced": "Дополнительно / метаданные",
+          "advancedSubtitle": "Системные поля и расширенные настройки",
+          "meta": "Метаданные",
+          "danger": "Опасная зона",
+          "dangerSubtitle": "Необратимые действия"
+        },
+        "groups": {
+          "planned": "Плановые даты",
+          "actual": "Фактические даты"
+        },
+        "summary": {
+          "hasActualDates": "Фактические даты заданы",
+          "noActualDates": "Фактические даты не заданы",
+          "participantsAssigned": "Участники назначены",
+          "noParticipants": "Нет исполнителей и наблюдателей",
+          "unassigned": "Не назначен",
+          "noWatchers": "Нет",
+          "relationsAssigned": "Связанные записи выбраны"
+        },
+        "fields": {
+          "assignee": "Исполнитель",
+          "taskId": "ID задачи",
+          "createdAt": "Создано",
+          "updatedAt": "Обновлено"
+        },
+        "placeholders": {
+          "addDate": "Добавить дату"
+        },
+        "empty": {
+          "relations": "Связанных записей нет"
+        },
+        "messages": {
+          "saved": "Сохранено",
+          "saveFailed": "Не удалось сохранить задачу"
+        },
+        "validation": {
+          "titleRequired": "Название обязательно"
+        },
+        "description": {
+          "title": "Описание",
+          "placeholder": "Опишите задачу: цель, шаги, ссылки, чек-лист...",
+          "emptyText": "Описание пока пустое. Нажмите «Редактировать», чтобы добавить описание."
+        },
+        "notes": {
+          "emptyTitle": "Заметок нет",
+          "emptyText": "Добавьте первую заметку, чтобы сохранить контекст.",
+          "addFirst": "Добавить заметку"
+        }
       },
       "sections": {
         "basic": "Основное",

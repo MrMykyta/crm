@@ -18,6 +18,8 @@
     "smoke:acl:role-templates": "node scripts/smokeRoleTemplates.js",
     "smoke:acl:role-lifecycle": "node scripts/smokeRoleLifecycle.js",
     "smoke:iam:guardrails": "node scripts/smokeIamGuardrails.js",
+    "smoke:tasks:visibility": "node scripts/smokeTasksVisibility.js",
+    "smoke:notes:visibility": "node scripts/smokeNotesVisibility.js",
     "smoke:departments:directory": "node scripts/smokeDepartmentsDirectory.js",
     "smoke:dept:counterparties": "node scripts/smokeDeptCounterparties.js",
     "smoke:dept:counterparty-backfill": "node scripts/smokeCounterpartyDepartmentBackfill.js",

@@ -2,6 +2,9 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import styles from './MultiSelectDropdown.module.css';
 
+const VIEWPORT_MARGIN = 8;
+const MENU_MIN_WIDTH = 280;
+
 /**
  * MultiSelectDropdown
  * props:
@@ -48,10 +51,6 @@ export default function MultiSelectDropdown({
   React.useEffect(() => {
     onOpenChangeRef.current?.(open);
   }, [open]);
-
-  const toggle = React.useCallback(() => {
-    if (!disabled) setOpen(o => !o);
-  }, [disabled]);
 
   const map = React.useMemo(() => {
     const m = new Map();
@@ -144,17 +143,40 @@ const toggleItem = (val) => {
     if (!el) return;
     const r = el.getBoundingClientRect();
     const vh = window.innerHeight || document.documentElement.clientHeight;
+    const vw = window.innerWidth || document.documentElement.clientWidth;
     const spaceBelow = vh - r.bottom;
-    const placeAbove = spaceBelow < 220;
-    setPos({ top: placeAbove ? r.top : r.bottom, left: r.left, width: r.width, placeAbove });
-  }, []);
+    const spaceAbove = r.top;
+    const panelHeight = Math.min(menuMaxHeight, 360);
+    const fieldBelowMiddle = (r.top + (r.height / 2)) > (vh / 2);
+    const hasRoomAbove = spaceAbove >= panelHeight + 12;
+    const hasRoomBelow = spaceBelow >= panelHeight + 12;
+    const placeAbove = (fieldBelowMiddle && hasRoomAbove) || (!hasRoomBelow && hasRoomAbove);
+    const width = Math.min(
+      Math.max(r.width, MENU_MIN_WIDTH),
+      Math.max(MENU_MIN_WIDTH, vw - (VIEWPORT_MARGIN * 2))
+    );
+    const left = Math.min(
+      Math.max(VIEWPORT_MARGIN, r.left),
+      Math.max(VIEWPORT_MARGIN, vw - width - VIEWPORT_MARGIN)
+    );
+    setPos({ top: placeAbove ? r.top : r.bottom, left, width, placeAbove });
+  }, [menuMaxHeight]);
+
+  const toggle = React.useCallback(() => {
+    if (disabled) return;
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    computePosition();
+    setOpen(true);
+  }, [computePosition, disabled, open]);
 
   React.useEffect(() => {
     if (!open) return;
     computePosition();
 
-        // onDoc: вспомогательная логика компонента.
-const onDoc = (e) => {
+    const onDoc = (e) => {
       const menu = document.getElementById(portalId.current);
       const insideTrigger = trigRef.current && trigRef.current.contains(e.target);
       const insideMenu = menu && menu.contains(e.target);
@@ -165,7 +187,7 @@ const onScroll = () => computePosition();
         // onResize: вспомогательная логика компонента.
 const onResize = () => computePosition();
 
-    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('pointerdown', onDoc, true);
     window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', onResize);
 
@@ -173,7 +195,7 @@ const onResize = () => computePosition();
 
     return () => {
       clearTimeout(id);
-      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('pointerdown', onDoc, true);
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onResize);
     };
@@ -209,6 +231,7 @@ const clearSingleSelection = () => {
         width: pos.width,
         transform: pos.placeAbove ? 'translateY(calc(-100% - 6px))' : 'translateY(6px)',
         maxHeight: menuMaxHeight,
+        visibility: pos.width ? 'visible' : 'hidden',
       }}
     >
       {filterable && (
@@ -322,11 +345,10 @@ const clearSingleSelection = () => {
         ref={trigRef}
       >
         <span className={styles.triggerText}>{triggerText}</span>
-        <span className={styles.caret} />
+        <span className={`${styles.caret} ${open ? styles.caretOpen : ''}`} aria-hidden="true" />
       </button>
 
       {open && createPortal(menuNode, document.body)}
     </div>
   );
 }
-

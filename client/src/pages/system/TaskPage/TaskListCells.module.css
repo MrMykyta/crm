@@ -166,3 +166,35 @@
   opacity: 0.66;
   font-weight: 700;
 }
+
+.visibilityChip {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  min-height: 26px;
+  border-radius: 999px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 78%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  color: color-mix(in srgb, var(--text) 88%, transparent);
+  font-size: var(--font-size-12);
+  font-weight: 720;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.visibility_private {
+  border-color: color-mix(in srgb, var(--warning, #f59e0b) 34%, transparent);
+  background: color-mix(in srgb, var(--warning, #f59e0b) 13%, var(--card-bg));
+}
+
+.visibility_company {
+  border-color: color-mix(in srgb, #67c7ff 30%, transparent);
+  background: color-mix(in srgb, #2679c8 14%, var(--card-bg));
+}
+
+.visibility_department {
+  border-color: color-mix(in srgb, var(--success, #22c55e) 34%, transparent);
+  background: color-mix(in srgb, var(--success, #22c55e) 12%, var(--card-bg));
+}
