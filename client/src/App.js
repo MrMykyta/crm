@@ -45,6 +45,7 @@ import ClientDetailPage from "./pages/CRM/Client/ClientDetailPage";
 import NotificationsPage from "./pages/system/NotificationsPage";
 import ChatPage from "./pages/Chat";
 import NotesPage from "./pages/system/NotesPage";
+import NoteDetailPage from "./pages/system/NoteDetailPage";
 import ContactsPage from "./pages/CRM/Contact/ContactsPage";
 import ContactDetailPage from "./pages/CRM/Contact/ContactDetailPage";
 import ProductsPage from "./pages/PIM/Product/ProductsPage";
@@ -214,21 +215,38 @@ function AppShell() {
 
           <Route path="counterparties" element={<RequirePermission requiredPermission="counterparty:read"><CounterpartiesPage /></RequirePermission>} />
           <Route
+            path="counterparties/new"
+            element={<RequirePermission requiredPermission="counterparty:create"><CounterpartyDetailPage createMode /></RequirePermission>}
+          />
+          <Route
             path="counterparties/:id"
             element={<RequirePermission requiredPermission="counterparty:read"><CounterpartyDetailPage /></RequirePermission>}
           />
           <Route path="leads" element={<RequirePermission requiredPermission="counterparty:read"><LeadsPage /></RequirePermission>} />
+          <Route
+            path="leads/new"
+            element={<RequirePermission requiredPermission="counterparty:create"><LeadDetailPage createMode /></RequirePermission>}
+          />
           <Route path="leads/:id" element={<RequirePermission requiredPermission="counterparty:read"><LeadDetailPage /></RequirePermission>} />
           <Route path="clients" element={<RequirePermission requiredPermission="counterparty:read"><ClientsPage /></RequirePermission>} />
+          <Route
+            path="clients/new"
+            element={<RequirePermission requiredPermission="counterparty:create"><ClientDetailPage createMode /></RequirePermission>}
+          />
           <Route path="clients/:id" element={<RequirePermission requiredPermission="counterparty:read"><ClientDetailPage /></RequirePermission>} />
 
           <Route path="calendar" element={<RequirePermission requiredPermission="task:read"><CalendarPage /></RequirePermission>} />
           <Route path="deals" element={<RequirePermission requiredPermission="deal:read"><DealsListPage /></RequirePermission>} />
+          <Route path="deals/new" element={<RequirePermission requiredPermission="deal:create"><DealDetailsPage createMode /></RequirePermission>} />
           <Route path="deals/:id" element={<RequirePermission requiredPermission="deal:read"><DealDetailsPage /></RequirePermission>} />
           <Route path="tasks" element={<RequirePermission requiredPermission="task:read"><TaskPage /></RequirePermission>} />
+          <Route path="tasks/new" element={<RequirePermission requiredPermission="task:read"><TaskDetailPage createMode /></RequirePermission>} />
           <Route path="tasks/:id" element={<RequirePermission requiredPermission="task:read"><TaskDetailPage /></RequirePermission>} />
           <Route path="notes" element={<RequirePermission requiredPermission="note:read"><NotesPage /></RequirePermission>} />
+          <Route path="notes/new" element={<RequirePermission requiredPermission="note:read"><NoteDetailPage createMode /></RequirePermission>} />
+          <Route path="notes/:id" element={<RequirePermission requiredPermission="note:read"><NoteDetailPage /></RequirePermission>} />
           <Route path="contacts" element={<ContactsPage />} />
+          <Route path="contacts/new" element={<ContactDetailPage createMode />} />
           <Route path="contacts/:id" element={<ContactDetailPage />} />
           <Route path="products" element={<RequirePermission requiredPermission="product:read"><ProductsPage /></RequirePermission>} />
           <Route path="products/:id" element={<RequirePermission requiredPermission="product:read"><ProductDetailPage /></RequirePermission>} />

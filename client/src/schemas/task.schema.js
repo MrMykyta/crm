@@ -1,3 +1,5 @@
+import { PRIORITY_DEFAULT, snapPriority } from '../config/priority';
+
 export const TASK_STATUS = ['todo', 'in_progress', 'done', 'blocked', 'canceled'];
 export const TASK_VISIBILITY = ['private', 'company', 'department'];
 
@@ -151,7 +153,7 @@ export function toFormTask(data = {}) {
     description: data.description ?? '',
     creator: data.creator ? displayUser(data.creator) : '',
     status: data.status ?? 'todo',
-    priority: Number.isFinite(data.priority) ? data.priority : 50,
+    priority: snapPriority(data.priority ?? PRIORITY_DEFAULT),
 
     startAt: toFormDateValue(plannedStartRaw, plannedStartHasTime),
     endAt: toFormDateValue(plannedEndRaw, plannedEndHasTime),
@@ -203,7 +205,7 @@ export function toApiTask(values = {}) {
     category: values.category?.trim() || null,
     description: values.description?.trim() || null,
     status: TASK_STATUS.includes(values.status) ? values.status : 'todo',
-    priority: Math.max(0, Math.min(100, parseInt(values.priority ?? 50, 10) || 0)),
+    priority: snapPriority(values.priority ?? PRIORITY_DEFAULT),
 
     startAt: plannedStartAt,
     endAt: plannedEndAt,
@@ -369,4 +371,3 @@ options: () => dealOptions, cols: 2 },
     },
   ];
 }
-

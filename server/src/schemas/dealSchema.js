@@ -12,6 +12,8 @@ const base = {
   value: Joi.number().precision(2).min(0).allow(null),
   currency,
   responsibleId: uuid.allow(null),
+  pipelineId: uuid.allow(null),
+  stageId: uuid.allow(null),
 };
 
 module.exports.create = Joi.object({
@@ -23,6 +25,8 @@ module.exports.create = Joi.object({
   value: base.value.optional(),
   currency: base.currency.default('PLN'),
   responsibleId: base.responsibleId.optional(),
+  pipelineId: base.pipelineId.optional(),
+  stageId: base.stageId.optional(),
 });
 
 module.exports.update = Joi.object({
@@ -34,14 +38,23 @@ module.exports.update = Joi.object({
   value: base.value.optional(),
   currency: base.currency.optional(),
   responsibleId: base.responsibleId.optional(),
+  pipelineId: base.pipelineId.optional(),
+  stageId: base.stageId.optional(),
 }).min(1);
 
 module.exports.listQuery = paging.keys({
   companyId: Joi.forbidden(),
   counterpartyId: base.counterpartyId,
   responsibleId: base.responsibleId,
+  pipelineId: base.pipelineId,
+  stageId: base.stageId,
   status: base.status,
   q: Joi.string().max(200),
   dateFrom: Joi.date().iso(),
   dateTo: Joi.date().iso(),
+});
+
+module.exports.stageMove = Joi.object({
+  companyId: Joi.forbidden(),
+  stageId: base.stageId.required(),
 });

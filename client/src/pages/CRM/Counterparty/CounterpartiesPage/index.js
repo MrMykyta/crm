@@ -6,9 +6,7 @@ import {
   Workspace,
   useWorkspaceData,
 } from '../../../../components/workspace';
-import Modal from '../../../../components/Modal';
 import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
-import CounterpartyForm from '../../CounterpartyForm';
 
 import useGridPrefs from '../../../../hooks/useGridPrefs';
 import useOpenAsModal from '../../../../hooks/useOpenAsModal';
@@ -20,16 +18,12 @@ import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import { SearchField, SelectField } from '../../../../components/ui/fields';
 
 import {
-  useCreateCounterpartyMutation,
   useListCounterpartiesQuery,
   useRemoveCounterpartyMutation,
 } from '../../../../store/rtk/counterpartyApi';
 import { useListDepartmentsQuery } from '../../../../store/rtk/departmentsApi';
 
 import s from './CounterpartiesPage.module.css';
-
-// контрагенты на этой странице: только партнёры / поставщики / производители
-const CONTRAGENT_TYPES = ['partner', 'supplier', 'manufacturer'];
 
 const sanitizeCounterpartyQuery = (query = {}) => Object.fromEntries(
   Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== '')
@@ -50,9 +44,7 @@ function DepartmentChip({ department, fallback }) {
 // Компонент CounterpartiesPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CounterpartiesPage() {
   const listRef = useRef(null);
-  const [open, setOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const openAsModal = useOpenAsModal();
@@ -71,7 +63,6 @@ export default function CounterpartiesPage() {
     onColumnVisibilityChange,
   } = useGridPrefs('crm.counterparties');
 
-  const [createCounterparty, { isLoading: creating }] = useCreateCounterpartyMutation();
   const [removeCounterparty, { isLoading: deleting }] = useRemoveCounterpartyMutation();
   const { data: departmentsData } = useListDepartmentsQuery(
     { includeArchived: true },
@@ -255,13 +246,13 @@ render: (r) => r.mainResponsibleUser || '—',
   const actions = useMemo(
     () => canCreateCounterparty ? (
       <AddButton
-        onClick={() => setOpen(true)}
+        onClick={() => navigate('/main/counterparties/new')}
         title={t('crm.actions.addCounterparty')}
       >
         {t('crm.actions.addCounterparty')}
       </AddButton>
     ) : null,
-    [canCreateCounterparty, t]
+    [canCreateCounterparty, navigate, t]
   );
 
   const rowActions = useCallback(
@@ -420,24 +411,6 @@ render: (r) => r.mainResponsibleUser || '—',
     listRef.current?.refetch?.();
   }, [deleteTarget, removeCounterparty]);
 
-  const footer = useMemo(
-    () => (
-      <>
-        <Modal.Button onClick={() => setOpen(false)}>
-          {t('common.cancel')}
-        </Modal.Button>
-        <Modal.Button
-          variant="primary"
-          form="cp-create-form"
-          disabled={saving || creating}
-        >
-          {saving || creating ? t('common.saving') : t('common.save')}
-        </Modal.Button>
-      </>
-    ),
-    [t, saving, creating]
-  );
-
   return (
     <>
       <Workspace
@@ -487,41 +460,6 @@ render: (r) => r.mainResponsibleUser || '—',
         labels={workspaceLabels}
         pagination={workspaceData.pagination}
       />
-
-      {canCreateCounterparty ? (
-        <Modal
-          open={open}
-          onClose={() => setOpen(false)}
-          title={t('crm.dialogs.newCounterparty')}
-          size="lg"
-          footer={footer}
-        >
-          <CounterpartyForm
-            id="cp-create-form"
-            defaultType="partner"                 // по умолчанию делаем партнёра
-            allowedTypes={CONTRAGENT_TYPES}      // никакого lead / client
-            loading={saving || creating}
-            withButtons={false}
-            departments={activeDepartments}
-            onCancel={() => setOpen(false)}
-            onSubmit={async (values) => {
-              setSaving(true);
-              try {
-                await createCounterparty({
-                  ...values,
-                  type: CONTRAGENT_TYPES.includes(values.type)
-                    ? values.type
-                    : 'partner',
-                }).unwrap();
-                setOpen(false);
-                listRef.current?.refetch?.();
-              } finally {
-                setSaving(false);
-              }
-            }}
-          />
-        </Modal>
-      ) : null}
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

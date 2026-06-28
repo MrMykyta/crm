@@ -4,6 +4,34 @@ import s from "../CalendarPage.module.css";
 import { isSameDay, toKey } from "./dateUtils";
 import CurrentTimeLineWeek from "./CurrentTimeLineWeek";
 
+function pad2(value) {
+  return String(value).padStart(2, "0");
+}
+
+function slotTime(hour) {
+  const safeHour = Math.max(0, Math.min(23, Number(hour) || 0));
+  return `${pad2(safeHour)}:00`;
+}
+
+function slotEndTime(hour) {
+  const safeHour = Math.max(0, Math.min(23, Number(hour) || 0));
+  if (safeHour >= 23) return "23:45";
+  return `${pad2(safeHour + 1)}:00`;
+}
+
+function rectSnapshot(element) {
+  const rect = element?.getBoundingClientRect?.();
+  if (!rect) return null;
+  return {
+    top: rect.top,
+    left: rect.left,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
 // Компонент WeekView: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function WeekView({
   baseDate,
@@ -125,7 +153,14 @@ const closeAllDay = () => setAllDayModal(null);
                   ].join(" ")}
                 >
                   {/* полоска all-day у КОНКРЕТНОГО дня */}
-                  <div className={s.dayAllDayStrip} style={{ height: ALLDAY_H }} onDoubleClick={() => onCreateFromDate?.(d)}>
+                  <div
+                    className={s.dayAllDayStrip}
+                    style={{ height: ALLDAY_H }}
+                    onDoubleClick={(event) => onCreateFromDate?.(d, {
+                      isAllDay: true,
+                      anchorRect: rectSnapshot(event.currentTarget),
+                    })}
+                  >
                     {shown.map((ev) => (
                       <div
                         key={ev.id}
@@ -158,7 +193,16 @@ const closeAllDay = () => setAllDayModal(null);
 
                   {/* фон по часам */}
                   {Array.from({ length: 24 }, (_, h) => (
-                    <div key={h} className={s.weekHourBg} onDoubleClick={() => onCreateFromDate?.(d)}></div>
+                    <div
+                      key={h}
+                      className={s.weekHourBg}
+                      onDoubleClick={(event) => onCreateFromDate?.(d, {
+                        isAllDay: false,
+                        startTime: slotTime(h),
+                        endTime: slotEndTime(h),
+                        anchorRect: rectSnapshot(event.currentTarget),
+                      })}
+                    ></div>
                   ))}
 
                   {/* обычные события */}

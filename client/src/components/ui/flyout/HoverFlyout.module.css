@@ -1,0 +1,122 @@
+.flyout {
+  position: fixed;
+  z-index: 72;
+  width: 292px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--sidebar-brd, color-mix(in srgb, var(--sidebar-text, #f3f4f6) 12%, transparent));
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--sidebar-bg, #0f172a) 88%, transparent),
+      color-mix(in srgb, var(--sidebar-bg, #0f172a) 96%, transparent));
+  box-shadow:
+    var(--shadow, 0 24px 60px rgba(0, 0, 0, 0.42)),
+    0 0 0 1px color-mix(in srgb, var(--sidebar-text, #f3f4f6) 5%, transparent) inset,
+    0 1px 0 color-mix(in srgb, var(--sidebar-text, #f3f4f6) 8%, transparent) inset;
+  -webkit-backdrop-filter: blur(var(--glass-blur, 18px)) saturate(1.18);
+  backdrop-filter: blur(var(--glass-blur, 18px)) saturate(1.18);
+  overflow: auto;
+  opacity: 0;
+  transform: translateX(-10px) scale(0.98);
+  transform-origin: top left;
+  transition:
+    opacity 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.flyoutVisible {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.flyoutTitle {
+  padding: 2px 4px 4px;
+  color: color-mix(in srgb, var(--sidebar-text, #f3f4f6) 72%, transparent);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.flyoutGroups {
+  display: grid;
+  gap: 12px;
+}
+
+.flyoutGroup {
+  display: grid;
+  gap: 5px;
+}
+
+.flyoutGroupTitle {
+  padding: 0 4px;
+  color: color-mix(in srgb, var(--sidebar-text, #f3f4f6) 56%, transparent);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.flyoutList {
+  display: grid;
+  gap: 2px;
+}
+
+.flyoutItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--sidebar-text, #f3f4f6);
+  font-size: 13px;
+  font-weight: 560;
+  text-decoration: none;
+}
+
+button.flyoutItem {
+  width: 100%;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.flyoutItem:hover,
+.flyoutItem:focus-visible {
+  background: color-mix(in srgb, var(--sidebar-text, #f3f4f6) 8%, transparent);
+  outline: none;
+}
+
+.flyoutItemActive {
+  border-color: color-mix(in srgb, var(--primary-start, #6366f1) 34%, transparent);
+  background: color-mix(in srgb, var(--primary-start, #6366f1) 14%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--primary-start, #6366f1) 84%, var(--focus, #6aa8ff));
+  font-weight: 700;
+}
+
+.flyoutItemDisabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.flyoutItemDisabled:hover {
+  background: transparent;
+}
+
+.flyoutItemDisabled small {
+  max-width: 130px;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--sidebar-text, #f3f4f6) 62%, transparent);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

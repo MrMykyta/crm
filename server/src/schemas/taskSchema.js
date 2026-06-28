@@ -3,8 +3,10 @@
 const { Joi, uuid } = require('./_common');
 
 const STATUS_VALUES = ['todo', 'in_progress', 'done', 'blocked', 'canceled'];
+const MY_STATUS_VALUES = ['todo', 'in_progress', 'done', 'blocked'];
 const MODE_VALUES = ['none', 'all', 'lists'];
 const VISIBILITY_VALUES = ['private', 'company', 'department'];
+const LEGACY_PRIORITY_VALUES = ['low', 'medium', 'normal', 'high', 'urgent', 'critical'];
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const isoOrDateOnly = Joi.alternatives().try(
@@ -19,7 +21,10 @@ const base = {
   category: Joi.string().trim().max(64).allow('', null),
   description: Joi.string().trim().max(10000).allow('', null),
   status: Joi.string().valid(...STATUS_VALUES),
-  priority: Joi.number().integer().min(0).max(100),
+  priority: Joi.alternatives().try(
+    Joi.number().integer().min(0).max(100),
+    Joi.string().trim().lowercase().valid(...LEGACY_PRIORITY_VALUES)
+  ),
   visibility: Joi.string().valid(...VISIBILITY_VALUES),
   visibilityDepartmentId: uuid.allow(null, ''),
 
@@ -140,6 +145,20 @@ module.exports.update = Joi.object({
   contactIds: base.contactIds,
   memberStatuses: base.memberStatuses,
 }).min(1);
+
+module.exports.myStatus = Joi.object({
+  memberStatus: Joi.string()
+    .valid(...MY_STATUS_VALUES)
+    .required(),
+  note: Joi.string().trim().max(2000).allow('', null),
+});
+
+module.exports.participantStatus = Joi.object({
+  memberStatus: Joi.string()
+    .valid(...STATUS_VALUES)
+    .required(),
+  note: Joi.string().trim().max(2000).allow('', null),
+});
 
 module.exports.listQuery = Joi.object({
   companyId: Joi.forbidden(),

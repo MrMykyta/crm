@@ -16,6 +16,8 @@ dealRouter.get('/:id', authorize('deal:read'), DealController.getById);
 dealRouter.post('/', validateBody(dealSchema.create), authorize('deal:create'), DealController.create);
 // обновить
 dealRouter.put('/:id', validateBody(dealSchema.update), authorize('deal:update'), DealController.update);
+// переместить сделку между этапами своей воронки
+dealRouter.put('/:id/stage', validateBody(dealSchema.stageMove), authorize('deal:update'), DealController.moveStage);
 // удалить
 dealRouter.delete('/:id', authorize('deal:delete'), DealController.remove);
 

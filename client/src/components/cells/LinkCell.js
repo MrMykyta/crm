@@ -8,7 +8,7 @@ export default function LinkCell({
   secondary,
   onClick,
   ariaLabel,
-  showChevron = true,
+  showChevron = false,
   className,
 }) {
   return (

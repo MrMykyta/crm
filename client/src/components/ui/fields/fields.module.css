@@ -424,47 +424,6 @@ textarea.input {
   line-height: var(--lh-comfy, 1.4);
 }
 
-/* ---------- Priority input wrapper ---------- */
-.priorityField {
-  min-width: 0;
-}
-
-.priorityControl {
-  width: 100%;
-  min-width: 0;
-}
-
-.priorityField .priorityControl :global(input) {
-  min-height: 42px;
-  padding: 10px 36px 10px 12px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--card-brd, var(--ui-field-border)) 75%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--input-bg, var(--card-bg)) 96%, transparent), transparent);
-  color: var(--text-1, var(--text));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
-}
-
-.priorityField .priorityControl :global(input:hover) {
-  border-color: color-mix(in srgb, var(--card-brd, var(--ui-field-border-hover)) 55%, var(--focus, var(--ui-field-border-focus)));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--input-bg, var(--card-bg)) 100%, transparent), transparent);
-}
-
-.priorityField .priorityControl :global(input:focus) {
-  border-color: var(--focus, var(--ui-field-border-focus));
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--focus, var(--ui-field-border-focus)) 28%, transparent),
-    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
-}
-
-.priorityField .priorityControl :global(button) {
-  right: 12px;
-  width: 0;
-  height: 0;
-  border-radius: 0;
-}
-
 /* ---------- File input ---------- */
 .fileInput {
   width: 100%;

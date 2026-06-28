@@ -24,9 +24,11 @@ rootRouter.use("/counterparties", auth, companyIdGuard, require("./crm/counterpa
 rootRouter.use("/contact-points", auth, companyIdGuard, require("./crm/contactPointRouter"));
 rootRouter.use("/contact", auth, companyIdGuard, require("./crm/contactRouter"));
 rootRouter.use("/contacts", auth, companyIdGuard, require("./crm/contactRouter"));
+rootRouter.use("/pipelines", auth, companyIdGuard, require("./crm/pipelineRouter"));
 rootRouter.use("/deals", auth, companyIdGuard, require("./crm/dealRouter"));
 rootRouter.use("/tasks", auth, companyIdGuard, require("./crm/taskRouter"));
 rootRouter.use("/notes", auth, companyIdGuard, require("./crm/noteRouter"));
+rootRouter.use("/registry", auth, companyIdGuard, require("./system/registryRouter"));
 rootRouter.use("/documents", auth, companyIdGuard, require("./crm/documentRouter"));
 rootRouter.use("/offers", auth, companyIdGuard, require("./oms/offerRouter"));
 rootRouter.use("/orders", auth, companyIdGuard, require("./oms/orderRouter"));
@@ -60,6 +62,12 @@ rootRouter.use(
   auth,
   companyIdGuard,
   require("./crm/companyOfferSettingsRouter")
+);
+rootRouter.use(
+  "/company-settings/deals",
+  auth,
+  companyIdGuard,
+  require("./crm/companyDealSettingsRouter")
 );
 rootRouter.use(
   "/company-settings/warehouse-documents",

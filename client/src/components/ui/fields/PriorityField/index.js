@@ -1,12 +1,13 @@
-import React from "react";
-import FieldShell from "../FieldShell";
-import PriorityInput from "../../../inputs/PriorityInput";
-import s from "../fields.module.css";
-import { cx } from "../fieldUtils";
+import SelectField from "../SelectField";
+import { PRIORITY_LEVELS, normalizePriority, snapPriority } from "../../../../config/priority";
+
+const PRIORITY_SELECT_OPTIONS = PRIORITY_LEVELS.map((level) => ({
+  value: level,
+  label: String(level),
+}));
 
 /**
- * PriorityField — тонкая обёртка над components/inputs/PriorityInput.
- * PriorityInput/NumericWithPresets не переписываются; value model сохраняется как есть.
+ * PriorityField — numeric priority select over canonical values.
  *
  * onChange contract (dual-mode):
  *   onValueChange?.(nextValue)
@@ -19,7 +20,6 @@ export default function PriorityField({
   value,
   onChange,
   onValueChange,
-  onBlur,
   disabled = false,
   readOnly = false,
   required = false,
@@ -28,57 +28,45 @@ export default function PriorityField({
   description,
   className = "",
   inputClassName = "",
+  contentClassName = "",
   fullWidth = true,
   size = "md",
   float = false,
   placeholder,
-  min,
-  max,
   ...rest
 }) {
-  const fieldId = id || name;
-  const inactive = disabled || readOnly;
-  const isFilled = value !== undefined && value !== null && value !== "";
+  const normalizedValue = normalizePriority(value);
 
   const emit = (nextValue) => {
-    if (inactive || nextValue === undefined) return;
-    onValueChange?.(nextValue);
-    onChange?.(nextValue, null);
-  };
-
-  const priorityProps = {
-    ...rest,
-    ...(min !== undefined ? { min } : null),
-    ...(max !== undefined ? { max } : null),
+    const normalized = snapPriority(nextValue);
+    onValueChange?.(normalized);
+    onChange?.(normalized, null);
   };
 
   return (
-    <FieldShell
-      id={fieldId}
+    <SelectField
+      id={id}
+      name={name}
       label={label}
-      required={required}
-      description={description}
-      helperText={helperText}
-      error={error}
+      value={normalizedValue}
+      options={PRIORITY_SELECT_OPTIONS}
+      onValueChange={emit}
+      placeholder={placeholder || "50"}
       disabled={disabled}
       readOnly={readOnly}
+      required={required}
+      error={error}
+      helperText={helperText}
+      description={description}
+      className={className}
+      inputClassName={inputClassName}
+      contentClassName={contentClassName}
       fullWidth={fullWidth}
       size={size}
       float={float}
-      isFilled={isFilled}
-      className={cx(s.priorityField, className)}
-    >
-      <div onBlur={onBlur}>
-        <PriorityInput
-          value={value ?? ""}
-          onChange={emit}
-          disabled={inactive}
-          placeholder={placeholder}
-          size={size === "lg" ? "md" : size}
-          className={cx(s.priorityControl, inputClassName)}
-          {...priorityProps}
-        />
-      </div>
-    </FieldShell>
+      valueType="number"
+      searchable={false}
+      {...rest}
+    />
   );
 }

@@ -170,6 +170,14 @@
   max-width: calc(100% - 24px);
 }
 
+.pageSizeTopControl button[role="combobox"] > span:first-child {
+  flex: 0 0 auto;
+  min-width: 24px;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+}
+
 .filterBox button[role="combobox"] [class*="RadixSelect_icon"],
 .pageSizeTopControl button[role="combobox"] [class*="RadixSelect_icon"] {
   right: 2px;
@@ -343,8 +351,9 @@
   min-height: var(--workspace-control-height);
   height: var(--workspace-control-height);
   margin-left: 0;
-  flex: 0 0 160px;
-  width: 160px;
+  flex: 0 0 auto;
+  min-width: 184px;
+  width: auto;
   padding: 0 8px 0 10px;
   border: 1px solid var(--gw-border);
   border-radius: var(--radius-md);
@@ -358,20 +367,20 @@
 .pageSizeTopLabel {
   flex: 0 0 auto;
   min-width: 0;
-  max-width: 82px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
 .pageSizeTopSelect {
-  width: 58px !important;
-  min-width: 58px !important;
+  width: 68px !important;
+  min-width: 68px !important;
 }
 
 .pageSizeTopControl > :last-child {
-  flex: 0 0 58px;
-  min-width: 58px;
+  flex: 0 0 68px;
+  min-width: 68px;
 }
 
 .columnsMenuWrap {

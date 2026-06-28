@@ -4,6 +4,34 @@ import s from "../CalendarPage.module.css";
 import { isSameDay } from "./dateUtils";
 import CurrentTimeLineWeek from "./CurrentTimeLineWeek";
 
+function pad2(value) {
+  return String(value).padStart(2, "0");
+}
+
+function slotTime(hour) {
+  const safeHour = Math.max(0, Math.min(23, Number(hour) || 0));
+  return `${pad2(safeHour)}:00`;
+}
+
+function slotEndTime(hour) {
+  const safeHour = Math.max(0, Math.min(23, Number(hour) || 0));
+  if (safeHour >= 23) return "23:45";
+  return `${pad2(safeHour + 1)}:00`;
+}
+
+function rectSnapshot(element) {
+  const rect = element?.getBoundingClientRect?.();
+  if (!rect) return null;
+  return {
+    top: rect.top,
+    left: rect.left,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
 // Компонент DayView: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function DayView({
   baseDate,
@@ -65,7 +93,16 @@ export default function DayView({
 
           <div className={s.dayCol}>
             {Array.from({ length: 24 }, (_, h) => (
-              <div key={h} className={s.weekHourBg} onDoubleClick={() => onCreateFromDate?.(baseDate)}></div>
+              <div
+                key={h}
+                className={s.weekHourBg}
+                onDoubleClick={(event) => onCreateFromDate?.(baseDate, {
+                  isAllDay: false,
+                  startTime: slotTime(h),
+                  endTime: slotEndTime(h),
+                  anchorRect: rectSnapshot(event.currentTarget),
+                })}
+              ></div>
             ))}
 
             {!events.length ? (

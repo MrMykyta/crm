@@ -24,6 +24,14 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'responsibleId', 
         as: 'responsible' 
       });
+      Deal.belongsTo(models.CrmPipeline, {
+        foreignKey: { name: 'pipelineId', field: 'pipeline_id' },
+        as: 'pipeline',
+      });
+      Deal.belongsTo(models.CrmPipelineStage, {
+        foreignKey: { name: 'stageId', field: 'stage_id' },
+        as: 'stage',
+      });
 
 
       Deal.hasMany(models.Task, {

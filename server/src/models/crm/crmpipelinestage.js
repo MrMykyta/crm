@@ -57,9 +57,46 @@ module.exports = (sequelize, DataTypes) => {
       allowNull:false, 
       defaultValue:0 
     },
+    order: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     color: { 
       type: DataTypes.STRING(16), 
       allowNull:true 
+    },
+    isWon: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'is_won'
+    },
+    isLost: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'is_lost'
+    },
+    hidden: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    archived: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    isDefaultEntry: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'is_default_entry'
+    },
+    wipLimit: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: 'wip_limit'
     },
     createdAt: { 
       type: DataTypes.DATE, 

@@ -1,6 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import { ChevronRight, GripVertical, LayoutGrid, List, Plus, Trash2 } from 'lucide-react';
 
 import {
   Workspace,
@@ -8,30 +19,25 @@ import {
 } from '../../../../components/workspace';
 import LinkCell from '../../../../components/cells/LinkCell';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
-import Modal from '../../../../components/Modal';
 import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
 import {
-  AutocompleteField,
   DateField,
-  NumberField,
   SearchField,
   SelectField,
-  TextareaField,
-  TextField,
 } from '../../../../components/ui/fields';
 import useGridPrefs from '../../../../hooks/useGridPrefs';
-import useOpenAsModal from '../../../../hooks/useOpenAsModal';
 import useCompanyMembersOptions from '../../../../hooks/useCompanyMembersOptions';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
+import PipelinePath from '../../../../components/deals/PipelinePath';
 
 import {
-  useCreateDealMutation,
   useDeleteDealMutation,
   useGetDealsQuery,
+  useGetPipelinesQuery,
   useMarkWonMutation,
   useMarkLostMutation,
+  useMoveDealStageMutation,
 } from '../../../../store/rtk/dealsApi';
-import { useGetCounterpartyLookupQuery } from '../../../../store/rtk/counterpartyApi';
 
 import s from './DealsListPage.module.css';
 
@@ -46,6 +52,130 @@ const buildStatusLabels = (t) => ({
 const sanitizeDealsQuery = (query = {}) => Object.fromEntries(
   Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== '')
 );
+
+const DEALS_VIEW_STORAGE_KEY = 'crm.deals.viewMode';
+const DEALS_BOARD_PIPELINE_STORAGE_KEY = 'crm.deals.board.pipelineId';
+const BOARD_PAGE_LIMIT = 200;
+
+function readStorage(key, fallback = '') {
+  try {
+    return window.localStorage.getItem(key) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStorage(key, value) {
+  try {
+    if (value) window.localStorage.setItem(key, value);
+    else window.localStorage.removeItem(key);
+  } catch {
+    // localStorage can be unavailable in restricted browser contexts.
+  }
+}
+
+function getStageOrder(stage = {}) {
+  const raw = stage.order ?? stage.position ?? 0;
+  const num = Number(raw);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function normalizePipelines(pipelines = []) {
+  return (Array.isArray(pipelines) ? pipelines : [])
+    .map((pipeline, pipelineIndex) => ({
+      ...pipeline,
+      order: Number.isFinite(Number(pipeline.order)) ? Number(pipeline.order) : pipelineIndex,
+      stages: (Array.isArray(pipeline.stages) ? pipeline.stages : [])
+        .slice()
+        .sort((left, right) => getStageOrder(left) - getStageOrder(right)),
+    }))
+    .sort((left, right) => Number(left.order || 0) - Number(right.order || 0));
+}
+
+function pickDefaultPipeline(pipelines = []) {
+  return pipelines.find((pipeline) => pipeline.isDefault && !pipeline.archived)
+    || pipelines.find((pipeline) => !pipeline.archived)
+    || pipelines[0]
+    || null;
+}
+
+function getVisibleStages(pipeline) {
+  return (pipeline?.stages || [])
+    .filter((stage) => !stage.hidden && !stage.archived)
+    .sort((left, right) => getStageOrder(left) - getStageOrder(right));
+}
+
+function getCounterpartyName(deal = {}) {
+  return deal.counterparty?.fullName
+    || deal.counterparty?.shortName
+    || deal.counterparty?.name
+    || '';
+}
+
+function getOwnerName(deal = {}) {
+  const user = deal.responsible || deal.owner;
+  if (!user) return '';
+  return [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || '';
+}
+
+function getEffectiveProbability(deal = {}, stage = {}) {
+  const raw = deal.probability ?? deal.effectiveProbability ?? stage?.probability ?? 0;
+  const num = Number(raw);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, Math.min(100, num));
+}
+
+function summarizeDeals(deals = [], stageById = new Map()) {
+  const byCurrency = new Map();
+  for (const deal of deals) {
+    const rawValue = Number(deal.value);
+    if (!Number.isFinite(rawValue)) continue;
+    const currency = deal.currency || 'PLN';
+    const stage = stageById.get(String(deal.stageId || deal.stage?.id || ''));
+    const probability = getEffectiveProbability(deal, stage);
+    const current = byCurrency.get(currency) || { value: 0, forecast: 0 };
+    current.value += rawValue;
+    current.forecast += rawValue * (probability / 100);
+    byCurrency.set(currency, current);
+  }
+  return byCurrency;
+}
+
+function buildStageAggregates(deals = [], stages = []) {
+  const initial = (Array.isArray(stages) ? stages : []).reduce((acc, stage) => {
+    if (stage?.id) acc[String(stage.id)] = { count: 0, totals: {} };
+    return acc;
+  }, {});
+  return (Array.isArray(deals) ? deals : []).reduce((acc, deal) => {
+    const stageId = String(deal.stageId || deal.stage?.id || '');
+    if (!stageId) return acc;
+    const current = acc[stageId] || { count: 0, totals: {} };
+    current.count += 1;
+    const rawValue = Number(deal.value);
+    if (Number.isFinite(rawValue) && rawValue > 0) {
+      const currency = deal.currency || 'PLN';
+      current.totals[currency] = (current.totals[currency] || 0) + rawValue;
+    }
+    acc[stageId] = current;
+    return acc;
+  }, initial);
+}
+
+function formatMoneySummary(summary, noneLabel = '—') {
+  const entries = [...summary.entries()].filter(([, totals]) => totals.value || totals.forecast);
+  if (!entries.length) return noneLabel;
+  return entries
+    .map(([currency, totals]) => `${Number(totals.value || 0).toLocaleString()} ${currency}`)
+    .join(' + ');
+}
+
+function formatForecastSummary(summary, noneLabel = '—') {
+  const entries = [...summary.entries()].filter(([, totals]) => totals.forecast);
+  if (!entries.length) return noneLabel;
+  return entries
+    .map(([currency, totals]) => `${Number(totals.forecast || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency}`)
+    .join(' + ');
+}
 
 // buildStatusOptions: собирает итоговую структуру данных в рамках UI-компонента.
 const buildStatusOptions = (t, labels, includeAll = false) => {
@@ -71,216 +201,195 @@ function formatMoney(value, currency, noneLabel = '—') {
   return `${num.toLocaleString()} ${cur}`;
 }
 
-// Компонент DealForm: отвечает за отображение UI и обработку взаимодействий пользователя.
-function DealForm({ onSubmit, onCancel, loading }) {
-  const { t } = useTranslation();
-  const { options: ownerOptions } = useCompanyMembersOptions();
-  const [error, setError] = useState('');
-  const [form, setForm] = useState({
-    title: '',
-    counterpartyId: '',
-    value: '',
-    currency: 'PLN',
-    status: 'new',
-    responsibleId: '',
-    description: '',
-  });
-  const [counterpartyTerm, setCounterpartyTerm] = useState('');
-  const [selectedCounterparty, setSelectedCounterparty] = useState(null);
-  const [debouncedTerm, setDebouncedTerm] = useState('');
-  const statusLabels = useMemo(() => buildStatusLabels(t), [t]);
-  const statusOptions = useMemo(
-    () => buildStatusOptions(t, statusLabels, false),
-    [t, statusLabels]
+function ViewSwitch({ value, onChange, t }) {
+  return (
+    <div className={s.viewSwitch} role="group" aria-label={t('deals.view.label', 'View')}>
+      <button
+        type="button"
+        className={`${s.viewButton} ${value === 'list' ? s.viewButtonActive : ''}`}
+        onClick={() => onChange('list')}
+        aria-pressed={value === 'list'}
+      >
+        <List size={15} aria-hidden="true" />
+        <span>{t('deals.view.list', 'Список')}</span>
+      </button>
+      <button
+        type="button"
+        className={`${s.viewButton} ${value === 'board' ? s.viewButtonActive : ''}`}
+        onClick={() => onChange('board')}
+        aria-pressed={value === 'board'}
+      >
+        <LayoutGrid size={15} aria-hidden="true" />
+        <span>{t('deals.view.board', 'Доска')}</span>
+      </button>
+    </div>
   );
+}
 
-  useEffect(() => {
-    const id = setTimeout(() => {
-      setDebouncedTerm(counterpartyTerm.trim());
-    }, 320);
-    return () => clearTimeout(id);
-  }, [counterpartyTerm]);
-
-  const { data: lookupOptions = [], isFetching: lookupLoading } =
-    useGetCounterpartyLookupQuery(
-      { term: debouncedTerm, limit: 12 },
-      { skip: !debouncedTerm }
-    );
-
-    // set: обновляет состояние компонента.
-const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-    // submit: вспомогательная логика компонента.
-const submit = (e) => {
-    e?.preventDefault();
-    setError('');
-    if (!form.title.trim()) {
-      setError(t('deals.validation.titleRequired', 'Title is required'));
-      return;
-    }
-    const counterpartyId = String(form.counterpartyId || '').trim();
-    if (!counterpartyId) {
-      setError(t('deals.validation.counterpartyRequired', 'Select a counterparty'));
-      return;
-    }
-
-    const payload = {
-      title: form.title.trim(),
-      counterpartyId,
-      status: form.status,
-      currency: form.currency.trim() || 'PLN',
-      description: form.description.trim() || null,
-    };
-    if (form.value !== '') payload.value = Number(form.value);
-    if (form.responsibleId) payload.responsibleId = form.responsibleId;
-
-    onSubmit?.(payload);
-  };
+function DealCard({
+  deal,
+  stage,
+  statusLabels,
+  onOpen,
+  onDelete,
+  canDelete,
+  deleting,
+  t,
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: deal.id,
+    data: {
+      dealId: deal.id,
+      sourceStageId: deal.stageId || deal.stage?.id || '',
+    },
+  });
+  const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
+  const ownerName = getOwnerName(deal);
+  const probability = getEffectiveProbability(deal, stage);
+  const priority = deal.priority || deal.priorityLabel || deal.priorityValue || '';
 
   return (
-    <form className={s.form} onSubmit={submit}>
-      <div className={s.field}>
-        <div className={s.label}>
-          {t('deals.fields.title', 'Title')}
+    <article
+      ref={setNodeRef}
+      style={style}
+      className={`${s.dealCard} ${isDragging ? s.dealCardDragging : ''}`}
+      onClick={() => onOpen(deal.id)}
+      tabIndex={0}
+      role="button"
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpen(deal.id);
+        }
+      }}
+      {...attributes}
+    >
+      <div className={s.cardColorStrip} style={{ background: stage?.color || 'var(--accent)' }} />
+      <div className={s.cardHeader}>
+        <button
+          type="button"
+          className={s.dragHandle}
+          aria-label={t('deals.board.dragDeal', 'Drag deal')}
+          title={t('deals.board.dragDeal', 'Drag deal')}
+          onClick={(event) => event.stopPropagation()}
+          {...listeners}
+        >
+          <GripVertical size={15} aria-hidden="true" />
+        </button>
+        <div className={s.cardTitleBlock}>
+          <h3 className={s.cardTitle}>{deal.title || t('deals.details.untitled', 'Untitled deal')}</h3>
+          {getCounterpartyName(deal) ? <p className={s.cardCounterparty}>{getCounterpartyName(deal)}</p> : null}
         </div>
-        <TextField
-          inputClassName={s.input}
-          value={form.title}
-          onValueChange={(value) => set('title', value)}
-          placeholder={t('deals.placeholders.title', 'Deal title')}
-        />
       </div>
 
-      <div className={s.row2}>
-        <div className={s.field}>
-          <div className={s.label}>
-            {t('deals.modal.new.counterpartyLabel', 'Counterparty')}
-          </div>
-          <AutocompleteField
-            value={selectedCounterparty}
-            inputValue={counterpartyTerm}
-            onInputChange={(value) => {
-              setCounterpartyTerm(value);
-              if (selectedCounterparty && value.trim() !== selectedCounterparty.name) {
-                setSelectedCounterparty(null);
-                set('counterpartyId', '');
-              }
+      <div className={s.cardMeta}>
+        <span className={s.cardAmount}>{formatMoney(deal.value, deal.currency, t('common.none', '—'))}</span>
+        <span className={s.cardProbability}>{probability}%</span>
+      </div>
+
+      <div className={s.cardChips}>
+        {deal.status === 'won' || deal.status === 'lost' ? (
+          <span className={`${s.statusChip} ${s[`status_${deal.status}`] || ''}`}>
+            {statusLabels[deal.status] || deal.status}
+          </span>
+        ) : null}
+        {priority ? <span className={s.priorityChip}>{priority}</span> : null}
+        {ownerName ? <span className={s.ownerChip}>{ownerName}</span> : null}
+      </div>
+
+      <div className={s.cardActions}>
+        <button
+          type="button"
+          className={s.cardAction}
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpen(deal.id);
+          }}
+        >
+          {t('deals.actions.open', 'Open')}
+          <ChevronRight size={14} aria-hidden="true" />
+        </button>
+        {canDelete ? (
+          <button
+            type="button"
+            className={s.cardDanger}
+            disabled={deleting}
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete(deal);
             }}
-            options={lookupOptions}
-            onChange={(nextValue, opt) => {
-              if (!opt) return;
-              setSelectedCounterparty(opt);
-              set('counterpartyId', String(nextValue || opt.id || ''));
-              setCounterpartyTerm(opt.name || '');
-              setError('');
-            }}
-            placeholder={t(
-              'deals.modal.new.counterpartyPlaceholder',
-              'Type a name or NIP...'
-            )}
-            hint={t('deals.common.typeToSearch', 'Type name or NIP')}
-            searchingLabel={t(
-              'deals.modal.new.counterpartySearching',
-              'Searching...'
-            )}
-            emptyLabel={t(
-              'deals.modal.new.counterpartyEmpty',
-              'No counterparties found'
-            )}
-            loading={Boolean(debouncedTerm) && lookupLoading}
-            getOptionLabel={(opt) => opt?.name || String(opt?.id || '')}
-            getOptionSecondary={(opt) => {
-              const parts = [];
-              if (opt?.nip) parts.push(`${t('deals.common.nipLabel', 'NIP')}: ${opt.nip}`);
-              if (opt?.email) parts.push(opt.email);
-              if (opt?.city) parts.push(opt.city);
-              return parts.join(' • ');
-            }}
-            inputClassName={s.input}
-          />
+            title={t('common.delete', 'Удалить')}
+          >
+            <Trash2 size={14} aria-hidden="true" />
+          </button>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function KanbanColumn({
+  stage,
+  deals,
+  stageById,
+  statusLabels,
+  canDelete,
+  deleting,
+  onOpen,
+  onDelete,
+  onCreate,
+  t,
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage.id });
+  const summary = summarizeDeals(deals, stageById);
+
+  return (
+    <section
+      ref={setNodeRef}
+      className={`${s.boardColumn} ${isOver ? s.boardColumnOver : ''}`}
+      aria-label={stage.name}
+    >
+      <header className={s.columnHeader}>
+        <div className={s.columnTitleRow}>
+          <span className={s.stageColor} style={{ background: stage.color || 'var(--accent)' }} />
+          <h2>{stage.name}</h2>
+          {stage.isWon || stage.isLost ? (
+            <span className={s.terminalBadge}>
+              {stage.isWon ? t('deals.board.wonColumn', 'Won') : t('deals.board.lostColumn', 'Lost')}
+            </span>
+          ) : null}
         </div>
-        <div className={s.field}>
-          <div className={s.label}>
-            {t('deals.fields.owner', 'Owner')}
+        <div className={s.columnStats}>
+          <span>{t('deals.board.count', { count: deals.length, defaultValue: `${deals.length} deals` })}</span>
+          <span>{formatMoneySummary(summary)}</span>
+          <span>{t('deals.board.forecastShort', { value: formatForecastSummary(summary), defaultValue: `Forecast ${formatForecastSummary(summary)}` })}</span>
+        </div>
+      </header>
+
+      <div className={s.columnCards}>
+        {deals.length ? deals.map((deal) => (
+          <DealCard
+            key={deal.id}
+            deal={deal}
+            stage={stage}
+            statusLabels={statusLabels}
+            canDelete={canDelete}
+            deleting={deleting}
+            onOpen={onOpen}
+            onDelete={onDelete}
+            t={t}
+          />
+        )) : (
+          <div className={s.emptyColumn}>
+            <p>{t('deals.board.emptyColumn', 'Нет сделок')}</p>
+            <button type="button" onClick={() => onCreate(stage.id)}>
+              <Plus size={14} aria-hidden="true" />
+              <span>{t('deals.board.createInStage', 'Создать сделку')}</span>
+            </button>
           </div>
-          <SelectField
-            inputClassName={s.select}
-            value={form.responsibleId}
-            onValueChange={(value) => set('responsibleId', value)}
-            options={[
-              { value: '', label: t('deals.form.ownerUnassigned', 'Unassigned') },
-              ...ownerOptions,
-            ]}
-          />
-        </div>
+        )}
       </div>
-
-      <div className={s.row2}>
-        <div className={s.field}>
-          <div className={s.label}>
-            {t('deals.fields.amount', 'Amount')}
-          </div>
-          <NumberField
-            inputClassName={s.input}
-            step="0.01"
-            value={form.value}
-            emitAs="string"
-            onValueChange={(value) => set('value', value)}
-            placeholder="0.00"
-          />
-        </div>
-        <div className={s.field}>
-          <div className={s.label}>
-            {t('deals.fields.currency', 'Currency')}
-          </div>
-          <TextField
-            inputClassName={s.input}
-            value={form.currency}
-            onValueChange={(value) => set('currency', value)}
-            placeholder="PLN"
-          />
-        </div>
-      </div>
-
-      <div className={s.row2}>
-        <div className={s.field}>
-          <div className={s.label}>
-            {t('deals.fields.status', 'Status')}
-          </div>
-          <SelectField
-            inputClassName={s.select}
-            value={form.status}
-            onValueChange={(value) => set('status', value)}
-            options={statusOptions}
-          />
-        </div>
-      </div>
-
-      <div className={s.field}>
-        <div className={s.label}>
-          {t('deals.fields.description', 'Description')}
-        </div>
-        <TextareaField
-          inputClassName={s.textarea}
-          value={form.description}
-          onValueChange={(value) => set('description', value)}
-          placeholder={t('deals.placeholders.description', 'Optional description')}
-        />
-      </div>
-
-      {error && <div className={s.error}>{error}</div>}
-
-      <div>
-        <Modal.Button type="button" onClick={onCancel}>
-          {t('common.cancel', 'Cancel')}
-        </Modal.Button>
-        <Modal.Button variant="primary" type="submit" disabled={loading}>
-          {loading
-            ? t('common.saving', 'Saving…')
-            : t('deals.actions.create', 'Create deal')}
-        </Modal.Button>
-      </div>
-    </form>
+    </section>
   );
 }
 
@@ -289,7 +398,6 @@ export default function DealsListPage() {
   const listRef = useRef(null);
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const openAsModal = useOpenAsModal();
   const {
     colWidths,
     colOrder,
@@ -299,12 +407,19 @@ export default function DealsListPage() {
     onColumnVisibilityChange,
   } = useGridPrefs('crm.deals');
 
-  const [open, setOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [createDeal, { isLoading: creating }] = useCreateDealMutation();
+  const [viewMode, setViewModeState] = useState(() => {
+    const saved = readStorage(DEALS_VIEW_STORAGE_KEY, 'list');
+    return saved === 'board' ? 'board' : 'list';
+  });
+  const [boardPipelineId, setBoardPipelineId] = useState(() => readStorage(DEALS_BOARD_PIPELINE_STORAGE_KEY, ''));
+  const [boardError, setBoardError] = useState('');
+  const [stageOverrides, setStageOverrides] = useState({});
   const [deleteDeal, { isLoading: deleting }] = useDeleteDealMutation();
   const [markWon] = useMarkWonMutation();
   const [markLost] = useMarkLostMutation();
+  const [moveDealStage] = useMoveDealStageMutation();
+  const { data: pipelinesData = [] } = useGetPipelinesQuery();
   const { can } = useAclPermissions();
   const canDeleteDeal = can('deal:delete');
   const { options: ownerOptions } = useCompanyMembersOptions();
@@ -313,11 +428,49 @@ export default function DealsListPage() {
     () => buildStatusOptions(t, statusLabels, true),
     [t, statusLabels]
   );
+  const pipelines = useMemo(() => normalizePipelines(pipelinesData), [pipelinesData]);
+  const activePipelines = useMemo(
+    () => pipelines.filter((pipeline) => !pipeline.archived),
+    [pipelines]
+  );
+  const defaultPipeline = useMemo(() => pickDefaultPipeline(pipelines), [pipelines]);
+  const selectedBoardPipeline = useMemo(() => {
+    const stored = activePipelines.find((pipeline) => String(pipeline.id) === String(boardPipelineId || ''));
+    return stored || defaultPipeline || null;
+  }, [activePipelines, boardPipelineId, defaultPipeline]);
+  const selectedBoardPipelineId = selectedBoardPipeline?.id || '';
+  const visibleBoardStages = useMemo(
+    () => getVisibleStages(selectedBoardPipeline),
+    [selectedBoardPipeline]
+  );
+  const stageById = useMemo(() => {
+    const map = new Map();
+    for (const pipeline of pipelines) {
+      for (const stage of pipeline.stages || []) map.set(String(stage.id), stage);
+    }
+    return map;
+  }, [pipelines]);
+  const pipelineOptions = useMemo(() => [
+    { value: '', label: t('deals.filters.allPipelines', 'All pipelines') },
+    ...pipelines.map((pipeline) => ({ value: pipeline.id, label: pipeline.name || pipeline.id })),
+  ], [pipelines, t]);
+  const boardPipelineOptions = useMemo(() => (
+    activePipelines.map((pipeline) => ({ value: pipeline.id, label: pipeline.name || pipeline.id }))
+  ), [activePipelines]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  );
+
+  const setViewMode = useCallback((next) => {
+    const normalized = next === 'board' ? 'board' : 'list';
+    setViewModeState(normalized);
+    writeStorage(DEALS_VIEW_STORAGE_KEY, normalized);
+  }, []);
 
   const openDetail = useCallback((id) => {
-    const suffix = openAsModal ? '?modal=1' : '';
-    navigate(`/main/deals/${id}${suffix}`);
-  }, [navigate, openAsModal]);
+    navigate(`/main/deals/${id}`);
+  }, [navigate]);
 
   const columns = useMemo(() => ([
     {
@@ -383,7 +536,36 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
     limit: 25,
   }), []);
   const [query, setQuery] = useState(defaultQuery);
-  const apiQuery = useMemo(() => sanitizeDealsQuery(query), [query]);
+  useEffect(() => {
+    if (viewMode !== 'board' || !selectedBoardPipelineId) return;
+    setQuery((prev) => (
+      prev.pipelineId === selectedBoardPipelineId
+        ? prev
+        : { ...prev, pipelineId: selectedBoardPipelineId, stageId: undefined, page: 1 }
+    ));
+  }, [selectedBoardPipelineId, viewMode]);
+
+  const stageOptions = useMemo(() => {
+    const selected = pipelines.find((pipeline) => String(pipeline.id) === String(query.pipelineId || (viewMode === 'board' ? selectedBoardPipelineId : '') || ''));
+    const stages = selected
+      ? selected.stages || []
+      : pipelines.flatMap((pipeline) => pipeline.stages || []);
+    return [
+      { value: '', label: t('deals.filters.allStages', 'All stages') },
+      ...stages.map((stage) => ({ value: stage.id, label: stage.name || stage.id })),
+    ];
+  }, [pipelines, query.pipelineId, selectedBoardPipelineId, t, viewMode]);
+  const apiQuery = useMemo(() => {
+    const next = viewMode === 'board'
+      ? {
+        ...query,
+        page: 1,
+        limit: BOARD_PAGE_LIMIT,
+        pipelineId: selectedBoardPipelineId || query.pipelineId,
+      }
+      : query;
+    return sanitizeDealsQuery(next);
+  }, [query, selectedBoardPipelineId, viewMode]);
   const {
     data: dealsData,
     isFetching: dealsLoading,
@@ -396,6 +578,16 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
     if (Array.isArray(dealsData?.data)) return dealsData.data;
     return [];
   }, [dealsData]);
+  const boardDeals = useMemo(() => loadedDeals.map((deal) => {
+    const override = stageOverrides[deal.id];
+    if (!override) return deal;
+    return {
+      ...deal,
+      stageId: override.stageId,
+      pipelineId: override.pipelineId || deal.pipelineId,
+      status: override.status || deal.status,
+    };
+  }), [loadedDeals, stageOverrides]);
   const dealsTotal = Number(dealsData?.total ?? loadedDeals.length ?? 0);
   const hasAnyFilter = Boolean(
     query.q || query.pipelineId || query.stageId || query.responsibleId || query.status || query.dateFrom || query.dateTo
@@ -424,6 +616,18 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
     }));
   }, []);
 
+  const updateBoardPipeline = useCallback((pipelineId) => {
+    setBoardPipelineId(pipelineId || '');
+    writeStorage(DEALS_BOARD_PIPELINE_STORAGE_KEY, pipelineId || '');
+    setBoardError('');
+    setQuery((prev) => ({
+      ...prev,
+      pipelineId: pipelineId || undefined,
+      stageId: undefined,
+      page: 1,
+    }));
+  }, []);
+
   const columnState = useMemo(() => ({
     widths: colWidths,
     order: colOrder,
@@ -437,10 +641,13 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
   }, [onColumnOrderChange, onColumnResize, onColumnVisibilityChange]);
 
   const actions = useMemo(() => (
-    <AddButton onClick={() => setOpen(true)} title={t('deals.actions.new', 'New deal')}>
-     {t('deals.actions.new', 'New deal')}
-    </AddButton>
-  ), [t]);
+    <div className={s.headerActions}>
+      <ViewSwitch value={viewMode} onChange={setViewMode} t={t} />
+      <AddButton onClick={() => navigate('/main/deals/new')} title={t('deals.actions.new', 'New deal')}>
+       {t('deals.actions.new', 'New deal')}
+      </AddButton>
+    </div>
+  ), [navigate, setViewMode, t, viewMode]);
 
   const rowActions = useCallback((row) => {
     const isWon = row.status === 'won';
@@ -483,35 +690,100 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
     );
   }, [canDeleteDeal, deleting, markLost, markWon, openDetail, t]);
 
-  const workspaceColumns = useMemo(() => [
-    ...columns.map((column) => ({
-      ...column,
-      fallbackLabel: column.title,
-      minWidth: Math.max(110, Math.min(Number(column.width) || 180, 180)),
-      maxWidth: 560,
-      category: column.category || 'core',
-      required: column.key === 'title',
-      numeric: column.key === 'value',
-    })),
-    {
-      key: 'actions',
-      fallbackLabel: t('common.actions', 'Actions'),
-      width: 280,
-      minWidth: 240,
-      maxWidth: 360,
-      category: 'context',
-      required: true,
-      render: rowActions,
-    },
-  ], [columns, rowActions, t]);
+  const createInStage = useCallback((stageId) => {
+    const params = new URLSearchParams();
+    if (selectedBoardPipelineId) params.set('pipelineId', selectedBoardPipelineId);
+    if (stageId) params.set('stageId', stageId);
+    const suffix = params.toString();
+    navigate(`/main/deals/new${suffix ? `?${suffix}` : ''}`);
+  }, [navigate, selectedBoardPipelineId]);
 
-  const renderCell = useCallback((row, column) => {
-    if (typeof column.render === 'function') return column.render(row);
-    const value = row?.[column.key];
-    return value == null || value === '' ? '—' : String(value);
-  }, []);
+  const handleBoardDragEnd = useCallback(async ({ active, over }) => {
+    const dealId = active?.data?.current?.dealId || active?.id;
+    const targetStageId = over?.id;
+    const sourceStageId = active?.data?.current?.sourceStageId;
+    if (!dealId || !targetStageId || String(targetStageId) === String(sourceStageId || '')) return;
 
-  const workspaceControls = useMemo(() => [
+    const targetStage = stageById.get(String(targetStageId));
+    if (!targetStage || targetStage.hidden || targetStage.archived) return;
+
+    setBoardError('');
+    setStageOverrides((prev) => ({
+      ...prev,
+      [dealId]: {
+        stageId: targetStage.id,
+        pipelineId: targetStage.pipelineId || selectedBoardPipelineId,
+        status: targetStage.isWon ? 'won' : targetStage.isLost ? 'lost' : 'in_progress',
+      },
+    }));
+
+    try {
+      await moveDealStage({ dealId, stageId: targetStage.id }).unwrap();
+      await refetchDeals();
+    } catch (error) {
+      setBoardError(error?.data?.error || error?.data?.message || error?.message || t('deals.board.moveFailed', 'Failed to move deal'));
+      await refetchDeals();
+    } finally {
+      setStageOverrides((prev) => {
+        const next = { ...prev };
+        delete next[dealId];
+        return next;
+      });
+    }
+  }, [moveDealStage, refetchDeals, selectedBoardPipelineId, stageById, t]);
+
+  const boardDealsByStage = useMemo(() => {
+    const map = new Map(visibleBoardStages.map((stage) => [String(stage.id), []]));
+    for (const deal of boardDeals) {
+      const stageId = String(deal.stageId || deal.stage?.id || '');
+      if (map.has(stageId)) map.get(stageId).push(deal);
+    }
+    return map;
+  }, [boardDeals, visibleBoardStages]);
+
+  const boardSummary = useMemo(() => ({
+    count: boardDeals.length,
+    money: summarizeDeals(boardDeals, stageById),
+  }), [boardDeals, stageById]);
+  const stageBarPipeline = useMemo(() => {
+    if (viewMode === 'board') return selectedBoardPipeline;
+    return activePipelines.find((pipeline) => String(pipeline.id) === String(query.pipelineId || ''))
+      || defaultPipeline
+      || selectedBoardPipeline
+      || null;
+  }, [activePipelines, defaultPipeline, query.pipelineId, selectedBoardPipeline, viewMode]);
+  const stageBarStages = useMemo(() => stageBarPipeline?.stages || [], [stageBarPipeline]);
+  const stageBarDeals = viewMode === 'board' ? boardDeals : workspaceData.rows;
+  const stageBarAggregates = useMemo(
+    () => buildStageAggregates(stageBarDeals, stageBarStages),
+    [stageBarDeals, stageBarStages]
+  );
+  const handleStageBarSelect = useCallback((stageId) => {
+    updateFilter('stageId', stageId);
+  }, [updateFilter]);
+  const clearStageFilter = useCallback(() => {
+    updateFilter('stageId', '');
+  }, [updateFilter]);
+  const stageBar = (
+    <section className={s.stageBarSection} aria-label={t('deals.pipeline.stageBar', 'Pipeline stage overview')}>
+      <PipelinePath
+        stages={stageBarStages}
+        currentStageId={query.stageId || ''}
+        aggregates={stageBarAggregates}
+        showAll
+        allSelected={!query.stageId}
+        allLabel={t('deals.filters.allStages', 'All stages')}
+        onClear={clearStageFilter}
+        onSelect={handleStageBarSelect}
+        emptyLabel={t('deals.pipeline.noStages', 'This pipeline has no stages yet.')}
+        wonLabel={t('deals.status.won', 'Won')}
+        lostLabel={t('deals.status.lost', 'Lost')}
+        ariaLabel={t('deals.pipeline.stageBar', 'Pipeline stage overview')}
+      />
+    </section>
+  );
+
+  const boardControls = useMemo(() => [
     {
       key: 'q',
       kind: 'search',
@@ -528,26 +800,13 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
       ),
     },
     {
-      key: 'pipelineId',
-      label: t('deals.filters.pipeline', 'Pipeline'),
-      control: (
-        <SelectField
-          value={query.pipelineId || ''}
-          onValueChange={(value) => updateFilter('pipelineId', value)}
-          options={[{ value: '', label: t('deals.filters.allPipelines', 'All pipelines') }]}
-          size="sm"
-          fullWidth={false}
-        />
-      ),
-    },
-    {
       key: 'stageId',
       label: t('deals.filters.stage', 'Stage'),
       control: (
         <SelectField
           value={query.stageId || ''}
           onValueChange={(value) => updateFilter('stageId', value)}
-          options={[{ value: '', label: t('deals.filters.allStages', 'All stages') }]}
+          options={stageOptions}
           size="sm"
           fullWidth={false}
         />
@@ -603,12 +862,144 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
     ownerOptions,
     query.dateFrom,
     query.dateTo,
+    query.q,
+    query.responsibleId,
+    query.stageId,
+    query.status,
+    stageOptions,
+    statusOptions,
+    t,
+    updateFilter,
+  ]);
+
+  const workspaceColumns = useMemo(() => [
+    ...columns.map((column) => ({
+      ...column,
+      fallbackLabel: column.title,
+      minWidth: Math.max(110, Math.min(Number(column.width) || 180, 180)),
+      maxWidth: 560,
+      category: column.category || 'core',
+      required: column.key === 'title',
+      numeric: column.key === 'value',
+    })),
+    {
+      key: 'actions',
+      fallbackLabel: t('common.actions', 'Actions'),
+      width: 280,
+      minWidth: 240,
+      maxWidth: 360,
+      category: 'context',
+      required: true,
+      render: rowActions,
+    },
+  ], [columns, rowActions, t]);
+
+  const renderCell = useCallback((row, column) => {
+    if (typeof column.render === 'function') return column.render(row);
+    const value = row?.[column.key];
+    return value == null || value === '' ? '—' : String(value);
+  }, []);
+
+  const workspaceControls = useMemo(() => [
+    {
+      key: 'q',
+      kind: 'search',
+      label: t('common.search', 'Search'),
+      control: (
+        <SearchField
+          value={query.q || ''}
+          onValueChange={(value) => updateFilter('q', value)}
+          placeholder={t('deals.filters.searchPlaceholder', 'Search deals')}
+          size="sm"
+          clearable
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'pipelineId',
+      label: t('deals.filters.pipeline', 'Pipeline'),
+      control: (
+        <SelectField
+          value={query.pipelineId || ''}
+          onValueChange={(value) => updateFilter('pipelineId', value)}
+          options={pipelineOptions}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'stageId',
+      label: t('deals.filters.stage', 'Stage'),
+      control: (
+        <SelectField
+          value={query.stageId || ''}
+          onValueChange={(value) => updateFilter('stageId', value)}
+          options={stageOptions}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'responsibleId',
+      label: t('deals.filters.owner', 'Owner'),
+      control: (
+        <SelectField
+          value={query.responsibleId || ''}
+          onValueChange={(value) => updateFilter('responsibleId', value)}
+          options={[{ value: '', label: t('deals.filters.allOwners', 'All owners') }, ...ownerOptions]}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'status',
+      label: t('deals.filters.status', 'Status'),
+      control: (
+        <SelectField
+          value={query.status || ''}
+          onValueChange={(value) => updateFilter('status', value)}
+          options={statusOptions}
+          size="sm"
+          fullWidth={false}
+        />
+      ),
+    },
+    {
+      key: 'dateRange',
+      label: t('deals.filters.dateRange', 'Date range'),
+      control: (
+        <div className={s.dateRange}>
+          <DateField
+            inputClassName={s.dateInput}
+            value={query.dateFrom || ''}
+            onValueChange={(value) => updateFilter('dateFrom', value)}
+            fullWidth={false}
+          />
+          <DateField
+            inputClassName={s.dateInput}
+            value={query.dateTo || ''}
+            onValueChange={(value) => updateFilter('dateTo', value)}
+            fullWidth={false}
+          />
+        </div>
+      ),
+    },
+  ], [
+    ownerOptions,
+    pipelineOptions,
+    query.dateFrom,
+    query.dateTo,
     query.pipelineId,
     query.q,
     query.responsibleId,
     query.stageId,
     query.status,
     statusOptions,
+    stageOptions,
     t,
     updateFilter,
   ]);
@@ -639,8 +1030,9 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
     listRef.current?.refetch?.();
   }, [deleteDeal, deleteTarget]);
 
-  return (
-    <>
+  const listView = (
+    <div className={s.listPage}>
+      {stageBar}
       <Workspace
         ref={listRef}
         title={t('deals.title', 'Deals')}
@@ -688,25 +1080,98 @@ render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('co
         labels={workspaceLabels}
         pagination={workspaceData.pagination}
       />
+    </div>
+  );
 
-      <Modal
-        open={open}
-        onClose={() => setOpen(false)}
-        title={t('deals.modal.new.title', 'New deal')}
-        size="lg"
-      >
-        <DealForm
-          loading={creating}
-          onCancel={() => setOpen(false)}
-          onSubmit={async (payload) => {
-            try {
-              await createDeal(payload).unwrap();
-              setOpen(false);
-              listRef.current?.refetch?.();
-            } catch {}
-          }}
-        />
-      </Modal>
+  const boardView = (
+    <div className={s.boardPage}>
+      <header className={s.boardTopbar}>
+        <div className={s.headerMain}>
+          <h1>{t('deals.title', 'Deals')}</h1>
+          <div className={s.subtitleRow}>
+            <span>{t('deals.workspaceCount', { count: boardSummary.count, defaultValue: `${boardSummary.count}` })}</span>
+            <span>{formatMoneySummary(boardSummary.money)}</span>
+            <span>{t('deals.board.forecastShort', { value: formatForecastSummary(boardSummary.money), defaultValue: `Forecast ${formatForecastSummary(boardSummary.money)}` })}</span>
+          </div>
+        </div>
+        {actions}
+      </header>
+
+      <section className={s.boardToolbar} aria-label={t('deals.board.toolbar', 'Board controls')}>
+        <div className={s.pipelinePicker}>
+          <span>{t('deals.filters.pipeline', 'Pipeline')}</span>
+          <SelectField
+            value={selectedBoardPipelineId}
+            onValueChange={updateBoardPipeline}
+            options={boardPipelineOptions}
+            placeholder={t('deals.filters.pipeline', 'Pipeline')}
+            size="sm"
+            fullWidth={false}
+          />
+        </div>
+        <button type="button" className={s.boardRefresh} onClick={refetchDeals}>
+          {t('list.refresh', 'Refresh')}
+        </button>
+      </section>
+
+      <section className={s.boardFilters} aria-label={t('deals.board.filters', 'Board filters')}>
+        {boardControls.map((control) => (
+          <div key={control.key} className={control.kind === 'search' ? s.boardFilterSearch : s.boardFilter}>
+            <span>{control.label}</span>
+            {control.control}
+          </div>
+        ))}
+      </section>
+
+      {stageBar}
+
+      {boardError ? <div className={s.boardError}>{boardError}</div> : null}
+      {dealsLoading ? <div className={s.boardState}>{t('common.loading', 'Loading')}</div> : null}
+      {dealsError ? (
+        <div className={s.boardState}>
+          <strong>{t('deals.errorTitle', 'Не удалось загрузить сделки')}</strong>
+          <button type="button" onClick={refetchDeals}>{t('list.refresh', 'Refresh')}</button>
+        </div>
+      ) : null}
+      {!dealsLoading && !dealsError && !visibleBoardStages.length ? (
+        <div className={s.boardState}>
+          {t('deals.board.noStages', 'No visible stages in this pipeline.')}
+        </div>
+      ) : null}
+
+      {!dealsLoading && !dealsError && visibleBoardStages.length ? (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleBoardDragEnd}
+        >
+          <div className={s.boardViewport}>
+            <div className={s.boardGrid}>
+              {visibleBoardStages.map((stage) => (
+                <KanbanColumn
+                  key={stage.id}
+                  stage={stage}
+                  deals={boardDealsByStage.get(String(stage.id)) || []}
+                  stageById={stageById}
+                  statusLabels={statusLabels}
+                  canDelete={canDeleteDeal}
+                  deleting={deleting}
+                  onOpen={openDetail}
+                  onDelete={setDeleteTarget}
+                  onCreate={createInStage}
+                  t={t}
+                />
+              ))}
+            </div>
+          </div>
+        </DndContext>
+      ) : null}
+    </div>
+  );
+
+  return (
+    <>
+      {viewMode === 'board' ? boardView : listView}
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

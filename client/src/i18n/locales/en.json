@@ -1895,6 +1895,9 @@
     "fields": {
       "ownerType": "Entity type",
       "owner": "Entity",
+      "relatedTo": "Related to",
+      "relatedType": "Type",
+      "relatedEntity": "Entity",
       "selectedId": "ID",
       "visibility": "Visibility",
       "pinned": "Pinned",
@@ -1940,9 +1943,19 @@
       "ownerType": "Select entity type",
       "ownerSearch": "Start typing entity name…",
       "ownerFilterSearch": "Filter by entity…",
-      "content": "Enter note text",
+      "content": "Start writing a note...",
       "search": "Search notes",
       "ownerIdFilter": "ownerId"
+    },
+    "preview": {
+      "titleLabel": "Title:"
+    },
+    "detail": {
+      "back": "Back to notes",
+      "newTitle": "New note",
+      "saved": "Saved",
+      "unsaved": "Unsaved changes",
+      "notFound": "Note not found"
     },
     "modal": {
       "createTitle": "New note",
@@ -1958,6 +1971,8 @@
       "selectOwnerTypeFirst": "Select entity type first",
       "searching": "Searching…",
       "emptyOwners": "No entities found",
+      "emptyTitle": "No notes yet",
+      "emptyText": "Create the first note or adjust the filters.",
       "deleteConfirm": "Delete this note?"
     },
     "validation": {
@@ -2068,11 +2083,11 @@
     "table": {
       "columns": {
         "counterparty": "Counterparty",
-      "contacts": "Contacts",
-      "updatedAt": "Updated",
-      "lead": "Lead",
-      "department": "Department",
-      "createdAt": "Created"
+        "contacts": "Contacts",
+        "updatedAt": "Updated",
+        "lead": "Lead",
+        "department": "Department",
+        "createdAt": "Created"
       },
       "contactCount": "{{count}} contact",
       "contactCount_plural": "{{count}} contacts"
@@ -2085,36 +2100,63 @@
       "fields": {
         "shortName": "Short name",
         "fullName": "Full legal name",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "displayName": "Display name",
+        "subject": "Subject",
         "type": "Type",
         "status": "Status",
+        "pesel": "PESEL",
+        "birthDate": "Birth date",
         "nip": "NIP",
+        "nipVat": "NIP / VAT",
         "regon": "REGON",
         "krs": "KRS",
         "bdo": "BDO",
-      "country": "Country",
-      "city": "City",
-      "postalCode": "Postal code",
-      "street": "Street",
-      "department": "Department",
-      "description": "Description",
+        "country": "Country",
+        "city": "City",
+        "postalCode": "Postal code",
+        "street": "Street",
+        "department": "Department",
+        "description": "Description",
         "primary": "Primary",
         "isCompany": "Company"
+      },
+      "subject": {
+        "company": "Company",
+        "person": "Individual"
+      },
+      "personIntel": {
+        "age": "Age",
+        "gender": "Gender",
+        "male": "Male",
+        "female": "Female",
+        "peselValid": "PESEL is valid"
       },
       "placeholders": {
         "shortName": "Short company name",
         "fullName": "Registered legal name",
-      "nip": "digits only",
-      "postalCode": "e.g. 00-000",
-      "department": "No department",
-      "contactValue": "value (email, phone, link...)"
+        "firstName": "John",
+        "lastName": "Doe",
+        "displayName": "John Doe",
+        "pesel": "11 digits",
+        "nip": "digits only",
+        "nipVat": "5261040828 or DE1111111111",
+        "postalCode": "e.g. 00-000",
+        "department": "No department",
+        "contactValue": "value (email, phone, link...)"
       },
       "actions": {
         "addContact": "+ Add contact",
+        "applyBirthDate": "Apply",
         "remove": "Remove"
       },
       "hints": {
-      "noContacts": "No contacts added",
-      "departmentVisibility": "Assigning a department does not change visibility yet."
+        "noContacts": "No contacts added",
+        "departmentVisibility": "Assigning a department does not change visibility yet.",
+        "taxIdFormat": "Enter 10 digits or country code + 10 digits.",
+        "nipChecksumLocal": "This check runs locally before contacting the government registry.",
+        "peselBirthDate": "PESEL contains birth date: {{date}}"
       },
       "errors": {
         "requiredShort": "Enter a short name",
@@ -2125,11 +2167,13 @@
         "badStatus": "Invalid status",
         "digitsOnly": "Digits only",
         "nipLen": "Must be exactly 10 digits",
+        "nipChecksum": "Polish NIP checksum validation failed.",
         "countryIso": "ISO-2, e.g. PL",
         "selectChannel": "Select a channel",
         "valueRequired": "Enter a value",
         "badEmail": "Invalid email",
-        "badPhone": "Invalid phone"
+        "badPhone": "Invalid phone",
+        "taxIdFormat": "Enter 10 digits or 2 country letters + 10 digits."
       }
     },
     "enums": {
@@ -2156,9 +2200,9 @@
     },
     "filters": {
       "allTypes": "All types",
-    "allStatuses": "All statuses",
-    "allDepartments": "All departments",
-    "searchPlaceholder": "Search (name, NIP, REGON...)"
+      "allStatuses": "All statuses",
+      "allDepartments": "All departments",
+      "searchPlaceholder": "Search (name, NIP, REGON...)"
     },
     "task": {
       "title": "Tasks",
@@ -2172,6 +2216,19 @@
         "count_plural": "{{count}} tasks",
         "filteredCount": "{{count}} of {{total}} task",
         "filteredCount_plural": "{{count}} of {{total}} tasks"
+      },
+      "views": {
+        "label": "View",
+        "groupTasks": "Tasks",
+        "all": "All tasks",
+        "my": "My tasks",
+        "overdue": "Overdue",
+        "today": "Due today",
+        "inProgress": "In progress",
+        "completed": "Completed",
+        "custom": "Custom",
+        "selected": "Selected",
+        "resetFilters": "Reset filters"
       },
       "kpi": {
         "title": "Task summary",
@@ -2264,6 +2321,48 @@
           "emptyTitle": "No notes yet",
           "emptyText": "Add the first note to keep context here.",
           "addFirst": "Add note"
+        },
+        "create": {
+          "draft": "Draft",
+          "descriptionHint": "Description will be saved with the task",
+          "participantsTitle": "Participants will be added after creation",
+          "participantsHint": "Create the task to track participant completion and change member statuses."
+        },
+        "team": {
+          "assigneesTitle": "Assignees",
+          "progressLabel": "{{done}} / {{total}} done",
+          "progressValue": "{{done}} / {{total}} done",
+          "aggregateEnabledHint": "The task will automatically become completed when every assignee marks it done.",
+          "aggregateDisabledHint": "The overall task status is managed manually.",
+          "noAssigneesTitle": "No assignees",
+          "noAssigneesText": "Add assignees to track completion progress",
+          "emptySection": "No assignees in this status",
+          "notAssigneeHint": "You are not an assignee on this task. You can only change your own assignee status.",
+          "myActions": "My status actions",
+          "startedAt": "Started",
+          "completedAt": "Completed",
+          "noStatusTime": "No status time recorded",
+          "statusUpdateFailed": "Failed to update assignee status",
+          "managerControlsLater": "Controls for changing other assignees will be added after reliable task:update permission detection is wired.",
+          "sections": {
+            "completed": "Completed",
+            "pending": "In progress / pending",
+            "blocked": "Blocked"
+          },
+          "actions": {
+            "start": "Start",
+            "done": "Done",
+            "blocked": "Blocked",
+            "reopen": "Reopen"
+          },
+          "memberStatus": {
+            "todo": "Not started",
+            "in_progress": "In progress",
+            "done": "Done",
+            "blocked": "Blocked",
+            "canceled": "Canceled"
+          },
+          "progressDetail": "{{done}} of {{total}} assignees completed the task"
         }
       },
       "sections": {
@@ -2286,23 +2385,11 @@
           "cancelled": "Canceled"
         }
       },
-      "priorityLevels": {
-        "1": "1 - Low",
-        "2": "2 - Below medium",
-        "3": "3 - Medium",
-        "4": "4 - Above medium",
-        "5": "5 - High"
-      },
-      "priorityBuckets": {
-        "low": "Low",
-        "normal": "Normal",
-        "high": "High",
-        "urgent": "Urgent"
-      },
       "fields": {
         "title": "Title",
         "category": "Category",
         "status": "Status",
+        "progress": "Progress",
         "creator": "Author",
         "priority": "Priority",
         "startAt": "Planned start",
@@ -2335,7 +2422,8 @@
         "status": "Choose status",
         "assignee": "Choose assignee",
         "counterpartyId": "Counterparty UUID",
-        "dealId": "Deal UUID"
+        "dealId": "Deal UUID",
+        "dealSearch": "Select a deal"
       },
       "messages": {
         "typeToSearch": "Start typing a name",
@@ -2371,9 +2459,11 @@
         "errorText": "Try refreshing the workspace."
       }
     },
-  "counterparties": {
-    "noDepartment": "No department",
-    "tabs": {
+    "counterparties": {
+      "noDepartment": "No department",
+      "confirmDeleteTitle": "Delete counterparty?",
+      "confirmDeleteText": "The counterparty will be deleted or archived according to system settings.",
+      "tabs": {
         "offers": "Offers",
         "orders": "Orders"
       },
@@ -2384,6 +2474,129 @@
       "orders": {
         "empty": "No orders for this counterparty",
         "new": "New order"
+      }
+    },
+    "clientDetail": {
+      "create": {
+        "title": "New client",
+        "subtitle": "Fill in client data and create the record."
+      },
+      "actions": {
+        "back": "Back to clients"
+      }
+    },
+    "leadDetail": {
+      "create": {
+        "title": "New lead",
+        "subtitle": "Fill in lead data and create the record."
+      },
+      "actions": {
+        "back": "Back to leads"
+      }
+    },
+    "counterpartyDetail": {
+      "untitled": "Untitled counterparty",
+      "create": {
+        "title": "New counterparty",
+        "subtitle": "Fill in the core data and create the record."
+      },
+      "tabs": {
+        "overview": "Description",
+        "registration": "Requisites",
+        "address": "Address",
+        "notes": "Notes",
+        "contacts": "Contacts",
+        "offers": "Offers",
+        "orders": "Orders",
+        "additional": "Additional"
+      },
+      "sections": {
+        "identity": "Main",
+        "registration": "Requisites",
+        "registrationHint": "Tax and legal identifiers.",
+        "address": "Address",
+        "addressHint": "Postal and legal address for this counterparty.",
+        "meta": "Additional",
+        "summary": "Summary"
+      },
+      "fields": {
+        "id": "ID",
+        "createdAt": "Created",
+        "updatedAt": "Updated",
+        "address": "Address",
+        "registrySource": "Registry source",
+        "registryCheckedAt": "Registry checked"
+      },
+      "actions": {
+        "back": "Back to list",
+        "create": "Create"
+      },
+      "description": {
+        "title": "Description",
+        "placeholder": "Describe this counterparty: terms, agreements, working notes...",
+        "emptyText": "No description yet. Add working notes, terms, or important context."
+      },
+      "relations": {
+        "number": "Number",
+        "status": "Status",
+        "totalGross": "Total",
+        "validUntil": "Valid until / created",
+        "placedAt": "Date / created"
+      },
+      "empty": {
+        "notesTitle": "No notes yet",
+        "notesText": "Add a note to keep counterparty context visible for the team.",
+        "addNote": "Add note",
+        "offersTitle": "No offers yet",
+        "offersText": "Create the first offer for this counterparty.",
+        "ordersTitle": "No orders yet",
+        "ordersText": "Create an order when this counterparty has an active sale."
+      },
+      "notesTitle": "Counterparty notes",
+      "validation": {
+        "nameRequired": "Enter a counterparty name",
+        "firstNameRequired": "Enter a first name",
+        "lastNameRequired": "Enter a last name",
+        "displayNameRequired": "Enter a display name",
+        "invalidPesel": "Invalid PESEL."
+      },
+      "messages": {
+        "saveFailed": "Could not save counterparty",
+        "loadFailed": "Could not load data"
+      },
+      "registry": {
+        "checking": "Checking in GUS...",
+        "foundTitle": "Company found",
+        "notFoundTitle": "Not found",
+        "notFoundText": "No company was found for this NIP. You can continue filling the form manually.",
+        "errorTitle": "Connection error",
+        "errorText": "Registry lookup is temporarily unavailable. Try again later or enter data manually.",
+        "configMissingTitle": "Registry is not configured",
+        "configMissingText": "GUS lookup key is missing on the server.",
+        "unsupportedTitle": "Country {{country}} is not connected yet",
+        "unsupportedText": "Only PL NIP lookup through GUS is available now.",
+        "apply": "Fill data",
+        "applyChanges": "Apply changes",
+        "applyGus": "Apply GUS data",
+        "applySaved": "Data updated from GUS",
+        "details": "Details",
+        "refresh": "Refresh",
+        "ignore": "Ignore",
+        "diffTitle": "Detected differences",
+        "moreDiffs": "+{{count}} more",
+        "source": "Source: {{source}}",
+        "updatedAt": "Updated: {{date}}",
+        "sandboxHint": "Data from the GUS test environment, not production.",
+        "mockHint": "Demo registry data, not official GUS data.",
+        "verifiedSource": "Verified {{source}}",
+        "lastChecked": "Last check: {{date}}",
+        "legalForm": "Legal form",
+        "registrationDate": "Registration date",
+        "vatStatus": "VAT status",
+        "pkd": "PKD",
+        "cacheHit": "Cache: hit",
+        "cacheMiss": "Cache: miss",
+        "cacheStale": "Cache: stale fallback"
       }
     }
   },
@@ -3477,13 +3690,6 @@
       "myTasksOnly": "My tasks only",
       "priority": "Priority"
     },
-    "priority": {
-      "all": "All",
-      "urgent": "Urgent",
-      "high": "High",
-      "medium": "Medium",
-      "low": "Low"
-    },
     "task": {
       "allDay": "All day",
       "completed": "Completed",
@@ -3513,6 +3719,20 @@
         "endAfterStart": "End time must be later than start time",
         "pastDateTime": "Tasks cannot be created in the past"
       }
+    },
+    "quickCreate": {
+      "title": "New task",
+      "moreOptions": "More options"
+    }
+  },
+  "priority": {
+    "all": "All priorities",
+    "levels": {
+      "10": "Lowest",
+      "25": "Low",
+      "50": "Normal",
+      "75": "High",
+      "100": "Urgent"
     }
   },
   "userDetail": {

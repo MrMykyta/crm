@@ -20,6 +20,21 @@ import {
 } from "lucide-react";
 import { WMS_DOCUMENT_NAVIGATION_GROUPS } from "../pages/wms/navigation/wmsUiNavigation";
 
+const TASK_NAVIGATION_GROUPS = [
+  {
+    key: "tasks",
+    labelKey: "crm.task.views.groupTasks",
+    items: [
+      { key: "all", labelKey: "crm.task.views.all", to: "/main/tasks" },
+      { key: "my", labelKey: "crm.task.views.my", to: "/main/tasks?view=my" },
+      { key: "overdue", labelKey: "crm.task.views.overdue", to: "/main/tasks?view=overdue" },
+      { key: "today", labelKey: "crm.task.views.today", to: "/main/tasks?view=today" },
+      { key: "in-progress", labelKey: "crm.task.views.inProgress", to: "/main/tasks?view=in-progress" },
+      { key: "completed", labelKey: "crm.task.views.completed", to: "/main/tasks?view=completed" },
+    ],
+  },
+];
+
 const WMS_VARIANT_B_MENU = [
   {
     key: "wmsDocuments",
@@ -47,7 +62,7 @@ export const MENU = [
   { key: "leads", icon: Sprout, labelKey: "menu.leads", route: "/main/leads", type: "item", filterFlyout: true, requiredPermission: "counterparty:read" },
   { key: "clients", icon: Users, labelKey: "menu.clients", route: "/main/clients", type: "item", filterFlyout: true, requiredPermission: "counterparty:read" },
   { key: "deals", icon: LineChart, labelKey: "menu.deals", route: "/main/deals", type: "item", requiredPermission: "deal:read" },
-  { key: "tasks", icon: CheckSquare, labelKey: "menu.tasks", route: "/main/tasks", type: "item", requiredPermission: "task:read" },
+  { key: "tasks", icon: CheckSquare, labelKey: "menu.tasks", route: "/main/tasks", type: "item", requiredPermission: "task:read", navigationFlyout: TASK_NAVIGATION_GROUPS },
   { key: "notes", icon: ClipboardList, labelKey: "menu.notes", route: "/main/notes", type: "item", requiredPermission: "note:read" },
   { key: "contacts", icon: Users, labelKey: "menu.contacts", route: "/main/contacts", type: "item" },
   { key: "calendar", icon: Calendar, labelKey: "menu.calendar", route: "/main/calendar", type: "item", requiredPermission: "task:read" },

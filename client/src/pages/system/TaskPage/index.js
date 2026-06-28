@@ -1,14 +1,13 @@
 // src/pages/crm/tasks/index.jsx
-import React, { useMemo, useRef, useState, useCallback } from 'react';
+import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
 import {
   Workspace,
   useWorkspaceData,
 } from '../../../components/workspace';
-import Modal from '../../../components/Modal';
 import AddButton from '../../../components/buttons/AddButton/AddButton';
 import ConfirmDialog from '../../../components/dialogs/ConfirmDialog';
 import LinkCell from '../../../components/cells/LinkCell';
@@ -16,15 +15,34 @@ import { SearchField, SelectField } from '../../../components/ui/fields';
 import useOpenAsModal from '../../../hooks/useOpenAsModal';
 
 import { TASK_STATUS, formatTaskDate } from '../../../schemas/task.schema';
-import { buildTaskLookups } from '../../../utils/taskLookups';
+import {
+  PRIORITY_I18N_KEYS,
+  PRIORITY_OPTIONS,
+  PRIORITY_TONES,
+  normalizePriority,
+} from '../../../config/priority';
 
-import TaskForm from './TaskForm';
-import { useCreateTaskMutation, useDeleteTaskMutation, useListTasksQuery } from '../../../store/rtk/tasksApi';
+import { useDeleteTaskMutation, useListTasksQuery } from '../../../store/rtk/tasksApi';
 import s from './TaskListCells.module.css';
 import w from './TaskWorkspace.module.css';
 
-const CLIENT_FILTER_KEYS = new Set(['priorityBucket', 'overdueOnly', 'dueTodayOnly', 'myTasks', 'assigneeId']);
+const CLIENT_FILTER_KEYS = new Set(['priority', 'overdueOnly', 'dueTodayOnly', 'myTasks', 'assigneeId']);
 const CLOSED_STATUSES = new Set(['done', 'canceled', 'cancelled']);
+const TASK_VIEW_ALL = 'all';
+const TASK_VIEW_MY = 'my';
+const TASK_VIEW_OVERDUE = 'overdue';
+const TASK_VIEW_TODAY = 'today';
+const TASK_VIEW_IN_PROGRESS = 'inProgress';
+const TASK_VIEW_COMPLETED = 'completed';
+
+const TASK_VIEW_OPTIONS = [
+  { value: TASK_VIEW_ALL, labelKey: 'crm.task.views.all', queryView: '' },
+  { value: TASK_VIEW_MY, labelKey: 'crm.task.views.my', queryView: 'my' },
+  { value: TASK_VIEW_OVERDUE, labelKey: 'crm.task.views.overdue', queryView: 'overdue' },
+  { value: TASK_VIEW_TODAY, labelKey: 'crm.task.views.today', queryView: 'today' },
+  { value: TASK_VIEW_IN_PROGRESS, labelKey: 'crm.task.views.inProgress', queryView: 'in-progress' },
+  { value: TASK_VIEW_COMPLETED, labelKey: 'crm.task.views.completed', queryView: 'completed' },
+];
 
 const normalizeStatus = (value) => String(value || 'todo').trim().toLowerCase();
 
@@ -54,14 +72,6 @@ const isTaskDueToday = (task, now = new Date()) => {
   return isSameLocalDay(due, now);
 };
 
-const getPriorityBucket = (priority) => {
-  const value = Math.max(0, Math.min(100, Number(priority ?? 50) || 0));
-  if (value <= 24) return 'low';
-  if (value <= 49) return 'normal';
-  if (value <= 74) return 'high';
-  return 'urgent';
-};
-
 const getVisibilityValue = (value) => {
   const normalized = String(value || 'company').trim().toLowerCase();
   return ['private', 'company', 'department'].includes(normalized) ? normalized : 'company';
@@ -75,17 +85,55 @@ const getTaskAssigneeIds = (task = {}) => {
     .filter(Boolean);
 };
 
+const getParticipantMeta = (user = {}) => user.TaskUserParticipant || user.taskUserParticipant || {};
+
+const buildTaskProgressSummary = (task = {}) => {
+  const summary = task.aggregateSummary;
+  const total = Number(summary?.assigneesTotal ?? 0);
+  if (total > 0) {
+    const done = Math.max(0, Number(summary?.assigneesDone ?? 0));
+    const percent = Number.isFinite(Number(summary?.progressPercent))
+      ? Number(summary.progressPercent)
+      : Math.round((done / total) * 100);
+    return {
+      total,
+      done: Math.min(done, total),
+      percent: Math.max(0, Math.min(100, percent)),
+    };
+  }
+
+  const participants = Array.isArray(task.userParticipants) ? task.userParticipants : [];
+  const assignees = participants.filter((user) => getParticipantMeta(user).role === 'assignee');
+  if (!assignees.length) return null;
+  const fallbackTotal = assignees.length;
+  const fallbackDone = assignees.filter((user) => getParticipantMeta(user).memberStatus === 'done').length;
+  return {
+    total: fallbackTotal,
+    done: fallbackDone,
+    percent: Math.round((fallbackDone / fallbackTotal) * 100),
+  };
+};
+
 const sanitizeTasksQuery = (query = {}) => Object.fromEntries(
   Object.entries(query).filter(([key, value]) => !CLIENT_FILTER_KEYS.has(key) && value !== undefined && value !== '')
 );
 
+const getTaskViewFromSearch = (search = '') => {
+  const view = new URLSearchParams(search).get('view');
+  if (view === 'my') return TASK_VIEW_MY;
+  if (view === 'overdue') return TASK_VIEW_OVERDUE;
+  if (view === 'today') return TASK_VIEW_TODAY;
+  if (view === 'in-progress') return TASK_VIEW_IN_PROGRESS;
+  if (view === 'completed') return TASK_VIEW_COMPLETED;
+  return TASK_VIEW_ALL;
+};
+
 // Компонент TasksPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function TasksPage(){
   const listRef = useRef(null);
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const openAsModal = useOpenAsModal();
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteError, setDeleteError] = useState('');
@@ -94,9 +142,7 @@ export default function TasksPage(){
 
   // lookups (users/departments/contacts/counterparties/deals) и текущий пользователь
   const members = useSelector((s) => s.bootstrap?.companyUsers || []);
-  const currentUser = useSelector((s) => s.auth?.currentUser || null);
-  const lookups = useMemo(() => buildTaskLookups({ members }), [members]);
-  const currentUserId = currentUser?.id ? String(currentUser.id) : '';
+  const currentUserId = useSelector((s) => s.auth?.currentUser?.id ? String(s.auth.currentUser.id) : '');
   const memberOptions = useMemo(() => {
     const options = (Array.isArray(members) ? members : [])
       .map((member) => {
@@ -109,8 +155,34 @@ export default function TasksPage(){
     return [{ value: '', label: t('crm.task.filters.allAssignees') }, ...options];
   }, [members, t]);
 
+  const activeTaskView = useMemo(() => getTaskViewFromSearch(location.search), [location.search]);
+
+  useEffect(() => {
+    setQuery((prev) => {
+      const next = {
+        ...prev,
+        page: 1,
+        overdueOnly: undefined,
+        dueTodayOnly: undefined,
+        myTasks: undefined,
+      };
+
+      if (prev.status === 'in_progress' || prev.status === 'done') {
+        next.status = undefined;
+      }
+
+      if (activeTaskView === TASK_VIEW_MY && currentUserId) next.myTasks = true;
+      if (activeTaskView === TASK_VIEW_OVERDUE) next.overdueOnly = true;
+      if (activeTaskView === TASK_VIEW_TODAY) next.dueTodayOnly = true;
+      if (activeTaskView === TASK_VIEW_IN_PROGRESS) next.status = 'in_progress';
+      if (activeTaskView === TASK_VIEW_COMPLETED) next.status = 'done';
+
+      return next;
+    });
+  }, [activeTaskView, currentUserId]);
+
   const hasClientFilter = Boolean(
-    query.priorityBucket
+    query.priority
     || query.overdueOnly
     || query.dueTodayOnly
     || query.myTasks
@@ -138,14 +210,14 @@ export default function TasksPage(){
   const filteredTasks = useMemo(() => {
     const now = new Date();
     return loadedTasks.filter((task) => {
-      if (query.priorityBucket && getPriorityBucket(task.priority) !== query.priorityBucket) return false;
+      if (query.priority && normalizePriority(task.priority) !== Number(query.priority)) return false;
       if (query.overdueOnly && !isTaskOverdue(task, now)) return false;
       if (query.dueTodayOnly && !isTaskDueToday(task, now)) return false;
       if (query.myTasks && currentUserId && !getTaskAssigneeIds(task).includes(currentUserId)) return false;
       if (query.assigneeId && !getTaskAssigneeIds(task).includes(String(query.assigneeId))) return false;
       return true;
     });
-  }, [currentUserId, loadedTasks, query.assigneeId, query.dueTodayOnly, query.myTasks, query.overdueOnly, query.priorityBucket]);
+  }, [currentUserId, loadedTasks, query.assigneeId, query.dueTodayOnly, query.myTasks, query.overdueOnly, query.priority]);
 
   const kpis = useMemo(() => {
     const now = new Date();
@@ -164,7 +236,7 @@ export default function TasksPage(){
     || query.visibility
     || query.from
     || query.to
-    || query.priorityBucket
+    || query.priority
     || query.overdueOnly
     || query.dueTodayOnly
     || query.myTasks
@@ -202,17 +274,16 @@ export default function TasksPage(){
     }));
   }, []);
 
-  const resetClientFilters = useCallback(() => {
-    setQuery((prev) => {
-      const next = { ...prev, page: 1 };
-      CLIENT_FILTER_KEYS.forEach((key) => {
-        delete next[key];
-      });
-      return next;
-    });
-  }, []);
+  const resetAllFilters = useCallback(() => {
+    setQuery(defaultQuery);
+    if (location.search) navigate('/main/tasks', { replace: true });
+  }, [defaultQuery, location.search, navigate]);
 
-  const [createTask] = useCreateTaskMutation();
+  const selectTaskView = useCallback((view) => {
+    const option = TASK_VIEW_OPTIONS.find((item) => item.value === view) || TASK_VIEW_OPTIONS[0];
+    navigate(option.queryView ? `/main/tasks?view=${option.queryView}` : '/main/tasks');
+  }, [navigate]);
+
   const [deleteTask, { isLoading: deletingTask }] = useDeleteTaskMutation();
 
   const openDetail = useCallback((id)=>{
@@ -250,17 +321,41 @@ render:(r)=> {
       },
     },
     {
+      key: 'progress',
+      title: t('crm.task.fields.progress'),
+      width: 132,
+      render: (r) => {
+        const progress = buildTaskProgressSummary(r);
+        if (!progress || !progress.total) return '—';
+        return (
+          <div
+            className={s.progressCell}
+            title={`${progress.done} / ${progress.total} · ${progress.percent}%`}
+          >
+            <div className={s.progressCellTop}>
+              <strong>{progress.done} / {progress.total}</strong>
+              <span>{progress.percent}%</span>
+            </div>
+            <div className={s.progressMiniTrack} aria-hidden="true">
+              <span style={{ width: `${progress.percent}%` }} />
+            </div>
+          </div>
+        );
+      },
+    },
+    {
       key:'priority',
       title:t('crm.task.fields.priority'),
       sortable:true,
       width:150,
             // render: описывает рендер соответствующего блока UI.
 render:(r)=> {
-        const bucket = getPriorityBucket(r.priority);
+        const value = normalizePriority(r.priority);
+        const tone = PRIORITY_TONES[value] || 'info';
         return (
-          <span className={`${s.priorityChip} ${s[`priority_${bucket}`]}`}>
-            {t(`crm.task.priorityBuckets.${bucket}`)}
-            <span className={s.priorityValue}>{Number(r.priority ?? 50)}</span>
+          <span className={`${s.priorityChip} ${s[`priority_${tone}`] || ''}`}>
+            <span className={s.priorityNumber}>{value}</span>
+            <span className={s.priorityValue}>{t(PRIORITY_I18N_KEYS[value])}</span>
           </span>
         );
       },
@@ -487,17 +582,17 @@ render:(r)=>{
       ),
     },
     {
-      key: 'priorityBucket',
+      key: 'priority',
       label: t('crm.task.filters.priority'),
       control: (
         <SelectField
-          value={query.priorityBucket || ''}
-          onValueChange={(value) => updateFilter('priorityBucket', value)}
+          value={query.priority || ''}
+          onValueChange={(value) => updateFilter('priority', value)}
           options={[
-            { value: '', label: t('crm.task.filters.allPriorities') },
-            ...['low', 'normal', 'high', 'urgent'].map((value) => ({
-              value,
-              label: t(`crm.task.priorityBuckets.${value}`),
+            { value: '', label: t('priority.all') },
+            ...PRIORITY_OPTIONS.map((option) => ({
+              value: String(option.value),
+              label: `${option.value} · ${t(option.labelKey)}`,
             })),
           ]}
           size="sm"
@@ -519,59 +614,30 @@ render:(r)=>{
       ),
     }] : []),
     {
-      key: 'quickFilters',
-      kind: 'quick',
+      key: 'taskView',
+      label: t('crm.task.views.label'),
       control: (
-        <div className={w.quickFilters}>
-          <button
-            type="button"
-            className={`${w.filterPill} ${query.overdueOnly ? w.filterPillActive : ''}`}
-            onClick={() => updateFilter('overdueOnly', query.overdueOnly ? undefined : true)}
-            title={t('crm.task.filters.overdueOnly')}
-          >
-            {t('crm.task.filters.overdueShort', 'Просроченные')}
-          </button>
-          <button
-            type="button"
-            className={`${w.filterPill} ${query.dueTodayOnly ? w.filterPillActive : ''}`}
-            onClick={() => updateFilter('dueTodayOnly', query.dueTodayOnly ? undefined : true)}
-            title={t('crm.task.filters.dueToday')}
-          >
-            {t('crm.task.filters.todayShort', 'Сегодня')}
-          </button>
-          {currentUserId ? (
-            <button
-              type="button"
-              className={`${w.filterPill} ${query.myTasks ? w.filterPillActive : ''}`}
-              onClick={() => updateFilter('myTasks', query.myTasks ? undefined : true)}
-              title={t('crm.task.filters.myTasks')}
-            >
-              {t('crm.task.filters.myShort', 'Мои')}
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className={w.resetButton}
-            onClick={resetClientFilters}
-            title={t('crm.task.filters.resetClient')}
-          >
-            {t('common.reset', 'Сбросить')}
-          </button>
-        </div>
+        <SelectField
+          value={activeTaskView}
+          onValueChange={selectTaskView}
+          options={TASK_VIEW_OPTIONS.map((option) => ({
+            value: option.value,
+            label: t(option.labelKey),
+          }))}
+          size="sm"
+          fullWidth={false}
+        />
       ),
     },
   ], [
-    currentUserId,
+    activeTaskView,
     memberOptions,
     query.assigneeId,
-    query.dueTodayOnly,
-    query.myTasks,
-    query.overdueOnly,
-    query.priorityBucket,
+    query.priority,
     query.search,
     query.status,
     query.visibility,
-    resetClientFilters,
+    selectTaskView,
     t,
     updateFilter,
   ]);
@@ -596,19 +662,17 @@ render:(r)=>{
   }), [t]);
 
   const actions = useMemo(()=> (
-    <AddButton onClick={()=>setOpen(true)} title={t('crm.task.addTask')}>
+    <AddButton onClick={()=>navigate('/main/tasks/new')} title={t('crm.task.addTask')}>
       {t('crm.task.addTask')}
     </AddButton>
-  ), [t]);
+  ), [navigate, t]);
 
-  const footer = useMemo(()=> (
-    <>
-      <Modal.Button onClick={()=>setOpen(false)}>{t('common.cancel')}</Modal.Button>
-      <Modal.Button variant="primary" form="task-create-form" disabled={saving}>
-        {saving ? t('common.saving') : t('common.save')}
-      </Modal.Button>
-    </>
-  ), [t, saving]);
+  const handleWorkspaceClickCapture = useCallback((event) => {
+    const button = event.target?.closest?.('button');
+    if (!button || typeof button.className !== 'string') return;
+    if (!button.className.includes('resetColumnsButton') || button.className.includes('columnsButton')) return;
+    resetAllFilters();
+  }, [resetAllFilters]);
 
   return (
     <div className={w.workspace}>
@@ -622,59 +686,41 @@ render:(r)=>{
         ))}
       </section>
 
-      <Workspace
-        ref={listRef}
-        title={t('crm.task.title')}
-        subtitle={t('crm.task.workspace.subtitle')}
-        badge={workspaceBadge}
-        actions={actions}
-        controls={workspaceControls}
-        rows={workspaceData.rows}
-        columns={workspaceColumns}
-        loading={workspaceData.loading}
-        error={workspaceData.error}
-        onRetry={workspaceData.refetch}
-        onRefetch={workspaceData.refetch}
-        renderCell={renderCell}
-        getRowId={(row) => row?.id}
-        getRowKey={(row) => String(row?.id || row?.title || '')}
-        onRowClick={(row) => row?.id && openDetail(row.id)}
-        storageKey="workspace:crm.tasks.columns.v1"
-        sortKey={workspaceData.query.sort}
-        sortDir={workspaceData.query.dir}
-        onSort={workspaceData.setSort}
-        emptyState={{
-          title: t(hasAnyFilter ? 'crm.task.states.emptyFilteredTitle' : 'crm.task.states.emptyTitle'),
-          description: t(hasAnyFilter ? 'crm.task.states.emptyFilteredText' : 'crm.task.states.emptyText'),
-        }}
-        errorState={{
-          title: t('crm.task.states.errorTitle'),
-          description: String(tasksError?.data?.message || tasksError?.data?.error || tasksError?.message || t('crm.task.states.errorText')),
-          retryLabel: t('list.refresh', 'Refresh'),
-        }}
-        labels={workspaceLabels}
-        pagination={workspaceData.pagination}
-      />
-
-      <Modal open={open} onClose={()=>setOpen(false)} title={t('crm.task.newTask')} size="xl" footer={footer}>
-        <TaskForm
-          id="task-create-form"
-          loading={saving}
-          withButtons={false}
-          lookups={lookups}
-          currentUserId={currentUser?.id}
-          onCancel={()=>setOpen(false)}
-          onSubmit={async (values)=>{
-            setSaving(true);
-            try{
-              await createTask(values).unwrap();
-              setOpen(false);
-              listRef.current?.refetch?.();
-              refetchTasks();
-            } finally { setSaving(false); }
+      <div onClickCapture={handleWorkspaceClickCapture}>
+        <Workspace
+          ref={listRef}
+          title={t('crm.task.title')}
+          subtitle={t('crm.task.workspace.subtitle')}
+          badge={workspaceBadge}
+          actions={actions}
+          controls={workspaceControls}
+          rows={workspaceData.rows}
+          columns={workspaceColumns}
+          loading={workspaceData.loading}
+          error={workspaceData.error}
+          onRetry={workspaceData.refetch}
+          onRefetch={workspaceData.refetch}
+          renderCell={renderCell}
+          getRowId={(row) => row?.id}
+          getRowKey={(row) => String(row?.id || row?.title || '')}
+          onRowClick={(row) => row?.id && openDetail(row.id)}
+          storageKey="workspace:crm.tasks.columns.v1"
+          sortKey={workspaceData.query.sort}
+          sortDir={workspaceData.query.dir}
+          onSort={workspaceData.setSort}
+          emptyState={{
+            title: t(hasAnyFilter ? 'crm.task.states.emptyFilteredTitle' : 'crm.task.states.emptyTitle'),
+            description: t(hasAnyFilter ? 'crm.task.states.emptyFilteredText' : 'crm.task.states.emptyText'),
           }}
+          errorState={{
+            title: t('crm.task.states.errorTitle'),
+            description: String(tasksError?.data?.message || tasksError?.data?.error || tasksError?.message || t('crm.task.states.errorText')),
+            retryLabel: t('list.refresh', 'Refresh'),
+          }}
+          labels={workspaceLabels}
+          pagination={workspaceData.pagination}
         />
-      </Modal>
+      </div>
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

@@ -80,6 +80,44 @@ module.exports.update = async (req, res) => {
   }
 };
 
+// Updates current assignee's own participant status without requiring task:update.
+module.exports.updateMyStatus = async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    const id = req.params.id;
+    const result = await taskService.updateMyMemberStatus({
+      taskId: id,
+      companyId,
+      userId: req.user.id,
+      memberStatus: req.body.memberStatus,
+      note: req.body.note,
+    });
+    res.status(200).send({ data: result });
+  } catch (e) {
+    console.error('[TaskController.updateMyStatus]', e);
+    res.status(e.status || 400).send({ error: e.message });
+  }
+};
+
+// Updates any assignee's participant status; route requires task:update.
+module.exports.updateParticipantStatus = async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    const result = await taskService.updateParticipantMemberStatus({
+      taskId: req.params.id,
+      targetUserId: req.params.userId,
+      companyId,
+      actorUserId: req.user.id,
+      memberStatus: req.body.memberStatus,
+      note: req.body.note,
+    });
+    res.status(200).send({ data: result });
+  } catch (e) {
+    console.error('[TaskController.updateParticipantStatus]', e);
+    res.status(e.status || 400).send({ error: e.message });
+  }
+};
+
 // Удаляет сущность по идентификатору.
 module.exports.remove = async (req, res) => {
   try {
@@ -106,4 +144,3 @@ module.exports.restore = async (req, res) => {
     res.status(e.status || 400).send({ error: e.message });
   }
 };
-

@@ -1,0 +1,199 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10020;
+  pointer-events: auto;
+  background: transparent;
+}
+
+.card {
+  position: fixed;
+  left: var(--quick-left);
+  top: var(--quick-top);
+  width: var(--quick-width);
+  transform: var(--quick-transform);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--card-brd, rgba(255,255,255,.12)) 70%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.055)),
+    color-mix(in srgb, var(--card-bg, #111827) 92%, transparent);
+  box-shadow:
+    0 22px 54px rgba(0,0,0,.32),
+    inset 0 1px 0 rgba(255,255,255,.12);
+  backdrop-filter: blur(22px);
+  color: var(--text);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-lg);
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.closeButton {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--input-bg, rgba(255,255,255,.08)) 86%, transparent);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--primary-start, #8b5cf6) 18%, var(--input-bg, rgba(255,255,255,.08)));
+}
+
+.modeGroup {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--input-bg, rgba(255,255,255,.08)) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--input-border, rgba(255,255,255,.12)) 70%, transparent);
+}
+
+.modeButton {
+  min-height: 34px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modeButtonActive {
+  color: var(--text);
+  background: color-mix(in srgb, var(--primary-start, #8b5cf6) 24%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1);
+}
+
+.timeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.error {
+  color: var(--danger, #ef4444);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.moreButton,
+.createButton {
+  min-height: 38px;
+  border-radius: 12px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.moreButton {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 4px;
+}
+
+.moreButton:hover {
+  color: var(--text);
+}
+
+.createButton {
+  border: 1px solid color-mix(in srgb, var(--primary-start, #8b5cf6) 55%, transparent);
+  background: linear-gradient(135deg, var(--primary-start, #8b5cf6), var(--primary-end, #06b6d4));
+  color: #fff;
+  padding: 0 18px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.24);
+}
+
+.createButton:disabled,
+.moreButton:disabled,
+.modeButton:disabled,
+.closeButton:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .layer {
+    background: rgba(0,0,0,.28);
+  }
+
+  .card {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: auto;
+    max-height: min(86vh, 620px);
+    transform: none;
+    border-radius: 18px 18px 0 0;
+    padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+  }
+
+  .footer {
+    position: sticky;
+    bottom: calc(-16px - env(safe-area-inset-bottom));
+    margin: 2px -14px calc(-16px - env(safe-area-inset-bottom));
+    padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.04)),
+      color-mix(in srgb, var(--card-bg, #111827) 96%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--card-brd, rgba(255,255,255,.12)) 70%, transparent);
+  }
+}
+
+@media (max-width: 430px) {
+  .timeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .createButton {
+    width: 100%;
+  }
+}

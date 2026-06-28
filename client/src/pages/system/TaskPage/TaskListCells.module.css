@@ -142,21 +142,26 @@
   border-color: color-mix(in srgb, var(--card-brd) 78%, transparent);
 }
 
-.priority_low {
-  color: color-mix(in srgb, var(--muted) 84%, var(--text));
+.priority_neutral {
+  color: color-mix(in srgb, var(--text) 72%, var(--muted));
 }
 
-.priority_normal {
+.priority_muted {
+  color: color-mix(in srgb, var(--muted) 84%, var(--text));
+  border-color: color-mix(in srgb, var(--muted) 28%, transparent);
+}
+
+.priority_info {
   color: color-mix(in srgb, #8fc4ff 76%, var(--text));
   border-color: color-mix(in srgb, #8fc4ff 28%, transparent);
 }
 
-.priority_high {
+.priority_warning {
   color: color-mix(in srgb, #ffce73 82%, var(--text));
   border-color: color-mix(in srgb, #ffce73 32%, transparent);
 }
 
-.priority_urgent {
+.priority_danger {
   color: color-mix(in srgb, #ff8f8f 78%, var(--text));
   border-color: color-mix(in srgb, var(--danger) 38%, transparent);
   background: color-mix(in srgb, var(--danger) 12%, var(--card-bg));
@@ -165,6 +170,59 @@
 .priorityValue {
   opacity: 0.66;
   font-weight: 700;
+}
+
+.priorityNumber {
+  font-size: var(--font-size-13);
+  font-weight: 840;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressCell {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-width: 86px;
+  max-width: 118px;
+}
+
+.progressCellTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  color: color-mix(in srgb, var(--text) 90%, transparent);
+  font-size: var(--font-size-12);
+  line-height: 1.1;
+}
+
+.progressCellTop strong {
+  overflow: hidden;
+  font-weight: 820;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progressCellTop span {
+  flex: 0 0 auto;
+  color: color-mix(in srgb, var(--muted) 88%, transparent);
+  font-weight: 760;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressMiniTrack {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-brd) 62%, transparent);
+}
+
+.progressMiniTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2dd4bf, #60a5fa);
 }
 
 .visibilityChip {

@@ -184,43 +184,6 @@
   background: color-mix(in srgb, var(--card-bg) 78%, transparent);
 }
 
-.quickFilters {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.filterPill,
-.resetButton {
-  min-height: 32px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--card-brd) 76%, transparent);
-  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
-  color: color-mix(in srgb, var(--text) 82%, transparent);
-  padding: 0 10px;
-  font-size: var(--font-size-12);
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.filterPill:hover,
-.resetButton:hover {
-  border-color: color-mix(in srgb, var(--focus) 34%, transparent);
-  background: color-mix(in srgb, var(--sidebar-hover) 72%, transparent);
-}
-
-.filterPillActive {
-  border-color: color-mix(in srgb, var(--focus) 48%, transparent);
-  background: color-mix(in srgb, var(--focus) 18%, var(--card-bg));
-  color: color-mix(in srgb, var(--focus) 72%, var(--text));
-}
-
-.resetButton {
-  color: color-mix(in srgb, var(--muted) 88%, transparent);
-}
-
 .emptyState {
   display: grid;
   justify-items: center;

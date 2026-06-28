@@ -3,6 +3,19 @@ import React from "react";
 import s from "../CalendarPage.module.css";
 import { isSameDay, toKey } from "./dateUtils";
 
+function rectSnapshot(element) {
+  const rect = element?.getBoundingClientRect?.();
+  if (!rect) return null;
+  return {
+    top: rect.top,
+    left: rect.left,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
 // Компонент MonthGridMonth: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function MonthGridMonth({
   baseDate,
@@ -65,7 +78,10 @@ export default function MonthGridMonth({
               isWeekend ? s.monthCellWeekend : "",
             ].join(" ")}
             onClick={() => onClickDay && onClickDay(date)}
-            onDoubleClick={() => onCreateFromDate?.(date)}
+            onDoubleClick={(event) => onCreateFromDate?.(date, {
+              isAllDay: true,
+              anchorRect: rectSnapshot(event.currentTarget),
+            })}
           >
             <div className={s.monthCellHeader}>
               <span className={isFirstOfMonth ? s.monthCellOtherMonthTitle : s.monthCellDay}>

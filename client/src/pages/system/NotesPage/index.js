@@ -1,29 +1,19 @@
-import React, {
-  useMemo,
-  useRef,
-  useState,
-  useCallback,
-  useEffect,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Workspace } from '../../../components/workspace';
-import Modal from '../../../components/Modal';
+import { Pencil, Pin, PinOff, Trash2 } from 'lucide-react';
 import AddButton from '../../../components/buttons/AddButton/AddButton';
 import ConfirmDialog from '../../../components/dialogs/ConfirmDialog';
 import {
   AutocompleteField,
-  CheckboxField,
   SelectField,
-  TextareaField,
-  VisibilityField,
 } from '../../../components/ui/fields';
-import useGridPrefs from '../../../hooks/useGridPrefs';
 import {
-  useCreateNoteMutation,
-  useUpdateNoteMutation,
   useDeleteNoteMutation,
   useGetNoteOwnerOptionsQuery,
+  useGetNotesQuery,
+  useUpdateNoteMutation,
 } from '../../../store/rtk/notesApi';
 import { useListDepartmentsQuery } from '../../../store/rtk/departmentsApi';
 import s from './NotesPage.module.css';
@@ -41,16 +31,11 @@ const OWNER_TYPES = [
   'product',
 ];
 
-const emptyForm = {
-  ownerType: '',
-  ownerId: '',
-  visibility: 'private',
-  visibilityDepartmentId: '',
-  pinned: false,
-  content: '',
-};
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100].map((value) => ({
+  value: String(value),
+  label: String(value),
+}));
 
-// formatDate: форматирует данные для отображения.
 function formatDate(value, locale) {
   if (!value) return '—';
   const date = new Date(value);
@@ -58,7 +43,6 @@ function formatDate(value, locale) {
   return date.toLocaleString(locale || undefined);
 }
 
-// getAuthorLabel: возвращает вычисленное значение для UI.
 function getAuthorLabel(note) {
   const first = note?.author?.firstName || '';
   const last = note?.author?.lastName || '';
@@ -66,12 +50,10 @@ function getAuthorLabel(note) {
   return full || note?.author?.email || '—';
 }
 
-// shortId: вспомогательная логика компонента.
 function shortId(value) {
   return String(value || '').slice(0, 8);
 }
 
-// toOwnerOption: вспомогательная логика компонента.
 function toOwnerOption(item) {
   if (!item?.id) return null;
   return {
@@ -81,245 +63,81 @@ function toOwnerOption(item) {
   };
 }
 
-// renderNoteContent: описывает рендер соответствующего блока UI.
-function renderNoteContent(rawContent, classNames) {
-  const text = String(rawContent || '').replace(/\r\n/g, '\n').trim();
-  if (!text) return <span className={classNames.muted}>—</span>;
-
-  const lines = text.split('\n');
-  const blocks = [];
-  let paragraph = [];
-  let listType = null;
-  let listItems = [];
-
-    // flushParagraph: вспомогательная логика компонента.
-const flushParagraph = () => {
-    if (!paragraph.length) return;
-    blocks.push({ type: 'p', lines: paragraph });
-    paragraph = [];
-  };
-
-    // flushList: вспомогательная логика компонента.
-const flushList = () => {
-    if (!listType || !listItems.length) return;
-    blocks.push({ type: listType, items: listItems });
-    listType = null;
-    listItems = [];
-  };
-
-  lines.forEach((line) => {
-    const trimmed = line.trim();
-    if (!trimmed) {
-      flushParagraph();
-      flushList();
-      return;
-    }
-
-    const unorderedMatch = trimmed.match(/^[-*•]\s+(.+)$/);
-    if (unorderedMatch) {
-      flushParagraph();
-      if (listType !== 'ul') {
-        flushList();
-        listType = 'ul';
-      }
-      listItems.push(unorderedMatch[1]);
-      return;
-    }
-
-    const orderedMatch = trimmed.match(/^\d+[.)]\s+(.+)$/);
-    if (orderedMatch) {
-      flushParagraph();
-      if (listType !== 'ol') {
-        flushList();
-        listType = 'ol';
-      }
-      listItems.push(orderedMatch[1]);
-      return;
-    }
-
-    flushList();
-    paragraph.push(line);
-  });
-
-  flushParagraph();
-  flushList();
-
-  return (
-    <div className={classNames.contentRich}>
-      {blocks.map((block, index) => {
-        if (block.type === 'p') {
-          return (
-            <p key={`p-${index}`} className={classNames.contentParagraph}>
-              {block.lines.join('\n')}
-            </p>
-          );
-        }
-
-        const ListTag = block.type === 'ol' ? 'ol' : 'ul';
-        return (
-          <ListTag
-            key={`${block.type}-${index}`}
-            className={`${classNames.contentList} ${block.type === 'ol' ? classNames.contentListOrdered : classNames.contentListUnordered}`}
-          >
-            {block.items.map((item, itemIndex) => (
-              <li key={`${block.type}-${index}-${itemIndex}`} className={classNames.contentListItem}>
-                {item}
-              </li>
-            ))}
-          </ListTag>
-        );
-      })}
-    </div>
-  );
+function getNoteLines(content) {
+  return String(content || '')
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
-// Компонент NoteForm: отвечает за отображение UI и обработку взаимодействий пользователя.
-function NoteForm({
-  t,
-  values,
-  ownerTypeOptions,
-  ownerSearch,
-  ownerOptions,
-  ownerLoading,
-  departments,
-  selectedOwner,
-  onOwnerSearchChange,
-  onOwnerSelect,
-  onChange,
-  onSubmit,
-  error,
-}) {
-  return (
-    <form id="notes-form" className={s.form} onSubmit={onSubmit}>
-      <div className={s.row2}>
-        <SelectField
-          className={s.field}
-          inputClassName={s.select}
-          label={t('notes.fields.ownerType')}
-          value={values.ownerType}
-          onValueChange={(value) => onChange('ownerType', value)}
-          options={[
-            { value: '', label: t('notes.placeholders.ownerType') },
-            ...ownerTypeOptions,
-          ]}
-          placeholder={t('notes.placeholders.ownerType')}
-          size="md"
-        />
-
-        <div className={s.field}>
-          <AutocompleteField
-            label={t('notes.fields.owner')}
-            value={selectedOwner}
-            inputValue={ownerSearch}
-            onInputChange={onOwnerSearchChange}
-            options={ownerOptions}
-            onSelect={onOwnerSelect}
-            placeholder={t('notes.placeholders.ownerSearch')}
-            hint={t('notes.messages.typeToSearch')}
-            searchingLabel={t('notes.messages.searching')}
-            emptyLabel={t('notes.messages.emptyOwners')}
-            loading={ownerLoading}
-            disabled={!values.ownerType}
-            getOptionPrimary={(opt) => opt?.label || String(opt?.id || '')}
-            getOptionSecondary={(opt) => opt?.subtitle || opt?.id || null}
-            inputClassName={`${s.input} ${s.ownerInputOpaque}`}
-            menuClassName={s.ownerMenuOpaque}
-            opaque
-          />
-          {selectedOwner?.label ? (
-            <span className={s.ownerIdHint}>
-              {selectedOwner.label}
-              {selectedOwner.subtitle ? ` · ${selectedOwner.subtitle}` : ''}
-            </span>
-          ) : values.ownerId ? (
-            <span className={s.ownerIdHint}>
-              {t('notes.fields.selectedId')}: {values.ownerId}
-            </span>
-          ) : null}
-        </div>
-      </div>
-
-      <div className={s.row2}>
-        <VisibilityField
-          className={s.field}
-          inputClassName={s.select}
-          value={values.visibility}
-          departmentId={values.visibilityDepartmentId}
-          departments={departments}
-          onChange={({ visibility, visibilityDepartmentId }) => {
-            onChange('visibility', visibility);
-            onChange('visibilityDepartmentId', visibilityDepartmentId);
-          }}
-          size="md"
-        />
-
-        <CheckboxField
-          className={s.checkboxField}
-          label={t('notes.fields.pinned')}
-          checked={Boolean(values.pinned)}
-          onValueChange={(checked) => onChange('pinned', checked)}
-        />
-      </div>
-
-      <TextareaField
-        className={s.field}
-        inputClassName={s.textarea}
-        label={t('notes.fields.content')}
-        value={values.content}
-        onValueChange={(value) => onChange('content', value)}
-        rows={8}
-        placeholder={t('notes.placeholders.content')}
-      />
-
-      {error && <div className={s.error}>{error}</div>}
-    </form>
-  );
+function getDerivedNoteTitle(content, fallback) {
+  return getNoteLines(content)[0] || fallback;
 }
 
-// Компонент NotesPage: отвечает за отображение UI и обработку взаимодействий пользователя.
+function getNotePreview(content) {
+  const lines = getNoteLines(content);
+  if (lines.length <= 1) return '';
+  return lines.slice(1, 4).join('\n');
+}
+
+function getVisibilityLabel(note, t, departmentById) {
+  if (note?.visibility === 'department') {
+    const departmentId = note.visibilityDepartmentId || note.visibility_department_id || '';
+    const department = note.visibilityDepartment || note.department || departmentById.get(String(departmentId));
+    const name = department?.name || department?.code || departmentId;
+    return `${t('visibility.department')}${name ? ` · ${name}` : ''}`;
+  }
+  return t(`visibility.${note?.visibility || 'company'}`, t('visibility.company'));
+}
+
 export default function NotesPage() {
   const { t, i18n } = useTranslation();
-  const listRef = useRef(null);
+  const navigate = useNavigate();
   const currentUserId = useSelector((state) => state.auth?.currentUser?.id || null);
 
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(emptyForm);
-  const [formError, setFormError] = useState('');
-
+  const [query, setQuery] = useState({
+    search: '',
+    ownerType: '',
+    ownerId: '',
+    visibility: '',
+    pinned: '',
+    page: 1,
+    limit: 25,
+  });
+  const [searchInput, setSearchInput] = useState('');
+  const [searchDebounced, setSearchDebounced] = useState('');
   const [ownerSearch, setOwnerSearch] = useState('');
   const [ownerSearchDebounced, setOwnerSearchDebounced] = useState('');
   const [selectedOwner, setSelectedOwner] = useState(null);
-  const [toolbarOwnerType, setToolbarOwnerType] = useState('');
-  const [toolbarOwnerSearch, setToolbarOwnerSearch] = useState('');
-  const [toolbarOwnerSearchDebounced, setToolbarOwnerSearchDebounced] = useState('');
-  const [toolbarSelectedOwner, setToolbarSelectedOwner] = useState(null);
-  const [quickEditId, setQuickEditId] = useState(null);
-  const [quickEditValue, setQuickEditValue] = useState('');
-  const [quickEditError, setQuickEditError] = useState('');
-  const [quickEditSaving, setQuickEditSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteError, setDeleteError] = useState('');
 
-  const [createNote, { isLoading: creating }] = useCreateNoteMutation();
   const [updateNote, { isLoading: updating }] = useUpdateNoteMutation();
   const [deleteNote, { isLoading: deleting }] = useDeleteNoteMutation();
   const { data: departmentsData } = useListDepartmentsQuery({ limit: 100 });
-  const {
-    colWidths,
-    colOrder,
-    colVisibility,
-    savedViews,
-    activeViewId,
-    onColumnResize,
-    onColumnOrderChange,
-    onColumnVisibilityChange,
-    onSavedViewsChange,
-    onActiveViewChange,
-    resetGridPrefs,
-  } = useGridPrefs('crm.notes');
 
-  const saving = creating || updating;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchDebounced(String(searchInput || '').trim());
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setQuery((prev) => {
+      if ((prev.search || '') === searchDebounced) return prev;
+      return { ...prev, search: searchDebounced, page: 1 };
+    });
+  }, [searchDebounced]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setOwnerSearchDebounced(String(ownerSearch || '').trim());
+    }, 320);
+    return () => clearTimeout(timer);
+  }, [ownerSearch]);
+
   const departments = useMemo(
     () => (Array.isArray(departmentsData) ? departmentsData : []),
     [departmentsData]
@@ -329,20 +147,6 @@ export default function NotesPage() {
     [departments]
   );
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setOwnerSearchDebounced(String(ownerSearch || '').trim());
-    }, 320);
-    return () => clearTimeout(timer);
-  }, [ownerSearch]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setToolbarOwnerSearchDebounced(String(toolbarOwnerSearch || '').trim());
-    }, 320);
-    return () => clearTimeout(timer);
-  }, [toolbarOwnerSearch]);
-
   const ownerTypeOptions = useMemo(
     () => OWNER_TYPES.map((value) => ({
       value,
@@ -350,17 +154,14 @@ export default function NotesPage() {
     })),
     [t]
   );
-
   const ownerTypeLabelMap = useMemo(
     () => ownerTypeOptions.reduce((acc, item) => ({ ...acc, [item.value]: item.label }), {}),
     [ownerTypeOptions]
   );
-
   const ownerTypeFilterOptions = useMemo(
     () => [{ value: '', label: t('notes.filters.allOwnerTypes') }, ...ownerTypeOptions],
     [ownerTypeOptions, t]
   );
-
   const visibilityFilterOptions = useMemo(
     () => [
       { value: '', label: t('visibility.all') },
@@ -370,7 +171,6 @@ export default function NotesPage() {
     ],
     [t]
   );
-
   const pinnedFilterOptions = useMemo(
     () => [
       { value: '', label: t('notes.filters.allPinned') },
@@ -382,196 +182,74 @@ export default function NotesPage() {
 
   const { data: ownerLookupData, isFetching: ownerLookupLoading } = useGetNoteOwnerOptionsQuery(
     {
-      ownerType: form.ownerType,
+      ownerType: query.ownerType,
       search: ownerSearchDebounced,
       limit: 20,
     },
-    { skip: !open || !form.ownerType }
+    { skip: !query.ownerType }
   );
-  const { data: toolbarOwnerLookupData, isFetching: toolbarOwnerLookupLoading } = useGetNoteOwnerOptionsQuery(
-    {
-      ownerType: toolbarOwnerType,
-      search: toolbarOwnerSearchDebounced,
-      limit: 20,
-    },
-    { skip: !toolbarOwnerType }
-  );
-
   const ownerOptions = useMemo(() => {
     const base = Array.isArray(ownerLookupData?.items)
       ? ownerLookupData.items.map(toOwnerOption).filter(Boolean)
       : [];
-
-    if (
-      selectedOwner?.id
-      && !base.some((item) => String(item.id) === String(selectedOwner.id))
-    ) {
+    if (selectedOwner?.id && !base.some((item) => String(item.id) === String(selectedOwner.id))) {
       return [selectedOwner, ...base];
     }
-
     return base;
   }, [ownerLookupData?.items, selectedOwner]);
 
-  const toolbarOwnerOptions = useMemo(() => {
-    const base = Array.isArray(toolbarOwnerLookupData?.items)
-      ? toolbarOwnerLookupData.items.map(toOwnerOption).filter(Boolean)
-      : [];
-
-    if (
-      toolbarSelectedOwner?.id
-      && !base.some((item) => String(item.id) === String(toolbarSelectedOwner.id))
-    ) {
-      return [toolbarSelectedOwner, ...base];
-    }
-
-    return base;
-  }, [toolbarOwnerLookupData?.items, toolbarSelectedOwner]);
+  const listQuery = useMemo(() => ({
+    search: query.search || undefined,
+    ownerType: query.ownerType || undefined,
+    ownerId: query.ownerId || undefined,
+    visibility: query.visibility || undefined,
+    pinned: query.pinned || undefined,
+    sort: 'createdAt',
+    dir: 'DESC',
+    page: query.page,
+    limit: query.limit,
+  }), [query]);
+  const { data, isFetching, refetch } = useGetNotesQuery(listQuery);
+  const notes = Array.isArray(data?.items) ? data.items : [];
+  const total = Number(data?.total || 0);
+  const totalPages = Math.max(1, Math.ceil(total / Number(query.limit || 25)));
+  const from = total === 0 ? 0 : ((query.page - 1) * query.limit) + 1;
+  const to = Math.min(total, query.page * query.limit);
 
   const canManage = useCallback(
     (note) => String(note?.author?.id || '') === String(currentUserId || ''),
     [currentUserId]
   );
 
-  const resetFormState = useCallback(() => {
-    setEditing(null);
-    setForm(emptyForm);
-    setFormError('');
-    setOwnerSearch('');
-    setOwnerSearchDebounced('');
-    setSelectedOwner(null);
+  const updateQuery = useCallback((patch) => {
+    setQuery((prev) => ({ ...prev, ...patch }));
   }, []);
 
   const openCreate = useCallback(() => {
-    setQuickEditId(null);
-    setQuickEditValue('');
-    setQuickEditError('');
-    resetFormState();
-    setOpen(true);
-  }, [resetFormState]);
+    navigate('/main/notes/new');
+  }, [navigate]);
 
-  const openEdit = useCallback((note) => {
-    setQuickEditId(null);
-    setQuickEditValue('');
-    setQuickEditError('');
-    const ownerType = note?.ownerType || '';
-    const ownerId = note?.ownerId || '';
-    const ownerTypeLabel = ownerTypeLabelMap[ownerType] || ownerType;
-    const fallbackOwnerLabel = note?.ownerLabel || `${ownerTypeLabel} #${shortId(ownerId)}`;
+  const openDetail = useCallback((note) => {
+    if (!note?.id) return;
+    navigate(`/main/notes/${note.id}`);
+  }, [navigate]);
 
-    setEditing(note);
-    setForm({
-      ownerType,
-      ownerId,
-      visibility: note?.visibility || 'company',
-      visibilityDepartmentId: note?.visibilityDepartmentId || note?.visibility_department_id || '',
-      pinned: Boolean(note?.pinned),
-      content: note?.content || '',
-    });
-    setSelectedOwner(
-      ownerId
-        ? {
-          id: ownerId,
-          label: fallbackOwnerLabel,
-          subtitle: note?.ownerSubtitle || ownerId,
-        }
-        : null
-    );
-    setOwnerSearch(ownerId ? fallbackOwnerLabel : '');
-    setOwnerSearchDebounced('');
-    setFormError('');
-    setOpen(true);
-  }, [ownerTypeLabelMap]);
+  const onCardKeyDown = useCallback((event, note) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openDetail(note);
+  }, [openDetail]);
 
-  const closeModal = useCallback(() => {
-    setOpen(false);
-    resetFormState();
-  }, [resetFormState]);
-
-  const handleOwnerTypeChange = useCallback((value) => {
-    setForm((prev) => ({
-      ...prev,
-      ownerType: value,
-      ownerId: '',
-    }));
-    setSelectedOwner(null);
-    setOwnerSearch('');
-    setOwnerSearchDebounced('');
-  }, []);
-
-  const handleOwnerInputChange = useCallback((value) => {
-    setOwnerSearch(value);
-
-    if (!selectedOwner) return;
-
-    const selectedLabel = String(selectedOwner.label || '').trim();
-    if (String(value || '').trim() !== selectedLabel) {
-      setSelectedOwner(null);
-      setForm((prev) => ({ ...prev, ownerId: '' }));
-    }
-  }, [selectedOwner]);
-
-  const handleOwnerSelect = useCallback((option) => {
-    if (!option?.id) return;
-
-    const normalized = toOwnerOption(option);
-    setSelectedOwner(normalized);
-    setOwnerSearch(normalized?.label || '');
-    setOwnerSearchDebounced(String(normalized?.label || '').trim());
-    setForm((prev) => ({ ...prev, ownerId: String(option.id) }));
-  }, []);
-
-    // handleSubmit: обработчик пользовательского действия.
-const handleSubmit = async (event) => {
-    event?.preventDefault();
-    setFormError('');
-
-    const payload = {
-      ownerType: String(form.ownerType || '').trim(),
-      ownerId: String(form.ownerId || '').trim(),
-      visibility: form.visibility || 'company',
-      pinned: Boolean(form.pinned),
-      content: String(form.content || '').trim(),
-    };
-    if (payload.visibility === 'department') {
-      payload.visibilityDepartmentId = form.visibilityDepartmentId || null;
-    } else {
-      payload.visibilityDepartmentId = null;
-    }
-
-    if (!payload.ownerType) {
-      setFormError(t('notes.validation.ownerTypeRequired'));
-      return;
-    }
-    if (!payload.ownerId) {
-      setFormError(t('notes.validation.ownerRequired'));
-      return;
-    }
-    if (!payload.content) {
-      setFormError(t('notes.validation.contentRequired'));
-      return;
-    }
-    if (payload.visibility === 'department' && !payload.visibilityDepartmentId) {
-      setFormError(t('visibility.departmentRequired'));
-      return;
-    }
-
+  const onTogglePin = useCallback(async (note) => {
+    if (!note?.id) return;
     try {
-      if (editing?.id) {
-        await updateNote({ id: editing.id, payload }).unwrap();
-      } else {
-        await createNote(payload).unwrap();
-      }
-      closeModal();
-      listRef.current?.refetch?.();
-    } catch (e) {
-      setFormError(
-        e?.data?.error
-        || e?.data?.message
-        || e?.message
-        || t('notes.validation.saveFailed')
-      );
+      await updateNote({ id: note.id, payload: { pinned: !note.pinned } }).unwrap();
+      refetch();
+    } catch {
+      // keep list interaction quiet; detail page will show full errors on save.
     }
-  };
+  }, [refetch, updateNote]);
 
   const onDelete = useCallback((note) => {
     if (!note?.id) return;
@@ -585,7 +263,7 @@ const handleSubmit = async (event) => {
     try {
       await deleteNote(deleteTarget.id).unwrap();
       setDeleteTarget(null);
-      listRef.current?.refetch?.();
+      refetch();
     } catch (error) {
       setDeleteError(
         error?.data?.message
@@ -594,425 +272,256 @@ const handleSubmit = async (event) => {
         || t('notes.validation.saveFailed')
       );
     }
-  }, [deleteNote, deleteTarget?.id, deleting, t]);
-
-  const onTogglePin = useCallback(async (note) => {
-    if (!note?.id) return;
-    try {
-      await updateNote({ id: note.id, payload: { pinned: !note.pinned } }).unwrap();
-      listRef.current?.refetch?.();
-    } catch {
-      // noop
-    }
-  }, [updateNote]);
-
-  const startQuickEdit = useCallback((note) => {
-    if (!note?.id) return;
-    setQuickEditId(note.id);
-    setQuickEditValue(String(note?.content || ''));
-    setQuickEditError('');
-  }, []);
-
-  const cancelQuickEdit = useCallback(() => {
-    setQuickEditId(null);
-    setQuickEditValue('');
-    setQuickEditError('');
-  }, []);
-
-  const saveQuickEdit = useCallback(async () => {
-    const id = quickEditId;
-    if (!id) return;
-
-    const content = String(quickEditValue || '').trim();
-    if (!content) {
-      setQuickEditError(t('notes.validation.contentRequired'));
-      return;
-    }
-
-    setQuickEditSaving(true);
-    setQuickEditError('');
-    try {
-      await updateNote({ id, payload: { content } }).unwrap();
-      cancelQuickEdit();
-      listRef.current?.refetch?.();
-    } catch (e) {
-      setQuickEditError(
-        e?.data?.error
-        || e?.data?.message
-        || e?.message
-        || t('notes.validation.saveFailed')
-      );
-    } finally {
-      setQuickEditSaving(false);
-    }
-  }, [quickEditId, quickEditValue, t, updateNote, cancelQuickEdit]);
-
-  const columns = useMemo(
-    () => [
-      {
-        key: 'content',
-        title: t('notes.table.content'),
-        width: 500,
-                // render: описывает рендер соответствующего блока UI.
-render: (row) => {
-          const ownerTypeLabel = ownerTypeLabelMap[row.ownerType] || row.ownerType;
-          const ownerLabel = row?.ownerLabel || `${ownerTypeLabel} #${shortId(row.ownerId)}`;
-          const ownerSubtitle = row?.ownerSubtitle || null;
-          const isQuickEditing = quickEditId === row.id && canManage(row);
-
-          return (
-            <div className={s.contentCell}>
-              <div className={s.contentSurface}>
-                {isQuickEditing ? (
-                  <div className={s.quickEditWrap}>
-                    <TextareaField
-                      inputClassName={s.quickEditTextarea}
-                      value={quickEditValue}
-                      rows={5}
-                      onValueChange={setQuickEditValue}
-                    />
-                    {quickEditError ? <div className={s.quickEditError}>{quickEditError}</div> : null}
-                    <div className={s.quickEditActions}>
-                      <button
-                        type="button"
-                        className={s.quickEditSave}
-                        disabled={quickEditSaving}
-                        onClick={saveQuickEdit}
-                      >
-                        {quickEditSaving ? t('common.saving') : t('common.save')}
-                      </button>
-                      <button
-                        type="button"
-                        className={s.quickEditCancel}
-                        disabled={quickEditSaving}
-                        onClick={cancelQuickEdit}
-                      >
-                        {t('common.cancel')}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div onDoubleClick={() => canManage(row) && startQuickEdit(row)}>
-                    {renderNoteContent(row.content, s)}
-                  </div>
-                )}
-              </div>
-              <div className={s.contentSubRow}>
-                <span className={`${s.badge} ${s.ownerBadge}`}>{ownerTypeLabel}</span>
-                <span className={s.ownerName}>{ownerLabel}</span>
-                {ownerSubtitle ? <span className={s.ownerId}>{ownerSubtitle}</span> : null}
-                {row.pinned ? <span className={`${s.badge} ${s.badgePinned}`}>{t('notes.fields.pinned')}</span> : null}
-              </div>
-            </div>
-          );
-        },
-      },
-      {
-        key: 'visibility',
-        title: t('notes.table.visibility'),
-        width: 170,
-                // render: описывает рендер соответствующего блока UI.
-render: (row) => (
-          <span
-            className={`${s.badge} ${row.visibility === 'private' ? s.badgePrivate : row.visibility === 'department' ? s.badgeDepartment : s.badgeCompany}`}
-            title={t(`visibility.tooltip.${row.visibility || 'company'}`, '')}
-          >
-            {row.visibility === 'department'
-              ? `${t('visibility.department')}${(() => {
-                const departmentId = row.visibilityDepartmentId || row.visibility_department_id || '';
-                const department = row.visibilityDepartment || row.department || departmentById.get(String(departmentId));
-                const name = department?.name || department?.code || departmentId;
-                return name ? ` · ${name}` : '';
-              })()}`
-              : t(`visibility.${row.visibility || 'company'}`, t('visibility.company'))}
-          </span>
-        ),
-      },
-      {
-        key: 'pinned',
-        title: t('notes.table.pinned'),
-        sortable: true,
-        width: 110,
-                // render: описывает рендер соответствующего блока UI.
-render: (row) => (
-          <span className={row.pinned ? s.pinYes : s.pinNo}>
-            {row.pinned ? t('notes.values.yes') : t('notes.values.no')}
-          </span>
-        ),
-      },
-      {
-        key: 'author',
-        title: t('notes.table.author'),
-        width: 180,
-                // render: описывает рендер соответствующего блока UI.
-render: (row) => getAuthorLabel(row),
-      },
-      {
-        key: 'createdAt',
-        title: t('notes.table.createdAt'),
-        sortable: true,
-        width: 180,
-                // render: описывает рендер соответствующего блока UI.
-render: (row) => formatDate(row.createdAt, i18n.language),
-      },
-      {
-        key: 'updatedAt',
-        title: t('notes.table.updatedAt'),
-        sortable: true,
-        width: 180,
-                // render: описывает рендер соответствующего блока UI.
-render: (row) => formatDate(row.updatedAt, i18n.language),
-      },
-    ],
-    [
-      t,
-      i18n.language,
-      ownerTypeLabelMap,
-      departmentById,
-      quickEditId,
-      quickEditValue,
-      quickEditError,
-      quickEditSaving,
-      canManage,
-      saveQuickEdit,
-      cancelQuickEdit,
-      startQuickEdit,
-    ]
-  );
-
-  const rowActions = useCallback(
-    (row) => {
-      if (!canManage(row)) return <span className={s.muted}>—</span>;
-      return (
-        <div className={s.rowActions}>
-          <button
-            type="button"
-            className={s.rowLink}
-            disabled={quickEditSaving}
-            onClick={() => (quickEditId === row.id ? cancelQuickEdit() : startQuickEdit(row))}
-          >
-            {quickEditId === row.id ? t('common.cancel') : t('notes.actions.quickEdit')}
-          </button>
-          <span className={s.sep}>•</span>
-          <button type="button" className={s.rowLink} onClick={() => onTogglePin(row)}>
-            {row.pinned ? t('notes.actions.unpin') : t('notes.actions.pin')}
-          </button>
-          <span className={s.sep}>•</span>
-          <button type="button" className={s.rowLink} onClick={() => openEdit(row)}>
-            {t('notes.actions.edit')}
-          </button>
-          <span className={s.sep}>•</span>
-          <button
-            type="button"
-            className={s.rowDanger}
-            disabled={deleting || quickEditSaving}
-            onClick={() => onDelete(row)}
-          >
-            {t('notes.actions.delete')}
-          </button>
-        </div>
-      );
-    },
-    [
-      canManage,
-      quickEditId,
-      quickEditSaving,
-      cancelQuickEdit,
-      startQuickEdit,
-      deleting,
-      onDelete,
-      onTogglePin,
-      openEdit,
-      t,
-    ]
-  );
-
-  const actions = useMemo(
-    () => (
-      <AddButton onClick={openCreate} title={t('notes.actions.add')}>
-        {t('notes.actions.add')}
-      </AddButton>
-    ),
-    [openCreate, t]
-  );
-
-  const footer = useMemo(
-    () => (
-      <>
-        <Modal.Button onClick={closeModal}>{t('common.cancel')}</Modal.Button>
-        <Modal.Button variant="primary" type="submit" form="notes-form" disabled={saving}>
-          {saving
-            ? t('common.saving')
-            : editing
-              ? t('notes.actions.save')
-              : t('notes.actions.create')}
-        </Modal.Button>
-      </>
-    ),
-    [saving, editing, closeModal, t]
-  );
-
-  const defaultQuery = useMemo(
-    () => ({
-      sort: 'createdAt',
-      dir: 'DESC',
-      limit: 25,
-    }),
-    []
-  );
+  }, [deleteNote, deleteTarget?.id, deleting, refetch, t]);
 
   return (
-    <>
-      <Workspace
-        ref={listRef}
-        source="notes"
-        title={t('notes.title')}
-        columns={columns}
-        defaultQuery={defaultQuery}
-        actions={actions}
-        rowActions={rowActions}
-        columnWidths={colWidths}
-        onColumnResize={onColumnResize}
-        columnOrder={colOrder}
-        onColumnOrderChange={onColumnOrderChange}
-        columnVisibility={colVisibility}
-        onColumnVisibilityChange={onColumnVisibilityChange}
-        savedViews={savedViews}
-        activeViewId={activeViewId}
-        onSavedViewsChange={onSavedViewsChange}
-        onActiveViewChange={onActiveViewChange}
-        onResetColumns={resetGridPrefs}
-        filterControls={[
-              {
-                type: 'search',
-                key: 'search',
-                placeholder: t('notes.placeholders.search'),
-                debounce: 400,
-              },
-              {
-                type: 'custom',
-                                // render: описывает рендер соответствующего блока UI.
-render: ({ query, onChange }) => (
-                  <SelectField
-                    className={s.toolbarSelect}
-                    inputClassName={s.select}
-                    value={query.ownerType || ''}
-                    options={ownerTypeFilterOptions}
-                    placeholder={t('notes.fields.ownerType')}
-                    size="sm"
-                    onValueChange={(value) => {
-                      const nextType = String(value || '');
-                      setToolbarOwnerType(nextType);
-                      setToolbarSelectedOwner(null);
-                      setToolbarOwnerSearch('');
-                      setToolbarOwnerSearchDebounced('');
-                      onChange((prev) => ({
-                        ...prev,
-                        ownerType: nextType || undefined,
-                        ownerId: undefined,
-                        page: 1,
-                      }));
-                    }}
-                  />
-                ),
-              },
-              {
-                type: 'custom',
-                                // render: описывает рендер соответствующего блока UI.
-render: ({ onChange }) => (
-                  <AutocompleteField
-                    className={s.toolbarOwner}
-                    value={toolbarSelectedOwner}
-                    inputValue={toolbarOwnerSearch}
-                    onInputChange={(value) => {
-                      setToolbarOwnerSearch(value);
-                      if (!toolbarSelectedOwner) return;
+    <main className={s.notesPage}>
+      <section className={s.listSurface}>
+        <header className={s.listHeader}>
+          <div>
+            <h1 className={s.listTitle}>{t('notes.title')}</h1>
+            <div className={s.listSubtitle}>
+              {total ? `${from}-${to} / ${total}` : '0 / 0'}
+            </div>
+          </div>
+          <AddButton onClick={openCreate} title={t('notes.actions.add')}>
+            {t('notes.actions.add')}
+          </AddButton>
+        </header>
 
-                      const selectedLabel = String(toolbarSelectedOwner.label || '').trim();
-                      if (String(value || '').trim() !== selectedLabel) {
-                        setToolbarSelectedOwner(null);
-                        onChange((prev) => ({
-                          ...prev,
-                          ownerId: undefined,
-                          page: 1,
-                        }));
-                      }
-                    }}
-                    options={toolbarOwnerOptions}
-                    onSelect={(option) => {
-                      if (!option?.id) return;
-                      const normalized = toOwnerOption(option);
-                      setToolbarSelectedOwner(normalized);
-                      setToolbarOwnerSearch(normalized?.label || '');
-                      setToolbarOwnerSearchDebounced(String(normalized?.label || '').trim());
-                      onChange((prev) => ({
-                        ...prev,
-                        ownerId: String(option.id),
-                        page: 1,
-                      }));
-                    }}
-                    placeholder={t('notes.placeholders.ownerFilterSearch')}
-                    hint={toolbarOwnerType ? t('notes.messages.typeToSearch') : t('notes.messages.selectOwnerTypeFirst')}
-                    searchingLabel={t('notes.messages.searching')}
-                    emptyLabel={t('notes.messages.emptyOwners')}
-                    loading={toolbarOwnerLookupLoading}
-                    disabled={!toolbarOwnerType}
-                    getOptionPrimary={(opt) => opt?.label || String(opt?.id || '')}
-                    getOptionSecondary={(opt) => opt?.subtitle || opt?.id || null}
-                    inputClassName={`${s.toolbarInput} ${s.ownerInputOpaque}`}
-                    menuClassName={s.ownerMenuOpaque}
-                    opaque
-                  />
-                ),
-              },
-              {
-                type: 'select',
-                key: 'visibility',
-                label: t('visibility.filterLabel'),
-                options: visibilityFilterOptions,
-              },
-              {
-                type: 'select',
-                key: 'pinned',
-                label: t('notes.fields.pinned'),
-                options: pinnedFilterOptions,
-              },
-            ]}
-      />
+        <div className={s.listToolbar}>
+          <input
+            className={`${s.input} ${s.toolbarSearch}`}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder={t('notes.placeholders.search')}
+            type="search"
+          />
 
-      <Modal
-        open={open}
-        onClose={closeModal}
-        title={editing ? t('notes.modal.editTitle') : t('notes.modal.createTitle')}
-        size="lg"
-        footer={footer}
-      >
-        <NoteForm
-          t={t}
-          values={form}
-          ownerTypeOptions={ownerTypeOptions}
-          ownerSearch={ownerSearch}
-          ownerOptions={ownerOptions}
-          ownerLoading={ownerLookupLoading}
-          departments={departments}
-          selectedOwner={selectedOwner}
-          onOwnerSearchChange={handleOwnerInputChange}
-          onOwnerSelect={handleOwnerSelect}
-          onChange={(key, value) => {
-            if (key === 'ownerType') {
-              handleOwnerTypeChange(value);
-              return;
-            }
-            setForm((prev) => ({ ...prev, [key]: value }));
-          }}
-          onSubmit={handleSubmit}
-          error={formError}
-        />
-      </Modal>
+          <SelectField
+            className={s.toolbarSelect}
+            inputClassName={s.select}
+            value={query.ownerType}
+            options={ownerTypeFilterOptions}
+            placeholder={t('notes.fields.relatedType')}
+            size="sm"
+            onValueChange={(value) => {
+              const nextType = String(value || '');
+              setSelectedOwner(null);
+              setOwnerSearch('');
+              setOwnerSearchDebounced('');
+              updateQuery({
+                ownerType: nextType,
+                ownerId: '',
+                page: 1,
+              });
+            }}
+          />
+
+          <AutocompleteField
+            className={s.toolbarOwner}
+            value={selectedOwner}
+            inputValue={ownerSearch}
+            onInputChange={(value) => {
+              setOwnerSearch(value);
+              if (!selectedOwner) return;
+
+              const selectedLabel = String(selectedOwner.label || '').trim();
+              if (String(value || '').trim() !== selectedLabel) {
+                setSelectedOwner(null);
+                updateQuery({ ownerId: '', page: 1 });
+              }
+            }}
+            options={ownerOptions}
+            onSelect={(option) => {
+              if (!option?.id) return;
+              const normalized = toOwnerOption(option);
+              setSelectedOwner(normalized);
+              setOwnerSearch(normalized?.label || '');
+              setOwnerSearchDebounced(String(normalized?.label || '').trim());
+              updateQuery({ ownerId: String(option.id), page: 1 });
+            }}
+            placeholder={t('notes.placeholders.ownerFilterSearch')}
+            hint={query.ownerType ? t('notes.messages.typeToSearch') : t('notes.messages.selectOwnerTypeFirst')}
+            searchingLabel={t('notes.messages.searching')}
+            emptyLabel={t('notes.messages.emptyOwners')}
+            loading={ownerLookupLoading}
+            disabled={!query.ownerType}
+            getOptionPrimary={(opt) => opt?.label || String(opt?.id || '')}
+            getOptionSecondary={(opt) => opt?.subtitle || opt?.id || null}
+            inputClassName={`${s.toolbarInput} ${s.ownerInputOpaque}`}
+            menuClassName={s.ownerMenuOpaque}
+            opaque
+          />
+
+          <SelectField
+            className={s.toolbarSelect}
+            inputClassName={s.select}
+            value={query.visibility}
+            options={visibilityFilterOptions}
+            placeholder={t('visibility.filterLabel')}
+            size="sm"
+            onValueChange={(value) => updateQuery({ visibility: String(value || ''), page: 1 })}
+          />
+
+          <SelectField
+            className={s.toolbarSelect}
+            inputClassName={s.select}
+            value={query.pinned}
+            options={pinnedFilterOptions}
+            placeholder={t('notes.fields.pinned')}
+            size="sm"
+            onValueChange={(value) => updateQuery({ pinned: String(value || ''), page: 1 })}
+          />
+
+          <SelectField
+            className={s.pageSizeSelect}
+            inputClassName={s.select}
+            value={String(query.limit)}
+            options={PAGE_SIZE_OPTIONS}
+            placeholder={t('pagination.perPage', 'На странице')}
+            size="sm"
+            onValueChange={(value) => updateQuery({ limit: Number(value) || 25, page: 1 })}
+          />
+        </div>
+
+        <div className={s.cardList} aria-busy={isFetching ? 'true' : undefined}>
+          {notes.length ? notes.map((note) => {
+            const title = getDerivedNoteTitle(note.content, t('notes.detail.newTitle'));
+            const preview = getNotePreview(note.content);
+            const ownerTypeLabel = ownerTypeLabelMap[note.ownerType] || note.ownerType || '—';
+            const ownerLabel = note?.ownerLabel || `${ownerTypeLabel} #${shortId(note.ownerId)}`;
+            const ownerSubtitle = note?.ownerSubtitle || null;
+            const manageable = canManage(note);
+            const noteDate = formatDate(note.updatedAt || note.createdAt, i18n.language);
+
+            return (
+              <article
+                key={note.id}
+                role="link"
+                tabIndex={0}
+                aria-label={title}
+                className={`${s.noteCard} ${note.pinned ? s.noteCardPinned : ''}`}
+                onClick={() => openDetail(note)}
+                onKeyDown={(event) => onCardKeyDown(event, note)}
+              >
+                <div className={s.noteCardTop}>
+                  <div
+                    className={s.noteTitleButton}
+                  >
+                    <h2 className={s.noteCardTitle}>{title}</h2>
+                  </div>
+
+                  <div className={s.noteCardTopMeta}>
+                    {note.pinned ? <span className={`${s.badge} ${s.badgePinned}`}>{t('notes.fields.pinned')}</span> : null}
+                    <time className={s.noteDate}>{noteDate}</time>
+                    {manageable ? (
+                      <div className={s.cardActions}>
+                        <button
+                          type="button"
+                          className={s.iconAction}
+                          title={t('notes.actions.edit')}
+                          aria-label={t('notes.actions.edit')}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openDetail(note);
+                          }}
+                        >
+                          <Pencil size={15} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className={s.iconAction}
+                          title={note.pinned ? t('notes.actions.unpin') : t('notes.actions.pin')}
+                          aria-label={note.pinned ? t('notes.actions.unpin') : t('notes.actions.pin')}
+                          disabled={updating}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onTogglePin(note);
+                          }}
+                        >
+                          {note.pinned ? <PinOff size={15} aria-hidden="true" /> : <Pin size={15} aria-hidden="true" />}
+                        </button>
+                        <button
+                          type="button"
+                          className={`${s.iconAction} ${s.iconActionDanger}`}
+                          title={t('notes.actions.delete')}
+                          aria-label={t('notes.actions.delete')}
+                          disabled={deleting || updating}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onDelete(note);
+                          }}
+                        >
+                          <Trash2 size={15} aria-hidden="true" />
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className={s.noteCardMain}>
+                  {preview ? <p className={s.notePreview}>{preview}</p> : null}
+
+                  <div className={s.noteMetaLine}>
+                    <span className={`${s.badge} ${s.ownerBadge}`}>{ownerTypeLabel}</span>
+                    <span className={s.ownerName}>{ownerLabel}</span>
+                    {ownerSubtitle ? <span className={s.ownerId}>{ownerSubtitle}</span> : null}
+                    <span className={`${s.badge} ${note.visibility === 'private' ? s.badgePrivate : note.visibility === 'department' ? s.badgeDepartment : s.badgeCompany}`}>
+                      {getVisibilityLabel(note, t, departmentById)}
+                    </span>
+                    <span>{getAuthorLabel(note)}</span>
+                  </div>
+                </div>
+              </article>
+            );
+          }) : (
+            <div className={s.emptyCards}>
+              {isFetching ? (
+                t('common.loading')
+              ) : (
+                <>
+                  <h2>{t('notes.messages.emptyTitle')}</h2>
+                  <p>{t('notes.messages.emptyText')}</p>
+                  <AddButton onClick={openCreate} title={t('notes.actions.add')}>
+                    {t('notes.actions.add')}
+                  </AddButton>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        <footer className={s.cardPagination}>
+          <span>{total ? `${from}-${to} / ${total}` : '0 / 0'}</span>
+          <div className={s.paginationButtons}>
+            <button
+              type="button"
+              className={s.detailGhostButton}
+              disabled={query.page <= 1}
+              onClick={() => updateQuery({ page: Math.max(1, query.page - 1) })}
+            >
+              {t('common.previous', 'Назад')}
+            </button>
+            <span>{query.page} / {totalPages}</span>
+            <button
+              type="button"
+              className={s.detailGhostButton}
+              disabled={query.page >= totalPages}
+              onClick={() => updateQuery({ page: Math.min(totalPages, query.page + 1) })}
+            >
+              {t('common.next', 'Вперёд')}
+            </button>
+          </div>
+        </footer>
+      </section>
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}
-        title={t('notes.actions.delete')}
+        title={t('notes.confirm.deleteTitle')}
         text={(
           <>
             <div>{t('notes.messages.deleteConfirm')}</div>
@@ -1030,6 +539,6 @@ render: ({ onChange }) => (
           setDeleteError('');
         }}
       />
-    </>
+    </main>
   );
 }

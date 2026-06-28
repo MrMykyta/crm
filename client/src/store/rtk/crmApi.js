@@ -216,6 +216,7 @@ export const crmApi = createApi({
     'Counterparty',
     'Deal',
     'DealList',
+    'DealSettings',
     'Contact',
     'ContactList',
     'Note',

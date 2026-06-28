@@ -2,6 +2,8 @@
   appearance:none;
   background:none !important;
   border:0; padding:0; margin:0;
+  border-radius: 0 !important;
+  box-shadow: none !important;
   text-align:left; color:inherit; font:inherit; cursor:pointer;
   display:flex; flex-direction:column; gap:4px; min-width:0;
   outline:none;
@@ -19,16 +21,12 @@
 .primary{
   font-weight:600; display:inline-block;
   max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  background-image: linear-gradient(currentColor, currentColor);
-  background-repeat: no-repeat;
-  background-size: 0% 1px;
-  background-position: 0 100%;
-  transition: color .14s ease, background-size .14s ease;
+  color: color-mix(in srgb, var(--text) 92%, transparent);
+  transition: color .14s ease;
 }
 
 .rowLink:hover .primary{
-  color: color-mix(in srgb, var(--text) 86%, var(--primary) 14%);
-  background-size: 100% 1px;
+  color: var(--text);
 }
 
 .rowLink:focus-visible{
@@ -37,8 +35,7 @@
   background:none !important;
 }
 .rowLink:focus-visible .primary{
-  background-size: 100% 1px;
-  color: color-mix(in srgb, var(--primary) 90%, var(--text) 10%);
+  color: var(--text);
 }
 
 .secondary{

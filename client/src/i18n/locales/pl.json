@@ -124,14 +124,36 @@
     }
   },
   "notes": {
+    "fields": {
+      "relatedTo": "Powiązane z",
+      "relatedType": "Typ",
+      "relatedEntity": "Encja"
+    },
+    "placeholders": {
+      "content": "Zacznij pisać notatkę..."
+    },
+    "preview": {
+      "titleLabel": "Tytuł:"
+    },
+    "detail": {
+      "back": "Wróć do notatek",
+      "newTitle": "Nowa notatka",
+      "saved": "Zapisano",
+      "unsaved": "Niezapisane zmiany",
+      "notFound": "Nie znaleziono notatki"
+    },
     "modal": {
       "createTitle": "Nowa notatka",
       "editTitle": "Edytuj notatkę",
-      "subtitle": "Zachowaj kontekst zadania dla zespołu."
+      "subtitle": "Zapisz kontekst dla zespołu."
     },
     "confirm": {
       "deleteTitle": "Usunąć notatkę?",
       "deleteText": "Tej akcji nie można cofnąć."
+    },
+    "messages": {
+      "emptyTitle": "Brak notatek",
+      "emptyText": "Utwórz pierwszą notatkę albo zmień filtry."
     }
   },
   "pim": {
@@ -1996,6 +2018,7 @@
         "type": "Typ",
         "status": "Status",
         "nip": "NIP",
+        "nipVat": "NIP / VAT",
         "department": "Dział",
         "owner": "Odpowiedzialny użytkownik"
       },
@@ -2010,9 +2033,16 @@
       "fields": {
         "shortName": "Krótka nazwa",
         "fullName": "Pełna nazwa prawna",
+        "firstName": "Imię",
+        "lastName": "Nazwisko",
+        "displayName": "Nazwa wyświetlana",
+        "subject": "Podmiot",
         "type": "Typ",
         "status": "Status",
+        "pesel": "PESEL",
+        "birthDate": "Data urodzenia",
         "nip": "NIP",
+        "nipVat": "NIP / VAT",
         "regon": "REGON",
         "krs": "KRS",
         "bdo": "BDO",
@@ -2025,21 +2055,41 @@
         "primary": "Główny",
         "isCompany": "Firma"
       },
+      "subject": {
+        "company": "Firma",
+        "person": "Osoba fizyczna"
+      },
+      "personIntel": {
+        "age": "Wiek",
+        "gender": "Płeć",
+        "male": "Mężczyzna",
+        "female": "Kobieta",
+        "peselValid": "PESEL jest poprawny"
+      },
       "placeholders": {
         "shortName": "Krótka nazwa firmy",
         "fullName": "Zarejestrowana nazwa prawna",
+        "firstName": "Jan",
+        "lastName": "Kowalski",
+        "displayName": "Jan Kowalski",
+        "pesel": "11 cyfr",
         "nip": "tylko cyfry",
+        "nipVat": "5261040828 lub DE1111111111",
         "postalCode": "np. 00-000",
         "department": "Bez działu",
         "contactValue": "wartość (email, telefon, link...)"
       },
       "actions": {
         "addContact": "+ Dodaj kontakt",
+        "applyBirthDate": "Zastosuj",
         "remove": "Usuń"
       },
       "hints": {
         "noContacts": "Brak kontaktów",
-        "departmentVisibility": "Przypisanie działu nie zmienia jeszcze widoczności."
+        "departmentVisibility": "Przypisanie działu nie zmienia jeszcze widoczności.",
+        "taxIdFormat": "Wpisz 10 cyfr albo kod kraju + 10 cyfr.",
+        "nipChecksumLocal": "Ta kontrola jest wykonywana lokalnie przed zapytaniem do rejestru państwowego.",
+        "peselBirthDate": "PESEL zawiera datę urodzenia: {{date}}"
       },
       "errors": {
         "requiredShort": "Wprowadź krótką nazwę",
@@ -2050,11 +2100,13 @@
         "badStatus": "Nieprawidłowy status",
         "digitsOnly": "Tylko cyfry",
         "nipLen": "Dokładnie 10 cyfr",
+        "nipChecksum": "Błąd sumy kontrolnej polskiego NIP.",
         "countryIso": "ISO-2, np. PL",
         "selectChannel": "Wybierz kanał",
         "valueRequired": "Podaj wartość",
         "badEmail": "Nieprawidłowy email",
-        "badPhone": "Nieprawidłowy telefon"
+        "badPhone": "Nieprawidłowy telefon",
+        "taxIdFormat": "Wpisz 10 cyfr albo 2 litery kraju + 10 cyfr."
       }
     },
     "enums": {
@@ -2155,6 +2207,19 @@
         "filteredCount": "{{count}} z {{total}} zadań",
         "filteredCount_plural": "{{count}} z {{total}} zadań"
       },
+      "views": {
+        "label": "Widok",
+        "groupTasks": "Zadania",
+        "all": "Wszystkie zadania",
+        "my": "Moje zadania",
+        "overdue": "Po terminie",
+        "today": "Na dziś",
+        "inProgress": "W trakcie",
+        "completed": "Ukończone",
+        "custom": "Niestandardowy",
+        "selected": "Wybrane",
+        "resetFilters": "Wyczyść filtry"
+      },
       "kpi": {
         "title": "Podsumowanie zadań",
         "total": "Razem",
@@ -2246,6 +2311,48 @@
           "emptyTitle": "Brak notatek",
           "emptyText": "Dodaj pierwszą notatkę, aby zachować kontekst.",
           "addFirst": "Dodaj notatkę"
+        },
+        "create": {
+          "draft": "Wersja robocza",
+          "descriptionHint": "Opis zostanie zapisany razem z zadaniem",
+          "participantsTitle": "Uczestnicy zostaną dodani po utworzeniu",
+          "participantsHint": "Utwórz zadanie, aby śledzić wykonanie uczestników i zmieniać ich statusy."
+        },
+        "team": {
+          "assigneesTitle": "Wykonawcy",
+          "progressLabel": "{{done}} / {{total}} wykonano",
+          "progressValue": "{{done}} / {{total}} wykonano",
+          "aggregateEnabledHint": "Zadanie automatycznie stanie się wykonane, gdy wszyscy wykonawcy oznaczą je jako wykonane.",
+          "aggregateDisabledHint": "Ogólny status zadania jest zarządzany ręcznie.",
+          "noAssigneesTitle": "Brak wykonawców",
+          "noAssigneesText": "Dodaj wykonawców, aby śledzić postęp wykonania",
+          "emptySection": "Brak wykonawców w tym statusie",
+          "notAssigneeHint": "Nie jesteś wykonawcą tego zadania. Możesz zmienić tylko własny status wykonawcy.",
+          "myActions": "Akcje mojego statusu",
+          "startedAt": "Rozpoczęto",
+          "completedAt": "Wykonano",
+          "noStatusTime": "Brak czasu statusu",
+          "statusUpdateFailed": "Nie udało się zaktualizować statusu wykonawcy",
+          "managerControlsLater": "Zmiana statusów innych wykonawców zostanie dodana po podłączeniu wiarygodnej kontroli uprawnienia task:update.",
+          "sections": {
+            "completed": "Wykonane",
+            "pending": "W toku / oczekujące",
+            "blocked": "Zablokowane"
+          },
+          "actions": {
+            "start": "Rozpocznij",
+            "done": "Wykonano",
+            "blocked": "Zablokowane",
+            "reopen": "Przywróć"
+          },
+          "memberStatus": {
+            "todo": "Nie rozpoczęto",
+            "in_progress": "W toku",
+            "done": "Wykonano",
+            "blocked": "Zablokowane",
+            "canceled": "Anulowane"
+          },
+          "progressDetail": "{{done}} z {{total}} wykonawców ukończyło zadanie"
         }
       },
       "sections": {
@@ -2268,23 +2375,11 @@
           "cancelled": "Anulowane"
         }
       },
-      "priorityLevels": {
-        "1": "1 - Niski",
-        "2": "2 - Poniżej średniego",
-        "3": "3 - Średni",
-        "4": "4 - Powyżej średniego",
-        "5": "5 - Wysoki"
-      },
-      "priorityBuckets": {
-        "low": "Niski",
-        "normal": "Normalny",
-        "high": "Wysoki",
-        "urgent": "Pilny"
-      },
       "fields": {
         "title": "Tytuł",
         "category": "Kategoria",
         "status": "Status",
+        "progress": "Postęp",
         "creator": "Autor",
         "priority": "Priorytet",
         "startAt": "Planowany początek",
@@ -2317,7 +2412,8 @@
         "status": "Wybierz status",
         "assignee": "Wybierz wykonawcę",
         "counterpartyId": "UUID kontrahenta",
-        "dealId": "UUID transakcji"
+        "dealId": "UUID transakcji",
+        "dealSearch": "Wybierz transakcję"
       },
       "messages": {
         "typeToSearch": "Zacznij wpisywać nazwę",
@@ -2355,6 +2451,8 @@
     },
     "counterparties": {
       "noDepartment": "Bez działu",
+      "confirmDeleteTitle": "Usunąć kontrahenta?",
+      "confirmDeleteText": "Kontrahent zostanie usunięty lub zarchiwizowany zgodnie z ustawieniami systemu.",
       "tabs": {
         "offers": "Oferty",
         "orders": "Zamówienia"
@@ -2366,6 +2464,129 @@
       "orders": {
         "empty": "Brak zamówień dla tego kontrahenta",
         "new": "Nowe zamówienie"
+      }
+    },
+    "clientDetail": {
+      "create": {
+        "title": "Nowy klient",
+        "subtitle": "Uzupełnij dane klienta i utwórz kartę."
+      },
+      "actions": {
+        "back": "Do listy klientów"
+      }
+    },
+    "leadDetail": {
+      "create": {
+        "title": "Nowy lead",
+        "subtitle": "Uzupełnij dane leada i utwórz kartę."
+      },
+      "actions": {
+        "back": "Do listy leadów"
+      }
+    },
+    "counterpartyDetail": {
+      "untitled": "Kontrahent bez nazwy",
+      "create": {
+        "title": "Nowy kontrahent",
+        "subtitle": "Uzupełnij podstawowe dane i utwórz kartę."
+      },
+      "tabs": {
+        "overview": "Opis",
+        "registration": "Dane rejestrowe",
+        "address": "Adres",
+        "notes": "Notatki",
+        "contacts": "Kontakty",
+        "offers": "Oferty",
+        "orders": "Zamówienia",
+        "additional": "Dodatkowe"
+      },
+      "sections": {
+        "identity": "Podstawowe",
+        "registration": "Dane rejestrowe",
+        "registrationHint": "Identyfikatory podatkowe i rejestrowe.",
+        "address": "Adres",
+        "addressHint": "Adres pocztowy i prawny kontrahenta.",
+        "meta": "Dodatkowe",
+        "summary": "Podsumowanie"
+      },
+      "fields": {
+        "id": "ID",
+        "createdAt": "Utworzono",
+        "updatedAt": "Zaktualizowano",
+        "address": "Adres",
+        "registrySource": "Źródło rejestru",
+        "registryCheckedAt": "Sprawdzono w rejestrze"
+      },
+      "actions": {
+        "back": "Do listy",
+        "create": "Utwórz"
+      },
+      "description": {
+        "title": "Opis",
+        "placeholder": "Opisz kontrahenta: warunki, ustalenia, notatki robocze...",
+        "emptyText": "Opis jest pusty. Dodaj ustalenia, warunki lub ważny kontekst."
+      },
+      "relations": {
+        "number": "Numer",
+        "status": "Status",
+        "totalGross": "Razem",
+        "validUntil": "Ważne do / utworzono",
+        "placedAt": "Data / utworzono"
+      },
+      "empty": {
+        "notesTitle": "Brak notatek",
+        "notesText": "Dodaj notatkę, aby zachować kontekst pracy z kontrahentem.",
+        "addNote": "Dodaj notatkę",
+        "offersTitle": "Brak ofert",
+        "offersText": "Utwórz pierwszą ofertę dla tego kontrahenta.",
+        "ordersTitle": "Brak zamówień",
+        "ordersText": "Utwórz zamówienie, gdy kontrahent ma aktywną sprzedaż."
+      },
+      "notesTitle": "Notatki kontrahenta",
+      "validation": {
+        "nameRequired": "Podaj nazwę kontrahenta",
+        "firstNameRequired": "Podaj imię",
+        "lastNameRequired": "Podaj nazwisko",
+        "displayNameRequired": "Podaj nazwę wyświetlaną",
+        "invalidPesel": "Nieprawidłowy PESEL."
+      },
+      "messages": {
+        "saveFailed": "Nie udało się zapisać kontrahenta",
+        "loadFailed": "Nie udało się załadować danych"
+      },
+      "registry": {
+        "checking": "Sprawdzamy w GUS...",
+        "foundTitle": "Firma znaleziona",
+        "notFoundTitle": "Nie znaleziono",
+        "notFoundText": "Nie znaleziono firmy dla tego NIP. Możesz uzupełnić formularz ręcznie.",
+        "errorTitle": "Błąd połączenia",
+        "errorText": "Wyszukiwanie w rejestrze jest chwilowo niedostępne. Spróbuj później albo wpisz dane ręcznie.",
+        "configMissingTitle": "Rejestr nie jest skonfigurowany",
+        "configMissingText": "Na serwerze brakuje klucza dostępu GUS.",
+        "unsupportedTitle": "Kraj {{country}} nie jest jeszcze podłączony",
+        "unsupportedText": "Teraz dostępne jest tylko wyszukiwanie PL NIP przez GUS.",
+        "apply": "Uzupełnij dane",
+        "applyChanges": "Zastosuj zmiany",
+        "applyGus": "Zastosuj dane GUS",
+        "applySaved": "Dane zaktualizowano z GUS",
+        "details": "Szczegóły",
+        "refresh": "Odśwież",
+        "ignore": "Ignoruj",
+        "diffTitle": "Wykryto różnice",
+        "moreDiffs": "+{{count}} więcej",
+        "source": "Źródło: {{source}}",
+        "updatedAt": "Zaktualizowano: {{date}}",
+        "sandboxHint": "Dane ze środowiska testowego GUS, nie production.",
+        "mockHint": "Dane demonstracyjne rejestru, nie oficjalne dane GUS.",
+        "verifiedSource": "Zweryfikowano {{source}}",
+        "lastChecked": "Ostatnie sprawdzenie: {{date}}",
+        "legalForm": "Forma prawna",
+        "registrationDate": "Data rejestracji",
+        "vatStatus": "Status VAT",
+        "pkd": "PKD",
+        "cacheHit": "Cache: hit",
+        "cacheMiss": "Cache: miss",
+        "cacheStale": "Cache: stale fallback"
       }
     }
   },
@@ -3463,13 +3684,6 @@
       "myTasksOnly": "Tylko moje zadania",
       "priority": "Priorytet"
     },
-    "priority": {
-      "all": "Wszystkie",
-      "urgent": "Pilny",
-      "high": "Wysoki",
-      "medium": "Średni",
-      "low": "Niski"
-    },
     "task": {
       "allDay": "Cały dzień",
       "completed": "Ukończone",
@@ -3499,6 +3713,20 @@
         "endAfterStart": "Godzina zakończenia musi być późniejsza niż rozpoczęcia",
         "pastDateTime": "Nie można utworzyć zadania w przeszłości"
       }
+    },
+    "quickCreate": {
+      "title": "Nowe zadanie",
+      "moreOptions": "Więcej opcji"
+    }
+  },
+  "priority": {
+    "all": "Wszystkie priorytety",
+    "levels": {
+      "10": "Najniższy",
+      "25": "Niski",
+      "50": "Normalny",
+      "75": "Wysoki",
+      "100": "Krytyczny"
     }
   },
   "userDetail": {

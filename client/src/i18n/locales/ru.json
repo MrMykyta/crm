@@ -1892,7 +1892,7 @@
       "groupSystem": "Системные",
       "visibleCount": "Видимо колонок: {{count}}",
       "emptySearch": "Колонки не найдены",
-      "reset": "Сбросить",
+      "reset": "Сбросить колонки",
       "resetHint": "Сбросить порядок, ширины и видимость",
       "groupCustom": "Пользовательские",
       "drawerHint": "Выберите, какие данные отображать в таблице",
@@ -1937,6 +1937,9 @@
     "fields": {
       "ownerType": "Тип сущности",
       "owner": "Сущность",
+      "relatedTo": "Связано с",
+      "relatedType": "Тип",
+      "relatedEntity": "Сущность",
       "selectedId": "ID",
       "visibility": "Видимость",
       "pinned": "Закреплена",
@@ -1982,9 +1985,19 @@
       "ownerType": "Выберите тип сущности",
       "ownerSearch": "Начните вводить название…",
       "ownerFilterSearch": "Фильтр по сущности…",
-      "content": "Введите текст заметки",
+      "content": "Начните писать заметку...",
       "search": "Поиск по заметкам",
       "ownerIdFilter": "ownerId"
+    },
+    "preview": {
+      "titleLabel": "Заголовок:"
+    },
+    "detail": {
+      "back": "Назад к заметкам",
+      "newTitle": "Новая заметка",
+      "saved": "Сохранено",
+      "unsaved": "Несохранённые изменения",
+      "notFound": "Заметка не найдена"
     },
     "modal": {
       "createTitle": "Новая заметка",
@@ -2000,6 +2013,8 @@
       "selectOwnerTypeFirst": "Сначала выберите тип сущности",
       "searching": "Поиск…",
       "emptyOwners": "Ничего не найдено",
+      "emptyTitle": "Пока нет заметок",
+      "emptyText": "Создайте первую заметку или измените фильтры.",
       "deleteConfirm": "Удалить заметку?"
     },
     "validation": {
@@ -2114,6 +2129,7 @@
         "type": "Тип",
         "status": "Статус",
         "nip": "NIP",
+        "nipVat": "NIP / VAT",
         "department": "Отдел",
         "owner": "Опекун"
       },
@@ -2128,9 +2144,16 @@
       "fields": {
         "shortName": "Краткое название",
         "fullName": "Юридическое название",
+        "firstName": "Имя",
+        "lastName": "Фамилия",
+        "displayName": "Отображаемое имя",
+        "subject": "Субъект",
         "type": "Тип",
         "status": "Статус",
+        "pesel": "PESEL",
+        "birthDate": "Дата рождения",
         "nip": "NIP",
+        "nipVat": "NIP / VAT",
         "regon": "REGON",
         "krs": "KRS",
         "bdo": "BDO",
@@ -2143,21 +2166,41 @@
         "primary": "Основной",
         "isCompany": "Компания"
       },
+      "subject": {
+        "company": "Компания",
+        "person": "Физическое лицо"
+      },
+      "personIntel": {
+        "age": "Возраст",
+        "gender": "Пол",
+        "male": "Мужчина",
+        "female": "Женщина",
+        "peselValid": "PESEL корректный"
+      },
       "placeholders": {
         "shortName": "Короткое название компании",
         "fullName": "Зарегистрированное юр. название",
+        "firstName": "Иван",
+        "lastName": "Иванов",
+        "displayName": "Иван Иванов",
+        "pesel": "11 цифр",
         "nip": "только цифры",
+        "nipVat": "5261040828 или DE1111111111",
         "postalCode": "напр. 00-000",
         "department": "Без отдела",
         "contactValue": "значение (email, телефон, ссылка...)"
       },
       "actions": {
         "addContact": "+ Добавить контакт",
+        "applyBirthDate": "Применить",
         "remove": "Удалить"
       },
       "hints": {
         "noContacts": "Контактов нет",
-        "departmentVisibility": "Назначение отдела пока не меняет видимость."
+        "departmentVisibility": "Назначение отдела пока не меняет видимость.",
+        "taxIdFormat": "Введите 10 цифр или код страны + 10 цифр.",
+        "nipChecksumLocal": "Проверка выполняется локально до обращения к государственному реестру.",
+        "peselBirthDate": "PESEL содержит дату рождения: {{date}}"
       },
       "errors": {
         "requiredShort": "Введите краткое название",
@@ -2168,11 +2211,13 @@
         "badStatus": "Неверный статус",
         "digitsOnly": "Только цифры",
         "nipLen": "Должно быть ровно 10 цифр",
+        "nipChecksum": "Ошибка контрольной суммы польского NIP.",
         "countryIso": "ISO-2, напр. PL",
         "selectChannel": "Выберите канал",
         "valueRequired": "Введите значение",
         "badEmail": "Некорректный email",
-        "badPhone": "Некорректный телефон"
+        "badPhone": "Некорректный телефон",
+        "taxIdFormat": "Введите 10 цифр или 2 буквы страны + 10 цифр."
       }
     },
     "enums": {
@@ -2215,6 +2260,19 @@
         "count_plural": "{{count}} задач",
         "filteredCount": "{{count}} из {{total}} задач",
         "filteredCount_plural": "{{count}} из {{total}} задач"
+      },
+      "views": {
+        "label": "Вид",
+        "groupTasks": "Задачи",
+        "all": "Все задачи",
+        "my": "Мои задачи",
+        "overdue": "Просроченные",
+        "today": "На сегодня",
+        "inProgress": "В процессе",
+        "completed": "Завершённые",
+        "custom": "Пользовательский",
+        "selected": "Выбрано",
+        "resetFilters": "Сбросить фильтры"
       },
       "kpi": {
         "title": "Сводка задач",
@@ -2307,6 +2365,48 @@
           "emptyTitle": "Заметок нет",
           "emptyText": "Добавьте первую заметку, чтобы сохранить контекст.",
           "addFirst": "Добавить заметку"
+        },
+        "create": {
+          "draft": "Черновик",
+          "descriptionHint": "Описание сохранится вместе с задачей",
+          "participantsTitle": "Участники будут добавлены после создания",
+          "participantsHint": "Создайте задачу, чтобы отслеживать выполнение участников и менять их статусы."
+        },
+        "team": {
+          "assigneesTitle": "Исполнители",
+          "progressLabel": "{{done}} / {{total}} выполнено",
+          "progressValue": "{{done}} / {{total}} выполнено",
+          "aggregateEnabledHint": "Задача автоматически станет выполненной, когда все исполнители отметят выполнение.",
+          "aggregateDisabledHint": "Общий статус задачи управляется вручную.",
+          "noAssigneesTitle": "Нет исполнителей",
+          "noAssigneesText": "Добавьте исполнителей, чтобы отслеживать прогресс выполнения",
+          "emptySection": "Нет участников в этом статусе",
+          "notAssigneeHint": "Вы не являетесь исполнителем этой задачи. Изменить можно только свой статус исполнителя.",
+          "myActions": "Действия с моим статусом",
+          "startedAt": "Начато",
+          "completedAt": "Выполнено",
+          "noStatusTime": "Время статуса не указано",
+          "statusUpdateFailed": "Не удалось обновить статус исполнителя",
+          "managerControlsLater": "Управление статусами других исполнителей будет добавлено после подключения проверки task:update.",
+          "sections": {
+            "completed": "Выполнили",
+            "pending": "В работе / ожидают",
+            "blocked": "Заблокированы"
+          },
+          "actions": {
+            "start": "В работу",
+            "done": "Выполнено",
+            "blocked": "Заблокировано",
+            "reopen": "Вернуть"
+          },
+          "memberStatus": {
+            "todo": "Не начато",
+            "in_progress": "В работе",
+            "done": "Выполнено",
+            "blocked": "Заблокировано",
+            "canceled": "Отменено"
+          },
+          "progressDetail": "{{done}} из {{total}} исполнителей завершили задачу"
         }
       },
       "sections": {
@@ -2329,23 +2429,11 @@
           "cancelled": "Отменено"
         }
       },
-      "priorityLevels": {
-        "1": "1 — Низкий",
-        "2": "2 — Ниже ср.",
-        "3": "3 — Средний",
-        "4": "4 — Выше ср.",
-        "5": "5 — Высокий"
-      },
-      "priorityBuckets": {
-        "low": "Низкий",
-        "normal": "Обычный",
-        "high": "Высокий",
-        "urgent": "Срочный"
-      },
       "fields": {
         "title": "Название",
         "category": "Категория",
         "status": "Статус",
+        "progress": "Прогресс",
         "creator": "Автор",
         "priority": "Приоритет",
         "startAt": "Планируемое начало",
@@ -2378,7 +2466,8 @@
         "status": "Выбрать статус",
         "assignee": "Выбрать исполнителя",
         "counterpartyId": "UUID контрагента",
-        "dealId": "UUID сделки"
+        "dealId": "UUID сделки",
+        "dealSearch": "Выберите сделку"
       },
       "messages": {
         "typeToSearch": "Начните вводить название",
@@ -2416,6 +2505,8 @@
     },
     "counterparties": {
       "noDepartment": "Без отдела",
+      "confirmDeleteTitle": "Удалить контрагента?",
+      "confirmDeleteText": "Контрагент будет удалён или архивирован согласно настройкам системы.",
       "tabs": {
         "offers": "Предложения",
         "orders": "Заказы"
@@ -2427,6 +2518,129 @@
       "orders": {
         "empty": "Нет заказов для этого контрагента",
         "new": "Новый заказ"
+      }
+    },
+    "clientDetail": {
+      "create": {
+        "title": "Новый клиент",
+        "subtitle": "Заполните данные клиента и создайте карточку."
+      },
+      "actions": {
+        "back": "К списку клиентов"
+      }
+    },
+    "leadDetail": {
+      "create": {
+        "title": "Новый лид",
+        "subtitle": "Заполните данные лида и создайте карточку."
+      },
+      "actions": {
+        "back": "К списку лидов"
+      }
+    },
+    "counterpartyDetail": {
+      "untitled": "Контрагент без названия",
+      "create": {
+        "title": "Новый контрагент",
+        "subtitle": "Заполните основные данные и создайте карточку."
+      },
+      "tabs": {
+        "overview": "Описание",
+        "registration": "Реквизиты",
+        "address": "Адрес",
+        "notes": "Заметки",
+        "contacts": "Контакты",
+        "offers": "Предложения",
+        "orders": "Заказы",
+        "additional": "Дополнительно"
+      },
+      "sections": {
+        "identity": "Основное",
+        "registration": "Реквизиты",
+        "registrationHint": "Налоговые и регистрационные идентификаторы.",
+        "address": "Адрес",
+        "addressHint": "Почтовый и юридический адрес контрагента.",
+        "meta": "Дополнительно",
+        "summary": "Сводка"
+      },
+      "fields": {
+        "id": "ID",
+        "createdAt": "Создано",
+        "updatedAt": "Обновлено",
+        "address": "Адрес",
+        "registrySource": "Источник реестра",
+        "registryCheckedAt": "Проверено в реестре"
+      },
+      "actions": {
+        "back": "К списку",
+        "create": "Создать"
+      },
+      "description": {
+        "title": "Описание",
+        "placeholder": "Опишите контрагента: условия, договоренности, особенности работы...",
+        "emptyText": "Описание пока пустое. Добавьте условия, договоренности или важный контекст."
+      },
+      "relations": {
+        "number": "Номер",
+        "status": "Статус",
+        "totalGross": "Итого",
+        "validUntil": "Действует до / создано",
+        "placedAt": "Дата / создано"
+      },
+      "empty": {
+        "notesTitle": "Пока нет заметок",
+        "notesText": "Добавьте заметку, чтобы сохранить контекст работы с контрагентом.",
+        "addNote": "Добавить заметку",
+        "offersTitle": "Пока нет предложений",
+        "offersText": "Создайте первое предложение для этого контрагента.",
+        "ordersTitle": "Пока нет заказов",
+        "ordersText": "Создайте заказ, когда у контрагента появится активная продажа."
+      },
+      "notesTitle": "Заметки контрагента",
+      "validation": {
+        "nameRequired": "Введите название контрагента",
+        "firstNameRequired": "Введите имя",
+        "lastNameRequired": "Введите фамилию",
+        "displayNameRequired": "Введите отображаемое имя",
+        "invalidPesel": "Неверный PESEL."
+      },
+      "messages": {
+        "saveFailed": "Не удалось сохранить контрагента",
+        "loadFailed": "Не удалось загрузить данные"
+      },
+      "registry": {
+        "checking": "Проверяем в GUS...",
+        "foundTitle": "Компания найдена",
+        "notFoundTitle": "Не найдено",
+        "notFoundText": "По этому NIP компания не найдена. Можно продолжить заполнение вручную.",
+        "errorTitle": "Ошибка соединения",
+        "errorText": "Проверка в реестре временно недоступна. Попробуйте позже или заполните данные вручную.",
+        "configMissingTitle": "Registry не настроен",
+        "configMissingText": "На сервере не задан ключ доступа GUS.",
+        "unsupportedTitle": "Страна {{country}} пока не подключена",
+        "unsupportedText": "Сейчас доступен только PL NIP через GUS.",
+        "apply": "Заполнить данные",
+        "applyChanges": "Применить изменения",
+        "applyGus": "Применить данные GUS",
+        "applySaved": "Данные обновлены из GUS",
+        "details": "Подробнее",
+        "refresh": "Обновить",
+        "ignore": "Игнорировать",
+        "diffTitle": "Обнаружены отличия",
+        "moreDiffs": "ещё {{count}}",
+        "source": "Источник: {{source}}",
+        "updatedAt": "Обновлено: {{date}}",
+        "sandboxHint": "Данные из тестовой среды GUS, не production.",
+        "mockHint": "Демо-данные реестра, не официальные данные GUS.",
+        "verifiedSource": "Проверено {{source}}",
+        "lastChecked": "Последняя проверка: {{date}}",
+        "legalForm": "Форма",
+        "registrationDate": "Дата регистрации",
+        "vatStatus": "VAT статус",
+        "pkd": "PKD",
+        "cacheHit": "Кэш: hit",
+        "cacheMiss": "Кэш: miss",
+        "cacheStale": "Кэш: stale fallback"
       }
     }
   },
@@ -3578,13 +3792,6 @@
       "myTasksOnly": "Только мои задачи",
       "priority": "Приоритет"
     },
-    "priority": {
-      "all": "Все",
-      "urgent": "Срочный",
-      "high": "Высокий",
-      "medium": "Средний",
-      "low": "Низкий"
-    },
     "task": {
       "allDay": "Весь день",
       "completed": "Завершена",
@@ -3614,6 +3821,20 @@
         "endAfterStart": "Время окончания должно быть позже начала",
         "pastDateTime": "Нельзя создать задачу в прошлом"
       }
+    },
+    "quickCreate": {
+      "title": "Новая задача",
+      "moreOptions": "Подробнее"
+    }
+  },
+  "priority": {
+    "all": "Все приоритеты",
+    "levels": {
+      "10": "Минимальный",
+      "25": "Низкий",
+      "50": "Обычный",
+      "75": "Высокий",
+      "100": "Критический"
     }
   },
   "userDetail": {

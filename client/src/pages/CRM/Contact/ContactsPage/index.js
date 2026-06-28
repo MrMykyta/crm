@@ -7,21 +7,16 @@ import {
   useWorkspaceData,
 } from '../../../../components/workspace';
 import AddButton from '../../../../components/buttons/AddButton/AddButton';
-import Modal from '../../../../components/Modal';
 import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
 import LinkCell from '../../../../components/cells/LinkCell';
-import ContactForm from '../../../../components/contacts/ContactForm';
 import { SearchField, SelectField } from '../../../../components/ui/fields';
 import useGridPrefs from '../../../../hooks/useGridPrefs';
-import useOpenAsModal from '../../../../hooks/useOpenAsModal';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 
 import {
-  useCreateContactMutation,
   useDeleteContactMutation,
   useGetContactsQuery,
   useSetMainContactMutation,
-  useUpdateContactMutation,
 } from '../../../../store/rtk/contactsApi';
 import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
 
@@ -51,13 +46,9 @@ function formatDate(value, locale) {
 export default function ContactsPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const openAsModal = useOpenAsModal();
   const listRef = useRef(null);
 
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [formBusy, setFormBusy] = useState(false);
   const [deleteBusyId, setDeleteBusyId] = useState(null);
   const { can } = useAclPermissions();
   const canDeleteContact = can('contact:delete');
@@ -71,8 +62,6 @@ export default function ContactsPage() {
     onColumnVisibilityChange,
   } = useGridPrefs('crm.contacts');
 
-  const [createContact] = useCreateContactMutation();
-  const [updateContact] = useUpdateContactMutation();
   const [deleteContact] = useDeleteContactMutation();
   const [setMainContact] = useSetMainContactMutation();
 
@@ -99,27 +88,18 @@ export default function ContactsPage() {
   }, [counterpartiesData?.items, i18n.language, t]);
 
   const openDetail = useCallback((id) => {
-    const suffix = openAsModal ? '?modal=1' : '';
-    navigate(`/main/contacts/${id}${suffix}`);
-  }, [navigate, openAsModal]);
+    navigate(`/main/contacts/${id}`);
+  }, [navigate]);
 
     // openCreate: открывает связанный UI-элемент.
-const openCreate = () => {
-    setEditing(null);
-    setOpen(true);
-  };
+const openCreate = useCallback(() => {
+    navigate('/main/contacts/new');
+  }, [navigate]);
 
     // openEdit: открывает связанный UI-элемент.
-const openEdit = (contact) => {
-    setEditing(contact);
-    setOpen(true);
-  };
-
-    // closeModal: закрывает связанный UI-элемент.
-const closeModal = () => {
-    setOpen(false);
-    setEditing(null);
-  };
+const openEdit = useCallback((contact) => {
+    if (contact?.id) openDetail(contact.id);
+  }, [openDetail]);
 
   const onSetMain = useCallback(async (id) => {
     await setMainContact(id).unwrap();
@@ -246,24 +226,8 @@ render: (row) => formatDate(row.updatedAt, i18n.language),
         ) : null}
       </div>
     ),
-    [canDeleteContact, deleteBusyId, onSetMain, t]
+    [canDeleteContact, deleteBusyId, onSetMain, openEdit, t]
   );
-
-    // onFormSubmit: вспомогательная логика компонента.
-const onFormSubmit = async (payload) => {
-    setFormBusy(true);
-    try {
-      if (editing?.id) {
-        await updateContact({ id: editing.id, payload }).unwrap();
-      } else {
-        await createContact(payload).unwrap();
-      }
-      closeModal();
-      listRef.current?.refetch?.();
-    } finally {
-      setFormBusy(false);
-    }
-  };
 
   const defaultQuery = useMemo(
     () => ({ page: 1, sort: 'createdAt', dir: 'DESC', limit: 25 }),
@@ -415,22 +379,6 @@ const onFormSubmit = async (payload) => {
     columnLabel: (column) => column.fallbackLabel || column.title || column.key,
   }), [t]);
 
-  const modalFooter = useMemo(
-    () => (
-      <>
-        <Modal.Button onClick={closeModal}>{t('common.cancel', 'Отмена')}</Modal.Button>
-        <Modal.Button
-          variant="primary"
-          form="contact-edit-form"
-          disabled={formBusy}
-        >
-          {formBusy ? t('common.saving', 'Сохранение...') : t('common.save', 'Сохранить')}
-        </Modal.Button>
-      </>
-    ),
-    [formBusy, t]
-  );
-
   return (
     <>
       <Workspace
@@ -484,24 +432,6 @@ const onFormSubmit = async (payload) => {
         labels={workspaceLabels}
         pagination={workspaceData.pagination}
       />
-
-      <Modal
-        open={open}
-        onClose={closeModal}
-        title={editing?.id
-          ? t('contacts.dialogs.edit', 'Редактирование контакта')
-          : t('contacts.dialogs.create', 'Новый контакт')}
-        size="lg"
-        footer={modalFooter}
-      >
-        <ContactForm
-          id="contact-edit-form"
-          initial={editing || undefined}
-          loading={formBusy}
-          withButtons={false}
-          onSubmit={onFormSubmit}
-        />
-      </Modal>
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

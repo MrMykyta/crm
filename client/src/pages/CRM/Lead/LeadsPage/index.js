@@ -6,8 +6,6 @@ import {
   Workspace,
   useWorkspaceData,
 } from '../../../../components/workspace';
-import Modal from '../../../../components/Modal';
-import CounterpartyForm from '../../CounterpartyForm';
 
 import useGridPrefs from '../../../../hooks/useGridPrefs';
 import useOpenAsModal from '../../../../hooks/useOpenAsModal';
@@ -18,7 +16,6 @@ import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import { SearchField, SelectField } from '../../../../components/ui/fields';
 
 import {
-  useCreateCounterpartyMutation,
   useListCounterpartiesQuery,
 } from '../../../../store/rtk/counterpartyApi';
 
@@ -32,8 +29,6 @@ const sanitizeCounterpartyQuery = (query = {}) => Object.fromEntries(
  */
 export default function LeadsPage() {
   const listRef = useRef(null);
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const openAsModal = useOpenAsModal();
@@ -47,8 +42,6 @@ export default function LeadsPage() {
     onColumnOrderChange,
     onColumnVisibilityChange,
   } = useGridPrefs('crm.leads');
-
-  const [createCounterparty, { isLoading: creating }] = useCreateCounterpartyMutation();
 
   // Открывает карточку лида в обычном режиме или как modal-route.
   const openDetail = useCallback(
@@ -265,114 +258,60 @@ render: (r) => r.mainResponsibleUser || '—',
   // Основная кнопка действия страницы (создать лид).
   const actions = useMemo(
     () => (
-      <AddButton onClick={() => setOpen(true)} title={t('crm.actions.addLead', 'Добавить лид')}>
+      <AddButton onClick={() => navigate('/main/leads/new')} title={t('crm.actions.addLead', 'Добавить лид')}>
         {t('crm.actions.addLead', 'Добавить лид')}
       </AddButton>
     ),
-    [t]
-  );
-
-  // Кнопки футера модалки создания лида.
-  const footer = useMemo(
-    () => (
-      <>
-        <Modal.Button onClick={() => setOpen(false)}>{t('common.cancel')}</Modal.Button>
-        <Modal.Button
-          variant="primary"
-          form="cp-create-form"
-          disabled={saving || creating}
-        >
-          {saving || creating ? t('common.saving') : t('common.save')}
-        </Modal.Button>
-      </>
-    ),
-    [t, saving, creating]
+    [navigate, t]
   );
 
   return (
-    <>
-      <Workspace
-        ref={listRef}
-        title={t('crm.titles.leads', 'Лиды')}
-        badge={t('crm.leads.workspaceCount', {
-          count: workspaceData.total,
-          defaultValue: `${workspaceData.total}`,
-        })}
-        actions={actions}
-        controls={workspaceControls}
-        rows={workspaceData.rows}
-        columns={workspaceColumns}
-        loading={workspaceData.loading}
-        error={workspaceData.error}
-        onRetry={workspaceData.refetch}
-        onRefetch={workspaceData.refetch}
-        renderCell={renderCell}
-        getRowId={(row) => row?.id}
-        getRowKey={(row) => String(row?.id || row?.shortName || row?.fullName || '')}
-        onRowClick={(row) => row?.id && openDetail(row.id)}
-        sortKey={workspaceData.query.sort}
-        sortDir={workspaceData.query.dir}
-        onSort={workspaceData.setSort}
-        columnState={columnState}
-        onColumnStateChange={handleColumnStateChange}
-        emptyState={{
-          title: t(
-            hasAnyFilter ? 'crm.leads.emptyFilteredTitle' : 'crm.leads.emptyTitle',
-            hasAnyFilter ? 'Лиды не найдены' : 'Нет лидов'
-          ),
-          description: t(
-            hasAnyFilter ? 'crm.leads.emptyFilteredText' : 'crm.leads.emptyText',
-            hasAnyFilter ? 'Измените поиск или фильтры.' : 'Создайте первый лид.'
-          ),
-        }}
-        errorState={{
-          title: t('crm.leads.errorTitle', 'Не удалось загрузить лидов'),
-          description: String(
-            leadsError?.data?.message
-            || leadsError?.data?.error
-            || leadsError?.message
-            || t('common.error', 'Error')
-          ),
-          retryLabel: t('list.refresh', 'Refresh'),
-        }}
-        labels={workspaceLabels}
-        pagination={workspaceData.pagination}
-      />
-
-      <Modal
-        open={open}
-        onClose={() => setOpen(false)}
-        title={t('crm.dialogs.newLead', 'Новый лид')}
-        size="lg"
-        footer={footer}
-      >
-        <CounterpartyForm
-            id="cp-create-form"
-            defaultType="lead"
-            defaultStatus="potential"
-            allowedTypes={['lead']}                      // показываем только тип lead
-            allowedStatuses={['potential','active','inactive']}
-            lockType                                     // тип фиксированный
-            loading={saving || creating}
-            withButtons={false}
-            onCancel={() => setOpen(false)}
-            // Создаёт лида и обновляет таблицу без полного перезапуска страницы.
-            onSubmit={async (values) => {
-                setSaving(true);
-                try {
-                await createCounterparty({
-                    ...values,
-                    type: 'lead',                          // на всякий случай дубль
-                    status: values.status || 'potential',
-                }).unwrap();
-                setOpen(false);
-                workspaceData.refetch?.();
-                } finally {
-                setSaving(false);
-                }
-            }}
-        />
-      </Modal>
-    </>
+    <Workspace
+      ref={listRef}
+      title={t('crm.titles.leads', 'Лиды')}
+      badge={t('crm.leads.workspaceCount', {
+        count: workspaceData.total,
+        defaultValue: `${workspaceData.total}`,
+      })}
+      actions={actions}
+      controls={workspaceControls}
+      rows={workspaceData.rows}
+      columns={workspaceColumns}
+      loading={workspaceData.loading}
+      error={workspaceData.error}
+      onRetry={workspaceData.refetch}
+      onRefetch={workspaceData.refetch}
+      renderCell={renderCell}
+      getRowId={(row) => row?.id}
+      getRowKey={(row) => String(row?.id || row?.shortName || row?.fullName || '')}
+      onRowClick={(row) => row?.id && openDetail(row.id)}
+      sortKey={workspaceData.query.sort}
+      sortDir={workspaceData.query.dir}
+      onSort={workspaceData.setSort}
+      columnState={columnState}
+      onColumnStateChange={handleColumnStateChange}
+      emptyState={{
+        title: t(
+          hasAnyFilter ? 'crm.leads.emptyFilteredTitle' : 'crm.leads.emptyTitle',
+          hasAnyFilter ? 'Лиды не найдены' : 'Нет лидов'
+        ),
+        description: t(
+          hasAnyFilter ? 'crm.leads.emptyFilteredText' : 'crm.leads.emptyText',
+          hasAnyFilter ? 'Измените поиск или фильтры.' : 'Создайте первый лид.'
+        ),
+      }}
+      errorState={{
+        title: t('crm.leads.errorTitle', 'Не удалось загрузить лидов'),
+        description: String(
+          leadsError?.data?.message
+          || leadsError?.data?.error
+          || leadsError?.message
+          || t('common.error', 'Error')
+        ),
+        retryLabel: t('list.refresh', 'Refresh'),
+      }}
+      labels={workspaceLabels}
+      pagination={workspaceData.pagination}
+    />
   );
 }

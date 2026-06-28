@@ -44,6 +44,23 @@ taskRouter.post(
   TaskController.create
 );
 
+// текущий исполнитель меняет только свой memberStatus; task:update не требуется
+taskRouter.patch(
+  '/:id/my-status',
+  requireMember,
+  validateBody(taskSchema.myStatus),
+  TaskController.updateMyStatus
+);
+
+// пользователь с task:update меняет статус любого assignee задачи
+taskRouter.patch(
+  '/:id/participants/:userId/status',
+  requireMember,
+  authorize('task:update'),
+  validateBody(taskSchema.participantStatus),
+  TaskController.updateParticipantStatus
+);
+
 // обновить задачу
 taskRouter.put(
   '/:id',

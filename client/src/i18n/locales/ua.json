@@ -123,14 +123,36 @@
     }
   },
   "notes": {
+    "fields": {
+      "relatedTo": "Пов'язано з",
+      "relatedType": "Тип",
+      "relatedEntity": "Сутність"
+    },
+    "placeholders": {
+      "content": "Почніть писати нотатку..."
+    },
+    "preview": {
+      "titleLabel": "Заголовок:"
+    },
+    "detail": {
+      "back": "Назад до нотаток",
+      "newTitle": "Нова нотатка",
+      "saved": "Збережено",
+      "unsaved": "Незбережені зміни",
+      "notFound": "Нотатку не знайдено"
+    },
     "modal": {
       "createTitle": "Нова нотатка",
       "editTitle": "Редагувати нотатку",
-      "subtitle": "Збережіть контекст задачі для команди."
+      "subtitle": "Збережіть контекст для команди."
     },
     "confirm": {
       "deleteTitle": "Видалити нотатку?",
       "deleteText": "Цю дію не можна скасувати."
+    },
+    "messages": {
+      "emptyTitle": "Поки немає нотаток",
+      "emptyText": "Створіть першу нотатку або змініть фільтри."
     }
   },
   "pim": {
@@ -2008,9 +2030,16 @@
       "fields": {
         "shortName": "Коротка назва",
         "fullName": "Повна юридична назва",
+        "firstName": "Ім'я",
+        "lastName": "Прізвище",
+        "displayName": "Відображуване ім'я",
+        "subject": "Суб'єкт",
         "type": "Тип",
         "status": "Статус",
+        "pesel": "PESEL",
+        "birthDate": "Дата народження",
         "nip": "NIP",
+        "nipVat": "NIP / VAT",
         "regon": "REGON",
         "krs": "KRS",
         "bdo": "BDO",
@@ -2023,21 +2052,41 @@
         "primary": "Основний",
         "isCompany": "Компанія"
       },
+      "subject": {
+        "company": "Компанія",
+        "person": "Фізична особа"
+      },
+      "personIntel": {
+        "age": "Вік",
+        "gender": "Стать",
+        "male": "Чоловік",
+        "female": "Жінка",
+        "peselValid": "PESEL коректний"
+      },
       "placeholders": {
         "shortName": "Коротка назва компанії",
         "fullName": "Зареєстрована юридична назва",
+        "firstName": "Іван",
+        "lastName": "Іванов",
+        "displayName": "Іван Іванов",
+        "pesel": "11 цифр",
         "nip": "лише цифри",
+        "nipVat": "5261040828 або DE1111111111",
         "postalCode": "напр. 00-000",
         "department": "Без відділу",
         "contactValue": "значення (email, телефон, посилання...)"
       },
       "actions": {
         "addContact": "+ Додати контакт",
+        "applyBirthDate": "Застосувати",
         "remove": "Вилучити"
       },
       "hints": {
         "noContacts": "Контактів немає",
-        "departmentVisibility": "Призначення відділу поки що не змінює видимість."
+        "departmentVisibility": "Призначення відділу поки що не змінює видимість.",
+        "taxIdFormat": "Введіть 10 цифр або код країни + 10 цифр.",
+        "nipChecksumLocal": "Перевірка виконується локально до звернення до державного реєстру.",
+        "peselBirthDate": "PESEL містить дату народження: {{date}}"
       },
       "errors": {
         "requiredShort": "Введіть коротку назву",
@@ -2048,11 +2097,13 @@
         "badStatus": "Неприпустимий статус",
         "digitsOnly": "Лише цифри",
         "nipLen": "Рівно 10 цифр",
+        "nipChecksum": "Помилка контрольної суми польського NIP.",
         "countryIso": "ISO-2, напр. PL",
         "selectChannel": "Оберіть канал",
         "valueRequired": "Введіть значення",
         "badEmail": "Невірний email",
-        "badPhone": "Невірний телефон"
+        "badPhone": "Невірний телефон",
+        "taxIdFormat": "Введіть 10 цифр або 2 літери країни + 10 цифр."
       }
     },
     "enums": {
@@ -2095,6 +2146,19 @@
         "count_plural": "{{count}} задач",
         "filteredCount": "{{count}} з {{total}} задач",
         "filteredCount_plural": "{{count}} з {{total}} задач"
+      },
+      "views": {
+        "label": "Вид",
+        "groupTasks": "Задачі",
+        "all": "Усі задачі",
+        "my": "Мої задачі",
+        "overdue": "Прострочені",
+        "today": "На сьогодні",
+        "inProgress": "У процесі",
+        "completed": "Завершені",
+        "custom": "Користувацький",
+        "selected": "Вибрано",
+        "resetFilters": "Скинути фільтри"
       },
       "kpi": {
         "title": "Підсумок задач",
@@ -2187,6 +2251,48 @@
           "emptyTitle": "Нотаток немає",
           "emptyText": "Додайте першу нотатку, щоб зберегти контекст.",
           "addFirst": "Додати нотатку"
+        },
+        "create": {
+          "draft": "Чернетка",
+          "descriptionHint": "Опис збережеться разом із задачею",
+          "participantsTitle": "Учасники будуть додані після створення",
+          "participantsHint": "Створіть задачу, щоб відстежувати виконання учасників і змінювати їхні статуси."
+        },
+        "team": {
+          "assigneesTitle": "Виконавці",
+          "progressLabel": "{{done}} / {{total}} виконано",
+          "progressValue": "{{done}} / {{total}} виконано",
+          "aggregateEnabledHint": "Задача автоматично стане виконаною, коли всі виконавці позначать виконання.",
+          "aggregateDisabledHint": "Загальний статус задачі керується вручну.",
+          "noAssigneesTitle": "Немає виконавців",
+          "noAssigneesText": "Додайте виконавців, щоб відстежувати прогрес виконання",
+          "emptySection": "Немає виконавців у цьому статусі",
+          "notAssigneeHint": "Ви не є виконавцем цієї задачі. Змінити можна лише власний статус виконавця.",
+          "myActions": "Дії з моїм статусом",
+          "startedAt": "Розпочато",
+          "completedAt": "Виконано",
+          "noStatusTime": "Час статусу не вказано",
+          "statusUpdateFailed": "Не вдалося оновити статус виконавця",
+          "managerControlsLater": "Керування статусами інших виконавців буде додано після підключення надійної перевірки task:update.",
+          "sections": {
+            "completed": "Виконали",
+            "pending": "У роботі / очікують",
+            "blocked": "Заблоковані"
+          },
+          "actions": {
+            "start": "У роботу",
+            "done": "Виконано",
+            "blocked": "Заблоковано",
+            "reopen": "Повернути"
+          },
+          "memberStatus": {
+            "todo": "Не розпочато",
+            "in_progress": "У роботі",
+            "done": "Виконано",
+            "blocked": "Заблоковано",
+            "canceled": "Скасовано"
+          },
+          "progressDetail": "{{done}} з {{total}} виконавців завершили задачу"
         }
       },
       "sections": {
@@ -2209,23 +2315,11 @@
           "cancelled": "Скасовано"
         }
       },
-      "priorityLevels": {
-        "1": "1 - Низький",
-        "2": "2 - Нижче середнього",
-        "3": "3 - Середній",
-        "4": "4 - Вище середнього",
-        "5": "5 - Високий"
-      },
-      "priorityBuckets": {
-        "low": "Низький",
-        "normal": "Звичайний",
-        "high": "Високий",
-        "urgent": "Терміновий"
-      },
       "fields": {
         "title": "Назва",
         "category": "Категорія",
         "status": "Статус",
+        "progress": "Прогрес",
         "creator": "Автор",
         "priority": "Пріоритет",
         "startAt": "Плановий початок",
@@ -2258,7 +2352,8 @@
         "status": "Вибрати статус",
         "assignee": "Вибрати виконавця",
         "counterpartyId": "UUID контрагента",
-        "dealId": "UUID угоди"
+        "dealId": "UUID угоди",
+        "dealSearch": "Оберіть угоду"
       },
       "messages": {
         "typeToSearch": "Почніть вводити назву",
@@ -2296,6 +2391,8 @@
     },
     "counterparties": {
       "noDepartment": "Без відділу",
+      "confirmDeleteTitle": "Видалити контрагента?",
+      "confirmDeleteText": "Контрагента буде видалено або заархівовано згідно з налаштуваннями системи.",
       "tabs": {
         "offers": "Пропозиції",
         "orders": "Замовлення"
@@ -2307,6 +2404,129 @@
       "orders": {
         "empty": "Немає замовлень для цього контрагента",
         "new": "Нове замовлення"
+      }
+    },
+    "clientDetail": {
+      "create": {
+        "title": "Новий клієнт",
+        "subtitle": "Заповніть дані клієнта та створіть картку."
+      },
+      "actions": {
+        "back": "До списку клієнтів"
+      }
+    },
+    "leadDetail": {
+      "create": {
+        "title": "Новий лід",
+        "subtitle": "Заповніть дані ліда та створіть картку."
+      },
+      "actions": {
+        "back": "До списку лідів"
+      }
+    },
+    "counterpartyDetail": {
+      "untitled": "Контрагент без назви",
+      "create": {
+        "title": "Новий контрагент",
+        "subtitle": "Заповніть основні дані та створіть картку."
+      },
+      "tabs": {
+        "overview": "Опис",
+        "registration": "Реквізити",
+        "address": "Адреса",
+        "notes": "Нотатки",
+        "contacts": "Контакти",
+        "offers": "Пропозиції",
+        "orders": "Замовлення",
+        "additional": "Додатково"
+      },
+      "sections": {
+        "identity": "Основне",
+        "registration": "Реквізити",
+        "registrationHint": "Податкові та реєстраційні ідентифікатори.",
+        "address": "Адреса",
+        "addressHint": "Поштова та юридична адреса контрагента.",
+        "meta": "Додатково",
+        "summary": "Підсумок"
+      },
+      "fields": {
+        "id": "ID",
+        "createdAt": "Створено",
+        "updatedAt": "Оновлено",
+        "address": "Адреса",
+        "registrySource": "Джерело реєстру",
+        "registryCheckedAt": "Перевірено в реєстрі"
+      },
+      "actions": {
+        "back": "До списку",
+        "create": "Створити"
+      },
+      "description": {
+        "title": "Опис",
+        "placeholder": "Опишіть контрагента: умови, домовленості, робочі нотатки...",
+        "emptyText": "Опис поки порожній. Додайте умови, домовленості або важливий контекст."
+      },
+      "relations": {
+        "number": "Номер",
+        "status": "Статус",
+        "totalGross": "Разом",
+        "validUntil": "Дійсно до / створено",
+        "placedAt": "Дата / створено"
+      },
+      "empty": {
+        "notesTitle": "Поки немає нотаток",
+        "notesText": "Додайте нотатку, щоб зберегти контекст роботи з контрагентом.",
+        "addNote": "Додати нотатку",
+        "offersTitle": "Поки немає пропозицій",
+        "offersText": "Створіть першу пропозицію для цього контрагента.",
+        "ordersTitle": "Поки немає замовлень",
+        "ordersText": "Створіть замовлення, коли у контрагента з'явиться активний продаж."
+      },
+      "notesTitle": "Нотатки контрагента",
+      "validation": {
+        "nameRequired": "Введіть назву контрагента",
+        "firstNameRequired": "Введіть ім'я",
+        "lastNameRequired": "Введіть прізвище",
+        "displayNameRequired": "Введіть відображуване ім'я",
+        "invalidPesel": "Невірний PESEL."
+      },
+      "messages": {
+        "saveFailed": "Не вдалося зберегти контрагента",
+        "loadFailed": "Не вдалося завантажити дані"
+      },
+      "registry": {
+        "checking": "Перевіряємо в GUS...",
+        "foundTitle": "Компанію знайдено",
+        "notFoundTitle": "Не знайдено",
+        "notFoundText": "За цим NIP компанію не знайдено. Можна продовжити заповнення вручну.",
+        "errorTitle": "Помилка з'єднання",
+        "errorText": "Пошук у реєстрі тимчасово недоступний. Спробуйте пізніше або введіть дані вручну.",
+        "configMissingTitle": "Registry не налаштовано",
+        "configMissingText": "На сервері не задано ключ доступу GUS.",
+        "unsupportedTitle": "Країну {{country}} ще не підключено",
+        "unsupportedText": "Зараз доступний тільки PL NIP через GUS.",
+        "apply": "Заповнити дані",
+        "applyChanges": "Застосувати зміни",
+        "applyGus": "Застосувати дані GUS",
+        "applySaved": "Дані оновлено з GUS",
+        "details": "Детальніше",
+        "refresh": "Оновити",
+        "ignore": "Ігнорувати",
+        "diffTitle": "Виявлено відмінності",
+        "moreDiffs": "ще {{count}}",
+        "source": "Джерело: {{source}}",
+        "updatedAt": "Оновлено: {{date}}",
+        "sandboxHint": "Дані з тестового середовища GUS, не production.",
+        "mockHint": "Демо-дані реєстру, не офіційні дані GUS.",
+        "verifiedSource": "Перевірено {{source}}",
+        "lastChecked": "Остання перевірка: {{date}}",
+        "legalForm": "Форма",
+        "registrationDate": "Дата реєстрації",
+        "vatStatus": "VAT статус",
+        "pkd": "PKD",
+        "cacheHit": "Кеш: hit",
+        "cacheMiss": "Кеш: miss",
+        "cacheStale": "Кеш: stale fallback"
       }
     }
   },
@@ -3086,13 +3306,6 @@
       "myTasksOnly": "Лише мої задачі",
       "priority": "Пріоритет"
     },
-    "priority": {
-      "all": "Усі",
-      "urgent": "Терміновий",
-      "high": "Високий",
-      "medium": "Середній",
-      "low": "Низький"
-    },
     "task": {
       "allDay": "Увесь день",
       "completed": "Завершена",
@@ -3122,6 +3335,20 @@
         "endAfterStart": "Час завершення має бути пізніше часу початку",
         "pastDateTime": "Не можна створити задачу в минулому"
       }
+    },
+    "quickCreate": {
+      "title": "Нове завдання",
+      "moreOptions": "Докладніше"
+    }
+  },
+  "priority": {
+    "all": "Усі пріоритети",
+    "levels": {
+      "10": "Мінімальний",
+      "25": "Низький",
+      "50": "Звичайний",
+      "75": "Високий",
+      "100": "Критичний"
     }
   },
   "userDetail": {

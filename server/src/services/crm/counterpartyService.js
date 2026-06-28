@@ -1,6 +1,7 @@
 // src/services/crm/counterpartyService.js
 "use strict";
 
+const crypto = require("crypto");
 const {
   sequelize,
   Counterparty,
@@ -26,6 +27,18 @@ const SORT_WHITELIST = [
   "shortName",
   "status",
   "type",
+];
+const REGISTRY_TRACKED_FIELDS = [
+  "nip",
+  "regon",
+  "krs",
+  "fullName",
+  "shortName",
+  "country",
+  "city",
+  "postalCode",
+  "street",
+  "isCompany",
 ];
 
 /**
@@ -125,6 +138,203 @@ function buildCounterpartyName(c) {
   );
 }
 
+function asText(value) {
+  if (value === undefined || value === null) return "";
+  return String(value).trim();
+}
+
+function normalizeTaxId(value, maxLength) {
+  const text = asText(value).replace(/\D/g, "");
+  return maxLength ? text.slice(0, maxLength) : text;
+}
+
+function normalizePesel(value) {
+  return asText(value).replace(/\D/g, "").slice(0, 11);
+}
+
+function isValidPesel(value) {
+  const pesel = normalizePesel(value);
+  if (pesel.length !== 11) return false;
+  const weights = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3];
+  const sum = weights.reduce((acc, weight, index) => acc + Number(pesel[index]) * weight, 0);
+  const checksum = (10 - (sum % 10)) % 10;
+  return checksum === Number(pesel[10]);
+}
+
+function normalizeDateOnly(value) {
+  const text = asText(value);
+  if (!text) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    const err = new Error("birthDate is invalid");
+    err.status = 400;
+    throw err;
+  }
+  const date = new Date(`${text}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== text) {
+    const err = new Error("birthDate is invalid");
+    err.status = 400;
+    throw err;
+  }
+  return text;
+}
+
+function normalizePeselOrNull(value) {
+  const pesel = normalizePesel(value);
+  if (!pesel) return null;
+  if (!/^\d{11}$/.test(pesel) || !isValidPesel(pesel)) {
+    const err = new Error("Invalid PESEL");
+    err.status = 400;
+    err.code = "INVALID_PESEL";
+    throw err;
+  }
+  return pesel;
+}
+
+function normalizeCountry(value) {
+  return asText(value).toUpperCase().slice(0, 2);
+}
+
+function compactObject(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const out = {};
+  for (const [key, raw] of Object.entries(value)) {
+    if (raw === undefined || raw === null) continue;
+    if (typeof raw === "string") {
+      const text = raw.trim();
+      if (text) out[key] = text;
+    } else if (Array.isArray(raw)) {
+      if (raw.length) out[key] = raw;
+    } else if (typeof raw === "object") {
+      const nested = compactObject(raw);
+      if (nested && Object.keys(nested).length) out[key] = nested;
+    } else {
+      out[key] = raw;
+    }
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+function sanitizeRegistrySnapshot(rawSnapshot = {}) {
+  if (!rawSnapshot || typeof rawSnapshot !== "object" || Array.isArray(rawSnapshot)) return null;
+  const taxIds = compactObject({
+    nip: normalizeTaxId(rawSnapshot.taxIds?.nip || rawSnapshot.nip, 10),
+    regon: normalizeTaxId(rawSnapshot.taxIds?.regon || rawSnapshot.regon, 14),
+    krs: normalizeTaxId(rawSnapshot.taxIds?.krs || rawSnapshot.krs, 14),
+  });
+  const address = compactObject({
+    country: normalizeCountry(rawSnapshot.address?.country || rawSnapshot.country || "PL"),
+    city: rawSnapshot.address?.city,
+    postalCode: rawSnapshot.address?.postalCode,
+    street: rawSnapshot.address?.street,
+  });
+  const snapshot = compactObject({
+    country: normalizeCountry(rawSnapshot.country || rawSnapshot.address?.country || "PL"),
+    legalName: rawSnapshot.legalName,
+    shortName: rawSnapshot.shortName,
+    taxIds,
+    address,
+    legalForm: rawSnapshot.legalForm,
+    pkd: Array.isArray(rawSnapshot.pkd) ? rawSnapshot.pkd.map(asText).filter(Boolean) : undefined,
+    source: Array.isArray(rawSnapshot.source)
+      ? rawSnapshot.source.map(asText).filter(Boolean)
+      : asText(rawSnapshot.source || "GUS"),
+    registryEnv: asText(rawSnapshot.registryEnv),
+    fetchedAt: rawSnapshot.fetchedAt ? new Date(rawSnapshot.fetchedAt).toISOString() : undefined,
+    mock: Boolean(rawSnapshot.mock),
+  });
+  return snapshot;
+}
+
+function stableJson(value) {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function hashSnapshot(snapshot) {
+  if (!snapshot) return null;
+  return crypto.createHash("sha256").update(stableJson(snapshot)).digest("hex");
+}
+
+function sourceToString(source) {
+  if (Array.isArray(source)) return source.map(asText).filter(Boolean).join(", ");
+  return asText(source || "GUS") || "GUS";
+}
+
+function registrySnapshotToTrackedValues(snapshot = {}) {
+  const taxIds = snapshot.taxIds || {};
+  const address = snapshot.address || {};
+  const legalName = asText(snapshot.legalName);
+  const shortName = asText(snapshot.shortName) || legalName;
+  return {
+    nip: normalizeTaxId(taxIds.nip || snapshot.nip, 10),
+    regon: normalizeTaxId(taxIds.regon || snapshot.regon, 14),
+    krs: normalizeTaxId(taxIds.krs || snapshot.krs, 14),
+    fullName: legalName || shortName,
+    shortName,
+    country: normalizeCountry(address.country || snapshot.country || "PL"),
+    city: asText(address.city),
+    postalCode: asText(address.postalCode),
+    street: asText(address.street),
+    isCompany: snapshot.isCompany === false ? false : true,
+  };
+}
+
+function comparableFieldValue(field, value) {
+  if (field === "isCompany") return Boolean(value);
+  if (field === "nip") return normalizeTaxId(value, 10);
+  if (field === "regon" || field === "krs") return normalizeTaxId(value, 14);
+  if (field === "country") return normalizeCountry(value);
+  return asText(value);
+}
+
+function fieldsMatchRegistrySnapshot(values, snapshot) {
+  if (!snapshot) return false;
+  const expected = registrySnapshotToTrackedValues(snapshot);
+  return REGISTRY_TRACKED_FIELDS.every((field) => {
+    const expectedValue = comparableFieldValue(field, expected[field]);
+    if (expectedValue === "" && field !== "isCompany") return true;
+    return comparableFieldValue(field, values[field]) === expectedValue;
+  });
+}
+
+function buildRegistryVerificationFields(data, values) {
+  const verification = data?.registryVerification;
+  if (!verification || verification.verified !== true) return null;
+  const snapshot = sanitizeRegistrySnapshot(verification.snapshot || {});
+  if (!fieldsMatchRegistrySnapshot(values, snapshot)) return null;
+  const verifiedAt = verification.verifiedAt ? new Date(verification.verifiedAt) : new Date();
+  return {
+    registryVerified: true,
+    registryVerifiedAt: Number.isNaN(verifiedAt.getTime()) ? new Date() : verifiedAt,
+    registryVerifiedSource: sourceToString(verification.source || snapshot?.source),
+    registryVerifiedEnv: asText(verification.registryEnv || snapshot?.registryEnv) || null,
+    registryVerifiedMock: Boolean(verification.mock || snapshot?.mock),
+    registrySnapshot: snapshot,
+    registrySnapshotHash: hashSnapshot(snapshot),
+  };
+}
+
+function clearRegistryVerificationFields() {
+  return {
+    registryVerified: false,
+    registryVerifiedAt: null,
+    registryVerifiedSource: null,
+    registryVerifiedEnv: null,
+    registryVerifiedMock: false,
+    registrySnapshot: null,
+    registrySnapshotHash: null,
+  };
+}
+
+function shouldClearRegistryVerification(counterparty, nextValues) {
+  if (!counterparty?.registryVerified) return false;
+  if (!counterparty.registrySnapshot) return true;
+  return !fieldsMatchRegistrySnapshot(nextValues, counterparty.registrySnapshot);
+}
+
 /* ───────────────────────────────────────────────────────────
  *  LIST
  * ─────────────────────────────────────────────────────────── */
@@ -185,9 +395,12 @@ module.exports.list = async (companyId, query = {}) => {
   applyCommonFilters(where, parsed, [
     "shortName",
     "fullName",
+    "firstName",
+    "lastName",
     "nip",
     "regon",
     "krs",
+    "pesel",
   ]);
 
   // выбор колонок (если ?fields=id,shortName,status)
@@ -237,38 +450,44 @@ module.exports.create = async (userId, companyId, data = {}) => {
     await assertHoldingInCompany(data.holdingId, companyId, t);
     await assertDepartmentInCompany(data.departmentId, companyId, t);
     await assertMemberInCompany(data.mainResponsibleUserId, companyId, t);
+    const isCompany = data.isCompany ?? true;
+
+    const createValues = {
+      companyId,
+      holdingId: data.holdingId ?? null,
+      departmentId: data.departmentId ?? null,
+      mainResponsibleUserId: data.mainResponsibleUserId ?? null,
+
+      firstName: data.firstName ?? null,
+      lastName: data.lastName ?? null,
+      pesel: isCompany ? null : normalizePeselOrNull(data.pesel),
+      birthDate: isCompany ? null : normalizeDateOnly(data.birthDate),
+      fullName: data.fullName ?? null,
+      shortName: data.shortName ?? null,
+
+      regon: data.regon ?? null,
+      nip: data.nip ?? null,
+      krs: data.krs ?? null,
+      bdo: data.bdo ?? null,
+
+      type: data.type ?? "lead",
+      status: data.status ?? "potential",
+
+      country: data.country ?? null,
+      city: data.city ?? null,
+      postalCode: data.postalCode ?? null,
+      street: data.street ?? null,
+      isCompany,
+
+      description: data.description ?? null,
+
+      createdBy: userId,
+      updatedBy: userId,
+    };
+    Object.assign(createValues, buildRegistryVerificationFields(data, createValues) || clearRegistryVerificationFields());
 
     counterparty = await Counterparty.create(
-      {
-        companyId,
-        holdingId: data.holdingId ?? null,
-        departmentId: data.departmentId ?? null,
-        mainResponsibleUserId: data.mainResponsibleUserId ?? null,
-
-        firstName: data.firstName ?? null,
-        lastName: data.lastName ?? null,
-        fullName: data.fullName ?? null,
-        shortName: data.shortName ?? null,
-
-        regon: data.regon ?? null,
-        nip: data.nip ?? null,
-        krs: data.krs ?? null,
-        bdo: data.bdo ?? null,
-
-        type: data.type ?? "lead",
-        status: data.status ?? "potential",
-
-        country: data.country ?? null,
-        city: data.city ?? null,
-        postalCode: data.postalCode ?? null,
-        street: data.street ?? null,
-        isCompany: data.isCompany ?? true,
-
-        description: data.description ?? null,
-
-        createdBy: userId,
-        updatedBy: userId,
-      },
+      createValues,
       { transaction: t }
     );
 
@@ -370,6 +589,7 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
       await t.rollback();
       return null;
     }
+    const isCompany = data.isCompany ?? counterparty.isCompany;
 
     // снимок до изменений — для meta.old*
     beforeSnapshot = {
@@ -378,37 +598,51 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
       city: counterparty.city,
     };
 
+    const updateValues = {
+      holdingId: data.holdingId ?? counterparty.holdingId,
+      departmentId: hasOwn(data, "departmentId")
+        ? data.departmentId
+        : counterparty.departmentId,
+      mainResponsibleUserId:
+        data.mainResponsibleUserId ?? counterparty.mainResponsibleUserId,
+
+      firstName: hasOwn(data, "firstName") ? data.firstName : counterparty.firstName,
+      lastName: hasOwn(data, "lastName") ? data.lastName : counterparty.lastName,
+      pesel: isCompany
+        ? null
+        : (hasOwn(data, "pesel") ? normalizePeselOrNull(data.pesel) : counterparty.pesel),
+      birthDate: isCompany
+        ? null
+        : (hasOwn(data, "birthDate") ? normalizeDateOnly(data.birthDate) : counterparty.birthDate),
+      fullName: data.fullName ?? counterparty.fullName,
+      shortName: data.shortName ?? counterparty.shortName,
+
+      regon: data.regon,
+      nip: data.nip,
+      krs: data.krs,
+      bdo: data.bdo,
+
+      type: data.type ?? counterparty.type,
+      status: data.status ?? counterparty.status,
+
+      country: data.country ?? counterparty.country,
+      city: data.city ?? counterparty.city,
+      postalCode: data.postalCode ?? counterparty.postalCode,
+      street: data.street ?? counterparty.street,
+      isCompany,
+
+      description: data.description ?? counterparty.description,
+      updatedBy: userId,
+    };
+    const nextVerification = buildRegistryVerificationFields(data, updateValues);
+    if (nextVerification) {
+      Object.assign(updateValues, nextVerification);
+    } else if (shouldClearRegistryVerification(counterparty, updateValues)) {
+      Object.assign(updateValues, clearRegistryVerificationFields());
+    }
+
     await counterparty.update(
-      {
-        holdingId: data.holdingId ?? counterparty.holdingId,
-        departmentId: hasOwn(data, "departmentId")
-          ? data.departmentId
-          : counterparty.departmentId,
-        mainResponsibleUserId:
-          data.mainResponsibleUserId ?? counterparty.mainResponsibleUserId,
-
-        firstName: data.firstName ?? counterparty.firstName,
-        lastName: data.lastName ?? counterparty.lastName,
-        fullName: data.fullName ?? counterparty.fullName,
-        shortName: data.shortName ?? counterparty.shortName,
-
-        regon: data.regon,
-        nip: data.nip,
-        krs: data.krs,
-        bdo: data.bdo,
-
-        type: data.type ?? counterparty.type,
-        status: data.status ?? counterparty.status,
-
-        country: data.country ?? counterparty.country,
-        city: data.city ?? counterparty.city,
-        postalCode: data.postalCode ?? counterparty.postalCode,
-        street: data.street ?? counterparty.street,
-        isCompany: data.isCompany ?? counterparty.isCompany,
-
-        description: data.description ?? counterparty.description,
-        updatedBy: userId,
-      },
+      updateValues,
       { transaction: t }
     );
 

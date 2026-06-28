@@ -14,6 +14,10 @@ static associate(models) {
         foreignKey: { name: 'createdBy', field: 'created_by' },
         as: 'creator',
       });
+      Task.belongsTo(models.User, {
+        foreignKey: { name: 'completedById', field: 'completed_by_id' },
+        as: 'completedBy',
+      });
 
       Task.belongsTo(models.Counterparty, {
         foreignKey: { name: 'counterpartyId', field: 'counterparty_id' },
@@ -145,6 +149,9 @@ get isAllDay() {
       },
 
       statusAggregate: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'status_aggregate' },
+
+      completedAt: { type: DataTypes.DATE, allowNull: true, field: 'completed_at' },
+      completedById: { type: DataTypes.UUID, allowNull: true, field: 'completed_by_id' },
 
       counterpartyId: { type: DataTypes.UUID, allowNull: true, field: 'counterparty_id' },
       dealId:         { type: DataTypes.UUID, allowNull: true, field: 'deal_id' },

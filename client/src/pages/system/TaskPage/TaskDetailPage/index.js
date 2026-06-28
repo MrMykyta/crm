@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Trash2, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Trash2, ClipboardList, CheckCircle2, CircleDot, OctagonAlert } from 'lucide-react';
 
 import {
   DetailLayout,
@@ -17,18 +17,32 @@ import {
   PriorityField,
   SelectField,
   TextField,
+  TextareaField,
   VisibilityField,
 } from '../../../../components/ui/fields';
 import { TASK_STATUS, formatTaskDate, toApiTask, toFormTask } from '../../../../schemas/task.schema';
+import {
+  PRIORITY_I18N_KEYS,
+  PRIORITY_TONES,
+  normalizePriority,
+} from '../../../../config/priority';
 import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
 import { useGetContactsQuery } from '../../../../store/rtk/contactsApi';
 import { useListDepartmentsQuery } from '../../../../store/rtk/departmentsApi';
-import { useDeleteTaskMutation, useGetTaskQuery, useUpdateTaskMutation } from '../../../../store/rtk/tasksApi';
+import {
+  useCreateTaskMutation,
+  useDeleteTaskMutation,
+  useGetTaskQuery,
+  useUpdateMyTaskStatusMutation,
+  useUpdateTaskMutation,
+} from '../../../../store/rtk/tasksApi';
+import { useSignedFileUrl } from '../../../../hooks/useSignedFileUrl';
 import DescriptionForm from '../sections/DescriptionForm';
 import s from './TaskDetailPage.module.css';
 
 const EMPTY_OPTIONS = [];
 const SAVE_DEBOUNCE_MS = 500;
+const MEMBER_STATUS_OPTIONS = ['todo', 'in_progress', 'done', 'blocked'];
 
 function memberLabel(member = {}) {
   return member.name
@@ -39,12 +53,131 @@ function memberLabel(member = {}) {
     || '—';
 }
 
-function getPriorityTone(priority) {
-  const value = Number(priority || 0);
-  if (value >= 75) return 'danger';
-  if (value >= 50) return 'warning';
-  if (value >= 25) return 'info';
-  return 'muted';
+function participantMeta(user = {}) {
+  return user.TaskUserParticipant || user.taskUserParticipant || {};
+}
+
+function normalizeAvatarRef(value) {
+  if (!value) return null;
+  if (typeof value === 'string') return value.trim() || null;
+  if (typeof value !== 'object') return null;
+  return value.avatarUrl
+    || value.photoUrl
+    || value.profilePhotoUrl
+    || value.url
+    || value.path
+    || value.location
+    || value.id
+    || null;
+}
+
+function participantAvatarValue(user = {}) {
+  return [
+    user.avatarUrl,
+    user.avatar,
+    user.photoUrl,
+    user.profilePhoto,
+    user.profilePhotoUrl,
+    user.image,
+    user.imageUrl,
+  ].map(normalizeAvatarRef).find(Boolean) || null;
+}
+
+function participantInitials(row = {}) {
+  const source = String(row.name || row.email || row.id || '?').trim();
+  if (!source) return '?';
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+  return source.slice(0, 2).toUpperCase();
+}
+
+function participantRow(user = {}) {
+  const meta = participantMeta(user);
+  return {
+    id: user.id,
+    name: memberLabel(user),
+    email: user.email || null,
+    avatarUrl: participantAvatarValue(user),
+    memberStatus: meta.memberStatus || 'todo',
+    startedAt: meta.startedAt || null,
+    completedAt: meta.completedAt || null,
+    completedById: meta.completedById || null,
+    statusNote: meta.statusNote || null,
+  };
+}
+
+function mergeAggregateSummaryRows(task = {}, summary = emptyAggregateSummary()) {
+  const participants = Array.isArray(task.userParticipants) ? task.userParticipants : [];
+  const participantById = new Map(
+    participants
+      .map((user) => participantRow(user))
+      .filter((row) => row.id)
+      .map((row) => [String(row.id), row])
+  );
+  const mergeRow = (row = {}) => {
+    const participant = participantById.get(String(row.id)) || {};
+    return {
+      ...participant,
+      ...row,
+      name: row.name || participant.name,
+      email: row.email || participant.email || null,
+      avatarUrl: participantAvatarValue(row) || participant.avatarUrl || null,
+    };
+  };
+  return {
+    ...summary,
+    pendingAssignees: (summary.pendingAssignees || []).map(mergeRow),
+    completedAssignees: (summary.completedAssignees || []).map(mergeRow),
+    blockedAssignees: (summary.blockedAssignees || []).map(mergeRow),
+  };
+}
+
+function emptyAggregateSummary() {
+  return {
+    assigneesTotal: 0,
+    assigneesDone: 0,
+    assigneesPending: 0,
+    assigneesBlocked: 0,
+    progressPercent: 0,
+    pendingAssignees: [],
+    completedAssignees: [],
+    blockedAssignees: [],
+  };
+}
+
+function deriveAggregateSummary(task = {}) {
+  if (task.aggregateSummary) return mergeAggregateSummaryRows(task, task.aggregateSummary);
+  const summary = emptyAggregateSummary();
+  const participants = Array.isArray(task.userParticipants) ? task.userParticipants : [];
+  participants.forEach((user) => {
+    const meta = participantMeta(user);
+    if (meta.role !== 'assignee') return;
+    const row = participantRow(user);
+    summary.assigneesTotal += 1;
+    if (row.memberStatus === 'done') {
+      summary.assigneesDone += 1;
+      summary.completedAssignees.push(row);
+    } else if (row.memberStatus === 'blocked') {
+      summary.assigneesBlocked += 1;
+      summary.blockedAssignees.push(row);
+    } else {
+      summary.assigneesPending += 1;
+      summary.pendingAssignees.push(row);
+    }
+  });
+  summary.progressPercent = summary.assigneesTotal
+    ? Math.round((summary.assigneesDone / summary.assigneesTotal) * 100)
+    : 0;
+  return summary;
+}
+
+function allAssigneeRows(task = {}) {
+  const summary = deriveAggregateSummary(task);
+  return [
+    ...(summary.completedAssignees || []),
+    ...(summary.pendingAssignees || []),
+    ...(summary.blockedAssignees || []),
+  ];
 }
 
 function getStatusTone(status) {
@@ -52,6 +185,35 @@ function getStatusTone(status) {
   if (status === 'blocked' || status === 'canceled') return 'danger';
   if (status === 'in_progress') return 'info';
   return 'neutral';
+}
+
+function ParticipantAvatar({ row }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const avatarValue = row?.avatarUrl || null;
+  const { url: avatarUrl, onError: refreshAvatarUrl } = useSignedFileUrl(avatarValue);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [avatarValue, avatarUrl]);
+
+  const showImage = Boolean(avatarUrl && !imageFailed);
+
+  return (
+    <div className={s.memberAvatar} aria-hidden="true">
+      {showImage ? (
+        <img
+          src={avatarUrl}
+          alt=""
+          onError={() => {
+            refreshAvatarUrl?.();
+            setImageFailed(true);
+          }}
+        />
+      ) : (
+        <span>{participantInitials(row)}</span>
+      )}
+    </div>
+  );
 }
 
 function normalizeInitialTask(task) {
@@ -81,18 +243,68 @@ function normalizeInitialTask(task) {
   };
 }
 
-export default function TaskDetailPage() {
+function getCreatedTaskId(created) {
+  return created?.id
+    || created?.task?.id
+    || created?.data?.id
+    || created?.data?.task?.id
+    || null;
+}
+
+function isDateParam(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || '').trim());
+}
+
+function isTimeParam(value) {
+  return /^\d{2}:\d{2}$/.test(String(value || '').trim());
+}
+
+function buildCreatePrefill(searchParams) {
+  const title = searchParams.get('title') || '';
+  const date = searchParams.get('date') || '';
+  if (!title && !date) return {};
+
+  const prefill = {};
+  if (title) prefill.title = title;
+
+  if (isDateParam(date)) {
+    const allDay = searchParams.get('allDay') !== '0';
+    const start = searchParams.get('start') || '';
+    const end = searchParams.get('end') || '';
+    if (!allDay && isTimeParam(start) && isTimeParam(end)) {
+      prefill.startAt = `${date}T${start}`;
+      prefill.endAt = `${date}T${end}`;
+      prefill.plannedStartHasTime = true;
+      prefill.plannedEndHasTime = true;
+    } else {
+      prefill.startAt = date;
+      prefill.endAt = date;
+      prefill.plannedStartHasTime = false;
+      prefill.plannedEndHasTime = false;
+    }
+  }
+
+  return prefill;
+}
+
+export default function TaskDetailPage({ createMode = false }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t, i18n } = useTranslation();
-  const { data: base, isFetching } = useGetTaskQuery(id);
+  const isCreateMode = createMode || id === 'new';
+  const createPrefillKey = isCreateMode ? searchParams.toString() : '';
+  const { data: base, isFetching } = useGetTaskQuery(id, { skip: isCreateMode });
+  const [createTask, { isLoading: creating }] = useCreateTaskMutation();
   const [updateTask, { isLoading: saving }] = useUpdateTaskMutation();
+  const [updateMyTaskStatus, { isLoading: updatingMyStatus }] = useUpdateMyTaskStatusMutation();
   const [deleteTask, { isLoading: deleting }] = useDeleteTaskMutation();
   const [values, setValues] = useState(() => normalizeInitialTask(null));
   const [loadedTaskId, setLoadedTaskId] = useState(null);
   const [dirty, setDirty] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [savedAt, setSavedAt] = useState(null);
+  const [memberStatusError, setMemberStatusError] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
@@ -113,6 +325,20 @@ export default function TaskDetailPage() {
   );
 
   useEffect(() => {
+    if (!isCreateMode) return;
+    const nextLoadedTaskId = `new:${createPrefillKey}`;
+    if (loadedTaskId === nextLoadedTaskId) return;
+    const prefill = buildCreatePrefill(searchParams);
+    setValues({ ...normalizeInitialTask(null), ...prefill });
+    setLoadedTaskId(nextLoadedTaskId);
+    setDirty(Boolean(Object.keys(prefill).length));
+    setSaveError('');
+    setSavedAt(null);
+    setMemberStatusError('');
+  }, [createPrefillKey, isCreateMode, loadedTaskId, searchParams]);
+
+  useEffect(() => {
+    if (isCreateMode) return;
     if (!base?.id) return;
     if (loadedTaskId !== base.id || !dirty) {
       setValues(normalizeInitialTask(base));
@@ -120,7 +346,7 @@ export default function TaskDetailPage() {
       setDirty(false);
       setSaveError('');
     }
-  }, [base, dirty, loadedTaskId]);
+  }, [base, dirty, isCreateMode, loadedTaskId]);
 
   const userOptions = useMemo(() => {
     const list = Array.isArray(members) ? members : [];
@@ -277,7 +503,7 @@ export default function TaskDetailPage() {
   }, []);
 
   const performSave = useCallback(async (reason = 'autosave') => {
-    if (!id || !dirty || saving) return null;
+    if (isCreateMode || !id || !dirty || saving) return null;
     if (!String(values.title || '').trim()) {
       setSaveError(t('crm.task.detail.validation.titleRequired'));
       return null;
@@ -302,18 +528,49 @@ export default function TaskDetailPage() {
       if (reason === 'manual') throw error;
       return null;
     }
-  }, [dirty, id, saving, t, updateTask, values]);
+  }, [dirty, id, isCreateMode, saving, t, updateTask, values]);
+
+  const handleCreate = useCallback(async () => {
+    if (creating) return null;
+    if (!String(values.title || '').trim()) {
+      setSaveError(t('crm.task.detail.validation.titleRequired'));
+      return null;
+    }
+    if (values.visibility === 'department' && !values.visibilityDepartmentId) {
+      setSaveError(t('visibility.departmentRequired'));
+      return null;
+    }
+    try {
+      const created = await createTask(toApiTask(values)).unwrap();
+      const createdId = getCreatedTaskId(created);
+      if (!createdId) {
+        throw new Error(t('crm.task.messages.createFailed'));
+      }
+      setDirty(false);
+      setSaveError('');
+      navigate(`/main/tasks/${createdId}`, { replace: true });
+      return created;
+    } catch (error) {
+      setSaveError(
+        error?.data?.message
+        || error?.data?.error
+        || error?.message
+        || t('crm.task.messages.createFailed')
+      );
+      return null;
+    }
+  }, [createTask, creating, navigate, t, values]);
 
   useEffect(() => {
-    if (!dirty || !id) return undefined;
+    if (isCreateMode || !dirty || !id) return undefined;
     const timer = setTimeout(() => {
       performSave('autosave');
     }, SAVE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [dirty, id, performSave, values]);
+  }, [dirty, id, isCreateMode, performSave, values]);
 
   const confirmDelete = async () => {
-    if (!id || deleting) return;
+    if (isCreateMode || !id || deleting) return;
     setDeleteError('');
     try {
       await deleteTask(id).unwrap();
@@ -330,7 +587,9 @@ export default function TaskDetailPage() {
 
   const locale = i18n.resolvedLanguage || i18n.language || undefined;
   const statusLabel = t(`crm.task.enums.status.${values.status}`, values.status || '—');
-  const priorityLabel = t('crm.task.detail.priorityValue', { value: values.priority ?? 0 });
+  const priorityValue = normalizePriority(values.priority);
+  const priorityLevelLabel = t(PRIORITY_I18N_KEYS[priorityValue]);
+  const priorityLabel = `${priorityValue} · ${priorityLevelLabel}`;
   const visibilityValue = values.visibility || 'company';
   const visibilityDepartment = values.visibilityDepartmentId
     ? departmentById.get(String(values.visibilityDepartmentId))
@@ -339,7 +598,7 @@ export default function TaskDetailPage() {
     ? `${t('visibility.department')} · ${visibilityDepartment.name || visibilityDepartment.code || visibilityDepartment.id}`
     : t(`visibility.${visibilityValue}`, t('visibility.company'));
   const taskTitle = values.title || base?.title || t('crm.task.detail.untitled');
-  const hasParticipants = Boolean((values.assigneeIds || []).length || (values.watcherIds || []).length);
+  const headerTitle = isCreateMode ? t('crm.task.newTask') : taskTitle;
   const hasActualDates = Boolean(values.actualStartAt || values.actualEndAt);
   const hasRelationValues = Boolean(values.counterpartyId || values.dealId || (values.contactIds || []).length);
 
@@ -392,41 +651,205 @@ export default function TaskDetailPage() {
     return items;
   }, [contactById, counterpartyById, t, values.contactIds, values.counterpartyId, values.dealId]);
 
+  const aggregateSummary = useMemo(() => deriveAggregateSummary(base || {}), [base]);
+  const currentAssignee = useMemo(() => {
+    if (!currentUserId || !base) return null;
+    return allAssigneeRows(base).find((row) => String(row.id) === String(currentUserId)) || null;
+  }, [base, currentUserId]);
+  const createAssigneeRows = useMemo(() => (
+    (values.assigneeIds || []).map((assigneeId) => {
+      const option = userById.get(String(assigneeId));
+      return {
+        id: String(assigneeId),
+        name: option?.label || String(assigneeId),
+      };
+    })
+  ), [userById, values.assigneeIds]);
+  const createWatcherRows = useMemo(() => (
+    (values.watcherIds || []).map((watcherId) => {
+      const option = userById.get(String(watcherId));
+      return {
+        id: String(watcherId),
+        name: option?.label || String(watcherId),
+      };
+    })
+  ), [userById, values.watcherIds]);
+
+  const handleMyStatus = useCallback(async (memberStatus) => {
+    if (isCreateMode || !id || updatingMyStatus) return;
+    setMemberStatusError('');
+    try {
+      await updateMyTaskStatus({
+        taskId: id,
+        payload: { memberStatus },
+      }).unwrap();
+      setSavedAt(new Date());
+    } catch (error) {
+      setMemberStatusError(
+        error?.data?.message
+        || error?.data?.error
+        || error?.message
+        || t('crm.task.detail.team.statusUpdateFailed')
+      );
+    }
+  }, [id, isCreateMode, t, updateMyTaskStatus, updatingMyStatus]);
+
+  const renderStatusChip = (status) => (
+    <span className={`${s.memberStatusChip} ${s[`memberStatus_${status}`] || ''}`}>
+      {t(`crm.task.detail.team.memberStatus.${status}`, status || '—')}
+    </span>
+  );
+
+  const renderMemberActions = (row) => {
+    if (!currentUserId || String(row.id) !== String(currentUserId)) {
+      return renderStatusChip(row.memberStatus || 'todo');
+    }
+    const status = row.memberStatus || 'todo';
+    const disabled = updatingMyStatus;
+
+    return (
+      <div className={s.memberStatusControl}>
+        <span className={s.memberStatusLabel}>{t('crm.task.fields.status')}:</span>
+        <div className={s.memberStatusSelectWrap}>
+          <select
+            className={s.memberStatusSelect}
+            value={status}
+            disabled={disabled}
+            aria-label={`${t('crm.task.fields.status')}: ${row.name || row.email || row.id}`}
+            onChange={(event) => {
+              const nextStatus = event.target.value;
+              if (nextStatus !== status) handleMyStatus(nextStatus);
+            }}
+          >
+            {MEMBER_STATUS_OPTIONS.map((nextStatus) => (
+              <option key={`${row.id}-${nextStatus}`} value={nextStatus}>
+                {t(`crm.task.detail.team.memberStatus.${nextStatus}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMemberRow = (row, sectionKey) => (
+    <div key={`${sectionKey}-${row.id}`} className={s.memberRow}>
+      <ParticipantAvatar row={row} />
+      <div className={s.memberMain}>
+        <strong className={s.memberName}>{row.name || row.email || row.id}</strong>
+        {row.email ? <div className={s.memberEmail}>{row.email}</div> : null}
+        <div className={s.memberMeta}>
+          {row.startedAt ? (
+            <span>{t('crm.task.detail.team.startedAt')}: {formatTaskDate(row.startedAt, true, locale)}</span>
+          ) : null}
+          {row.completedAt ? (
+            <span>{t('crm.task.detail.team.completedAt')}: {formatTaskDate(row.completedAt, true, locale)}</span>
+          ) : null}
+          {!row.startedAt && !row.completedAt ? <span>{t('crm.task.detail.team.noStatusTime')}</span> : null}
+        </div>
+        {row.statusNote ? <div className={s.memberNote}>{row.statusNote}</div> : null}
+      </div>
+      {renderMemberActions(row)}
+    </div>
+  );
+
+  const renderTeamSection = ({ key, title, icon, rows }) => (
+    !rows.length ? null : (
+    <section className={s.memberSection}>
+      <div className={s.memberSectionHeader}>
+        {icon}
+        <strong>{title}</strong>
+        <span>{rows.length}</span>
+      </div>
+      <div className={s.memberList}>
+        {rows.map((row) => renderMemberRow(row, key))}
+      </div>
+    </section>
+    )
+  );
+
   const participantsPanel = (
     <div className={s.tabStack}>
       <DetailSection
-        title={t('crm.task.detail.sections.participants')}
-        subtitle={hasParticipants ? t('crm.task.detail.summary.participantsAssigned') : undefined}
+        title={t('crm.task.detail.team.assigneesTitle')}
       >
         <div className={s.formStack}>
-          {!hasParticipants ? (
-            <div className={s.compactSummary}>
-              <span>{t('crm.task.detail.fields.assignee')}</span>
-              <strong>{t('crm.task.detail.summary.unassigned')}</strong>
-              <span>{t('crm.task.fields.watchers')}</span>
-              <strong>{t('crm.task.detail.summary.noWatchers')}</strong>
+          {isCreateMode ? (
+            <div className={s.createModeHint}>
+              <strong>{t('crm.task.detail.create.participantsTitle', 'Участники будут добавлены после создания')}</strong>
+              <span>{t('crm.task.detail.create.participantsHint', 'Сохраните задачу, чтобы отслеживать выполнение участников и менять их статусы.')}</span>
+              {createAssigneeRows.length || createWatcherRows.length ? (
+                <div className={s.createPreviewList}>
+                  {createAssigneeRows.length ? (
+                    <div>
+                      <span>{t('crm.task.fields.assignees')}</span>
+                      <strong>{createAssigneeRows.map((row) => row.name).join(', ')}</strong>
+                    </div>
+                  ) : null}
+                  {createWatcherRows.length ? (
+                    <div>
+                      <span>{t('crm.task.fields.watchers')}</span>
+                      <strong>{createWatcherRows.map((row) => row.name).join(', ')}</strong>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
-          ) : null}
-          <div className={s.twoColumn}>
-            <MultiSelectField
-              id="task-detail-assignees"
-              label={t('crm.task.detail.fields.assignee')}
-              value={values.assigneeIds || EMPTY_OPTIONS}
-              options={userOptions}
-              placeholder={t('common.noneSelected')}
-              onValueChange={(nextValue) => setField('assigneeIds', nextValue)}
-              maxPreview={3}
-            />
-            <MultiSelectField
-              id="task-detail-watchers"
-              label={t('crm.task.fields.watchers')}
-              value={values.watcherIds || EMPTY_OPTIONS}
-              options={watcherOptions}
-              placeholder={t('common.noneSelected')}
-              onValueChange={(nextValue) => setField('watcherIds', nextValue)}
-              maxPreview={3}
-            />
-          </div>
+          ) : aggregateSummary.assigneesTotal ? (
+            <>
+              <div className={s.teamProgressCard}>
+                <div className={s.teamProgressTop}>
+                  <div className={s.teamProgressTrack} aria-hidden="true">
+                    <span style={{ width: `${Math.max(0, Math.min(100, aggregateSummary.progressPercent || 0))}%` }} />
+                  </div>
+                  <span>{aggregateSummary.progressPercent}%</span>
+                </div>
+                <strong>
+                  {t('crm.task.detail.team.progressDetail', {
+                    done: aggregateSummary.assigneesDone,
+                    total: aggregateSummary.assigneesTotal,
+                  })}
+                </strong>
+                <p>
+                  {values.statusAggregate
+                    ? t('crm.task.detail.team.aggregateEnabledHint')
+                    : t('crm.task.detail.team.aggregateDisabledHint')}
+                </p>
+              </div>
+              {memberStatusError ? <div className={s.memberStatusError}>{memberStatusError}</div> : null}
+              {!currentAssignee ? <div className={s.memberSelfHint}>{t('crm.task.detail.team.notAssigneeHint')}</div> : null}
+              <div className={s.teamSections}>
+                {renderTeamSection({
+                  key: 'completed',
+                  title: t('crm.task.detail.team.sections.completed'),
+                  icon: <CheckCircle2 size={15} aria-hidden="true" />,
+                  rows: aggregateSummary.completedAssignees || [],
+                })}
+                {renderTeamSection({
+                  key: 'pending',
+                  title: t('crm.task.detail.team.sections.pending'),
+                  icon: <CircleDot size={15} aria-hidden="true" />,
+                  rows: aggregateSummary.pendingAssignees || [],
+                })}
+                {renderTeamSection({
+                  key: 'blocked',
+                  title: t('crm.task.detail.team.sections.blocked'),
+                  icon: <OctagonAlert size={15} aria-hidden="true" />,
+                  rows: aggregateSummary.blockedAssignees || [],
+                })}
+              </div>
+              {!(aggregateSummary.completedAssignees || []).length &&
+                !(aggregateSummary.pendingAssignees || []).length &&
+                !(aggregateSummary.blockedAssignees || []).length ? (
+                  <div className={s.memberSectionEmpty}>{t('crm.task.detail.team.emptySection')}</div>
+                ) : null}
+            </>
+          ) : (
+            <div className={s.teamEmptyState}>
+              <strong>{t('crm.task.detail.team.noAssigneesTitle')}</strong>
+              <span>{t('crm.task.detail.team.noAssigneesText')}</span>
+            </div>
+          )}
         </div>
       </DetailSection>
     </div>
@@ -575,25 +998,45 @@ export default function TaskDetailPage() {
     </div>
   );
 
+  const descriptionPanel = isCreateMode ? (
+    <div className={s.tabStack}>
+      <DetailSection
+        title={t('crm.task.detail.description.title')}
+        subtitle={t('crm.task.detail.create.descriptionHint', 'Описание сохранится вместе с задачей')}
+      >
+        <TextareaField
+          id="task-detail-create-description"
+          label={t('crm.task.fields.description')}
+          value={values.description || ''}
+          onValueChange={(nextValue) => setField('description', nextValue)}
+          placeholder={t('crm.task.detail.description.placeholder')}
+          rows={10}
+          autoResize
+          inputClassName={s.descriptionDraftInput}
+        />
+      </DetailSection>
+    </div>
+  ) : (
+    <div className={s.tabStack}>
+      <DescriptionForm
+        taskId={id}
+        initialHtml={values.description || ''}
+        className={s.descriptionSection}
+        onSaved={(nextHtml) => {
+          setValues((previous) => ({ ...previous, description: nextHtml || '' }));
+          setSavedAt(new Date());
+        }}
+      />
+    </div>
+  );
+
   const tabs = [
     {
       key: 'description',
       label: t('crm.task.detail.tabs.description'),
-      children: (
-        <div className={s.tabStack}>
-          <DescriptionForm
-            taskId={id}
-            initialHtml={values.description || ''}
-            className={s.descriptionSection}
-            onSaved={(nextHtml) => {
-              setValues((previous) => ({ ...previous, description: nextHtml || '' }));
-              setSavedAt(new Date());
-            }}
-          />
-        </div>
-      ),
+      children: descriptionPanel,
     },
-    {
+    ...(!isCreateMode ? [{
       key: 'notes',
       label: t('crm.task.detail.tabs.notes'),
       children: (
@@ -613,7 +1056,7 @@ export default function TaskDetailPage() {
           />
         </div>
       ),
-    },
+    }] : []),
     {
       key: 'participants',
       label: t('crm.task.detail.tabs.participants'),
@@ -624,11 +1067,11 @@ export default function TaskDetailPage() {
       label: t('crm.task.detail.tabs.relations'),
       children: relationsPanel,
     },
-    {
+    ...(!isCreateMode ? [{
       key: 'additional',
       label: t('crm.task.detail.tabs.additional'),
       children: additionalPanel,
-    },
+    }] : []),
   ];
 
   const sidebar = (
@@ -660,8 +1103,6 @@ export default function TaskDetailPage() {
               id="task-detail-priority"
               label={t('crm.task.fields.priority')}
               value={values.priority}
-              min={0}
-              max={100}
               onValueChange={(nextValue) => setField('priority', nextValue)}
             />
           </div>
@@ -682,6 +1123,29 @@ export default function TaskDetailPage() {
         </div>
       </DetailSection>
 
+      <DetailSection title={t('crm.task.detail.sections.participants')}>
+        <div className={s.formStack}>
+          <MultiSelectField
+            id="task-detail-assignees"
+            label={t('crm.task.detail.fields.assignee')}
+            value={values.assigneeIds || EMPTY_OPTIONS}
+            options={userOptions}
+            placeholder={t('common.noneSelected')}
+            onValueChange={(nextValue) => setField('assigneeIds', nextValue)}
+            maxPreview={3}
+          />
+          <MultiSelectField
+            id="task-detail-watchers"
+            label={t('crm.task.fields.watchers')}
+            value={values.watcherIds || EMPTY_OPTIONS}
+            options={watcherOptions}
+            placeholder={t('common.noneSelected')}
+            onValueChange={(nextValue) => setField('watcherIds', nextValue)}
+            maxPreview={3}
+          />
+        </div>
+      </DetailSection>
+
       <DetailSection title={t('crm.task.detail.sections.planning')}>
         <div className={s.formStack}>
           <div className={s.dateGroup}>
@@ -689,7 +1153,7 @@ export default function TaskDetailPage() {
             {dateField('startAt', 'plannedStartHasTime', 'crm.task.fields.startAt')}
             {dateField('endAt', 'plannedEndHasTime', 'crm.task.fields.endAt')}
           </div>
-          <details className={s.inlineDetails} open={hasActualDates}>
+          {!isCreateMode ? <details className={s.inlineDetails} open={hasActualDates}>
             <summary>
               <span>{t('crm.task.detail.groups.actual')}</span>
               <em>{hasActualDates ? t('crm.task.detail.summary.hasActualDates') : t('crm.task.detail.summary.noActualDates')}</em>
@@ -698,14 +1162,31 @@ export default function TaskDetailPage() {
               {dateField('actualStartAt', 'actualStartHasTime', 'crm.task.fields.actualStartAt')}
               {dateField('actualEndAt', 'actualEndHasTime', 'crm.task.fields.actualEndAt')}
             </div>
-          </details>
+          </details> : null}
         </div>
       </DetailSection>
+
+      {isCreateMode ? (
+        <DetailSection title={t('visibility.label')}>
+          <VisibilityField
+            className={s.visibilityControlFull}
+            inputClassName={s.visibilitySelect}
+            departmentClassName={s.visibilityDepartment}
+            departmentInputClassName={s.visibilitySelect}
+            label={t('visibility.change', 'Change')}
+            value={values.visibility || 'company'}
+            departmentId={values.visibilityDepartmentId || ''}
+            departments={departments}
+            onChange={setVisibility}
+            size="sm"
+          />
+        </DetailSection>
+      ) : null}
     </div>
   );
 
-  if (!base && isFetching) return null;
-  if (!base) return null;
+  if (!isCreateMode && !base && isFetching) return null;
+  if (!isCreateMode && !base) return null;
 
   return (
     <>
@@ -714,22 +1195,26 @@ export default function TaskDetailPage() {
         className={s.detailLayout}
         breadcrumbs={[
           { label: t('crm.task.title', 'Tasks'), to: '/main/tasks' },
-          { label: taskTitle },
+          { label: headerTitle },
         ]}
-        title={taskTitle}
+        title={headerTitle}
         subtitle={t('crm.task.detail.subtitle', {
           status: statusLabel,
           assignees: (values.assigneeIds || []).map((assigneeId) => userById.get(String(assigneeId))?.label).filter(Boolean).join(', ') || t('common.none'),
         })}
         icon={<ClipboardList size={18} aria-hidden="true" />}
         status={{ value: values.status, label: statusLabel, tone: getStatusTone(values.status) }}
-        priority={{ value: values.priority, label: priorityLabel, tone: getPriorityTone(values.priority) }}
+        priority={{ value: priorityValue, label: priorityLabel, tone: PRIORITY_TONES[priorityValue] || 'info' }}
         actions={[
           {
             key: 'back',
             label: t('crm.task.detail.actions.back'),
             icon: <ArrowLeft size={14} aria-hidden="true" />,
             onClick: async () => {
+              if (isCreateMode) {
+                navigate('/main/tasks');
+                return;
+              }
               try {
                 if (dirty) await performSave('manual');
                 navigate('/main/tasks');
@@ -739,13 +1224,18 @@ export default function TaskDetailPage() {
             },
           },
         ]}
-        primaryAction={dirty ? {
+        primaryAction={isCreateMode ? {
+          key: 'create',
+          label: t('crm.task.actions.create'),
+          disabled: creating,
+          onClick: handleCreate,
+        } : dirty ? {
           key: 'save',
           label: t('common.save'),
           disabled: saving,
           onClick: () => performSave('manual'),
         } : null}
-        overflowActions={[
+        overflowActions={isCreateMode ? [] : [
           {
             key: 'delete',
             label: t('crm.task.actions.delete'),
@@ -759,11 +1249,13 @@ export default function TaskDetailPage() {
           },
         ]}
         saveState={{
-          saving,
+          saving: isCreateMode ? creating : saving,
           dirty,
           error: saveError,
           label: saveError
-            || (saving ? t('common.saving') : dirty ? t('common.unsaved') : savedAt ? t('crm.task.detail.messages.saved') : t('common.saved')),
+            || (isCreateMode
+              ? (creating ? t('common.saving') : dirty ? t('common.unsaved') : t('crm.task.detail.create.draft', 'Черновик'))
+              : (saving ? t('common.saving') : dirty ? t('common.unsaved') : savedAt ? t('crm.task.detail.messages.saved') : t('common.saved'))),
         }}
         sidebar={sidebar}
         tabs={tabs}

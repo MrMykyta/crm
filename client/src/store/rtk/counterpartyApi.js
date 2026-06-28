@@ -136,6 +136,15 @@ transformResponse: (resp) => {
       keepUnusedDataFor: 30,
     }),
 
+    // ---------- REGISTRY LOOKUP ----------
+    lookupRegistry: build.query({
+      query: ({ country = 'PL', kind = 'nip', value, forceRefresh = false } = {}) => ({
+        url: `/registry/lookup${toQuery({ country, kind, value, forceRefresh: forceRefresh ? 'true' : undefined })}`,
+        method: 'GET',
+      }),
+      keepUnusedDataFor: 30,
+    }),
+
     // ---------- DETAIL ----------
     getCounterparty: build.query({
             // query: формирует параметры HTTP-запроса для endpoint-а.
@@ -297,6 +306,7 @@ async onQueryStarted(id, { dispatch, queryFulfilled, getState }) {
 export const {
   useListCounterpartiesQuery,
   useGetCounterpartyLookupQuery,
+  useLazyLookupRegistryQuery,
   useGetCounterpartyQuery,
   useCreateCounterpartyMutation,
   useUpdateCounterpartyMutation,

@@ -91,6 +91,32 @@ invalidatesTags: (res) =>
           : [{ type: 'TaskList', id: 'LIST' }],
     }),
 
+    updateMyTaskStatus: build.mutation({
+      query: ({ taskId, payload }) => ({
+        url: `/tasks/${encodeURIComponent(taskId)}/my-status`,
+        method: 'PATCH',
+        body: stripCompanyId(payload),
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      invalidatesTags: (res, err, arg) => [
+        { type: 'Task', id: res?.task?.id || arg?.taskId },
+        { type: 'TaskList', id: 'LIST' },
+      ],
+    }),
+
+    updateTaskParticipantStatus: build.mutation({
+      query: ({ taskId, userId, payload }) => ({
+        url: `/tasks/${encodeURIComponent(taskId)}/participants/${encodeURIComponent(userId)}/status`,
+        method: 'PATCH',
+        body: stripCompanyId(payload),
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      invalidatesTags: (res, err, arg) => [
+        { type: 'Task', id: res?.task?.id || arg?.taskId },
+        { type: 'TaskList', id: 'LIST' },
+      ],
+    }),
+
     deleteTask: build.mutation({
             // query: формирует параметры HTTP-запроса для endpoint-а.
 query: (id) => ({ url: `/tasks/${encodeURIComponent(id)}`, method: 'DELETE' }),
@@ -117,6 +143,8 @@ export const {
   useGetTaskQuery,
   useCreateTaskMutation,
   useUpdateTaskMutation,
+  useUpdateMyTaskStatusMutation,
+  useUpdateTaskParticipantStatusMutation,
   useDeleteTaskMutation,
   useRestoreTaskMutation,
 } = tasksApi;

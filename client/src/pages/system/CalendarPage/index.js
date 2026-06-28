@@ -11,8 +11,13 @@ import MonthView from "./components/MonthView";
 import WeekView from "./components/WeekView";
 import DayView from "./components/DayView";
 import MiniMonth from "./components/MiniMonth";
-import CreateTaskModal from "../../../components/dialogs/CreateTaskModal";
+import QuickCreateTaskPopover from "../../../components/calendar/QuickCreateTaskPopover";
 import { useCreateTaskMutation, useListTasksQuery } from "../../../store/rtk/tasksApi";
+import {
+  PRIORITY_I18N_KEYS,
+  PRIORITY_OPTIONS,
+  normalizePriority,
+} from "../../../config/priority";
 import { toKey } from "./components/dateUtils";
 
 const VIEW = {
@@ -23,7 +28,6 @@ const VIEW = {
 };
 
 const TASK_DONE_STATUSES = new Set(["done", "completed", "closed"]);
-const BASE_PRIORITY_OPTIONS = ["all", "high", "medium", "low"];
 
 function getDateLocale(language) {
   const value = String(language || "en").toLowerCase();
@@ -61,6 +65,31 @@ function startOfWeek(date) {
 
 function dateInputValue(date) {
   return toKey(date);
+}
+
+function parseDateInput(value) {
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const [year, month, day] = raw.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function rectSnapshot(element) {
+  const rect = element?.getBoundingClientRect?.();
+  if (!rect) return null;
+  return {
+    top: rect.top,
+    left: rect.left,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height,
+  };
 }
 
 function extractTasksList(data) {
@@ -124,26 +153,9 @@ function taskText(item) {
   ].map(normalizeText).filter(Boolean).join(" ");
 }
 
-function getPriorityLevel(priority) {
-  const raw = String(priority || "").trim().toLowerCase();
-  if (["urgent", "high", "medium", "low"].includes(raw)) return raw;
-
-  const numeric = Number(priority);
-  if (!Number.isFinite(numeric)) return "medium";
-  if (numeric > 5) {
-    if (numeric >= 90) return "urgent";
-    if (numeric >= 60) return "high";
-    if (numeric >= 30) return "medium";
-    return "low";
-  }
-  if (numeric <= 1) return "urgent";
-  if (numeric <= 2) return "high";
-  if (numeric <= 3) return "medium";
-  return "low";
-}
-
 function formatPriorityLabel(t, priority) {
-  return t(`calendar.priority.${getPriorityLevel(priority)}`);
+  const value = normalizePriority(priority);
+  return `${value} · ${t(PRIORITY_I18N_KEYS[value])}`;
 }
 
 function userIdSetFromTask(task) {
@@ -291,7 +303,7 @@ export default function CalendarPage() {
   const [view, setView] = useState(VIEW.MONTH);
   const [cursor, setCursor] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const [taskModal, setTaskModal] = useState(null);
+  const [quickCreate, setQuickCreate] = useState(null);
   const [filters, setFilters] = useState({
     showCompleted: true,
     overdueOnly: false,
@@ -321,7 +333,7 @@ export default function CalendarPage() {
     isError: tasksError,
     error: tasksLoadError,
   } = useListTasksQuery(tasksQuery);
-  const [createTask] = useCreateTaskMutation();
+  const [createTask, { isLoading: creatingTask }] = useCreateTaskMutation();
 
   const rawTasks = useMemo(() => extractTasksList(tasksData), [tasksData]);
   const myTasksAvailable = useMemo(
@@ -336,10 +348,10 @@ export default function CalendarPage() {
       .filter((item) => isItemInRange(item, visibleRange));
   }, [locale, rawTasks, visibleRange]);
 
-  const priorityOptions = useMemo(() => {
-    const hasUrgent = calendarItems.some((item) => getPriorityLevel(item.priority) === "urgent");
-    return hasUrgent ? ["all", "urgent", "high", "medium", "low"] : BASE_PRIORITY_OPTIONS;
-  }, [calendarItems]);
+  const priorityOptions = useMemo(
+    () => ["all", ...PRIORITY_OPTIONS.map((option) => String(option.value))],
+    []
+  );
 
   const filteredCalendarItems = useMemo(() => {
     const search = normalizeText(filters.search);
@@ -347,7 +359,7 @@ export default function CalendarPage() {
     return calendarItems.filter((item) => {
       if (!filters.showCompleted && item.completed) return false;
       if (filters.overdueOnly && !item.overdue) return false;
-      if (filters.priority !== "all" && getPriorityLevel(item.priority) !== filters.priority) return false;
+      if (filters.priority !== "all" && normalizePriority(item.priority) !== Number(filters.priority)) return false;
       if (search && !taskText(item).includes(search)) return false;
       if (filters.myTasksOnly && currentUserId) {
         const ids = userIdSetFromTask(item.task);
@@ -434,11 +446,23 @@ const onClick = (e) => {
     return () => window.removeEventListener("mousedown", onClick);
   }, [yearPickerOpen]);
 
-  const openCreateTask = (date = cursor) => {
-    setTaskModal({ defaultDate: dateInputValue(date) });
+  const openCreateTask = (date = cursor, options = {}) => {
+    const parsed = parseDateInput(date) || cursor;
+    setSelectedDate(parsed);
+    setCursor(parsed);
+    setQuickCreate({
+      date: dateInputValue(parsed),
+      anchorRect: options.anchorRect || null,
+      initialValue: {
+        title: options.title || "",
+        isAllDay: options.isAllDay !== false,
+        startTime: options.startTime || "",
+        endTime: options.endTime || "",
+      },
+    });
   };
 
-  const closeCreateTask = () => setTaskModal(null);
+  const closeCreateTask = () => setQuickCreate(null);
 
   const handleTaskOpen = (item) => {
     const taskId = item?.taskId || item?.task?.id;
@@ -448,6 +472,20 @@ const onClick = (e) => {
   const handleCreateTask = async (payload) => {
     await createTask(payload).unwrap();
     closeCreateTask();
+  };
+
+  const handleMoreCreateOptions = ({ date, title, allDay, start, end }) => {
+    const params = [
+      ["date", date],
+      ["title", title],
+      ["allDay", allDay ? "1" : "0"],
+      ["start", start],
+      ["end", end],
+    ]
+      .filter(([, value]) => value !== undefined && value !== null && String(value) !== "")
+      .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
+      .join("&");
+    navigate(`/main/tasks/new${params ? `?${params}` : ""}`);
   };
 
   const tasksErrorText = formatTasksError(tasksLoadError);
@@ -483,7 +521,12 @@ const onClick = (e) => {
             <button type="button" className={s.iconBtn} aria-label={t("calendar.actions.taskInbox")}>
               <IconInbox />
             </button>
-            <button type="button" className={s.iconBtn} aria-label={t("calendar.actions.createTask")} onClick={() => openCreateTask(selectedDate)}>
+            <button
+              type="button"
+              className={s.iconBtn}
+              aria-label={t("calendar.actions.createTask")}
+              onClick={(event) => openCreateTask(selectedDate, { anchorRect: rectSnapshot(event.currentTarget), isAllDay: true })}
+            >
               <IconPlus />
             </button>
           </div>
@@ -713,7 +756,7 @@ const onClick = (e) => {
               <select value={filters.priority} onChange={(event) => updateFilter("priority", event.target.value)}>
                 {priorityOptions.map((option) => (
                   <option key={option} value={option}>
-                    {t(`calendar.priority.${option}`)}
+                    {option === "all" ? t("priority.all") : `${option} · ${t(PRIORITY_I18N_KEYS[Number(option)])}`}
                   </option>
                 ))}
               </select>
@@ -726,7 +769,17 @@ const onClick = (e) => {
                 <div className={s.sideEyebrow}>{t("calendar.sidebar.selectedDay")}</div>
                 <h3>{selectedDateLabel.charAt(0).toUpperCase() + selectedDateLabel.slice(1)}</h3>
               </div>
-              <span className={s.sideCount}>{selectedDayItems.length}</span>
+              <div className={s.sideHeaderActions}>
+                <span className={s.sideCount}>{selectedDayItems.length}</span>
+                <button
+                  type="button"
+                  className={s.sideCreateBtn}
+                  aria-label={t("calendar.actions.createTask")}
+                  onClick={(event) => openCreateTask(selectedDate, { anchorRect: rectSnapshot(event.currentTarget), isAllDay: true })}
+                >
+                  +
+                </button>
+              </div>
             </div>
 
             {selectedDayItems.length ? (
@@ -758,28 +811,23 @@ const onClick = (e) => {
             ) : (
               <div className={s.sideEmpty}>
                 <p>{t("calendar.state.noTasksForDay")}</p>
-                <button type="button" onClick={() => openCreateTask(selectedDate)}>
-                  {t("calendar.actions.createTask")}
-                </button>
               </div>
             )}
           </section>
         </aside>
       </div>
 
-      {taskModal ? (
-        <CreateTaskModal
-          key={taskModal.defaultDate}
-          currentUser={currentUser}
-          initialValues={{
-            defaultDate: taskModal.defaultDate,
-            dueDate: taskModal.defaultDate,
-            eventDate: taskModal.defaultDate,
-            planOpen: true,
-            isAllDay: true,
-          }}
+      {quickCreate ? (
+        <QuickCreateTaskPopover
+          key={`${quickCreate.date}-${quickCreate.initialValue.isAllDay ? "all-day" : "timed"}-${quickCreate.initialValue.startTime || ""}`}
+          date={quickCreate.date}
+          anchorRect={quickCreate.anchorRect}
+          initialValue={quickCreate.initialValue}
+          locale={locale}
+          busy={creatingTask}
           onClose={closeCreateTask}
           onSubmit={handleCreateTask}
+          onMoreOptions={handleMoreCreateOptions}
         />
       ) : null}
     </div>

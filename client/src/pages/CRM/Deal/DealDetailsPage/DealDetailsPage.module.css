@@ -1,64 +1,267 @@
-.header {
+.emptyState {
+  padding: 32px;
+  background: color-mix(in srgb, var(--card-bg) 84%, var(--text) 4%);
+  border: 1px solid color-mix(in srgb, var(--card-bg) 72%, var(--text) 12%);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.sidebar {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.twoCols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(88px, 0.45fr);
+  gap: 10px;
+}
+
+.hero {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 18px 18px 16px;
+  border: 1px solid color-mix(in srgb, var(--card-bg) 70%, var(--text) 14%);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--focus, #3b82f6) 10%, transparent), transparent 54%),
+    color-mix(in srgb, var(--card-bg) 88%, var(--focus, #3b82f6) 5%);
+}
+
+.heroTop {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: 18px;
   align-items: flex-start;
-  flex-wrap: wrap;
-  padding-bottom: 12px;
-  margin-bottom: 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--card-bg) 70%, var(--text) 12%);
 }
 
-.breadcrumb {
-  font-size: var(--font-size-12);
+.heroTop h2 {
+  margin: 2px 0 4px;
+  font-size: var(--font-size-24, 24px);
+  font-weight: 750;
+  color: var(--text);
+  letter-spacing: 0;
+}
+
+.heroTop p {
+  margin: 0;
   color: var(--muted);
+  font-size: var(--font-size-13);
 }
 
-.breadcrumb a {
-  color: var(--link);
-  text-decoration: none;
+.eyebrow {
+  color: var(--muted);
+  font-size: var(--font-size-11);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
-.title {
-  font-size: var(--font-size-20);
-  font-weight: 600;
-  color: var(--text);
-  margin-top: 4px;
-}
-
-.actions {
+.heroActions {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 180px;
 }
 
-.actionBtn {
-  background: color-mix(in srgb, var(--card-bg) 78%, #000 22%);
-  border: 1px solid color-mix(in srgb, var(--card-bg) 70%, var(--text) 20%);
+.winAction,
+.lostAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  border: 1px solid color-mix(in srgb, var(--card-bg) 70%, var(--text) 18%);
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: color-mix(in srgb, var(--card-bg) 88%, var(--text) 4%);
   color: var(--text);
-  border-radius: 10px;
-  padding: 8px 12px;
+  font: inherit;
+  font-size: var(--font-size-13);
   cursor: pointer;
 }
 
-.actionBtn:disabled {
-  opacity: 0.6;
+.winAction {
+  border-color: color-mix(in srgb, #16a34a 42%, var(--card-bg));
+  color: color-mix(in srgb, #16a34a 72%, var(--text));
+}
+
+.lostAction {
+  border-color: color-mix(in srgb, #dc2626 42%, var(--card-bg));
+  color: color-mix(in srgb, #dc2626 72%, var(--text));
+}
+
+.winAction:disabled,
+.lostAction:disabled {
+  opacity: 0.52;
   cursor: not-allowed;
 }
 
-.actionBtnDanger {
-  background: color-mix(in srgb, var(--danger) 28%, var(--card-bg));
-  border-color: color-mix(in srgb, var(--danger) 60%, var(--card-bg));
+.heroMain {
+  min-width: 0;
+}
+
+.heroMetrics {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.heroMetrics span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--card-bg) 68%, var(--text) 12%);
+  background: color-mix(in srgb, var(--card-bg) 86%, var(--text) 3%);
+  color: var(--muted);
+  font-size: var(--font-size-12);
+  white-space: nowrap;
+}
+
+.heroMetrics .moneyMetric {
+  color: var(--text);
+  font-weight: 750;
+}
+
+.stageFact {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--card-bg) 72%, var(--text) 10%);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--card-bg) 92%, var(--text) 2%);
+}
+
+.stageFact span {
+  color: var(--muted);
+  font-size: var(--font-size-12);
+}
+
+.stageFact strong {
+  overflow-wrap: anywhere;
+}
+
+.stageFact small,
+.stageFact em {
+  color: var(--muted);
+  font-size: var(--font-size-12);
+  font-style: normal;
+}
+
+.stageFact em {
   color: var(--danger);
 }
 
-.emptyState {
-  padding: 32px;
-  background: color-mix(in srgb, var(--card-bg) 78%, #000 22%);
-  border-radius: 16px;
+.tabStack {
+  display: grid;
+  gap: 14px;
 }
 
 .placeholder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--muted);
   font-size: var(--font-size-14);
+}
+
+.pipelineEmpty {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px dashed color-mix(in srgb, var(--card-bg) 65%, var(--text) 18%);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+  color: var(--muted);
+}
+
+.pipelineEmpty strong {
+  display: block;
+  color: var(--text);
+}
+
+.pipelineEmpty p {
+  margin: 2px 0 0;
+  font-size: var(--font-size-12);
+}
+
+.pipelineEmpty a {
+  color: var(--link);
+  text-decoration: none;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.taskList,
+.overviewFacts,
+.systemRows {
+  display: grid;
+  gap: 8px;
+}
+
+.taskRow,
+.overviewFacts div,
+.systemRows div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--card-bg) 72%, var(--text) 10%);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--card-bg) 92%, var(--text) 2%);
+}
+
+.taskRow {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.taskRow span,
+.overviewFacts strong,
+.systemRows strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.taskRow small,
+.overviewFacts span,
+.systemRows span {
+  color: var(--muted);
+  font-size: var(--font-size-12);
+}
+
+@media (max-width: 720px) {
+  .heroTop {
+    display: grid;
+  }
+
+  .heroActions {
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .winAction,
+  .lostAction {
+    flex: 1 1 124px;
+    justify-content: center;
+  }
+
+  .twoCols {
+    grid-template-columns: 1fr;
+  }
+
+  .pipelineEmpty {
+    grid-template-columns: 1fr;
+  }
 }

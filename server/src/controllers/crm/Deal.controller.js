@@ -62,6 +62,20 @@ module.exports.update = async (req, res) => {
   }
 };
 
+module.exports.moveStage = async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    const updated = await dealService.moveStage(req.params.id, req.body, { companyId, user: req.user });
+    if (!updated) {
+        return res.sendStatus(404);
+    }
+    res.status(200).send(updated);
+  } catch (e) {
+    console.error('[DealController.moveStage]', e);
+    res.status(e.status || 400).send({ error: e.message });
+  }
+};
+
 // Удаляет сущность по идентификатору.
 module.exports.remove = async (req, res) => {
   try {
@@ -76,4 +90,3 @@ module.exports.remove = async (req, res) => {
     res.status(400).send({ error: e.message });
   }
 };
-

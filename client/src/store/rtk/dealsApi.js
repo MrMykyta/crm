@@ -76,6 +76,177 @@ query: (dealId) => ({ url: `/deals/${encodeURIComponent(dealId)}`, method: 'GET'
 providesTags: (_res, _err, id) => [{ type: 'Deal', id }],
     }),
 
+    getPipelines: build.query({
+      query: () => ({
+        url: '/pipelines',
+        method: 'GET',
+      }),
+      transformResponse: (resp) => (Array.isArray(resp) ? resp : []),
+      providesTags: [{ type: 'DealList', id: 'PIPELINES' }],
+      keepUnusedDataFor: 120,
+    }),
+
+    createPipeline: build.mutation({
+      query: (payload) => ({
+        url: '/pipelines',
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: [
+        { type: 'DealList', id: 'PIPELINES' },
+        { type: 'DealList', id: 'LIST' },
+      ],
+    }),
+
+    updatePipeline: build.mutation({
+      query: ({ pipelineId, payload }) => ({
+        url: `/pipelines/${encodeURIComponent(pipelineId)}`,
+        method: 'PUT',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: [
+        { type: 'DealList', id: 'PIPELINES' },
+        { type: 'DealList', id: 'LIST' },
+      ],
+    }),
+
+    deletePipeline: build.mutation({
+      query: (pipelineId) => ({
+        url: `/pipelines/${encodeURIComponent(pipelineId)}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [
+        { type: 'DealList', id: 'PIPELINES' },
+        { type: 'DealList', id: 'LIST' },
+      ],
+    }),
+
+    reorderPipelines: build.mutation({
+      query: (orderedPipelineIds) => ({
+        url: '/pipelines/reorder',
+        method: 'PUT',
+        body: { orderedPipelineIds },
+      }),
+      invalidatesTags: [
+        { type: 'DealList', id: 'PIPELINES' },
+        { type: 'DealList', id: 'LIST' },
+      ],
+    }),
+
+    createPipelineStage: build.mutation({
+      query: ({ pipelineId, payload }) => ({
+        url: `/pipelines/${encodeURIComponent(pipelineId)}/stages`,
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: [
+        { type: 'DealList', id: 'PIPELINES' },
+        { type: 'DealList', id: 'LIST' },
+      ],
+    }),
+
+    updatePipelineStage: build.mutation({
+      query: ({ pipelineId, stageId, payload }) => ({
+        url: `/pipelines/${encodeURIComponent(pipelineId)}/stages/${encodeURIComponent(stageId)}`,
+        method: 'PUT',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: [
+        { type: 'DealList', id: 'PIPELINES' },
+        { type: 'DealList', id: 'LIST' },
+      ],
+    }),
+
+    deletePipelineStage: build.mutation({
+      query: ({ pipelineId, stageId, replacementStageId }) => ({
+        url: `/pipelines/${encodeURIComponent(pipelineId)}/stages/${encodeURIComponent(stageId)}`,
+        method: 'DELETE',
+        body: replacementStageId ? { replacementStageId } : {},
+      }),
+      invalidatesTags: [
+        { type: 'DealList', id: 'PIPELINES' },
+        { type: 'DealList', id: 'LIST' },
+      ],
+    }),
+
+    reorderPipelineStages: build.mutation({
+      query: ({ pipelineId, orderedStageIds }) => ({
+        url: `/pipelines/${encodeURIComponent(pipelineId)}/stages/reorder`,
+        method: 'PUT',
+        body: { orderedStageIds },
+      }),
+      invalidatesTags: [
+        { type: 'DealList', id: 'PIPELINES' },
+        { type: 'DealList', id: 'LIST' },
+      ],
+    }),
+
+    getDealSettings: build.query({
+      query: () => ({
+        url: '/company-settings/deals',
+        method: 'GET',
+      }),
+      providesTags: [{ type: 'DealSettings', id: 'GENERAL' }],
+      keepUnusedDataFor: 120,
+    }),
+
+    updateDealSettings: build.mutation({
+      query: (payload) => ({
+        url: '/company-settings/deals',
+        method: 'PUT',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: [
+        { type: 'DealSettings', id: 'GENERAL' },
+        { type: 'DealList', id: 'PIPELINES' },
+      ],
+    }),
+
+    getLostReasons: build.query({
+      query: () => ({
+        url: '/company-settings/deals/lost-reasons',
+        method: 'GET',
+      }),
+      transformResponse: (resp) => (Array.isArray(resp) ? resp : []),
+      providesTags: [{ type: 'DealSettings', id: 'LOST_REASONS' }],
+      keepUnusedDataFor: 120,
+    }),
+
+    createLostReason: build.mutation({
+      query: (payload) => ({
+        url: '/company-settings/deals/lost-reasons',
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: [{ type: 'DealSettings', id: 'LOST_REASONS' }],
+    }),
+
+    updateLostReason: build.mutation({
+      query: ({ lostReasonId, payload }) => ({
+        url: `/company-settings/deals/lost-reasons/${encodeURIComponent(lostReasonId)}`,
+        method: 'PUT',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: [{ type: 'DealSettings', id: 'LOST_REASONS' }],
+    }),
+
+    deleteLostReason: build.mutation({
+      query: (lostReasonId) => ({
+        url: `/company-settings/deals/lost-reasons/${encodeURIComponent(lostReasonId)}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'DealSettings', id: 'LOST_REASONS' }],
+    }),
+
+    reorderLostReasons: build.mutation({
+      query: (orderedLostReasonIds) => ({
+        url: '/company-settings/deals/lost-reasons/reorder',
+        method: 'PUT',
+        body: { orderedLostReasonIds },
+      }),
+      invalidatesTags: [{ type: 'DealSettings', id: 'LOST_REASONS' }],
+    }),
+
     createDeal: build.mutation({
             // query: формирует параметры HTTP-запроса для endpoint-а.
 query: (payload) => ({
@@ -136,6 +307,18 @@ invalidatesTags: (_res, _err, dealId) => [
         { type: 'DealList', id: 'LIST' },
       ],
     }),
+
+    moveDealStage: build.mutation({
+      query: ({ dealId, stageId }) => ({
+        url: `/deals/${encodeURIComponent(dealId)}/stage`,
+        method: 'PUT',
+        body: { stageId },
+      }),
+      invalidatesTags: (_res, _err, { dealId }) => [
+        { type: 'Deal', id: dealId },
+        { type: 'DealList', id: 'LIST' },
+      ],
+    }),
   }),
   overrideExisting: true,
 });
@@ -143,10 +326,26 @@ invalidatesTags: (_res, _err, dealId) => [
 export const {
   useGetDealsQuery,
   useGetDealByIdQuery,
+  useGetPipelinesQuery,
   useCreateDealMutation,
   useUpdateDealMutation,
   useDeleteDealMutation,
   useMarkWonMutation,
   useMarkLostMutation,
+  useMoveDealStageMutation,
+  useCreatePipelineMutation,
+  useUpdatePipelineMutation,
+  useDeletePipelineMutation,
+  useReorderPipelinesMutation,
+  useCreatePipelineStageMutation,
+  useUpdatePipelineStageMutation,
+  useDeletePipelineStageMutation,
+  useReorderPipelineStagesMutation,
+  useGetDealSettingsQuery,
+  useUpdateDealSettingsMutation,
+  useGetLostReasonsQuery,
+  useCreateLostReasonMutation,
+  useUpdateLostReasonMutation,
+  useDeleteLostReasonMutation,
+  useReorderLostReasonsMutation,
 } = dealsApi;
-

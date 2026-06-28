@@ -21,8 +21,52 @@ const LIMIT = 20;
 
 const STATUS_VALUES = ["todo", "in_progress", "done", "blocked", "canceled"];
 const MEMBER_STATUS_VALUES = STATUS_VALUES;
+const SELF_MEMBER_STATUS_VALUES = ["todo", "in_progress", "done", "blocked"];
 const VISIBILITY_VALUES = ["private", "company", "department"];
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const PRIORITY_DEFAULT = 50;
+const LEGACY_PRIORITY_MAP = {
+  low: 25,
+  medium: 50,
+  normal: 50,
+  high: 75,
+  urgent: 100,
+  critical: 100,
+};
+const LEGACY_NUMERIC_PRIORITY_MAP = {
+  1: 25,
+  2: 50,
+  3: 75,
+  4: 75,
+  5: 100,
+};
+
+function snapPriority(value) {
+  if (value === null || value === undefined || value === "") return PRIORITY_DEFAULT;
+
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return PRIORITY_DEFAULT;
+  if (Object.prototype.hasOwnProperty.call(LEGACY_NUMERIC_PRIORITY_MAP, numeric)) {
+    return LEGACY_NUMERIC_PRIORITY_MAP[numeric];
+  }
+
+  if (numeric <= 17) return 10;
+  if (numeric <= 37) return 25;
+  if (numeric <= 62) return 50;
+  if (numeric <= 87) return 75;
+  return 100;
+}
+
+function normalizePriority(value) {
+  if (value === null || value === undefined || value === "") return PRIORITY_DEFAULT;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(LEGACY_PRIORITY_MAP, normalized)) {
+      return LEGACY_PRIORITY_MAP[normalized];
+    }
+  }
+  return snapPriority(value);
+}
 
 // normalizeBoolean: приводит значения к единому формату для сервиса.
 function normalizeBoolean(value, fallback = false) {
@@ -174,6 +218,83 @@ function inferHasTimeFromValue(value, fallback = true) {
   return hasNonZeroUtcTime(parsed);
 }
 
+function participantThrough(user) {
+  const raw = user?.TaskUserParticipant || user?.taskUserParticipant || {};
+  return raw?.toJSON ? raw.toJSON() : raw;
+}
+
+function participantName(user) {
+  const firstName = String(user?.firstName || "").trim();
+  const lastName = String(user?.lastName || "").trim();
+  return [firstName, lastName].filter(Boolean).join(" ") || user?.email || user?.id || "";
+}
+
+function aggregateAssigneeDto(user, meta, extraKeys = []) {
+  const item = {
+    id: user.id,
+    name: participantName(user),
+    email: user.email || null,
+    memberStatus: meta.memberStatus || "todo",
+  };
+
+  for (const key of extraKeys) {
+    if (meta[key]) item[key] = meta[key];
+  }
+  if (meta.statusNote) item.statusNote = meta.statusNote;
+
+  return item;
+}
+
+function emptyAggregateSummary() {
+  return {
+    assigneesTotal: 0,
+    assigneesDone: 0,
+    assigneesPending: 0,
+    assigneesBlocked: 0,
+    progressPercent: 0,
+    pendingAssignees: [],
+    completedAssignees: [],
+    blockedAssignees: [],
+  };
+}
+
+function buildTaskAggregateSummary(taskOrParticipants) {
+  const participants = Array.isArray(taskOrParticipants)
+    ? taskOrParticipants
+    : taskOrParticipants?.userParticipants || [];
+
+  const summary = emptyAggregateSummary();
+  for (const user of participants) {
+    const meta = participantThrough(user);
+    if (meta.role !== "assignee") continue;
+
+    summary.assigneesTotal += 1;
+    const status = meta.memberStatus || "todo";
+    if (status === "done") {
+      summary.assigneesDone += 1;
+      summary.completedAssignees.push(
+        aggregateAssigneeDto(user, meta, ["completedAt", "completedById"])
+      );
+    } else if (status === "blocked") {
+      summary.assigneesBlocked += 1;
+      summary.blockedAssignees.push(
+        aggregateAssigneeDto(user, meta, ["startedAt"])
+      );
+    } else {
+      summary.assigneesPending += 1;
+      summary.pendingAssignees.push(
+        aggregateAssigneeDto(user, meta, ["startedAt"])
+      );
+    }
+  }
+
+  summary.progressPercent = summary.assigneesTotal
+    ? Math.round((summary.assigneesDone / summary.assigneesTotal) * 100)
+    : 0;
+
+  return summary;
+}
+
 // toTaskDto: выполняет вспомогательную бизнес-логику сервиса.
 function toTaskDto(task) {
   const row = task?.toJSON ? task.toJSON() : task;
@@ -203,6 +324,7 @@ function toTaskDto(task) {
 
   return {
     ...row,
+    priority: normalizePriority(row.priority),
     plannedStartAt,
     plannedEndAt,
     actualStartAt,
@@ -211,6 +333,7 @@ function toTaskDto(task) {
     plannedEndHasTime,
     actualStartHasTime,
     actualEndHasTime,
+    aggregateSummary: buildTaskAggregateSummary(row),
   };
 }
 
@@ -579,7 +702,16 @@ function buildListIncludes(companyId) {
       model: User,
       as: "userParticipants",
       attributes: ["id", "firstName", "lastName", "email"],
-      through: { attributes: ["role", "memberStatus"] },
+      through: {
+        attributes: [
+          "role",
+          "memberStatus",
+          "startedAt",
+          "completedAt",
+          "completedById",
+          "statusNote",
+        ],
+      },
       include: [
         {
           model: UserCompany,
@@ -718,31 +850,17 @@ async function ensureContacts({ task, payload, companyId }) {
   }
 }
 
-// computeAggregatedStatus: выполняет вспомогательную бизнес-логику сервиса.
-function computeAggregatedStatus(memberStatuses, aggregateFlag) {
-  if (!memberStatuses.length) return null; // нечего агрегировать
-
-  if (aggregateFlag) {
-    // ВСЕ должны быть 'done'
-    const allDone = memberStatuses.every((s) => s === "done");
-    return allDone ? "done" : "in_progress";
-  } else {
-    // ДОСТАТОЧНО хотя бы одного 'done'
-    const anyDone = memberStatuses.some((s) => s === "done");
-    return anyDone ? "done" : "in_progress";
-  }
-}
-
 // recomputeTaskStatusIfNeeded: выполняет вспомогательную бизнес-логику сервиса.
-async function recomputeTaskStatusIfNeeded({ taskId, companyId }) {
+async function recomputeTaskStatusIfNeeded({ taskId, companyId, actorId = null }) {
   requireCompanyId(companyId);
   const task = await Task.findOne({
     where: { id: taskId, companyId },
-    attributes: ["id", "status", "statusAggregate"],
+    attributes: ["id", "status", "statusAggregate", "completedAt", "completedById"],
   });
   if (!task) return;
 
   if (!task.statusAggregate) return;
+  if (["blocked", "canceled"].includes(task.status)) return;
 
   const members = await TaskUserParticipant.findAll({
     attributes: ["memberStatus"],
@@ -752,11 +870,68 @@ async function recomputeTaskStatusIfNeeded({ taskId, companyId }) {
   const memberStatuses = members.map((m) => m.memberStatus);
   if (!memberStatuses.length) return;
 
-  const next = computeAggregatedStatus(memberStatuses, true);
-  if (next && next !== task.status) {
-    task.status = next;
+  const allDone = memberStatuses.every((status) => status === "done");
+  if (allDone) {
+    if (task.status !== "done") task.status = "done";
+    if (!task.completedAt) task.completedAt = new Date();
+    if (!task.completedById) task.completedById = actorId || null;
+    await task.save();
+    return;
+  }
+
+  if (task.status === "done") {
+    task.status = "in_progress";
+    task.completedAt = null;
+    task.completedById = null;
     await task.save();
   }
+}
+
+function buildMemberStatusPatch(participant, nextStatus, actorId = null) {
+  const now = new Date();
+  const previousStatus = participant?.memberStatus || "todo";
+  const patch = { memberStatus: nextStatus };
+  const hasStarted = !!participant?.startedAt;
+  const wasDone = previousStatus === "done";
+
+  if (nextStatus === "todo") {
+    if (wasDone) {
+      patch.completedAt = null;
+      patch.completedById = null;
+    }
+    return patch;
+  }
+
+  if (nextStatus === "in_progress") {
+    if (!hasStarted) patch.startedAt = now;
+    if (wasDone) {
+      patch.completedAt = null;
+      patch.completedById = null;
+    }
+    return patch;
+  }
+
+  if (nextStatus === "done") {
+    if (!hasStarted) patch.startedAt = now;
+    if (!participant?.completedAt) patch.completedAt = now;
+    if (actorId) patch.completedById = actorId;
+    return patch;
+  }
+
+  if (nextStatus === "blocked") {
+    if (!hasStarted) patch.startedAt = now;
+    patch.completedAt = null;
+    patch.completedById = null;
+    return patch;
+  }
+
+  if (nextStatus === "canceled") {
+    if (!hasStarted) patch.startedAt = now;
+    patch.completedAt = null;
+    patch.completedById = null;
+  }
+
+  return patch;
 }
 
 module.exports = {
@@ -846,6 +1021,33 @@ module.exports = {
         "visibility",
         "visibilityDepartmentId",
       ],
+      include: [
+        {
+          model: User,
+          as: "userParticipants",
+          attributes: ["id", "firstName", "lastName", "email"],
+          through: {
+            attributes: [
+              "role",
+              "memberStatus",
+              "startedAt",
+              "completedAt",
+              "completedById",
+              "statusNote",
+            ],
+          },
+          include: [
+            {
+              model: UserCompany,
+              as: "memberships",
+              attributes: [],
+              where: { companyId: cid },
+              required: true,
+            },
+          ],
+          required: false,
+        },
+      ],
       order: [
         ["startAt", "ASC"],
         ["createdAt", "DESC"],
@@ -867,9 +1069,10 @@ module.exports = {
         end: t.endAt,
         allDay: isAllDay,
         status: t.status,
-        priority: t.priority,
+        priority: normalizePriority(t.priority),
         category: t.category,
         timezone: t.timezone || null,
+        aggregateSummary: buildTaskAggregateSummary(t),
       };
     });
 
@@ -911,7 +1114,16 @@ module.exports = {
           model: User,
           as: "userParticipants",
           attributes: ["id", "firstName", "lastName", "email"],
-          through: { attributes: ["role", "memberStatus"] },
+          through: {
+            attributes: [
+              "role",
+              "memberStatus",
+              "startedAt",
+              "completedAt",
+              "completedById",
+              "statusNote",
+            ],
+          },
           include: [
             {
               model: UserCompany,
@@ -1053,9 +1265,7 @@ module.exports = {
         payload.status && STATUS_VALUES.includes(payload.status)
           ? payload.status
           : "todo",
-      priority: Number.isInteger(payload.priority)
-        ? Math.min(100, Math.max(0, payload.priority))
-        : 50,
+      priority: normalizePriority(payload.priority),
       visibility: visibilityPatch.visibility,
       visibilityDepartmentId: visibilityPatch.visibilityDepartmentId,
       startAt: plannedStart.value || null,
@@ -1077,7 +1287,7 @@ module.exports = {
     await ensureParticipants({ task, companyId: cid, payload });
     await ensureContacts({ task, payload, companyId: cid });
 
-    await recomputeTaskStatusIfNeeded({ taskId: task.id, companyId: cid });
+    await recomputeTaskStatusIfNeeded({ taskId: task.id, companyId: cid, actorId: createdBy });
 
     // 🔔 уведомления участникам/наблюдателям
     try {
@@ -1234,10 +1444,7 @@ module.exports = {
     if (payload.description !== undefined)
       next.description = payload.description || null;
     if (payload.priority !== undefined)
-      next.priority = Math.min(
-        100,
-        Math.max(0, parseInt(payload.priority, 10) || 0)
-      );
+      next.priority = normalizePriority(payload.priority);
     if (plannedStart.provided) next.startAt = plannedStart.value || null;
     if (plannedEnd.provided) next.endAt = plannedEnd.value || null;
     if (actualStart.provided) next.actualStartAt = actualStart.value || null;
@@ -1258,8 +1465,16 @@ module.exports = {
       next.visibilityDepartmentId = visibilityPatch.visibilityDepartmentId;
     }
 
+    const actorId = user?.id || null;
     if (payload.status && STATUS_VALUES.includes(payload.status)) {
       next.status = payload.status;
+      if (payload.status === "done") {
+        next.completedAt = task.completedAt || new Date();
+        next.completedById = actorId || task.completedById || null;
+      } else if (task.status === "done") {
+        next.completedAt = null;
+        next.completedById = null;
+      }
     }
 
     if (payload.participantMode) next.participantMode = payload.participantMode;
@@ -1289,15 +1504,16 @@ module.exports = {
       );
 
       for (const m of patch) {
-        await TaskUserParticipant.update(
-          { memberStatus: m.memberStatus },
-          { where: { taskId: task.id, userId: m.userId, role: "assignee" } }
-        );
+        const participant = await TaskUserParticipant.findOne({
+          where: { taskId: task.id, userId: m.userId, role: "assignee" },
+        });
+        if (!participant) continue;
+        await participant.update(buildMemberStatusPatch(participant, m.memberStatus, actorId));
       }
     }
 
     // если флаг агрегирования включён — пересчитать общий статус
-    await recomputeTaskStatusIfNeeded({ taskId: task.id, companyId: cid });
+    await recomputeTaskStatusIfNeeded({ taskId: task.id, companyId: cid, actorId });
 
     try {
       const updated = await this.getById({ id: task.id, companyId: cid, user });
@@ -1343,6 +1559,160 @@ module.exports = {
       console.error("[taskService.update] notify error", e);
       return await this.getById({ id: task.id, companyId: cid, user });
     }
+  },
+
+  async updateMyMemberStatus({ taskId, companyId, userId, memberStatus, note }) {
+    const cid = requireCompanyId(companyId);
+    if (!userId) {
+      const err = new Error("Unauthorized");
+      err.status = 401;
+      throw err;
+    }
+    if (!SELF_MEMBER_STATUS_VALUES.includes(memberStatus)) {
+      const err = new Error("memberStatus is invalid");
+      err.status = 400;
+      throw err;
+    }
+
+    const user = { id: userId, companyId: cid };
+    const where = { id: taskId, companyId: cid };
+    const { condition: visibilityCondition } = await buildTaskVisibilityWhere({
+      companyId: cid,
+      user,
+    });
+    pushWhereAnd(where, visibilityCondition);
+
+    const task = await Task.findOne({
+      where,
+      attributes: ["id", "companyId"],
+    });
+    if (!task) {
+      const err = new Error("Task not found");
+      err.status = 404;
+      throw err;
+    }
+
+    const participant = await TaskUserParticipant.findOne({
+      where: { taskId: task.id, userId, role: "assignee" },
+    });
+    if (!participant) {
+      const err = new Error("Only task assignees can update their own task status");
+      err.status = 403;
+      throw err;
+    }
+
+    const patch = buildMemberStatusPatch(participant, memberStatus, userId);
+    if (note !== undefined) patch.statusNote = note ? String(note).trim() : null;
+    await participant.update(patch);
+
+    await recomputeTaskStatusIfNeeded({ taskId: task.id, companyId: cid, actorId: userId });
+
+    // TODO(AGG): record participant status activity/notifications in the timeline phase.
+    const updatedTask = await this.getById({ id: task.id, companyId: cid, user });
+    const updatedParticipant = await TaskUserParticipant.findOne({
+      where: { taskId: task.id, userId, role: "assignee" },
+      raw: true,
+    });
+
+    return {
+      task: updatedTask,
+      participant: updatedParticipant
+        ? {
+            taskId: updatedParticipant.taskId,
+            userId: updatedParticipant.userId,
+            role: updatedParticipant.role,
+            memberStatus: updatedParticipant.memberStatus,
+            startedAt: updatedParticipant.startedAt,
+            completedAt: updatedParticipant.completedAt,
+            completedById: updatedParticipant.completedById,
+            statusNote: updatedParticipant.statusNote,
+          }
+        : null,
+    };
+  },
+
+  async updateParticipantMemberStatus({
+    taskId,
+    targetUserId,
+    companyId,
+    actorUserId,
+    memberStatus,
+    note,
+  }) {
+    const cid = requireCompanyId(companyId);
+    if (!actorUserId) {
+      const err = new Error("Unauthorized");
+      err.status = 401;
+      throw err;
+    }
+    if (!targetUserId) {
+      const err = new Error("targetUserId is required");
+      err.status = 400;
+      throw err;
+    }
+    if (!MEMBER_STATUS_VALUES.includes(memberStatus)) {
+      const err = new Error("memberStatus is invalid");
+      err.status = 400;
+      throw err;
+    }
+
+    await assertMemberIdsInCompany([targetUserId], cid, "targetUserId");
+
+    const actor = { id: actorUserId, companyId: cid };
+    const where = { id: taskId, companyId: cid };
+    const { condition: visibilityCondition } = await buildTaskVisibilityWhere({
+      companyId: cid,
+      user: actor,
+    });
+    pushWhereAnd(where, visibilityCondition);
+
+    const task = await Task.findOne({
+      where,
+      attributes: ["id", "companyId"],
+    });
+    if (!task) {
+      const err = new Error("Task not found");
+      err.status = 404;
+      throw err;
+    }
+
+    const participant = await TaskUserParticipant.findOne({
+      where: { taskId: task.id, userId: targetUserId, role: "assignee" },
+    });
+    if (!participant) {
+      const err = new Error("Target user is not an assignee of this task");
+      err.status = 403;
+      throw err;
+    }
+
+    const patch = buildMemberStatusPatch(participant, memberStatus, actorUserId);
+    if (note !== undefined) patch.statusNote = note ? String(note).trim() : null;
+    await participant.update(patch);
+
+    await recomputeTaskStatusIfNeeded({ taskId: task.id, companyId: cid, actorId: actorUserId });
+
+    // TODO(AGG): record manager participant status activity/notifications in the timeline phase.
+    const updatedTask = await this.getById({ id: task.id, companyId: cid, user: actor });
+    const updatedParticipant = await TaskUserParticipant.findOne({
+      where: { taskId: task.id, userId: targetUserId, role: "assignee" },
+      raw: true,
+    });
+
+    return {
+      task: updatedTask,
+      participant: updatedParticipant
+        ? {
+            taskId: updatedParticipant.taskId,
+            userId: updatedParticipant.userId,
+            role: updatedParticipant.role,
+            memberStatus: updatedParticipant.memberStatus,
+            startedAt: updatedParticipant.startedAt,
+            completedAt: updatedParticipant.completedAt,
+            completedById: updatedParticipant.completedById,
+            statusNote: updatedParticipant.statusNote,
+          }
+        : null,
+    };
   },
 
   // ---------- REMOVE (soft) ----------

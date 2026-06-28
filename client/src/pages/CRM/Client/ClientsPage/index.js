@@ -1,4 +1,3 @@
-// src/pages/CRM/Counterparty/ClientsPage/index.jsx
 import React, { useRef, useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -7,8 +6,6 @@ import {
   Workspace,
   useWorkspaceData,
 } from '../../../../components/workspace';
-import Modal from '../../../../components/Modal';
-import CounterpartyForm from '../../CounterpartyForm';
 
 import useGridPrefs from '../../../../hooks/useGridPrefs';
 import useOpenAsModal from '../../../../hooks/useOpenAsModal';
@@ -19,7 +16,6 @@ import AddButton from '../../../../components/buttons/AddButton/AddButton';
 import { SearchField, SelectField } from '../../../../components/ui/fields';
 
 import {
-  useCreateCounterpartyMutation,
   useListCounterpartiesQuery,
 } from '../../../../store/rtk/counterpartyApi';
 
@@ -29,12 +25,10 @@ const sanitizeCounterpartyQuery = (query = {}) => Object.fromEntries(
 
 /**
  * Страница списка клиентов:
- * настраивает колонки, фильтры, сохранённые представления и модалку создания.
+ * настраивает колонки, фильтры и сохранённые представления.
  */
 export default function ClientsPage() {
   const listRef = useRef(null);
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const openAsModal = useOpenAsModal();
@@ -48,9 +42,6 @@ export default function ClientsPage() {
     onColumnOrderChange,
     onColumnVisibilityChange,
   } = useGridPrefs('crm.clients');
-
-  const [createCounterparty, { isLoading: creating }] =
-    useCreateCounterpartyMutation();
 
   // Открывает карточку клиента в обычном режиме или в modal-route режиме.
   const openDetail = useCallback(
@@ -271,118 +262,62 @@ render: (r) => r.mainResponsibleUser || '—',
   const actions = useMemo(
     () => (
       <AddButton
-        onClick={() => setOpen(true)}
+        onClick={() => navigate('/main/clients/new')}
         title={t('crm.actions.addClient', 'Добавить клиента')}
       >
         {t('crm.actions.addClient', 'Добавить клиента')}
       </AddButton>
     ),
-    [t]
-  );
-
-  // Кнопки футера модалки создания клиента.
-  const footer = useMemo(
-    () => (
-      <>
-        <Modal.Button onClick={() => setOpen(false)}>
-          {t('common.cancel')}
-        </Modal.Button>
-        <Modal.Button
-          variant="primary"
-          form="cp-create-form"
-          disabled={saving || creating}
-        >
-          {saving || creating ? t('common.saving') : t('common.save')}
-        </Modal.Button>
-      </>
-    ),
-    [t, saving, creating]
+    [navigate, t]
   );
 
   return (
-    <>
-      <Workspace
-        ref={listRef}
-        title={t('crm.titles.clients', 'Клиенты')}
-        badge={t('crm.clients.workspaceCount', {
-          count: workspaceData.total,
-          defaultValue: `${workspaceData.total}`,
-        })}
-        actions={actions}
-        controls={workspaceControls}
-        rows={workspaceData.rows}
-        columns={workspaceColumns}
-        loading={workspaceData.loading}
-        error={workspaceData.error}
-        onRetry={workspaceData.refetch}
-        onRefetch={workspaceData.refetch}
-        renderCell={renderCell}
-        getRowId={(row) => row?.id}
-        getRowKey={(row) => String(row?.id || row?.shortName || row?.fullName || '')}
-        onRowClick={(row) => row?.id && openDetail(row.id)}
-        sortKey={workspaceData.query.sort}
-        sortDir={workspaceData.query.dir}
-        onSort={workspaceData.setSort}
-        columnState={columnState}
-        onColumnStateChange={handleColumnStateChange}
-        emptyState={{
-          title: t(
-            hasAnyFilter ? 'crm.clients.emptyFilteredTitle' : 'crm.clients.emptyTitle',
-            hasAnyFilter ? 'Клиенты не найдены' : 'Нет клиентов'
-          ),
-          description: t(
-            hasAnyFilter ? 'crm.clients.emptyFilteredText' : 'crm.clients.emptyText',
-            hasAnyFilter ? 'Измените поиск или фильтры.' : 'Создайте первого клиента.'
-          ),
-        }}
-        errorState={{
-          title: t('crm.clients.errorTitle', 'Не удалось загрузить клиентов'),
-          description: String(
-            clientsError?.data?.message
-            || clientsError?.data?.error
-            || clientsError?.message
-            || t('common.error', 'Error')
-          ),
-          retryLabel: t('list.refresh', 'Refresh'),
-        }}
-        labels={workspaceLabels}
-        pagination={workspaceData.pagination}
-      />
-
-      <Modal
-        open={open}
-        onClose={() => setOpen(false)}
-        title={t('crm.dialogs.newClient', 'Новый клиент')}
-        size="lg"
-        footer={footer}
-      >
-        <CounterpartyForm
-          id="cp-create-form"
-          defaultType="client"
-          defaultStatus="active"
-          allowedTypes={['client']} // создаём только клиентов
-          allowedStatuses={['potential', 'active', 'inactive']}
-          lockType
-          loading={saving || creating}
-          withButtons={false}
-          onCancel={() => setOpen(false)}
-          // Создаёт клиента и обновляет список после успешного сохранения.
-          onSubmit={async (values) => {
-            setSaving(true);
-            try {
-              await createCounterparty({
-                ...values,
-                type: 'client',
-                status: values.status || 'active',
-              }).unwrap();
-              setOpen(false);
-              workspaceData.refetch?.();
-            } finally {
-              setSaving(false);
-            }
-          }}
-        />
-      </Modal>
-    </>
+    <Workspace
+      ref={listRef}
+      title={t('crm.titles.clients', 'Клиенты')}
+      badge={t('crm.clients.workspaceCount', {
+        count: workspaceData.total,
+        defaultValue: `${workspaceData.total}`,
+      })}
+      actions={actions}
+      controls={workspaceControls}
+      rows={workspaceData.rows}
+      columns={workspaceColumns}
+      loading={workspaceData.loading}
+      error={workspaceData.error}
+      onRetry={workspaceData.refetch}
+      onRefetch={workspaceData.refetch}
+      renderCell={renderCell}
+      getRowId={(row) => row?.id}
+      getRowKey={(row) => String(row?.id || row?.shortName || row?.fullName || '')}
+      onRowClick={(row) => row?.id && openDetail(row.id)}
+      sortKey={workspaceData.query.sort}
+      sortDir={workspaceData.query.dir}
+      onSort={workspaceData.setSort}
+      columnState={columnState}
+      onColumnStateChange={handleColumnStateChange}
+      emptyState={{
+        title: t(
+          hasAnyFilter ? 'crm.clients.emptyFilteredTitle' : 'crm.clients.emptyTitle',
+          hasAnyFilter ? 'Клиенты не найдены' : 'Нет клиентов'
+        ),
+        description: t(
+          hasAnyFilter ? 'crm.clients.emptyFilteredText' : 'crm.clients.emptyText',
+          hasAnyFilter ? 'Измените поиск или фильтры.' : 'Создайте первого клиента.'
+        ),
+      }}
+      errorState={{
+        title: t('crm.clients.errorTitle', 'Не удалось загрузить клиентов'),
+        description: String(
+          clientsError?.data?.message
+          || clientsError?.data?.error
+          || clientsError?.message
+          || t('common.error', 'Error')
+        ),
+        retryLabel: t('list.refresh', 'Refresh'),
+      }}
+      labels={workspaceLabels}
+      pagination={workspaceData.pagination}
+    />
   );
 }

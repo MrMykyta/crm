@@ -1,21 +1,295 @@
+.skeleton {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.skeleton > div,
+.skeleton > span {
+  display: block;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+}
+
+.skeleton > div {
+  width: min(320px, 100%);
+  height: 24px;
+}
+
+.skeleton > span {
+  width: min(520px, 100%);
+  height: 14px;
+}
+
+.sidebarStack,
+.formStack,
+.tabStack {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.twoColumn {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.taxIdFieldStack {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.taxIdLocalHint {
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.peselBirthDateSuggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 70%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 58%, transparent);
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+  font-size: var(--font-size-12);
+  line-height: 1.35;
+}
+
+.peselBirthDateSuggestion button {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 7px;
+  padding: 5px 8px;
+  background: color-mix(in srgb, var(--primary, #2563eb) 12%, transparent);
+  color: var(--primary, #2563eb);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.peselBirthDateSuggestion button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.personIdentitySummary {
+  display: grid;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 78%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 66%, transparent);
+  color: var(--detail-text, var(--text));
+  font-size: var(--font-size-12);
+  line-height: 1.35;
+}
+
+.personIdentitySummaryStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--success, #16a34a);
+  font-weight: 700;
+}
+
+.personIdentitySummary dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+}
+
+.personIdentitySummary div {
+  min-width: 0;
+}
+
+.personIdentitySummary dt {
+  display: inline;
+  margin: 0;
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+  font-weight: 600;
+}
+
+.personIdentitySummary dd {
+  display: inline;
+  margin: 0;
+  font-weight: 700;
+}
+
+.descriptionSection {
+  border-color: color-mix(in srgb, var(--detail-border, var(--card-brd)) 88%, transparent);
+  background: var(--detail-surface);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  padding: 12px;
+  -webkit-backdrop-filter: blur(16px) saturate(1.04);
+  backdrop-filter: blur(16px) saturate(1.04);
+}
+
+.descriptionSection :global([class*="HtmlDescriptionSection_emptyState"]),
+.descriptionSection :global([class*="HtmlDescriptionSection_htmlView"]) {
+  min-height: 150px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 74%, transparent);
+}
+
+.descriptionSection :global([class*="HtmlDescriptionSection_headerRow"]) {
+  gap: 8px;
+}
+
+.descriptionSection :global([class*="HtmlDescriptionSection_ghostBtn"]),
+.descriptionSection :global([class*="HtmlDescriptionSection_primaryBtn"]) {
+  height: 30px;
+  padding: 0 11px;
+}
+
+.glassPanel {
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 88%, transparent);
+  border-radius: 14px;
+  background: var(--detail-surface);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  padding: 12px;
+  -webkit-backdrop-filter: blur(16px) saturate(1.04);
+  backdrop-filter: blur(16px) saturate(1.04);
+}
+
+.embeddedSection {
+  min-width: 0;
+}
+
+.notesGlass :global([class*="EntityNotesSection_headerRow"]) {
+  gap: 8px;
+  padding-bottom: 2px;
+}
+
+.notesGlass :global([class*="EntityNotesSection_title"]),
+.contactsGlass :global([class*="CounterpartyContactsSection_title"]) {
+  color: var(--ui-text, var(--text));
+  font-size: var(--font-size-13);
+  font-weight: 760;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.notesGlass :global([class*="EntityNotesSection_card"]),
+.notesGlass :global([class*="EntityNotesSection_empty"]),
+.notesGlass :global([class*="EntityNotesSection_filters"]),
+.notesGlass :global([class*="EntityNotesSection_composerCard"]) {
+  border-color: color-mix(in srgb, var(--detail-border, var(--card-brd)) 58%, transparent);
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 72%, transparent);
+}
+
+.notesGlass :global([class*="EntityNotesSection_empty"]) {
+  min-height: 116px;
+  padding: 18px;
+}
+
+.contactsGlass :global([class*="CounterpartyContactsSection_section"]) {
+  margin-top: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.contactsGlass :global([class*="CounterpartyContactsSection_header"]) {
+  margin-bottom: 10px;
+}
+
+.contactsGlass :global([class*="CounterpartyContactsSection_state"]) {
+  min-height: 116px;
+  border: 1px dashed color-mix(in srgb, var(--detail-border, var(--card-brd)) 62%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 58%, transparent);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  text-align: center;
+}
+
+.contactsGlass :global([class*="CounterpartyContactsSection_card"]) {
+  border-color: color-mix(in srgb, var(--detail-border, var(--card-brd)) 58%, transparent);
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 72%, transparent);
+}
+
+.contactsGlass :global([class*="CounterpartyContactsSection_actionBtn"]) {
+  border-color: color-mix(in srgb, var(--detail-border, var(--card-brd)) 70%, transparent);
+  background: color-mix(in srgb, var(--detail-surface, var(--card-bg)) 78%, transparent);
+}
+
+.metaRows {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.systemStack {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.metaRows > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 62%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 58%, transparent);
+}
+
+.metaRows span {
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+  font-size: var(--font-size-12);
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.metaRows strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text, var(--ui-text-1));
+  font-size: var(--font-size-14);
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .relatedSection {
   display: grid;
   gap: 12px;
 }
 
-.relatedHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
+.relationEmpty {
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+  min-height: 116px;
+  padding: 18px;
+  border: 1px dashed color-mix(in srgb, var(--detail-border, var(--card-brd)) 64%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 58%, transparent);
+  color: var(--detail-muted, var(--text-2, var(--muted)));
 }
 
-.relatedTitle {
-  margin: 0;
-  color: var(--ui-text-1);
-  font-size: var(--font-size-16, 16px);
-  font-weight: var(--fw-semibold, 600);
+.relationEmpty strong {
+  color: var(--ui-text, var(--text));
+  font-size: var(--font-size-14);
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.relationEmpty span {
+  max-width: 420px;
+  font-size: var(--font-size-13);
+  line-height: 1.35;
 }
 
 .linkButton {
@@ -42,32 +316,365 @@
   font-size: 13px;
 }
 
-.detailActions {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 12px;
+.registryCard,
+.registryVerified {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 64%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface, var(--card-bg)) 78%, transparent);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  backdrop-filter: blur(14px) saturate(1.05);
 }
 
-.detailActionBtn {
+.registryCard {
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+  color: var(--ui-text, var(--text));
+}
+
+.registryCardLoading,
+.registryCardMuted,
+.registryCardWarning {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+}
+
+.registryCardLoading {
+  align-items: center;
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+  font-size: var(--font-size-13);
+  font-weight: 650;
+}
+
+.registryCardMuted {
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+}
+
+.registryCardWarning {
+  border-color: color-mix(in srgb, #f59e0b 42%, transparent);
+  background: color-mix(in srgb, #f59e0b 10%, var(--detail-surface, var(--card-bg)) 74%);
+}
+
+.registryCardMuted strong,
+.registryCardWarning strong {
+  display: block;
+  color: var(--ui-text, var(--text));
+  font-size: var(--font-size-13);
+  line-height: 1.25;
+}
+
+.registryCardMuted p,
+.registryCardWarning p {
+  margin: 3px 0 0;
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+  font-size: var(--font-size-12);
+  line-height: 1.35;
+}
+
+.spinIcon {
+  animation: registrySpin 900ms linear infinite;
+}
+
+@keyframes registrySpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.registryHeader,
+.registryActions,
+.registryVerified {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.registryHeader {
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.registryStatus {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  color: #86efac;
+  font-size: var(--font-size-13);
+  font-weight: 760;
+}
+
+.registrySource {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, #22c55e 36%, transparent);
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+  color: #bbf7d0;
+  font-size: var(--font-size-11);
+  font-weight: 760;
+}
+
+.registryCompany {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.registryCompany strong {
+  min-width: 0;
+  color: var(--ui-text, var(--text));
+  font-size: var(--font-size-14);
+  font-weight: 760;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.registryCompany span,
+.registryMeta,
+.registryDiff small {
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+  font-size: var(--font-size-12);
+  line-height: 1.35;
+}
+
+.registryFacts,
+.registryDetails {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.registryFacts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.registryFacts div,
+.registryDetails div {
+  min-width: 0;
+}
+
+.registryFacts dt,
+.registryDetails dt {
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+  font-size: var(--font-size-11);
+  font-weight: 700;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.registryFacts dd,
+.registryDetails dd {
+  margin: 2px 0 0;
+  min-width: 0;
+  color: var(--ui-text, var(--text));
+  font-size: var(--font-size-12);
+  font-weight: 680;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.registryMeta {
+  display: grid;
+  gap: 2px;
+}
+
+.registrySandboxHint {
+  color: #fbbf24;
+  font-weight: 760;
+}
+
+.registryDiff,
+.registryDetails {
+  border-top: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 54%, transparent);
+  padding-top: 9px;
+}
+
+.registryDiff {
+  display: grid;
+  gap: 7px;
+}
+
+.registryDiff > strong {
+  color: var(--ui-text, var(--text));
+  font-size: var(--font-size-12);
+  font-weight: 760;
+}
+
+.registryDiffRow {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.registryDiffRow > span {
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+  font-size: var(--font-size-11);
+  font-weight: 700;
+}
+
+.registryDiffRow p {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+  color: var(--ui-text, var(--text));
+  font-size: var(--font-size-12);
+}
+
+.registryDiffRow em,
+.registryDiffRow strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.registryDiffRow em {
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+  font-style: normal;
+}
+
+.registryDiffRow b {
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+  font-weight: 700;
+}
+
+.registryActions {
+  flex-wrap: wrap;
+}
+
+.registryPrimaryButton,
+.registryGhostButton,
+.registryIconButton {
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 68%, transparent);
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-12);
+  font-weight: 760;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.registryPrimaryButton {
+  min-height: 30px;
+  padding: 0 10px;
+  background: color-mix(in srgb, #22c55e 22%, var(--detail-surface, var(--card-bg)) 70%);
+  color: #dcfce7;
+}
+
+.registryGhostButton,
+.registryIconButton {
+  min-height: 30px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 68%, transparent);
+  color: var(--ui-text, var(--text));
+}
+
+.registryGhostButton {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 12px;
+  gap: 5px;
+  padding: 0 9px;
+}
+
+.registryIconButton {
+  display: inline-grid;
+  width: 30px;
+  place-items: center;
+  padding: 0;
+}
+
+.registryPrimaryButton:hover,
+.registryGhostButton:hover,
+.registryIconButton:hover {
+  border-color: color-mix(in srgb, #22c55e 48%, var(--detail-border, var(--card-brd)));
+  transform: translateY(-1px);
+}
+
+.registryPrimaryButton:disabled,
+.registryGhostButton:disabled,
+.registryIconButton:disabled {
+  cursor: default;
+  opacity: 0.62;
+  transform: none;
+}
+
+.registryVerified {
+  justify-content: space-between;
+  padding: 8px 9px;
+}
+
+.registryVerifiedText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.registryVerifiedText span {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  color: #86efac;
+  font-size: var(--font-size-12);
+  font-weight: 760;
+}
+
+.registryVerifiedText small {
+  color: var(--detail-muted, var(--text-2, var(--muted)));
+  font-size: var(--font-size-11);
+  line-height: 1.25;
+}
+
+.registryApplyNotice {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, #22c55e 34%, transparent);
   border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--card-brd) 76%, transparent);
-  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
-  color: var(--text);
-  font-size: var(--font-size-13);
-  cursor: pointer;
+  padding: 7px 9px;
+  background: color-mix(in srgb, #22c55e 10%, var(--detail-surface, var(--card-bg)) 74%);
+  color: #bbf7d0;
+  font-size: var(--font-size-12);
+  font-weight: 740;
+  line-height: 1.25;
 }
 
-.detailActionBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.registryApplyNoticeError {
+  border-color: color-mix(in srgb, #f59e0b 42%, transparent);
+  background: color-mix(in srgb, #f59e0b 10%, var(--detail-surface, var(--card-bg)) 74%);
+  color: #fde68a;
 }
 
-.detailActionDanger {
-  color: #f18686;
-  border-color: color-mix(in srgb, #ef4444 46%, transparent);
+@media (max-width: 720px) {
+  .twoColumn {
+    grid-template-columns: 1fr;
+  }
+
+  .registryFacts {
+    grid-template-columns: 1fr;
+  }
+
+  .registryActions {
+    align-items: stretch;
+  }
+
+  .registryPrimaryButton,
+  .registryGhostButton {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .registryDiffRow p {
+    grid-template-columns: 1fr;
+  }
+
+  .registryDiffRow b {
+    display: none;
+  }
 }

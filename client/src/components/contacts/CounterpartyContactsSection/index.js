@@ -1,15 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AddButton from '../../buttons/AddButton/AddButton';
-import Modal from '../../Modal';
-import ContactForm from '../ContactForm';
 import {
-  useCreateContactMutation,
   useDeleteContactMutation,
   useGetContactsByCounterpartyQuery,
   useSetMainContactMutation,
-  useUpdateContactMutation,
 } from '../../../store/rtk/contactsApi';
 import s from './CounterpartyContactsSection.module.css';
 
@@ -21,14 +17,18 @@ function contactName(item) {
   return full || item?.displayName || item?.id || '—';
 }
 
+function getCounterpartyTypeFromPath(pathname = '') {
+  if (pathname.includes('/main/leads/')) return 'lead';
+  if (pathname.includes('/main/clients/')) return 'client';
+  return 'partner';
+}
+
 // Компонент CounterpartyContactsSection: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function CounterpartyContactsSection({ counterpartyId, counterpartyName = '' }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [busy, setBusy] = useState(false);
   const [deleteBusyId, setDeleteBusyId] = useState(null);
 
   const { data, isLoading, isFetching, refetch } = useGetContactsByCounterpartyQuery(
@@ -42,8 +42,6 @@ export default function CounterpartyContactsSection({ counterpartyId, counterpar
     { skip: !counterpartyId }
   );
 
-  const [createContact] = useCreateContactMutation();
-  const [updateContact] = useUpdateContactMutation();
   const [deleteContact] = useDeleteContactMutation();
   const [setMainContact] = useSetMainContactMutation();
 
@@ -52,39 +50,42 @@ export default function CounterpartyContactsSection({ counterpartyId, counterpar
     return source;
   }, [data?.items]);
 
+  const counterpartyType = getCounterpartyTypeFromPath(location.pathname);
+  const returnToContacts = `${location.pathname}?tab=contacts${location.hash || ''}`;
+  const returnLabel = counterpartyName || t('contacts.fields.counterparty', 'Контрагент');
+
+  const buildCreateHref = useCallback(() => {
+    const params = new URLSearchParams();
+    if (counterpartyId) params.set('counterpartyId', counterpartyId);
+    if (counterpartyName) params.set('counterpartyName', counterpartyName);
+    if (counterpartyType) params.set('counterpartyType', counterpartyType);
+    params.set('returnTo', returnToContacts);
+    return `/main/contacts/new?${params.toString()}`;
+  }, [counterpartyId, counterpartyName, counterpartyType, returnToContacts]);
+
+  const buildContactState = useCallback(() => ({
+    returnTo: returnToContacts,
+    returnLabel,
+    counterpartyId,
+    counterpartyName,
+    counterpartyType,
+  }), [counterpartyId, counterpartyName, counterpartyType, returnLabel, returnToContacts]);
+
     // openCreate: открывает связанный UI-элемент.
-const openCreate = () => {
-    setEditing(null);
-    setOpen(true);
-  };
+const openCreate = useCallback(() => {
+    navigate(buildCreateHref(), { state: buildContactState() });
+  }, [buildContactState, buildCreateHref, navigate]);
+
+    // openContact: открывает связанный UI-элемент.
+const openContact = useCallback((contact) => {
+    if (!contact?.id) return;
+    navigate(`/main/contacts/${contact.id}`, { state: buildContactState() });
+  }, [buildContactState, navigate]);
 
     // openEdit: открывает связанный UI-элемент.
-const openEdit = (contact) => {
-    setEditing(contact);
-    setOpen(true);
-  };
-
-    // closeModal: закрывает связанный UI-элемент.
-const closeModal = () => {
-    setOpen(false);
-    setEditing(null);
-  };
-
-    // onSave: вспомогательная логика компонента.
-const onSave = async (payload) => {
-    setBusy(true);
-    try {
-      if (editing?.id) {
-        await updateContact({ id: editing.id, payload }).unwrap();
-      } else {
-        await createContact(payload).unwrap();
-      }
-      closeModal();
-      await refetch();
-    } finally {
-      setBusy(false);
-    }
-  };
+const openEdit = useCallback((contact) => {
+    openContact(contact);
+  }, [openContact]);
 
     // onDelete: вспомогательная логика компонента.
 const onDelete = async (id) => {
@@ -103,15 +104,6 @@ const onSetMain = async (id) => {
     await setMainContact(id).unwrap();
     await refetch();
   };
-
-  const footer = (
-    <>
-      <Modal.Button onClick={closeModal}>{t('common.cancel', 'Отмена')}</Modal.Button>
-      <Modal.Button variant="primary" form="counterparty-contact-form" disabled={busy}>
-        {busy ? t('common.saving', 'Сохранение...') : t('common.save', 'Сохранить')}
-      </Modal.Button>
-    </>
-  );
 
   return (
     <section className={s.section}>
@@ -137,7 +129,13 @@ const onSetMain = async (id) => {
             <article key={item.id} className={s.card}>
               <div className={s.cardHead}>
                 <div>
-                  <div className={s.name}>{contactName(item)}</div>
+                  <button
+                    type="button"
+                    className={s.nameButton}
+                    onClick={() => openContact(item)}
+                  >
+                    {contactName(item)}
+                  </button>
                   <div className={s.sub}>{item.position || item.jobTitle || item.department || '—'}</div>
                 </div>
                 {isMain ? <span className={s.badgeMain}>{t('contacts.values.main', 'Основной')}</span> : null}
@@ -170,7 +168,7 @@ const onSetMain = async (id) => {
                 <button
                   type="button"
                   className={s.actionBtn}
-                  onClick={() => navigate(`/main/contacts/${item.id}`)}
+                  onClick={() => openContact(item)}
                 >
                   {t('contacts.actions.open', 'Открыть')}
                 </button>
@@ -198,27 +196,6 @@ const onSetMain = async (id) => {
           );
         })}
       </div>
-
-      <Modal
-        open={open}
-        onClose={closeModal}
-        title={editing?.id
-          ? t('contacts.dialogs.edit', 'Редактирование контакта')
-          : t('contacts.dialogs.create', 'Новый контакт')}
-        size="lg"
-        footer={footer}
-      >
-        <ContactForm
-          id="counterparty-contact-form"
-          initial={editing || undefined}
-          loading={busy}
-          withButtons={false}
-          fixedCounterpartyId={counterpartyId}
-          fixedCounterpartyName={counterpartyName}
-          onSubmit={onSave}
-        />
-      </Modal>
     </section>
   );
 }
-

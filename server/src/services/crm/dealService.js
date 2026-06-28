@@ -72,6 +72,20 @@ async function assertStageInCompany(stageId, companyId, pipelineId = null) {
     err.status = 400;
     throw err;
   }
+  return row;
+}
+
+async function getStageInCompany(stageId, companyId, pipelineId = null) {
+  if (!stageId) return null;
+  const where = { id: stageId, companyId };
+  if (pipelineId) where.pipelineId = pipelineId;
+  const row = await CrmPipelineStage.findOne({ where });
+  if (!row) {
+    const err = new Error('stageId is invalid');
+    err.status = 400;
+    throw err;
+  }
+  return row;
 }
 
 // buildDefaultInclude: собирает служебную структуру для выполнения запроса.
@@ -205,7 +219,11 @@ module.exports.create = async (payload = {}, opts = {}) => {
     await assertCounterpartyInCompany(counterpartyId, cid);
     if (payload.responsibleId) await assertMemberInCompany(payload.responsibleId, cid);
     if (payload.pipelineId) await assertPipelineInCompany(payload.pipelineId, cid);
-    if (payload.stageId) await assertStageInCompany(payload.stageId, cid, payload.pipelineId || null);
+    if (payload.stageId) {
+      const stage = await getStageInCompany(payload.stageId, cid, payload.pipelineId || null);
+      if (!payload.pipelineId) payload.pipelineId = stage.pipelineId;
+      if (!payload.stageEnteredAt) payload.stageEnteredAt = new Date();
+    }
 
     const toCreate = { ...payload, companyId: cid };
     delete toCreate.companyId;
@@ -220,11 +238,16 @@ module.exports.update = async (id, payload = {}, opts = {}) => {
 
     if (payload.counterpartyId) await assertCounterpartyInCompany(payload.counterpartyId, cid);
     if (payload.responsibleId) await assertMemberInCompany(payload.responsibleId, cid);
-    if (payload.pipelineId) await assertPipelineInCompany(payload.pipelineId, cid);
-    if (payload.stageId) await assertStageInCompany(payload.stageId, cid, payload.pipelineId || null);
-
     const item = await Deal.findOne({ where: { id, companyId: cid } });
     if (!item) return null;
+
+    const targetPipelineId = payload.pipelineId || item.pipelineId || null;
+    if (payload.pipelineId) await assertPipelineInCompany(payload.pipelineId, cid);
+    if (payload.stageId) {
+      const stage = await getStageInCompany(payload.stageId, cid, targetPipelineId);
+      if (item.stageId !== payload.stageId && !payload.stageEnteredAt) payload.stageEnteredAt = new Date();
+      if (!payload.pipelineId) payload.pipelineId = stage.pipelineId;
+    }
 
     const next = { ...payload };
     delete next.companyId;
@@ -240,3 +263,39 @@ module.exports.remove = async (id, opts = {}) => {
     return Deal.destroy({ where: { id, companyId: cid } });
 };
 
+module.exports.moveStage = async (id, payload = {}, opts = {}) => {
+  if (!id) throw new Error('id is required');
+  const cid = requireCompanyId(opts.companyId || opts.user?.companyId);
+  const stageId = payload.stageId || null;
+  if (!stageId) throw new Error('stageId is required');
+
+  const item = await Deal.findOne({ where: { id, companyId: cid } });
+  if (!item) return null;
+
+  const stage = await getStageInCompany(stageId, cid, item.pipelineId || null);
+  if (item.pipelineId && String(stage.pipelineId) !== String(item.pipelineId)) {
+    const err = new Error('stage does not belong to deal pipeline');
+    err.status = 400;
+    throw err;
+  }
+
+  let nextStatus;
+  if (stage.isWon) {
+    nextStatus = 'won';
+  } else if (stage.isLost) {
+    nextStatus = 'lost';
+  } else if (item.status === 'new' && stage.isDefaultEntry) {
+    nextStatus = 'new';
+  } else {
+    nextStatus = 'in_progress';
+  }
+
+  await item.update({
+    pipelineId: item.pipelineId || stage.pipelineId,
+    stageId: stage.id,
+    stageEnteredAt: new Date(),
+    status: nextStatus,
+  });
+
+  return module.exports.getById(id, { companyId: cid });
+};
