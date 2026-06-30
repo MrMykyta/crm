@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -11,51 +11,40 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronRight, GripVertical, LayoutGrid, List, Plus, Trash2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  CalendarClock,
+  Check,
+  ChevronRight,
+  Circle,
+  GripVertical,
+  Plus,
+  Search,
+  Settings,
+  Trash2,
+  X,
+} from 'lucide-react';
 
-import {
-  Workspace,
-  useWorkspaceData,
-} from '../../../../components/workspace';
-import LinkCell from '../../../../components/cells/LinkCell';
-import AddButton from '../../../../components/buttons/AddButton/AddButton';
+import Modal from '../../../../components/Modal';
 import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
-import {
-  DateField,
-  SearchField,
-  SelectField,
-} from '../../../../components/ui/fields';
-import useGridPrefs from '../../../../hooks/useGridPrefs';
+import { SearchField, SelectField } from '../../../../components/ui/fields';
+import PipelinePath from '../../../../components/deals/PipelinePath';
 import useCompanyMembersOptions from '../../../../hooks/useCompanyMembersOptions';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
-import PipelinePath from '../../../../components/deals/PipelinePath';
 
 import {
   useDeleteDealMutation,
-  useGetDealsQuery,
+  useGetDealsBoardQuery,
+  useGetLostReasonsQuery,
   useGetPipelinesQuery,
-  useMarkWonMutation,
   useMarkLostMutation,
+  useMarkWonMutation,
   useMoveDealStageMutation,
 } from '../../../../store/rtk/dealsApi';
 
 import s from './DealsListPage.module.css';
 
-// buildStatusLabels: собирает итоговую структуру данных в рамках UI-компонента.
-const buildStatusLabels = (t) => ({
-  new: t('deals.status.new', 'New'),
-  in_progress: t('deals.status.inProgress', 'In progress'),
-  won: t('deals.status.won', 'Won'),
-  lost: t('deals.status.lost', 'Lost'),
-});
-
-const sanitizeDealsQuery = (query = {}) => Object.fromEntries(
-  Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== '')
-);
-
-const DEALS_VIEW_STORAGE_KEY = 'crm.deals.viewMode';
-const DEALS_BOARD_PIPELINE_STORAGE_KEY = 'crm.deals.board.pipelineId';
-const BOARD_PAGE_LIMIT = 200;
+const SALES_PIPELINE_STORAGE_KEY = 'crm.deals.pipeline.workspace.pipelineId';
 
 function readStorage(key, fallback = '') {
   try {
@@ -70,26 +59,36 @@ function writeStorage(key, value) {
     if (value) window.localStorage.setItem(key, value);
     else window.localStorage.removeItem(key);
   } catch {
-    // localStorage can be unavailable in restricted browser contexts.
+    // localStorage may be unavailable in restricted contexts.
   }
 }
 
-function getStageOrder(stage = {}) {
-  const raw = stage.order ?? stage.position ?? 0;
+function compact(obj = {}) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, value]) => value !== undefined && value !== null && value !== '')
+  );
+}
+
+function getOrder(item = {}, fallback = 0) {
+  const raw = item.order ?? item.position ?? fallback;
   const num = Number(raw);
-  return Number.isFinite(num) ? num : 0;
+  return Number.isFinite(num) ? num : fallback;
 }
 
 function normalizePipelines(pipelines = []) {
   return (Array.isArray(pipelines) ? pipelines : [])
     .map((pipeline, pipelineIndex) => ({
       ...pipeline,
-      order: Number.isFinite(Number(pipeline.order)) ? Number(pipeline.order) : pipelineIndex,
+      order: getOrder(pipeline, pipelineIndex),
       stages: (Array.isArray(pipeline.stages) ? pipeline.stages : [])
         .slice()
-        .sort((left, right) => getStageOrder(left) - getStageOrder(right)),
+        .sort((left, right) => getOrder(left) - getOrder(right)),
     }))
-    .sort((left, right) => Number(left.order || 0) - Number(right.order || 0));
+    .sort((left, right) => getOrder(left) - getOrder(right));
+}
+
+function getVisibleStages(stages = []) {
+  return stages.filter((stage) => !stage.hidden && !stage.archived);
 }
 
 function pickDefaultPipeline(pipelines = []) {
@@ -99,228 +98,284 @@ function pickDefaultPipeline(pipelines = []) {
     || null;
 }
 
-function getVisibleStages(pipeline) {
-  return (pipeline?.stages || [])
-    .filter((stage) => !stage.hidden && !stage.archived)
-    .sort((left, right) => getStageOrder(left) - getStageOrder(right));
-}
-
-function getCounterpartyName(deal = {}) {
-  return deal.counterparty?.fullName
-    || deal.counterparty?.shortName
-    || deal.counterparty?.name
-    || '';
-}
-
-function getOwnerName(deal = {}) {
-  const user = deal.responsible || deal.owner;
-  if (!user) return '';
-  return [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || '';
-}
-
-function getEffectiveProbability(deal = {}, stage = {}) {
-  const raw = deal.probability ?? deal.effectiveProbability ?? stage?.probability ?? 0;
-  const num = Number(raw);
-  if (!Number.isFinite(num)) return 0;
-  return Math.max(0, Math.min(100, num));
-}
-
-function summarizeDeals(deals = [], stageById = new Map()) {
-  const byCurrency = new Map();
-  for (const deal of deals) {
-    const rawValue = Number(deal.value);
-    if (!Number.isFinite(rawValue)) continue;
-    const currency = deal.currency || 'PLN';
-    const stage = stageById.get(String(deal.stageId || deal.stage?.id || ''));
-    const probability = getEffectiveProbability(deal, stage);
-    const current = byCurrency.get(currency) || { value: 0, forecast: 0 };
-    current.value += rawValue;
-    current.forecast += rawValue * (probability / 100);
-    byCurrency.set(currency, current);
-  }
-  return byCurrency;
-}
-
-function buildStageAggregates(deals = [], stages = []) {
-  const initial = (Array.isArray(stages) ? stages : []).reduce((acc, stage) => {
-    if (stage?.id) acc[String(stage.id)] = { count: 0, totals: {} };
-    return acc;
-  }, {});
-  return (Array.isArray(deals) ? deals : []).reduce((acc, deal) => {
-    const stageId = String(deal.stageId || deal.stage?.id || '');
-    if (!stageId) return acc;
-    const current = acc[stageId] || { count: 0, totals: {} };
-    current.count += 1;
-    const rawValue = Number(deal.value);
-    if (Number.isFinite(rawValue) && rawValue > 0) {
-      const currency = deal.currency || 'PLN';
-      current.totals[currency] = (current.totals[currency] || 0) + rawValue;
-    }
-    acc[stageId] = current;
-    return acc;
-  }, initial);
-}
-
-function formatMoneySummary(summary, noneLabel = '—') {
-  const entries = [...summary.entries()].filter(([, totals]) => totals.value || totals.forecast);
-  if (!entries.length) return noneLabel;
+function formatMoneyMap(map = {}, none = '—') {
+  const entries = Object.entries(map || {}).filter(([, value]) => Number(value) > 0);
+  if (!entries.length) return none;
   return entries
-    .map(([currency, totals]) => `${Number(totals.value || 0).toLocaleString()} ${currency}`)
+    .map(([currency, value]) => `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency}`)
     .join(' + ');
 }
 
-function formatForecastSummary(summary, noneLabel = '—') {
-  const entries = [...summary.entries()].filter(([, totals]) => totals.forecast);
-  if (!entries.length) return noneLabel;
-  return entries
-    .map(([currency, totals]) => `${Number(totals.forecast || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency}`)
-    .join(' + ');
-}
-
-// buildStatusOptions: собирает итоговую структуру данных в рамках UI-компонента.
-const buildStatusOptions = (t, labels, includeAll = false) => {
-  const options = [
-    { value: 'new', label: labels.new },
-    { value: 'in_progress', label: labels.in_progress },
-    { value: 'won', label: labels.won },
-    { value: 'lost', label: labels.lost },
-  ];
-  if (!includeAll) return options;
-  return [
-    { value: '', label: t('deals.filters.allStatuses', 'All statuses') },
-    ...options,
-  ];
-};
-
-// formatMoney: форматирует данные для отображения.
-function formatMoney(value, currency, noneLabel = '—') {
-  if (value === null || value === undefined || value === '') return noneLabel;
+function formatMoney(value, currency = 'PLN', none = '—') {
+  if (value === null || value === undefined || value === '') return none;
   const num = Number(value);
-  if (Number.isNaN(num)) return `${value} ${currency || ''}`.trim();
-  const cur = currency || 'PLN';
-  return `${num.toLocaleString()} ${cur}`;
+  if (!Number.isFinite(num)) return `${value} ${currency || ''}`.trim();
+  return `${num.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency || 'PLN'}`;
 }
 
-function ViewSwitch({ value, onChange, t }) {
+function formatDateTime(value, none = '—') {
+  if (!value) return none;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return none;
+  return date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function getHealthTone(healthStatus) {
+  const value = String(healthStatus || '').toLowerCase();
+  if (value.includes('healthy')) return 'healthy';
+  if (value.includes('waiting')) return 'waiting';
+  if (value.includes('risk')) return 'risk';
+  if (value.includes('stale')) return 'stale';
+  if (value.includes('won')) return 'won';
+  if (value.includes('lost')) return 'lost';
+  return 'unknown';
+}
+
+function isClosedDeal(deal = {}, stage = {}) {
+  return stage.isWon || stage.isLost || deal.status === 'won' || deal.status === 'lost';
+}
+
+function getOwnerLabel(deal = {}, t) {
+  return deal.ownerName || deal.responsible?.email || t('deals.workspace.unassigned', '—');
+}
+
+function getStageAge(deal = {}, t) {
+  const days = Number(deal.daysInStage);
+  if (!Number.isFinite(days)) return t('deals.workspace.newInStage', 'New in stage');
+  return t('deals.workspace.daysInStage', '{{count}}d in stage', { count: days });
+}
+
+function getNextActionMeta(deal = {}, stage = {}, t) {
+  const closed = isClosedDeal(deal, stage);
+  if (!deal.nextActionAt) {
+    return {
+      missing: !closed,
+      label: closed ? '' : t('deals.workspace.noNextAction', 'No next action'),
+    };
+  }
+  const type = deal.nextActionType ? t(`deals.workspace.nextActionTypes.${deal.nextActionType}`, deal.nextActionType) : '';
+  const due = formatDateTime(deal.nextActionAt);
+  return {
+    missing: false,
+    overdue: new Date(deal.nextActionAt).getTime() < Date.now() && !closed,
+    label: type ? `${type} · ${due}` : due,
+  };
+}
+
+function flattenBoardStages(stages = []) {
+  return stages.flatMap((stage) => (stage.deals || []).map((deal) => ({ ...deal, stage })));
+}
+
+function buildAttention(stages = [], t) {
+  const items = [];
+  const now = Date.now();
+  stages.forEach((stage) => {
+    (stage.deals || []).forEach((deal) => {
+      if (isClosedDeal(deal, stage)) return;
+      const title = deal.title || t('deals.details.untitled', 'Untitled deal');
+      if (!deal.nextActionAt) {
+        items.push({ key: `${deal.id}-missing`, deal, stage, tone: 'danger', label: t('deals.workspace.noNextAction', 'No next action'), title });
+        return;
+      }
+      const due = new Date(deal.nextActionAt).getTime();
+      if (Number.isFinite(due) && due < now) {
+        items.push({ key: `${deal.id}-overdue`, deal, stage, tone: 'warning', label: t('deals.workspace.overdueNextAction', 'Overdue next action'), title });
+      }
+      const health = String(deal.healthStatus || '').toLowerCase();
+      if (health.includes('risk') || health.includes('stale') || deal.staleByRotDays) {
+        items.push({ key: `${deal.id}-health`, deal, stage, tone: 'warning', label: t('deals.workspace.needsAttention', 'Needs attention'), title });
+      }
+    });
+  });
+  return items.slice(0, 8);
+}
+
+function WorkspaceShell({
+  title,
+  subtitle,
+  badge,
+  actions,
+  controls,
+  controlsAria,
+  children,
+}) {
   return (
-    <div className={s.viewSwitch} role="group" aria-label={t('deals.view.label', 'View')}>
-      <button
-        type="button"
-        className={`${s.viewButton} ${value === 'list' ? s.viewButtonActive : ''}`}
-        onClick={() => onChange('list')}
-        aria-pressed={value === 'list'}
-      >
-        <List size={15} aria-hidden="true" />
-        <span>{t('deals.view.list', 'Список')}</span>
-      </button>
-      <button
-        type="button"
-        className={`${s.viewButton} ${value === 'board' ? s.viewButtonActive : ''}`}
-        onClick={() => onChange('board')}
-        aria-pressed={value === 'board'}
-      >
-        <LayoutGrid size={15} aria-hidden="true" />
-        <span>{t('deals.view.board', 'Доска')}</span>
-      </button>
+    <div className={s.workspace}>
+      <header className={s.workspaceTopbar}>
+        <div className={s.headerMain}>
+          <h1>{title}</h1>
+          <div className={s.subtitleRow}>
+            {subtitle ? <p>{subtitle}</p> : null}
+            {badge ? <span className={s.countText}>{badge}</span> : null}
+          </div>
+        </div>
+        {actions ? <div className={s.actions}>{actions}</div> : null}
+      </header>
+      <section className={s.controls} aria-label={controlsAria}>
+        {controls}
+      </section>
+      <main className={s.content}>
+        {children}
+      </main>
     </div>
   );
 }
 
-function DealCard({
-  deal,
-  stage,
-  statusLabels,
-  onOpen,
-  onDelete,
-  canDelete,
-  deleting,
-  t,
-}) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: deal.id,
-    data: {
-      dealId: deal.id,
-      sourceStageId: deal.stageId || deal.stage?.id || '',
+function FilterBox({ icon, label, kind, children }) {
+  const className = kind === 'search' ? s.searchBox : kind === 'quick' ? s.quickBox : s.filterBox;
+  return (
+    <div className={className}>
+      {icon}
+      <div>
+        {label ? <span className={s.controlLabel}>{label}</span> : null}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function HealthChip({ status, t }) {
+  if (!status) return null;
+  const tone = getHealthTone(status);
+  return (
+    <span className={`${s.healthDot} ${s[`health_${tone}`] || ''}`} title={status}>
+      <Circle size={9} aria-hidden="true" fill="currentColor" />
+      <span>{t(`deals.workspace.health.${tone}`, status)}</span>
+    </span>
+  );
+}
+
+function NextActionChip({ deal, stage, t }) {
+  const meta = getNextActionMeta(deal, stage, t);
+  if (!meta.label) return null;
+  return (
+    <span className={`${s.nextActionChip} ${meta.missing ? s.nextActionMissing : ''} ${meta.overdue ? s.nextActionOverdue : ''}`}>
+      <CalendarClock size={13} aria-hidden="true" />
+      <span>{meta.label}</span>
+    </span>
+  );
+}
+
+function DealSignals({ deal, stage, t }) {
+  return (
+    <div className={s.signals}>
+      <HealthChip status={deal.healthStatus} t={t} />
+      <NextActionChip deal={deal} stage={stage} t={t} />
+      {deal.staleByRotDays ? (
+        <span className={s.rotWarning}>
+          <AlertTriangle size={13} aria-hidden="true" />
+          <span>{t('deals.workspace.rotWarning', 'Rotting')}</span>
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function SalesPipelineLine({ stages, activeStageId, onStageClick, t }) {
+  const aggregates = useMemo(() => Object.fromEntries(stages.map((stage) => [
+    String(stage.id),
+    {
+      count: Number(stage.count || 0),
+      totals: stage.sum || {},
+      weighted: stage.weighted || {},
     },
-  });
-  const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
-  const ownerName = getOwnerName(deal);
-  const probability = getEffectiveProbability(deal, stage);
-  const priority = deal.priority || deal.priorityLabel || deal.priorityValue || '';
+  ])), [stages]);
+
+  return (
+    <PipelinePath
+      stages={stages}
+      currentStageId={activeStageId}
+      aggregates={aggregates}
+      onSelect={onStageClick}
+      ariaLabel={t('deals.workspace.pipelineLine', 'Pipeline line')}
+      wonLabel={t('deals.actions.won', 'Won')}
+      lostLabel={t('deals.actions.lost', 'Lost')}
+    />
+  );
+}
+
+function StageMoveSelect({ deal, stages, currentStage, onMove, t }) {
+  return (
+    <select
+      className={s.stageMoveSelect}
+      value={currentStage?.id || deal.stageId || ''}
+      aria-label={t('deals.workspace.moveStage', 'Move stage')}
+      onChange={(event) => {
+        const target = stages.find((stage) => String(stage.id) === String(event.target.value));
+        if (target && String(target.id) !== String(currentStage?.id || deal.stageId || '')) onMove(deal, target);
+      }}
+    >
+      {stages.map((stage) => (
+        <option key={stage.id} value={stage.id}>{stage.name}</option>
+      ))}
+    </select>
+  );
+}
+
+function PipelineDealCard({ deal, stage, onOpen, onWon, onLost, onDelete, canDelete, t }) {
+  const priority = Number.isFinite(Number(deal.priority)) ? Number(deal.priority) : null;
+  const title = deal.title || t('deals.details.untitled', 'Untitled deal');
+  const wonLabel = t('deals.actions.won', 'Won');
+  const lostLabel = t('deals.actions.lost', 'Lost');
+  const deleteLabel = t('deals.workspace.deleteAction', 'Delete');
+
+  const handleCardClick = useCallback((event) => {
+    if (event.target.closest('button')) return;
+    onOpen(deal.id);
+  }, [deal.id, onOpen]);
+
+  const handleCardKeyDown = useCallback((event) => {
+    if (event.target.closest('button')) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onOpen(deal.id);
+    }
+  }, [deal.id, onOpen]);
 
   return (
     <article
-      ref={setNodeRef}
-      style={style}
-      className={`${s.dealCard} ${isDragging ? s.dealCardDragging : ''}`}
-      onClick={() => onOpen(deal.id)}
+      className={s.pipelineDealCard}
+      style={{ '--stage-color': stage.color || '#64748b' }}
       tabIndex={0}
-      role="button"
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onOpen(deal.id);
-        }
-      }}
-      {...attributes}
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+      aria-label={title}
     >
-      <div className={s.cardColorStrip} style={{ background: stage?.color || 'var(--accent)' }} />
-      <div className={s.cardHeader}>
-        <button
-          type="button"
-          className={s.dragHandle}
-          aria-label={t('deals.board.dragDeal', 'Drag deal')}
-          title={t('deals.board.dragDeal', 'Drag deal')}
-          onClick={(event) => event.stopPropagation()}
-          {...listeners}
-        >
-          <GripVertical size={15} aria-hidden="true" />
+      <div className={s.pipelineDealIdentity}>
+        <button type="button" className={s.pipelineDealMain} onClick={() => onOpen(deal.id)}>
+          <strong>{title}</strong>
         </button>
-        <div className={s.cardTitleBlock}>
-          <h3 className={s.cardTitle}>{deal.title || t('deals.details.untitled', 'Untitled deal')}</h3>
-          {getCounterpartyName(deal) ? <p className={s.cardCounterparty}>{getCounterpartyName(deal)}</p> : null}
+
+        <div className={s.pipelineDealAccount}>
+          <span>{deal.counterpartyName || t('deals.workspace.noCompany', '—')}</span>
+          {deal.contactName ? <small>{deal.contactName}</small> : null}
         </div>
       </div>
 
-      <div className={s.cardMeta}>
-        <span className={s.cardAmount}>{formatMoney(deal.value, deal.currency, t('common.none', '—'))}</span>
-        <span className={s.cardProbability}>{probability}%</span>
+      <span className={s.pipelineDealAmount}>{formatMoney(deal.value, deal.currency)}</span>
+
+      <DealSignals deal={deal} stage={stage} t={t} />
+
+      <div className={s.pipelineDealFooter}>
+        <span>{getOwnerLabel(deal, t)}</span>
+        <span>{getStageAge(deal, t)}</span>
+        {priority !== null ? <span className={s.priorityChip}>{t('deals.workspace.priorityShort', 'P{{value}}', { value: priority })}</span> : null}
       </div>
 
-      <div className={s.cardChips}>
-        {deal.status === 'won' || deal.status === 'lost' ? (
-          <span className={`${s.statusChip} ${s[`status_${deal.status}`] || ''}`}>
-            {statusLabels[deal.status] || deal.status}
-          </span>
+      <div className={s.pipelineDealActions}>
+        {!stage.isWon ? (
+          <button type="button" onClick={() => onWon(deal)} aria-label={wonLabel} title={wonLabel}>
+            <Check size={13} aria-hidden="true" />
+          </button>
         ) : null}
-        {priority ? <span className={s.priorityChip}>{priority}</span> : null}
-        {ownerName ? <span className={s.ownerChip}>{ownerName}</span> : null}
-      </div>
-
-      <div className={s.cardActions}>
-        <button
-          type="button"
-          className={s.cardAction}
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpen(deal.id);
-          }}
-        >
-          {t('deals.actions.open', 'Open')}
-          <ChevronRight size={14} aria-hidden="true" />
-        </button>
+        {!stage.isLost ? (
+          <button type="button" onClick={() => onLost(deal)} aria-label={lostLabel} title={lostLabel}>
+            <X size={13} aria-hidden="true" />
+          </button>
+        ) : null}
         {canDelete ? (
-          <button
-            type="button"
-            className={s.cardDanger}
-            disabled={deleting}
-            onClick={(event) => {
-              event.stopPropagation();
-              onDelete(deal);
-            }}
-            title={t('common.delete', 'Удалить')}
-          >
-            <Trash2 size={14} aria-hidden="true" />
+          <button type="button" onClick={() => onDelete(deal)} aria-label={deleteLabel} title={deleteLabel}>
+            <Trash2 size={13} aria-hidden="true" />
           </button>
         ) : null}
       </div>
@@ -328,63 +383,262 @@ function DealCard({
   );
 }
 
-function KanbanColumn({
-  stage,
-  deals,
-  stageById,
-  statusLabels,
-  canDelete,
-  deleting,
-  onOpen,
-  onDelete,
+function PipelineStageColumns({
+  stages,
+  activeStageId,
   onCreate,
+  onOpen,
+  onWon,
+  onLost,
+  onDelete,
+  canDelete,
   t,
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: stage.id });
-  const summary = summarizeDeals(deals, stageById);
+  const [collapsedStageIds, setCollapsedStageIds] = useState(() => new Set());
+
+  const toggleStage = useCallback((stageId) => {
+    setCollapsedStageIds((current) => {
+      const next = new Set(current);
+      const key = String(stageId);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
   return (
+    <div className={s.pipelineColumns} aria-label={t('deals.workspace.pipelineColumns', 'Pipeline stage sections')}>
+      {stages.map((stage) => {
+        const active = String(activeStageId || '') === String(stage.id);
+        const terminalClass = stage.isWon ? s.pipelineColumnWon : stage.isLost ? s.pipelineColumnLost : '';
+        const deals = Array.isArray(stage.deals) ? stage.deals : [];
+        const collapsed = collapsedStageIds.has(String(stage.id));
+        return (
+          <section
+            key={stage.id}
+            className={`${s.pipelineStageColumn} ${active ? s.pipelineStageColumnActive : ''} ${terminalClass}`}
+            style={{ '--stage-color': stage.color || '#64748b' }}
+            data-stage-section={stage.id}
+            tabIndex={-1}
+            aria-label={stage.name}
+          >
+            <div className={s.pipelineColumnRail} style={{ background: stage.color || '#64748b' }} />
+            <div className={s.pipelineStageHeader}>
+              <button
+                type="button"
+                className={s.pipelineStageToggle}
+                onClick={() => toggleStage(stage.id)}
+                aria-expanded={!collapsed}
+                aria-label={stage.name}
+                title={stage.name}
+              >
+                <ChevronRight size={14} aria-hidden="true" />
+                <span className={s.stageSwatch} style={{ background: stage.color || '#64748b' }} />
+                <strong>{stage.name}</strong>
+              </button>
+              <div className={s.pipelineStageStats}>
+                <span>{t('deals.workspace.dealCount', '{{count}} deals', { count: Number(stage.count || 0) })}</span>
+                <strong>{formatMoneyMap(stage.sum)}</strong>
+              </div>
+              <button type="button" className={s.pipelineStageAdd} onClick={() => onCreate(stage.id)}>
+                <Plus size={14} aria-hidden="true" />
+                <span>{t('deals.workspace.addDealShort', 'Deal')}</span>
+              </button>
+            </div>
+            {!collapsed ? (
+              <div className={s.pipelineColumnCards}>
+                {deals.length ? deals.map((deal) => (
+                  <PipelineDealCard
+                    key={deal.id}
+                    deal={deal}
+                    stage={stage}
+                    onOpen={onOpen}
+                    onWon={onWon}
+                    onLost={onLost}
+                    onDelete={onDelete}
+                    canDelete={canDelete}
+                    t={t}
+                  />
+                )) : (
+                  <div className={s.pipelineColumnEmpty}>
+                    <span>{t('deals.workspace.noDealsInStage', 'No deals')}</span>
+                    <button type="button" onClick={() => onCreate(stage.id)}>
+                      <Plus size={14} aria-hidden="true" />
+                      <span>{t('deals.workspace.addDealShort', 'Deal')}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function PipelineWorkspace({
+  stages,
+  activeStageId,
+  onStageClick,
+  onCreate,
+  onOpen,
+  onWon,
+  onLost,
+  onDelete,
+  canDelete,
+  t,
+}) {
+  const stageCount = Math.max(stages.length, 1);
+  const canvasMinWidth = stageCount * 205;
+  return (
     <section
-      ref={setNodeRef}
-      className={`${s.boardColumn} ${isOver ? s.boardColumnOver : ''}`}
-      aria-label={stage.name}
+      className={s.pipelineStageWorkspace}
+      style={{
+        '--stage-count': stageCount,
+        '--stage-canvas-min': `${canvasMinWidth}px`,
+      }}
     >
+      <div className={s.pipelineStageScroller}>
+        <div className={s.pipelineStageCanvas}>
+          <SalesPipelineLine stages={stages} activeStageId={activeStageId} onStageClick={onStageClick} t={t} />
+          <PipelineStageColumns
+            stages={stages}
+            activeStageId={activeStageId}
+            onCreate={onCreate}
+            onOpen={onOpen}
+            onWon={onWon}
+            onLost={onLost}
+            onDelete={onDelete}
+            canDelete={canDelete}
+            t={t}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AttentionBand({ items, onOpen, t }) {
+  if (!items.length) return null;
+  const visibleItems = items.slice(0, 3);
+  const hiddenCount = items.length - visibleItems.length;
+  return (
+    <section className={s.attentionBand} aria-label={t('deals.workspace.attentionTitle', 'Needs attention')}>
+      <div className={s.attentionTitle}>
+        <AlertTriangle size={15} aria-hidden="true" />
+        <strong>{t('deals.workspace.attentionTitle', 'Needs attention')}</strong>
+      </div>
+      <div className={s.attentionItems}>
+        {visibleItems.map((item) => (
+          <button key={item.key} type="button" className={s.attentionItem} onClick={() => onOpen(item.deal.id)}>
+            <span>{item.label}</span>
+            <strong>{item.title}</strong>
+            <small>{item.stage.name}</small>
+          </button>
+        ))}
+        {hiddenCount > 0 ? <span className={s.attentionMore}>+{hiddenCount}</span> : null}
+      </div>
+    </section>
+  );
+}
+
+function DealBoardCard({ deal, stage, onOpen, onWon, onLost, t }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: deal.id,
+    data: { dealId: deal.id, sourceStageId: deal.stageId },
+  });
+  const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
+  const priority = Number.isFinite(Number(deal.priority)) ? Number(deal.priority) : null;
+
+  return (
+    <article
+      ref={setNodeRef}
+      style={style}
+      className={`${s.boardCard} ${isDragging ? s.cardDragging : ''}`}
+      onDoubleClick={() => onOpen(deal.id)}
+    >
+      <div className={s.cardStrip} style={{ background: stage.color || '#64748b' }} />
+      <div className={s.cardHead}>
+        <button type="button" className={s.dragButton} aria-label={t('deals.workspace.dragDeal', 'Drag deal')} title={t('deals.workspace.dragDeal', 'Drag deal')} {...attributes} {...listeners}>
+          <GripVertical size={15} aria-hidden="true" />
+        </button>
+        <button type="button" className={s.cardTitleButton} onClick={() => onOpen(deal.id)}>
+          <strong>{deal.title || t('deals.details.untitled', 'Untitled deal')}</strong>
+          <ChevronRight size={14} aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className={s.cardAccount}>
+        <span>{deal.counterpartyName || t('deals.workspace.noCompany', '—')}</span>
+        {deal.contactName ? <small>{deal.contactName}</small> : null}
+      </div>
+
+      <div className={s.cardValueRow}>
+        <span>{formatMoney(deal.value, deal.currency)}</span>
+        <span>{deal.probability || 0}%</span>
+      </div>
+
+      <DealSignals deal={deal} stage={stage} t={t} />
+
+      <div className={s.cardFooter}>
+        <span>{getOwnerLabel(deal, t)}</span>
+        <span>{getStageAge(deal, t)}</span>
+        {priority !== null ? <span className={s.priorityChip}>{t('deals.workspace.priorityShort', 'P{{value}}', { value: priority })}</span> : null}
+      </div>
+
+      <div className={s.cardActions}>
+        {!stage.isWon ? <button type="button" onClick={() => onWon(deal)}>{t('deals.actions.won', 'Won')}</button> : null}
+        {!stage.isLost ? <button type="button" className={s.dangerLink} onClick={() => onLost(deal)}>{t('deals.actions.lost', 'Lost')}</button> : null}
+      </div>
+    </article>
+  );
+}
+
+function BoardColumn({ stage, onOpen, onCreate, onWon, onLost, t }) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage.id });
+  const count = Number(stage.count || 0);
+  const wipLimit = Number(stage.wipLimit);
+  const wipWarning = Number.isFinite(wipLimit) && wipLimit > 0 && count > wipLimit;
+  const terminalClass = stage.isWon ? s.columnWon : stage.isLost ? s.columnLost : '';
+
+  return (
+    <section ref={setNodeRef} className={`${s.boardColumn} ${terminalClass} ${isOver ? s.columnOver : ''}`}>
       <header className={s.columnHeader}>
-        <div className={s.columnTitleRow}>
-          <span className={s.stageColor} style={{ background: stage.color || 'var(--accent)' }} />
+        <div className={s.columnTitle}>
+          <span className={s.stageSwatch} style={{ background: stage.color || '#64748b' }} />
           <h2>{stage.name}</h2>
-          {stage.isWon || stage.isLost ? (
-            <span className={s.terminalBadge}>
-              {stage.isWon ? t('deals.board.wonColumn', 'Won') : t('deals.board.lostColumn', 'Lost')}
-            </span>
-          ) : null}
+          {stage.isWon ? <span className={s.terminalBadge}>{t('deals.actions.won', 'Won')}</span> : null}
+          {stage.isLost ? <span className={s.terminalBadge}>{t('deals.actions.lost', 'Lost')}</span> : null}
         </div>
         <div className={s.columnStats}>
-          <span>{t('deals.board.count', { count: deals.length, defaultValue: `${deals.length} deals` })}</span>
-          <span>{formatMoneySummary(summary)}</span>
-          <span>{t('deals.board.forecastShort', { value: formatForecastSummary(summary), defaultValue: `Forecast ${formatForecastSummary(summary)}` })}</span>
+          <span>{t('deals.workspace.dealCount', '{{count}} deals', { count })}</span>
+          <span>{formatMoneyMap(stage.sum)}</span>
+          <span>{t('deals.workspace.weightedValue', 'Weighted {{value}}', { value: formatMoneyMap(stage.weighted) })}</span>
+        </div>
+        <div className={s.columnWarnings}>
+          {wipWarning ? <span><AlertTriangle size={13} aria-hidden="true" /> {t('deals.workspace.wipWarning', 'WIP {{count}}/{{limit}}', { count, limit: wipLimit })}</span> : null}
+          {stage.rotDays ? <span>{t('deals.workspace.rotDays', 'Rot {{count}}d', { count: stage.rotDays })}</span> : null}
         </div>
       </header>
 
-      <div className={s.columnCards}>
-        {deals.length ? deals.map((deal) => (
-          <DealCard
+      <div className={s.columnBody}>
+        {Array.isArray(stage.deals) && stage.deals.length ? stage.deals.map((deal) => (
+          <DealBoardCard
             key={deal.id}
             deal={deal}
             stage={stage}
-            statusLabels={statusLabels}
-            canDelete={canDelete}
-            deleting={deleting}
             onOpen={onOpen}
-            onDelete={onDelete}
+            onWon={onWon}
+            onLost={onLost}
             t={t}
           />
         )) : (
           <div className={s.emptyColumn}>
-            <p>{t('deals.board.emptyColumn', 'Нет сделок')}</p>
+            <p>{t('deals.workspace.noDealsInStage', 'No deals')}</p>
             <button type="button" onClick={() => onCreate(stage.id)}>
               <Plus size={14} aria-hidden="true" />
-              <span>{t('deals.board.createInStage', 'Создать сделку')}</span>
+              <span>{t('deals.workspace.addDeal', 'Add deal')}</span>
             </button>
           </div>
         )}
@@ -393,800 +647,494 @@ function KanbanColumn({
   );
 }
 
-// Компонент DealsListPage: отвечает за отображение UI и обработку взаимодействий пользователя.
+function BoardMode({ stages, sensors, onDragEnd, onOpen, onCreate, onWon, onLost, t }) {
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <div className={s.boardScroller}>
+        <div className={s.boardColumns}>
+          {stages.map((stage) => (
+            <BoardColumn
+              key={stage.id}
+              stage={stage}
+              onOpen={onOpen}
+              onCreate={onCreate}
+              onWon={onWon}
+              onLost={onLost}
+              t={t}
+            />
+          ))}
+        </div>
+      </div>
+    </DndContext>
+  );
+}
+
+function ListMode({ rows, stages, onOpen, onMove, onWon, onLost, onDelete, canDelete, t }) {
+  return (
+    <div className={s.listTable} role="table" aria-label={t('deals.title', 'Deals')}>
+      <div className={s.listHead} role="row">
+        <span>{t('deals.columns.title', 'Deal')}</span>
+        <span>{t('deals.columns.amount', 'Amount')}</span>
+        <span>{t('deals.fields.stage', 'Stage')}</span>
+        <span>{t('deals.columns.owner', 'Owner')}</span>
+        <span>{t('deals.workspace.signals', 'Signals')}</span>
+        <span>{t('deals.columns.actions', 'Actions')}</span>
+      </div>
+      {rows.length ? rows.map(({ stage, ...deal }) => (
+        <div key={deal.id} className={s.listRow} role="row">
+          <button type="button" className={s.listDealButton} onClick={() => onOpen(deal.id)}>
+            <strong>{deal.title || t('deals.details.untitled', 'Untitled deal')}</strong>
+            <small>{deal.counterpartyName || t('deals.workspace.noCompany', '—')}{deal.contactName ? ` · ${deal.contactName}` : ''}</small>
+          </button>
+          <span>{formatMoney(deal.value, deal.currency)}</span>
+          <span>{stage.name}</span>
+          <span>{getOwnerLabel(deal, t)}</span>
+          <DealSignals deal={deal} stage={stage} t={t} />
+          <div className={s.rowActions}>
+            <StageMoveSelect deal={deal} stages={stages} currentStage={stage} onMove={onMove} t={t} />
+            {!stage.isWon ? <button type="button" onClick={() => onWon(deal)}>{t('deals.actions.won', 'Won')}</button> : null}
+            {!stage.isLost ? <button type="button" className={s.dangerLink} onClick={() => onLost(deal)}>{t('deals.actions.lost', 'Lost')}</button> : null}
+            {canDelete ? <button type="button" className={s.dangerLink} onClick={() => onDelete(deal)}>{t('deals.workspace.deleteAction', 'Delete')}</button> : null}
+          </div>
+        </div>
+      )) : (
+        <div className={s.emptyStage}>
+          <span>{t('deals.workspace.noDeals', 'No deals')}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LostReasonModal({ open, deal, reasons, value, onValueChange, onConfirm, onCancel, loading, onConfigure, t }) {
+  const activeReasons = (reasons || []).filter((reason) => !reason.archived);
+  return (
+    <Modal
+      open={open}
+      title={t('deals.workspace.lostModalTitle', 'Mark deal as lost')}
+      onClose={loading ? undefined : onCancel}
+      footer={(
+        <>
+          <Modal.Button onClick={onCancel} disabled={loading}>{t('common.cancel', 'Cancel')}</Modal.Button>
+          <Modal.Button variant="primary" onClick={onConfirm} disabled={loading || !value} data-variant="danger">
+            {t('deals.workspace.markLost', 'Mark lost')}
+          </Modal.Button>
+        </>
+      )}
+    >
+      <div className={s.lostDialog}>
+        <p>{t('deals.workspace.lostModalText', '{{title}} needs a lost reason before moving to a lost stage.', { title: deal?.title || t('deals.details.untitled', 'Untitled deal') })}</p>
+        <SelectField
+          label={t('deals.workspace.lostReason', 'Lost reason')}
+          value={value || ''}
+          onValueChange={onValueChange}
+          options={activeReasons.map((reason) => ({ value: reason.id, label: reason.name }))}
+          placeholder={t('deals.workspace.selectLostReason', 'Select reason')}
+          searchable
+        />
+        {!activeReasons.length ? (
+          <div className={s.lostEmpty}>
+            <span>{t('deals.workspace.noLostReasons', 'No active lost reasons configured.')}</span>
+            <button type="button" onClick={onConfigure}>{t('deals.workspace.configurePipeline', 'Configure Pipeline')}</button>
+          </div>
+        ) : null}
+      </div>
+    </Modal>
+  );
+}
+
 export default function DealsListPage() {
-  const listRef = useRef(null);
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const {
-    colWidths,
-    colOrder,
-    colVisibility,
-    onColumnResize,
-    onColumnOrderChange,
-    onColumnVisibilityChange,
-  } = useGridPrefs('crm.deals');
-
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [viewMode, setViewModeState] = useState(() => {
-    const saved = readStorage(DEALS_VIEW_STORAGE_KEY, 'list');
-    return saved === 'board' ? 'board' : 'list';
+  const view = 'pipeline';
+  const [selectedPipelineId, setSelectedPipelineId] = useState(() => readStorage(SALES_PIPELINE_STORAGE_KEY, ''));
+  const [filters, setFilters] = useState({
+    q: '',
+    responsibleId: '',
+    healthStatus: '',
+    nextAction: '',
   });
-  const [boardPipelineId, setBoardPipelineId] = useState(() => readStorage(DEALS_BOARD_PIPELINE_STORAGE_KEY, ''));
+  const [activeStageId, setActiveStageId] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [lostTarget, setLostTarget] = useState(null);
+  const [lostReasonId, setLostReasonId] = useState('');
   const [boardError, setBoardError] = useState('');
-  const [stageOverrides, setStageOverrides] = useState({});
-  const [deleteDeal, { isLoading: deleting }] = useDeleteDealMutation();
-  const [markWon] = useMarkWonMutation();
-  const [markLost] = useMarkLostMutation();
-  const [moveDealStage] = useMoveDealStageMutation();
-  const { data: pipelinesData = [] } = useGetPipelinesQuery();
+
   const { can } = useAclPermissions();
   const canDeleteDeal = can('deal:delete');
   const { options: ownerOptions } = useCompanyMembersOptions();
-  const statusLabels = useMemo(() => buildStatusLabels(t), [t]);
-  const statusOptions = useMemo(
-    () => buildStatusOptions(t, statusLabels, true),
-    [t, statusLabels]
-  );
+  const { data: pipelinesData = [] } = useGetPipelinesQuery();
+  const { data: lostReasons = [] } = useGetLostReasonsQuery();
   const pipelines = useMemo(() => normalizePipelines(pipelinesData), [pipelinesData]);
-  const activePipelines = useMemo(
-    () => pipelines.filter((pipeline) => !pipeline.archived),
-    [pipelines]
-  );
-  const defaultPipeline = useMemo(() => pickDefaultPipeline(pipelines), [pipelines]);
-  const selectedBoardPipeline = useMemo(() => {
-    const stored = activePipelines.find((pipeline) => String(pipeline.id) === String(boardPipelineId || ''));
-    return stored || defaultPipeline || null;
-  }, [activePipelines, boardPipelineId, defaultPipeline]);
-  const selectedBoardPipelineId = selectedBoardPipeline?.id || '';
-  const visibleBoardStages = useMemo(
-    () => getVisibleStages(selectedBoardPipeline),
-    [selectedBoardPipeline]
-  );
-  const stageById = useMemo(() => {
-    const map = new Map();
-    for (const pipeline of pipelines) {
-      for (const stage of pipeline.stages || []) map.set(String(stage.id), stage);
-    }
-    return map;
-  }, [pipelines]);
-  const pipelineOptions = useMemo(() => [
-    { value: '', label: t('deals.filters.allPipelines', 'All pipelines') },
-    ...pipelines.map((pipeline) => ({ value: pipeline.id, label: pipeline.name || pipeline.id })),
-  ], [pipelines, t]);
-  const boardPipelineOptions = useMemo(() => (
+  const activePipelines = useMemo(() => pipelines.filter((pipeline) => !pipeline.archived), [pipelines]);
+  const defaultPipeline = useMemo(() => pickDefaultPipeline(activePipelines), [activePipelines]);
+  const selectedPipeline = useMemo(() => (
+    activePipelines.find((pipeline) => String(pipeline.id) === String(selectedPipelineId || ''))
+    || defaultPipeline
+    || null
+  ), [activePipelines, defaultPipeline, selectedPipelineId]);
+  const effectivePipelineId = selectedPipeline?.id || '';
+  const pipelineOptions = useMemo(() => (
     activePipelines.map((pipeline) => ({ value: pipeline.id, label: pipeline.name || pipeline.id }))
   ), [activePipelines]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
-  );
-
-  const setViewMode = useCallback((next) => {
-    const normalized = next === 'board' ? 'board' : 'list';
-    setViewModeState(normalized);
-    writeStorage(DEALS_VIEW_STORAGE_KEY, normalized);
-  }, []);
-
-  const openDetail = useCallback((id) => {
-    navigate(`/main/deals/${id}`);
-  }, [navigate]);
-
-  const columns = useMemo(() => ([
-    {
-      key: 'title',
-      title: t('deals.columns.title', 'Deal'),
-      sortable: true,
-      width: 320,
-            // render: описывает рендер соответствующего блока UI.
-render: (r) => (
-        <LinkCell
-          primary={r.title}
-          secondary={r.counterparty?.fullName || r.counterparty?.shortName || undefined}
-          onClick={() => openDetail(r.id)}
-          ariaLabel={t('deals.aria.openDeal', {
-            title: r.title || r.id,
-            defaultValue: `Open deal ${r.title || r.id}`,
-          })}
-        />
-      ),
-    },
-    {
-      key: 'value',
-      title: t('deals.columns.amount', 'Amount'),
-      sortable: true,
-      width: 160,
-            // render: описывает рендер соответствующего блока UI.
-render: (r) => formatMoney(r.value, r.currency, t('common.none', '—')),
-    },
-    {
-      key: 'status',
-      title: t('deals.columns.status', 'Status'),
-      sortable: true,
-      width: 140,
-            // render: описывает рендер соответствующего блока UI.
-render: (r) => statusLabels[r.status] || r.status || t('common.none', '—'),
-    },
-    {
-      key: 'responsible',
-      title: t('deals.columns.owner', 'Owner'),
-      width: 200,
-            // render: описывает рендер соответствующего блока UI.
-render: (r) => {
-        const u = r.responsible;
-        return u
-          ? [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email
-          : t('common.none', '—');
-      },
-    },
-    {
-      key: 'updatedAt',
-      title: t('deals.columns.updated', 'Updated'),
-      sortable: true,
-      width: 180,
-            // render: описывает рендер соответствующего блока UI.
-render: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : t('common.none', '—')),
-    },
-  ]), [openDetail, statusLabels, t]);
-
-  const defaultQuery = useMemo(() => ({
-    page: 1,
-    sort: 'createdAt',
-    dir: 'DESC',
-    limit: 25,
-  }), []);
-  const [query, setQuery] = useState(defaultQuery);
   useEffect(() => {
-    if (viewMode !== 'board' || !selectedBoardPipelineId) return;
-    setQuery((prev) => (
-      prev.pipelineId === selectedBoardPipelineId
-        ? prev
-        : { ...prev, pipelineId: selectedBoardPipelineId, stageId: undefined, page: 1 }
-    ));
-  }, [selectedBoardPipelineId, viewMode]);
+    if (!effectivePipelineId) return;
+    setSelectedPipelineId(effectivePipelineId);
+    writeStorage(SALES_PIPELINE_STORAGE_KEY, effectivePipelineId);
+  }, [effectivePipelineId]);
 
-  const stageOptions = useMemo(() => {
-    const selected = pipelines.find((pipeline) => String(pipeline.id) === String(query.pipelineId || (viewMode === 'board' ? selectedBoardPipelineId : '') || ''));
-    const stages = selected
-      ? selected.stages || []
-      : pipelines.flatMap((pipeline) => pipeline.stages || []);
-    return [
-      { value: '', label: t('deals.filters.allStages', 'All stages') },
-      ...stages.map((stage) => ({ value: stage.id, label: stage.name || stage.id })),
-    ];
-  }, [pipelines, query.pipelineId, selectedBoardPipelineId, t, viewMode]);
-  const apiQuery = useMemo(() => {
-    const next = viewMode === 'board'
-      ? {
-        ...query,
-        page: 1,
-        limit: BOARD_PAGE_LIMIT,
-        pipelineId: selectedBoardPipelineId || query.pipelineId,
-      }
-      : query;
-    return sanitizeDealsQuery(next);
-  }, [query, selectedBoardPipelineId, viewMode]);
+  const boardQuery = useMemo(() => compact({
+    pipelineId: effectivePipelineId,
+    q: filters.q,
+    responsibleId: filters.responsibleId,
+    healthStatus: filters.healthStatus,
+    nextAction: filters.nextAction,
+    perStageLimit: 80,
+  }), [effectivePipelineId, filters]);
+
   const {
-    data: dealsData,
-    isFetching: dealsLoading,
-    error: dealsError,
-    refetch: refetchDeals,
-  } = useGetDealsQuery(apiQuery);
-  const loadedDeals = useMemo(() => {
-    if (Array.isArray(dealsData)) return dealsData;
-    if (Array.isArray(dealsData?.items)) return dealsData.items;
-    if (Array.isArray(dealsData?.data)) return dealsData.data;
-    return [];
-  }, [dealsData]);
-  const boardDeals = useMemo(() => loadedDeals.map((deal) => {
-    const override = stageOverrides[deal.id];
-    if (!override) return deal;
-    return {
-      ...deal,
-      stageId: override.stageId,
-      pipelineId: override.pipelineId || deal.pipelineId,
-      status: override.status || deal.status,
-    };
-  }), [loadedDeals, stageOverrides]);
-  const dealsTotal = Number(dealsData?.total ?? loadedDeals.length ?? 0);
-  const hasAnyFilter = Boolean(
-    query.q || query.pipelineId || query.stageId || query.responsibleId || query.status || query.dateFrom || query.dateTo
-  );
+    data: boardData,
+    isFetching: boardLoading,
+    error: boardFetchError,
+    refetch: refetchBoard,
+  } = useGetDealsBoardQuery(boardQuery, { skip: !effectivePipelineId });
 
-  const workspaceData = useWorkspaceData({
-    externalData: loadedDeals,
-    externalMeta: {
-      total: dealsTotal,
-      page: dealsData?.page || query.page || defaultQuery.page,
-      limit: dealsData?.limit || query.limit || defaultQuery.limit,
-    },
-    externalLoading: dealsLoading,
-    externalError: dealsError,
-    onExternalRefetch: refetchDeals,
-    query,
-    onQueryChange: setQuery,
-    defaultQuery,
-  });
+  const [deleteDeal, { isLoading: deleting }] = useDeleteDealMutation();
+  const [moveDealStage, { isLoading: movingStage }] = useMoveDealStageMutation();
+  const [markWon, { isLoading: markingWon }] = useMarkWonMutation();
+  const [markLost, { isLoading: markingLost }] = useMarkLostMutation();
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  const stages = useMemo(() => boardData?.stages || [], [boardData?.stages]);
+  const visibleStages = useMemo(() => getVisibleStages(stages), [stages]);
+  const flatDeals = useMemo(() => flattenBoardStages(visibleStages), [visibleStages]);
+  const attentionItems = useMemo(() => buildAttention(visibleStages, t), [visibleStages, t]);
+
+  useEffect(() => {
+    setActiveStageId('');
+  }, [effectivePipelineId]);
+
+  useEffect(() => {
+    if (!activeStageId) return;
+    if (!visibleStages.some((stage) => String(stage.id) === String(activeStageId))) {
+      setActiveStageId('');
+    }
+  }, [activeStageId, visibleStages]);
 
   const updateFilter = useCallback((key, value) => {
-    setQuery((prev) => ({
-      ...prev,
-      [key]: value || undefined,
-      page: 1,
-    }));
+    setFilters((prev) => ({ ...prev, [key]: value || '' }));
   }, []);
 
-  const updateBoardPipeline = useCallback((pipelineId) => {
-    setBoardPipelineId(pipelineId || '');
-    writeStorage(DEALS_BOARD_PIPELINE_STORAGE_KEY, pipelineId || '');
+  const updatePipeline = useCallback((pipelineId) => {
+    setSelectedPipelineId(pipelineId || '');
+    writeStorage(SALES_PIPELINE_STORAGE_KEY, pipelineId || '');
+    setActiveStageId('');
     setBoardError('');
-    setQuery((prev) => ({
-      ...prev,
-      pipelineId: pipelineId || undefined,
-      stageId: undefined,
-      page: 1,
-    }));
   }, []);
 
-  const columnState = useMemo(() => ({
-    widths: colWidths,
-    order: colOrder,
-    visibility: colVisibility,
-  }), [colOrder, colVisibility, colWidths]);
+  const openDetail = useCallback((dealId) => {
+    navigate(`/main/deals/${dealId}`);
+  }, [navigate]);
 
-  const handleColumnStateChange = useCallback((next = {}) => {
-    onColumnResize(next.widths || {});
-    onColumnOrderChange(Array.isArray(next.order) ? next.order : []);
-    onColumnVisibilityChange(next.visibility || {});
-  }, [onColumnOrderChange, onColumnResize, onColumnVisibilityChange]);
-
-  const actions = useMemo(() => (
-    <div className={s.headerActions}>
-      <ViewSwitch value={viewMode} onChange={setViewMode} t={t} />
-      <AddButton onClick={() => navigate('/main/deals/new')} title={t('deals.actions.new', 'New deal')}>
-       {t('deals.actions.new', 'New deal')}
-      </AddButton>
-    </div>
-  ), [navigate, setViewMode, t, viewMode]);
-
-  const rowActions = useCallback((row) => {
-    const isWon = row.status === 'won';
-    const isLost = row.status === 'lost';
-    return (
-      <div className={s.rowActions}>
-        <button className={s.rowLink} onClick={() => openDetail(row.id)}>
-          {t('deals.actions.open', 'Open')}
-        </button>
-        <span className={s.sep}>·</span>
-        <button
-          className={s.rowLink}
-          disabled={isWon}
-          onClick={() => markWon(row.id)}
-        >
-          {t('deals.actions.won', 'Won')}
-        </button>
-        <span className={s.sep}>·</span>
-        <button
-          className={s.rowDanger}
-          disabled={isLost}
-          onClick={() => markLost(row.id)}
-        >
-          {t('deals.actions.lost', 'Lost')}
-        </button>
-        {canDeleteDeal ? (
-          <>
-            <span className={s.sep}>·</span>
-            <button
-              type="button"
-              className={s.rowDanger}
-              disabled={deleting}
-              onClick={() => setDeleteTarget(row)}
-            >
-              {t('common.delete', 'Удалить')}
-            </button>
-          </>
-        ) : null}
-      </div>
-    );
-  }, [canDeleteDeal, deleting, markLost, markWon, openDetail, t]);
-
-  const createInStage = useCallback((stageId) => {
+  const createDeal = useCallback((stageId = '') => {
     const params = new URLSearchParams();
-    if (selectedBoardPipelineId) params.set('pipelineId', selectedBoardPipelineId);
+    if (effectivePipelineId) params.set('pipelineId', effectivePipelineId);
     if (stageId) params.set('stageId', stageId);
     const suffix = params.toString();
     navigate(`/main/deals/new${suffix ? `?${suffix}` : ''}`);
-  }, [navigate, selectedBoardPipelineId]);
+  }, [effectivePipelineId, navigate]);
 
-  const handleBoardDragEnd = useCallback(async ({ active, over }) => {
-    const dealId = active?.data?.current?.dealId || active?.id;
-    const targetStageId = over?.id;
-    const sourceStageId = active?.data?.current?.sourceStageId;
-    if (!dealId || !targetStageId || String(targetStageId) === String(sourceStageId || '')) return;
+  const configurePipeline = useCallback(() => {
+    navigate('/main/company-settings/deals');
+  }, [navigate]);
 
-    const targetStage = stageById.get(String(targetStageId));
-    if (!targetStage || targetStage.hidden || targetStage.archived) return;
+  const refreshBoard = useCallback(async () => {
+    await refetchBoard();
+  }, [refetchBoard]);
 
+  const handleMove = useCallback(async (deal, targetStage) => {
     setBoardError('');
-    setStageOverrides((prev) => ({
-      ...prev,
-      [dealId]: {
-        stageId: targetStage.id,
-        pipelineId: targetStage.pipelineId || selectedBoardPipelineId,
-        status: targetStage.isWon ? 'won' : targetStage.isLost ? 'lost' : 'in_progress',
-      },
-    }));
-
     try {
-      await moveDealStage({ dealId, stageId: targetStage.id }).unwrap();
-      await refetchDeals();
+      if (targetStage.isWon) {
+        await markWon({ dealId: deal.id }).unwrap();
+      } else if (targetStage.isLost) {
+        setLostTarget({ deal, stage: targetStage });
+        setLostReasonId('');
+        return;
+      } else {
+        await moveDealStage({ dealId: deal.id, stageId: targetStage.id }).unwrap();
+      }
+      await refreshBoard();
     } catch (error) {
-      setBoardError(error?.data?.error || error?.data?.message || error?.message || t('deals.board.moveFailed', 'Failed to move deal'));
-      await refetchDeals();
-    } finally {
-      setStageOverrides((prev) => {
-        const next = { ...prev };
-        delete next[dealId];
-        return next;
-      });
+      setBoardError(error?.data?.error || error?.data?.message || error?.message || t('deals.workspace.moveFailed', 'Failed to move deal'));
+      await refreshBoard();
     }
-  }, [moveDealStage, refetchDeals, selectedBoardPipelineId, stageById, t]);
+  }, [markWon, moveDealStage, refreshBoard, t]);
 
-  const boardDealsByStage = useMemo(() => {
-    const map = new Map(visibleBoardStages.map((stage) => [String(stage.id), []]));
-    for (const deal of boardDeals) {
-      const stageId = String(deal.stageId || deal.stage?.id || '');
-      if (map.has(stageId)) map.get(stageId).push(deal);
+  const handleDragEnd = useCallback(async ({ active, over }) => {
+    const dealId = active?.data?.current?.dealId || active?.id;
+    const sourceStageId = active?.data?.current?.sourceStageId;
+    const targetStageId = over?.id;
+    if (!dealId || !targetStageId || String(sourceStageId || '') === String(targetStageId)) return;
+    const targetStage = stages.find((stage) => String(stage.id) === String(targetStageId));
+    const deal = stages
+      .flatMap((stage) => stage.deals || [])
+      .find((item) => String(item.id) === String(dealId));
+    if (!targetStage || !deal) return;
+    await handleMove(deal, targetStage);
+  }, [handleMove, stages]);
+
+  const openLost = useCallback((deal) => {
+    const lostStage = stages.find((stage) => stage.isLost);
+    if (!lostStage) {
+      setBoardError(t('deals.workspace.noLostStage', 'Lost stage is not configured for this pipeline.'));
+      return;
     }
-    return map;
-  }, [boardDeals, visibleBoardStages]);
+    setLostTarget({ deal, stage: lostStage });
+    setLostReasonId('');
+  }, [stages, t]);
 
-  const boardSummary = useMemo(() => ({
-    count: boardDeals.length,
-    money: summarizeDeals(boardDeals, stageById),
-  }), [boardDeals, stageById]);
-  const stageBarPipeline = useMemo(() => {
-    if (viewMode === 'board') return selectedBoardPipeline;
-    return activePipelines.find((pipeline) => String(pipeline.id) === String(query.pipelineId || ''))
-      || defaultPipeline
-      || selectedBoardPipeline
-      || null;
-  }, [activePipelines, defaultPipeline, query.pipelineId, selectedBoardPipeline, viewMode]);
-  const stageBarStages = useMemo(() => stageBarPipeline?.stages || [], [stageBarPipeline]);
-  const stageBarDeals = viewMode === 'board' ? boardDeals : workspaceData.rows;
-  const stageBarAggregates = useMemo(
-    () => buildStageAggregates(stageBarDeals, stageBarStages),
-    [stageBarDeals, stageBarStages]
-  );
-  const handleStageBarSelect = useCallback((stageId) => {
-    updateFilter('stageId', stageId);
-  }, [updateFilter]);
-  const clearStageFilter = useCallback(() => {
-    updateFilter('stageId', '');
-  }, [updateFilter]);
-  const stageBar = (
-    <section className={s.stageBarSection} aria-label={t('deals.pipeline.stageBar', 'Pipeline stage overview')}>
-      <PipelinePath
-        stages={stageBarStages}
-        currentStageId={query.stageId || ''}
-        aggregates={stageBarAggregates}
-        showAll
-        allSelected={!query.stageId}
-        allLabel={t('deals.filters.allStages', 'All stages')}
-        onClear={clearStageFilter}
-        onSelect={handleStageBarSelect}
-        emptyLabel={t('deals.pipeline.noStages', 'This pipeline has no stages yet.')}
-        wonLabel={t('deals.status.won', 'Won')}
-        lostLabel={t('deals.status.lost', 'Lost')}
-        ariaLabel={t('deals.pipeline.stageBar', 'Pipeline stage overview')}
-      />
-    </section>
-  );
+  const markDealWon = useCallback((deal) => {
+    const wonStage = stages.find((stage) => stage.isWon);
+    if (!wonStage) {
+      setBoardError(t('deals.workspace.noWonStage', 'Won stage is not configured for this pipeline.'));
+      return;
+    }
+    handleMove(deal, wonStage);
+  }, [handleMove, stages, t]);
 
-  const boardControls = useMemo(() => [
-    {
-      key: 'q',
-      kind: 'search',
-      label: t('common.search', 'Search'),
-      control: (
-        <SearchField
-          value={query.q || ''}
-          onValueChange={(value) => updateFilter('q', value)}
-          placeholder={t('deals.filters.searchPlaceholder', 'Search deals')}
-          size="sm"
-          clearable
-          fullWidth={false}
-        />
-      ),
-    },
-    {
-      key: 'stageId',
-      label: t('deals.filters.stage', 'Stage'),
-      control: (
-        <SelectField
-          value={query.stageId || ''}
-          onValueChange={(value) => updateFilter('stageId', value)}
-          options={stageOptions}
-          size="sm"
-          fullWidth={false}
-        />
-      ),
-    },
-    {
-      key: 'responsibleId',
-      label: t('deals.filters.owner', 'Owner'),
-      control: (
-        <SelectField
-          value={query.responsibleId || ''}
-          onValueChange={(value) => updateFilter('responsibleId', value)}
-          options={[{ value: '', label: t('deals.filters.allOwners', 'All owners') }, ...ownerOptions]}
-          size="sm"
-          fullWidth={false}
-        />
-      ),
-    },
-    {
-      key: 'status',
-      label: t('deals.filters.status', 'Status'),
-      control: (
-        <SelectField
-          value={query.status || ''}
-          onValueChange={(value) => updateFilter('status', value)}
-          options={statusOptions}
-          size="sm"
-          fullWidth={false}
-        />
-      ),
-    },
-    {
-      key: 'dateRange',
-      label: t('deals.filters.dateRange', 'Date range'),
-      control: (
-        <div className={s.dateRange}>
-          <DateField
-            inputClassName={s.dateInput}
-            value={query.dateFrom || ''}
-            onValueChange={(value) => updateFilter('dateFrom', value)}
-            fullWidth={false}
-          />
-          <DateField
-            inputClassName={s.dateInput}
-            value={query.dateTo || ''}
-            onValueChange={(value) => updateFilter('dateTo', value)}
-            fullWidth={false}
-          />
-        </div>
-      ),
-    },
-  ], [
-    ownerOptions,
-    query.dateFrom,
-    query.dateTo,
-    query.q,
-    query.responsibleId,
-    query.stageId,
-    query.status,
-    stageOptions,
-    statusOptions,
-    t,
-    updateFilter,
-  ]);
-
-  const workspaceColumns = useMemo(() => [
-    ...columns.map((column) => ({
-      ...column,
-      fallbackLabel: column.title,
-      minWidth: Math.max(110, Math.min(Number(column.width) || 180, 180)),
-      maxWidth: 560,
-      category: column.category || 'core',
-      required: column.key === 'title',
-      numeric: column.key === 'value',
-    })),
-    {
-      key: 'actions',
-      fallbackLabel: t('common.actions', 'Actions'),
-      width: 280,
-      minWidth: 240,
-      maxWidth: 360,
-      category: 'context',
-      required: true,
-      render: rowActions,
-    },
-  ], [columns, rowActions, t]);
-
-  const renderCell = useCallback((row, column) => {
-    if (typeof column.render === 'function') return column.render(row);
-    const value = row?.[column.key];
-    return value == null || value === '' ? '—' : String(value);
-  }, []);
-
-  const workspaceControls = useMemo(() => [
-    {
-      key: 'q',
-      kind: 'search',
-      label: t('common.search', 'Search'),
-      control: (
-        <SearchField
-          value={query.q || ''}
-          onValueChange={(value) => updateFilter('q', value)}
-          placeholder={t('deals.filters.searchPlaceholder', 'Search deals')}
-          size="sm"
-          clearable
-          fullWidth={false}
-        />
-      ),
-    },
-    {
-      key: 'pipelineId',
-      label: t('deals.filters.pipeline', 'Pipeline'),
-      control: (
-        <SelectField
-          value={query.pipelineId || ''}
-          onValueChange={(value) => updateFilter('pipelineId', value)}
-          options={pipelineOptions}
-          size="sm"
-          fullWidth={false}
-        />
-      ),
-    },
-    {
-      key: 'stageId',
-      label: t('deals.filters.stage', 'Stage'),
-      control: (
-        <SelectField
-          value={query.stageId || ''}
-          onValueChange={(value) => updateFilter('stageId', value)}
-          options={stageOptions}
-          size="sm"
-          fullWidth={false}
-        />
-      ),
-    },
-    {
-      key: 'responsibleId',
-      label: t('deals.filters.owner', 'Owner'),
-      control: (
-        <SelectField
-          value={query.responsibleId || ''}
-          onValueChange={(value) => updateFilter('responsibleId', value)}
-          options={[{ value: '', label: t('deals.filters.allOwners', 'All owners') }, ...ownerOptions]}
-          size="sm"
-          fullWidth={false}
-        />
-      ),
-    },
-    {
-      key: 'status',
-      label: t('deals.filters.status', 'Status'),
-      control: (
-        <SelectField
-          value={query.status || ''}
-          onValueChange={(value) => updateFilter('status', value)}
-          options={statusOptions}
-          size="sm"
-          fullWidth={false}
-        />
-      ),
-    },
-    {
-      key: 'dateRange',
-      label: t('deals.filters.dateRange', 'Date range'),
-      control: (
-        <div className={s.dateRange}>
-          <DateField
-            inputClassName={s.dateInput}
-            value={query.dateFrom || ''}
-            onValueChange={(value) => updateFilter('dateFrom', value)}
-            fullWidth={false}
-          />
-          <DateField
-            inputClassName={s.dateInput}
-            value={query.dateTo || ''}
-            onValueChange={(value) => updateFilter('dateTo', value)}
-            fullWidth={false}
-          />
-        </div>
-      ),
-    },
-  ], [
-    ownerOptions,
-    pipelineOptions,
-    query.dateFrom,
-    query.dateTo,
-    query.pipelineId,
-    query.q,
-    query.responsibleId,
-    query.stageId,
-    query.status,
-    statusOptions,
-    stageOptions,
-    t,
-    updateFilter,
-  ]);
-
-  const workspaceLabels = useMemo(() => ({
-    loading: t('common.loading', 'Loading'),
-    errorTitle: t('deals.errorTitle', 'Не удалось загрузить сделки'),
-    retry: t('list.refresh', 'Refresh'),
-    resetColumns: t('list.columns.reset', 'Reset'),
-    columnsMenu: t('list.columns.configureShort', 'Columns'),
-    showAllColumns: t('list.columns.configure', 'Show all'),
-    showTechnicalColumns: t('list.columns.groupSystem', 'System'),
-    hideTechnicalColumns: t('list.columns.hideAdditional', 'Hide extra'),
-    requiredColumn: t('list.columns.recommended', 'Recommended'),
-    visibleColumns: (count) => t('list.columns.visibleCount', { count }),
-    groupLabel: (group) => {
-      if (group === 'context') return t('list.columns.groupAdditional', 'Additional');
-      if (group === 'technical') return t('list.columns.groupSystem', 'System');
-      return t('list.columns.groupMain', 'Main');
-    },
-    columnLabel: (column) => column.fallbackLabel || column.title || column.key,
-  }), [t]);
+  const confirmLost = useCallback(async () => {
+    if (!lostTarget?.deal?.id || !lostReasonId) return;
+    try {
+      await markLost({
+        dealId: lostTarget.deal.id,
+        payload: { lostReasonId },
+      }).unwrap();
+      setLostTarget(null);
+      setLostReasonId('');
+      await refreshBoard();
+    } catch (error) {
+      setBoardError(error?.data?.error || error?.data?.message || error?.message || t('deals.workspace.markLostFailed', 'Failed to mark lost'));
+    }
+  }, [lostReasonId, lostTarget, markLost, refreshBoard, t]);
 
   const confirmDelete = useCallback(async () => {
     if (!deleteTarget?.id) return;
     await deleteDeal(deleteTarget.id).unwrap();
     setDeleteTarget(null);
-    listRef.current?.refetch?.();
-  }, [deleteDeal, deleteTarget]);
+    await refreshBoard();
+  }, [deleteDeal, deleteTarget, refreshBoard]);
 
-  const listView = (
-    <div className={s.listPage}>
-      {stageBar}
-      <Workspace
-        ref={listRef}
-        title={t('deals.title', 'Deals')}
-        badge={t('deals.workspaceCount', {
-          count: workspaceData.total,
-          defaultValue: `${workspaceData.total}`,
-        })}
-        actions={actions}
-        controls={workspaceControls}
-        rows={workspaceData.rows}
-        columns={workspaceColumns}
-        loading={workspaceData.loading}
-        error={workspaceData.error}
-        onRetry={workspaceData.refetch}
-        onRefetch={workspaceData.refetch}
-        renderCell={renderCell}
-        getRowId={(row) => row?.id}
-        getRowKey={(row) => String(row?.id || row?.title || '')}
-        onRowClick={(row) => row?.id && openDetail(row.id)}
-        sortKey={workspaceData.query.sort}
-        sortDir={workspaceData.query.dir}
-        onSort={workspaceData.setSort}
-        columnState={columnState}
-        onColumnStateChange={handleColumnStateChange}
-        emptyState={{
-          title: t(
-            hasAnyFilter ? 'deals.emptyFilteredTitle' : 'deals.emptyTitle',
-            hasAnyFilter ? 'Deals not found' : 'No deals'
-          ),
-          description: t(
-            hasAnyFilter ? 'deals.emptyFilteredText' : 'deals.emptyText',
-            hasAnyFilter ? 'Change search or filters.' : 'Create the first deal.'
-          ),
-        }}
-        errorState={{
-          title: t('deals.errorTitle', 'Не удалось загрузить сделки'),
-          description: String(
-            dealsError?.data?.message
-            || dealsError?.data?.error
-            || dealsError?.message
-            || t('common.error', 'Error')
-          ),
-          retryLabel: t('list.refresh', 'Refresh'),
-        }}
-        labels={workspaceLabels}
-        pagination={workspaceData.pagination}
-      />
-    </div>
+  const focusStage = useCallback((stageId) => {
+    if (!stageId) return;
+    setActiveStageId(stageId);
+    window.setTimeout(() => {
+      const selector = `[data-stage-section="${String(stageId).replace(/"/g, '\\"')}"]`;
+      const element = document.querySelector(selector);
+      if (!element) return;
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      element.focus({ preventScroll: true });
+    }, 50);
+  }, []);
+
+  const healthOptions = useMemo(() => [
+    { value: '', label: t('deals.workspace.allHealth', 'All health') },
+    { value: 'healthy', label: t('deals.workspace.health.healthy', 'Healthy') },
+    { value: 'waiting', label: t('deals.workspace.health.waiting', 'Waiting') },
+    { value: 'at_risk', label: t('deals.workspace.health.risk', 'At risk') },
+    { value: 'stale', label: t('deals.workspace.health.stale', 'Stale') },
+    { value: 'closed_won', label: t('deals.workspace.health.won', 'Closed won') },
+    { value: 'closed_lost', label: t('deals.workspace.health.lost', 'Closed lost') },
+  ], [t]);
+  const nextActionOptions = useMemo(() => [
+    { value: '', label: t('deals.workspace.allNextActions', 'All next actions') },
+    { value: 'missing', label: t('deals.workspace.noNextAction', 'No next action') },
+    { value: 'overdue', label: t('deals.workspace.overdue', 'Overdue') },
+    { value: 'today', label: t('deals.workspace.dueToday', 'Due today') },
+    { value: 'upcoming', label: t('deals.workspace.upcoming', 'Upcoming') },
+  ], [t]);
+
+  const controls = (
+    <>
+      <FilterBox icon={<Search size={15} aria-hidden="true" />} kind="search">
+        <SearchField
+          value={filters.q || ''}
+          onValueChange={(value) => updateFilter('q', value)}
+          placeholder={t('deals.filters.searchPlaceholder', 'Search deals')}
+          size="sm"
+          fullWidth={false}
+          clearable
+        />
+      </FilterBox>
+      <FilterBox label={t('deals.filters.pipeline', 'Pipeline')}>
+        <SelectField
+          value={effectivePipelineId || ''}
+          onValueChange={updatePipeline}
+          options={pipelineOptions}
+          size="sm"
+          fullWidth={false}
+          searchable
+        />
+      </FilterBox>
+      <FilterBox label={t('deals.filters.owner', 'Owner')}>
+        <SelectField
+          value={filters.responsibleId || ''}
+          onValueChange={(value) => updateFilter('responsibleId', value)}
+          options={[{ value: '', label: t('deals.filters.allOwners', 'All owners') }, ...ownerOptions]}
+          size="sm"
+          fullWidth={false}
+          searchable
+        />
+      </FilterBox>
+      <FilterBox label={t('deals.workspace.healthLabel', 'Health')}>
+        <SelectField
+          value={filters.healthStatus || ''}
+          onValueChange={(value) => updateFilter('healthStatus', value)}
+          options={healthOptions}
+          size="sm"
+          fullWidth={false}
+        />
+      </FilterBox>
+      <FilterBox label={t('deals.workspace.nextActionLabel', 'Next Action')}>
+        <SelectField
+          value={filters.nextAction || ''}
+          onValueChange={(value) => updateFilter('nextAction', value)}
+          options={nextActionOptions}
+          size="sm"
+          fullWidth={false}
+        />
+      </FilterBox>
+    </>
   );
 
-  const boardView = (
-    <div className={s.boardPage}>
-      <header className={s.boardTopbar}>
-        <div className={s.headerMain}>
-          <h1>{t('deals.title', 'Deals')}</h1>
-          <div className={s.subtitleRow}>
-            <span>{t('deals.workspaceCount', { count: boardSummary.count, defaultValue: `${boardSummary.count}` })}</span>
-            <span>{formatMoneySummary(boardSummary.money)}</span>
-            <span>{t('deals.board.forecastShort', { value: formatForecastSummary(boardSummary.money), defaultValue: `Forecast ${formatForecastSummary(boardSummary.money)}` })}</span>
-          </div>
+  const headerActions = (
+    <>
+      <button type="button" className={s.primaryAction} onClick={() => createDeal()}>
+        <Plus size={16} aria-hidden="true" />
+        <span>{t('deals.actions.new', 'New deal')}</span>
+      </button>
+      <button type="button" className={s.secondaryAction} onClick={configurePipeline}>
+        <Settings size={16} aria-hidden="true" />
+        <span>{t('deals.workspace.configurePipeline', 'Configure Pipeline')}</span>
+      </button>
+    </>
+  );
+
+  const renderBody = () => {
+    if (!effectivePipelineId) {
+      return (
+        <div className={s.emptyBoard}>
+          <h2>{t('deals.workspace.createSalesProcess', 'Create a sales process')}</h2>
+          <p>{t('deals.workspace.createSalesProcessText', 'Pipeline Builder creates the process used by Sales.')}</p>
+          <button type="button" onClick={configurePipeline}>{t('deals.workspace.openBuilder', 'Open Pipeline Builder')}</button>
         </div>
-        {actions}
-      </header>
-
-      <section className={s.boardToolbar} aria-label={t('deals.board.toolbar', 'Board controls')}>
-        <div className={s.pipelinePicker}>
-          <span>{t('deals.filters.pipeline', 'Pipeline')}</span>
-          <SelectField
-            value={selectedBoardPipelineId}
-            onValueChange={updateBoardPipeline}
-            options={boardPipelineOptions}
-            placeholder={t('deals.filters.pipeline', 'Pipeline')}
-            size="sm"
-            fullWidth={false}
-          />
-        </div>
-        <button type="button" className={s.boardRefresh} onClick={refetchDeals}>
-          {t('list.refresh', 'Refresh')}
-        </button>
-      </section>
-
-      <section className={s.boardFilters} aria-label={t('deals.board.filters', 'Board filters')}>
-        {boardControls.map((control) => (
-          <div key={control.key} className={control.kind === 'search' ? s.boardFilterSearch : s.boardFilter}>
-            <span>{control.label}</span>
-            {control.control}
-          </div>
-        ))}
-      </section>
-
-      {stageBar}
-
-      {boardError ? <div className={s.boardError}>{boardError}</div> : null}
-      {dealsLoading ? <div className={s.boardState}>{t('common.loading', 'Loading')}</div> : null}
-      {dealsError ? (
+      );
+    }
+    if (boardLoading) return <div className={s.boardState}>{t('common.loading', 'Loading')}</div>;
+    if (boardFetchError) {
+      return (
         <div className={s.boardState}>
-          <strong>{t('deals.errorTitle', 'Не удалось загрузить сделки')}</strong>
-          <button type="button" onClick={refetchDeals}>{t('list.refresh', 'Refresh')}</button>
+          <strong>{t('deals.workspace.loadFailed', 'Could not load Sales workspace.')}</strong>
+          <button type="button" onClick={refetchBoard}>{t('deals.workspace.retry', 'Retry')}</button>
         </div>
-      ) : null}
-      {!dealsLoading && !dealsError && !visibleBoardStages.length ? (
-        <div className={s.boardState}>
-          {t('deals.board.noStages', 'No visible stages in this pipeline.')}
+      );
+    }
+    if (!visibleStages.length) {
+      return (
+        <div className={s.emptyBoard}>
+          <h2>{t('deals.workspace.noStages', 'No stages configured')}</h2>
+          <p>{t('deals.workspace.noStagesText', 'This pipeline needs stages before deals can be worked.')}</p>
+          <button type="button" onClick={configurePipeline}>{t('deals.workspace.configurePipeline', 'Configure Pipeline')}</button>
         </div>
-      ) : null}
-
-      {!dealsLoading && !dealsError && visibleBoardStages.length ? (
-        <DndContext
+      );
+    }
+    if (view === 'board') {
+      return (
+        <BoardMode
+          stages={visibleStages}
           sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleBoardDragEnd}
-        >
-          <div className={s.boardViewport}>
-            <div className={s.boardGrid}>
-              {visibleBoardStages.map((stage) => (
-                <KanbanColumn
-                  key={stage.id}
-                  stage={stage}
-                  deals={boardDealsByStage.get(String(stage.id)) || []}
-                  stageById={stageById}
-                  statusLabels={statusLabels}
-                  canDelete={canDeleteDeal}
-                  deleting={deleting}
-                  onOpen={openDetail}
-                  onDelete={setDeleteTarget}
-                  onCreate={createInStage}
-                  t={t}
-                />
-              ))}
-            </div>
-          </div>
-        </DndContext>
-      ) : null}
-    </div>
-  );
+          onDragEnd={handleDragEnd}
+          onOpen={openDetail}
+          onCreate={createDeal}
+          onWon={markDealWon}
+          onLost={openLost}
+          t={t}
+        />
+      );
+    }
+    if (view === 'list') {
+      return (
+        <ListMode
+          rows={flatDeals}
+          stages={visibleStages}
+          onOpen={openDetail}
+          onMove={handleMove}
+          onWon={markDealWon}
+          onLost={openLost}
+          onDelete={setDeleteTarget}
+          canDelete={canDeleteDeal}
+          t={t}
+        />
+      );
+    }
+    return (
+      <div className={s.pipelineMode}>
+        <PipelineWorkspace
+          stages={visibleStages}
+          activeStageId={activeStageId}
+          onStageClick={focusStage}
+          onCreate={createDeal}
+          onOpen={openDetail}
+          onWon={markDealWon}
+          onLost={openLost}
+          onDelete={setDeleteTarget}
+          canDelete={canDeleteDeal}
+          t={t}
+        />
+        <AttentionBand items={attentionItems} onOpen={openDetail} t={t} />
+      </div>
+    );
+  };
+
+  const badge = t('deals.workspace.badge', '{{count}} records', { count: boardData?.totals?.count || 0 });
 
   return (
-    <>
-      {viewMode === 'board' ? boardView : listView}
+    <WorkspaceShell
+      title={t('deals.title', 'Deals')}
+      subtitle={t('deals.workspace.subtitle', 'Pipeline workspace')}
+      badge={badge}
+      actions={headerActions}
+      controls={controls}
+      controlsAria={t('deals.workspace.controlsAria', 'Sales workspace controls')}
+    >
+      {boardError ? <div className={s.boardError}>{boardError}</div> : null}
+      {renderBody()}
+
+      <LostReasonModal
+        open={Boolean(lostTarget)}
+        deal={lostTarget?.deal}
+        reasons={lostReasons}
+        value={lostReasonId}
+        onValueChange={setLostReasonId}
+        onConfirm={confirmLost}
+        onCancel={() => setLostTarget(null)}
+        loading={markingLost || movingStage || markingWon}
+        onConfigure={configurePipeline}
+        t={t}
+      />
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}
-        title={t('deals.confirm.deleteTitle', 'Удалить сделку?')}
-        text={t(
-          'deals.confirm.deleteText',
-          'Сделка будет удалена или архивирована согласно настройкам системы.'
-        )}
-        okText={t('common.delete', 'Удалить')}
-        cancelText={t('common.cancel', 'Отмена')}
+        title={t('deals.workspace.deleteTitle', 'Delete deal?')}
+        text={t('deals.workspace.deleteText', 'The deal will be removed from the active workspace.')}
+        okText={t('deals.workspace.deleteAction', 'Delete')}
+        cancelText={t('common.cancel', 'Cancel')}
         danger
         loading={deleting}
         onOk={confirmDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </>
+    </WorkspaceShell>
   );
 }

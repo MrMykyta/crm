@@ -6,7 +6,6 @@ import Modal from '../../../../components/Modal';
 import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
 import { SelectField } from '../../../../components/ui/fields';
 import HtmlDescriptionSection from '../../../../components/data/HtmlDescriptionSection';
-import { ProductPickerDemo } from '../../../../components/pim';
 import {
   useCreateProductVariantMutation,
   useCreateProductPriceMutation,
@@ -82,6 +81,61 @@ function formatNumber(value, { digits = 2 } = {}) {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
+}
+
+function parsePriceInput(value) {
+  const text = String(value ?? '').trim().replace(',', '.');
+  if (!text) return null;
+  const parsed = Number(text);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatPriceInput(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return '';
+  return String(Math.round((parsed + Number.EPSILON) * 100) / 100);
+}
+
+function grossFromNet(netPrice, vatRate) {
+  return formatPriceInput(netPrice * (1 + (vatRate / 100)));
+}
+
+function netFromGross(grossPrice, vatRate) {
+  const factor = 1 + (vatRate / 100);
+  if (factor <= 0) return '';
+  return formatPriceInput(grossPrice / factor);
+}
+
+function recalculatePriceForm(prev, changedField, rawValue) {
+  const next = { ...prev, [changedField]: rawValue };
+  const vatRate = Math.max(0, parsePriceInput(changedField === 'vatRate' ? rawValue : next.vatRate) ?? 0);
+
+  if (changedField === 'netPrice') {
+    next._priceBasis = 'net';
+    const net = parsePriceInput(rawValue);
+    next.grossPrice = net === null ? '' : grossFromNet(net, vatRate);
+    return next;
+  }
+
+  if (changedField === 'grossPrice') {
+    next._priceBasis = 'gross';
+    const gross = parsePriceInput(rawValue);
+    next.netPrice = gross === null ? '' : netFromGross(gross, vatRate);
+    return next;
+  }
+
+  if (changedField === 'vatRate') {
+    const basis = prev._priceBasis || (String(prev.netPrice || '').trim() ? 'net' : 'gross');
+    if (basis === 'gross') {
+      const gross = parsePriceInput(next.grossPrice);
+      next.netPrice = gross === null ? '' : netFromGross(gross, vatRate);
+    } else {
+      const net = parsePriceInput(next.netPrice);
+      next.grossPrice = net === null ? '' : grossFromNet(net, vatRate);
+    }
+  }
+
+  return next;
 }
 
 // formatBytes: форматирует данные для отображения.
@@ -420,6 +474,7 @@ function emptyPriceForm(product) {
     vatRate: String(product?.taxCategory?.rate ?? 23),
     currency: product?.currency || 'PLN',
     minQty: '1',
+    _priceBasis: 'net',
   };
 }
 
@@ -814,7 +869,7 @@ const onRemove = async (fileId) => {
   return (
     <section className={s.sectionCard}>
       <div className={s.sectionHeader}>
-        <h3>Файлы</h3>
+        <h3>Активы товара</h3>
         <div className={s.sectionLeadMeta}>
           <span className={s.metaChip}>{files.length} всего</span>
           {busyUpload ? (
@@ -846,10 +901,10 @@ const onRemove = async (fileId) => {
         <div className={s.dropzoneTitle}>
           {busyUpload
             ? `Загрузка ${uploadProgress.current}/${uploadProgress.total}`
-            : 'Перетащите файлы сюда или нажмите для выбора'}
+            : 'Перетащите активы товара сюда или нажмите для выбора'}
         </div>
         <div className={s.dropzoneHint}>
-          Фото до 50 MB, документы до 100 MB, прочее до 200 MB.
+          Изображения, документы и медиа для контекста товара.
         </div>
       </div>
       <input
@@ -2372,6 +2427,7 @@ const openEdit = (item) => {
       vatRate: item.vatRate != null ? String(item.vatRate) : String(product?.taxCategory?.rate ?? 23),
       currency: item.currency || product?.currency || 'PLN',
       minQty: item.minQty != null ? String(item.minQty) : '1',
+      _priceBasis: item.netPrice != null || item.grossPrice == null ? 'net' : 'gross',
     });
     setError('');
     setOpen(true);
@@ -2623,7 +2679,7 @@ render: (row) => formatQuantity(row.minQty || 1, { symbol: row.unit, precision: 
               <input
                 className={s.input}
                 value={form.netPrice}
-                onChange={(e) => setForm((prev) => ({ ...prev, netPrice: e.target.value }))}
+                onChange={(e) => setForm((prev) => recalculatePriceForm(prev, 'netPrice', e.target.value))}
                 inputMode="decimal"
               />
             </label>
@@ -2632,7 +2688,7 @@ render: (row) => formatQuantity(row.minQty || 1, { symbol: row.unit, precision: 
               <input
                 className={s.input}
                 value={form.grossPrice}
-                onChange={(e) => setForm((prev) => ({ ...prev, grossPrice: e.target.value }))}
+                onChange={(e) => setForm((prev) => recalculatePriceForm(prev, 'grossPrice', e.target.value))}
                 inputMode="decimal"
               />
             </label>
@@ -2644,7 +2700,7 @@ render: (row) => formatQuantity(row.minQty || 1, { symbol: row.unit, precision: 
               <input
                 className={s.input}
                 value={form.vatRate}
-                onChange={(e) => setForm((prev) => ({ ...prev, vatRate: e.target.value }))}
+                onChange={(e) => setForm((prev) => recalculatePriceForm(prev, 'vatRate', e.target.value))}
                 inputMode="decimal"
               />
             </label>
@@ -3732,18 +3788,6 @@ function StockSummaryTab({ productId, product, values }) {
   );
 }
 
-function ProductPickerDemoTab() {
-  return (
-    <section className={s.sectionCard}>
-      <div className={s.sectionHeader}>
-        <h3>Подбор товара v2</h3>
-        <span className={s.metaChip}>Демо</span>
-      </div>
-      <ProductPickerDemo />
-    </section>
-  );
-}
-
 // Компонент ProductDetailTabs: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ProductDetailTabs({ tab, data, values, onChange }) {
   const productId = data?.id;
@@ -3779,7 +3823,6 @@ export default function ProductDetailTabs({ tab, data, values, onChange }) {
   if (tab === 'files') return <FilesTab productId={productId} />;
   if (tab === 'variants') return <VariantsTab productId={productId} product={data} />;
   if (tab === 'suppliers-purchase') return <SuppliersPurchaseTab productId={productId} product={data} />;
-  if (tab === 'picker-demo') return <ProductPickerDemoTab />;
   if (tab === 'prices') return <PricesTab productId={productId} product={data} />;
   if (tab === 'warehouse') return <StockSummaryTab productId={productId} product={data} values={values} />;
   if (tab === 'reservations') return <ReservationsTab productId={productId} product={data} />;

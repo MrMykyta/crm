@@ -1,119 +1,646 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import {
+  ArrowLeft,
+  BadgeCheck,
+  Copy,
+  FileText,
+  ReceiptText,
+  Save,
+  Send,
+} from 'lucide-react';
 
-import DocumentEnginePage, { mapOfferToDocumentModel } from '../../../../components/documents/DocumentEngine';
+import {
+  DetailCard,
+  DetailLayout,
+  DetailSection,
+  DetailTabs,
+} from '../../../../components/detail';
 import LineItemsEditor from '../../../../components/documents/LineItemsEditor';
 import {
   asNumber,
   asText,
+  calculateLine,
   calculateTotals,
+  createEmptyItem,
   mapLinesToPayload,
+  stableItemsHash,
   toEditorItem,
 } from '../../../../components/documents/LineItemsEditor/lineModel';
+import EntityNotesSection from '../../../../components/notes/EntityNotesSection';
+import { SelectField, TextField, TextareaField } from '../../../../components/ui/fields';
 import { normalizeItemSortOrder, sortItemsBySortOrder } from '../../../../components/oms/useReorderItems';
 import { isOfferEditable } from '../../../../components/oms/documentEditability';
-import { DocumentRelations, DocumentTimeline } from '../../../../components/documents/DocumentShell';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
+import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
+import { useGetContactsByCounterpartyQuery } from '../../../../store/rtk/contactsApi';
+import { useListCompanyUsersQuery } from '../../../../store/rtk/companyUsersApi';
 import {
   useAcceptOfferMutation,
   useCancelOfferMutation,
   useConvertOfferToOrderMutation,
+  useCreateOfferMutation,
+  useDeleteOfferMutation,
   useDuplicateOfferMutation,
   useExpireOfferMutation,
   useGetOfferByIdQuery,
+  useGetOfferMetaQuery,
   useRejectOfferMutation,
   useSaveOfferItemsMutation,
   useSendOfferMutation,
   useUpdateOfferMutation,
 } from '../../../../store/rtk/offersApi';
-import s from '../../OmsReadOnlyDetail.module.css';
+import s from './OfferDetailPage.module.css';
 
-const DISCOUNT_TYPE_OPTIONS = [
-  { value: 'none', label: 'none' },
-  { value: 'fixed', label: 'fixed' },
-  { value: 'percent', label: 'percent' },
-];
+const EMPTY_FORM = {
+  counterpartyId: '',
+  contactId: '',
+  ownerId: '',
+  dealId: '',
+  currency: 'PLN',
+  exchangeRate: '',
+  issueDate: '',
+  validUntil: '',
+  title: '',
+  subject: '',
+  notes: '',
+  internalNotes: '',
+  paymentTerms: '',
+  deliveryTerms: '',
+  incoterms: '',
+  leadTime: '',
+};
 
-function statusLabel(status, t) {
-  const normalized = asText(status).toLowerCase();
-  if (!normalized) return '—';
-  return t(`statuses.${normalized}`, normalized);
-}
+const TERMINAL_STATUSES = new Set(['accepted', 'rejected', 'expired', 'cancelled']);
 
 function getErrorText(error, fallback) {
   return error?.data?.message || error?.data?.error || error?.error || error?.message || fallback;
 }
 
-function collectOfferInvoices(data) {
-  const list = [];
-  if (Array.isArray(data?.invoices)) list.push(...data.invoices.filter(Boolean));
-  if (data?.convertedInvoice) list.push(data.convertedInvoice);
-  const map = new Map();
-  list.forEach((item) => { if (item?.id && !map.has(item.id)) map.set(item.id, item); });
-  return [...map.values()];
+function dateInput(value) {
+  return asText(value).slice(0, 10);
 }
 
-function buildDocumentRelations(data, t) {
-  const relations = [];
-  const convertedOrder = data?.convertedOrder;
-  if (convertedOrder?.id || data?.convertedOrderId) {
-    const orderId = convertedOrder?.id || data.convertedOrderId;
-    relations.push({
-      type: t('documents.types.order'),
-      number: convertedOrder?.number || orderId,
-      status: convertedOrder?.status,
-      statusLabel: convertedOrder?.status ? statusLabel(convertedOrder.status, t) : undefined,
-      to: `/main/oms/orders/${orderId}`,
-    });
-  }
-  collectOfferInvoices(data).forEach((invoice) => {
-    relations.push({
-      type: t('documents.types.invoice'),
-      number: invoice.number || invoice.id,
-      status: invoice.status,
-      statusLabel: invoice.status ? statusLabel(invoice.status, t) : undefined,
-      to: `/main/documents/${invoice.id}`,
-    });
+function formatDate(value, locale) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(+date)) return '—';
+  return date.toLocaleDateString(locale || undefined);
+}
+
+function formatDateTime(value, locale) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(+date)) return '—';
+  return date.toLocaleString(locale || undefined);
+}
+
+function formatMoney(value, currency = 'PLN', locale) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '—';
+  return `${number.toLocaleString(locale || undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} ${currency || 'PLN'}`;
+}
+
+function formatAmount(value, locale) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '—';
+  return number.toLocaleString(locale || undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
-  return relations;
 }
 
-function buildTimelineEvents(data, t) {
-  const actorName = data?.owner?.name || data?.owner?.email || '';
-  return [
-    data?.createdAt ? { id: 'created', actorName, action: t('documents.timeline.created'), timestamp: data.createdAt } : null,
-    data?.issueDate ? { id: 'issued', actorName, action: t('documents.timeline.issued'), timestamp: data.issueDate } : null,
-    data?.updatedAt ? { id: 'updated', actorName, action: t('documents.timeline.updated'), timestamp: data.updatedAt } : null,
-  ].filter(Boolean);
+function MoneyAmount({ value, currency = 'PLN', locale, size = 'md' }) {
+  return (
+    <span className={`${s.moneyAmount} ${s[`money_${size}`] || ''}`}>
+      <span>{formatAmount(value, locale)}</span>
+      <small>{currency || 'PLN'}</small>
+    </span>
+  );
+}
+
+function counterpartyName(counterparty) {
+  return counterparty?.shortName || counterparty?.fullName || counterparty?.name || counterparty?.id || '';
+}
+
+function contactName(contact) {
+  return [contact?.firstName, contact?.lastName].filter(Boolean).join(' ').trim()
+    || contact?.name
+    || contact?.email
+    || contact?.id
+    || '';
+}
+
+function userName(user) {
+  return [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim()
+    || user?.name
+    || user?.email
+    || user?.userId
+    || user?.id
+    || '';
+}
+
+function statusLabel(status, t) {
+  const key = asText(status).toLowerCase();
+  if (!key) return '—';
+  return t(`statuses.${key}`, key);
+}
+
+function getValidity(offer, t, locale) {
+  const raw = offer?.validUntil;
+  const status = asText(offer?.status).toLowerCase();
+  if (!raw) {
+    return {
+      label: t('oms.offerDetail.validity.noDate', 'No expiry'),
+      tone: 'muted',
+    };
+  }
+
+  const date = new Date(raw);
+  if (Number.isNaN(+date)) {
+    return {
+      label: t('oms.offerDetail.validity.noDate', 'No expiry'),
+      tone: 'muted',
+    };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
+  const days = Math.ceil((date.getTime() - today.getTime()) / 86400000);
+
+  if (days < 0 && status === 'expired') {
+    return {
+      label: t('oms.offerDetail.validity.expiredDisplay', 'Expired visually'),
+      detail: formatDate(raw, locale),
+      tone: 'danger',
+    };
+  }
+
+  if (days < 0 && !TERMINAL_STATUSES.has(status)) {
+    return {
+      label: t('oms.offerDetail.validity.expiredSoft', 'Needs renewal'),
+      detail: formatDate(raw, locale),
+      tone: 'soft',
+    };
+  }
+
+  if (days === 0) {
+    return {
+      label: t('oms.offerDetail.validity.today', 'Expires today'),
+      detail: formatDate(raw, locale),
+      tone: 'warning',
+    };
+  }
+
+  if (days > 0) {
+    return {
+      label: t('oms.offerDetail.validity.daysLeft', '{{count}} days left', { count: days }),
+      detail: formatDate(raw, locale),
+      tone: days <= 3 ? 'warning' : 'ok',
+    };
+  }
+
+  return {
+    label: formatDate(raw, locale),
+    tone: 'muted',
+  };
+}
+
+function buildFormFromOffer(offer, searchParams) {
+  if (!offer?.id) {
+    return {
+      ...EMPTY_FORM,
+      counterpartyId: searchParams.get('counterpartyId') || '',
+      contactId: searchParams.get('contactId') || '',
+      dealId: searchParams.get('dealId') || '',
+      issueDate: new Date().toISOString().slice(0, 10),
+    };
+  }
+
+  return {
+    counterpartyId: offer.counterpartyId || offer.counterparty?.id || '',
+    contactId: offer.contactId || offer.contact?.id || '',
+    ownerId: offer.ownerId || offer.owner?.id || '',
+    dealId: offer.dealId || offer.deal?.id || '',
+    currency: offer.currency || offer.currencyCode || 'PLN',
+    exchangeRate: offer.exchangeRate != null ? String(offer.exchangeRate) : '',
+    issueDate: dateInput(offer.issueDate),
+    validUntil: dateInput(offer.validUntil),
+    title: offer.title || '',
+    subject: offer.subject || '',
+    notes: offer.notes || '',
+    internalNotes: offer.internalNotes || '',
+    paymentTerms: offer.paymentTerms || '',
+    deliveryTerms: offer.deliveryTerms || '',
+    incoterms: offer.incoterms || '',
+    leadTime: offer.leadTime || '',
+  };
+}
+
+function buildItemsFromOffer(offer) {
+  if (Array.isArray(offer?.items) && offer.items.length) {
+    return normalizeItemSortOrder(sortItemsBySortOrder(offer.items).map(toEditorItem));
+  }
+  return normalizeItemSortOrder([createEmptyItem()]);
+}
+
+function buildPayload(form) {
+  const exchangeRate = form.exchangeRate === '' ? null : Number(form.exchangeRate);
+  return {
+    counterpartyId: form.counterpartyId || null,
+    contactId: form.contactId || null,
+    ownerId: form.ownerId || null,
+    dealId: form.dealId || null,
+    currency: asText(form.currency).toUpperCase() || 'PLN',
+    exchangeRate: Number.isFinite(exchangeRate) ? exchangeRate : null,
+    issueDate: form.issueDate || null,
+    validUntil: form.validUntil || null,
+    title: form.title || '',
+    subject: form.subject || '',
+    notes: form.notes || '',
+    internalNotes: form.internalNotes || '',
+    paymentTerms: form.paymentTerms || '',
+    deliveryTerms: form.deliveryTerms || '',
+    incoterms: form.incoterms || '',
+    leadTime: form.leadTime || '',
+  };
+}
+
+function validateOfferForm(form, items, t) {
+  const errors = {};
+  if (!form.counterpartyId) errors.counterpartyId = t('oms.offerDetail.validation.customerRequired', 'Customer is required.');
+  items.forEach((item) => {
+    if (!asText(item.name)) errors[`item:${item.localId}:name`] = t('documents.editor.validation.itemNameRequired');
+    if (asNumber(item.qty, 0) <= 0) errors[`item:${item.localId}:qty`] = t('documents.editor.validation.qtyPositive');
+    if (asNumber(item.priceNet, -1) < 0) errors[`item:${item.localId}:priceNet`] = t('documents.editor.validation.priceNonNegative');
+  });
+  return errors;
+}
+
+function buildActivity(offer, t, locale) {
+  const items = [
+    { key: 'created', at: offer?.createdAt, label: t('oms.offerDetail.activity.created', 'Offer created'), actor: offer?.createdByUser },
+    { key: 'sent', at: offer?.sentAt || offer?.statusMetadata?.sentAt, label: t('oms.offerDetail.activity.sent', 'Offer sent'), actor: offer?.sentByUser },
+    { key: 'viewed', at: offer?.viewedAt || offer?.statusMetadata?.viewedAt, label: t('oms.offerDetail.activity.viewed', 'Offer viewed'), actor: offer?.viewedByUser },
+    { key: 'accepted', at: offer?.acceptedAt || offer?.statusMetadata?.acceptedAt, label: t('oms.offerDetail.activity.accepted', 'Offer accepted'), actor: offer?.acceptedByUser },
+    { key: 'rejected', at: offer?.rejectedAt || offer?.statusMetadata?.rejectedAt, label: t('oms.offerDetail.activity.rejected', 'Offer rejected'), actor: offer?.rejectedByUser },
+    { key: 'cancelled', at: offer?.cancelledAt || offer?.statusMetadata?.cancelledAt, label: t('oms.offerDetail.activity.cancelled', 'Offer cancelled'), actor: offer?.cancelledByUser },
+    { key: 'converted', at: offer?.convertedAt || offer?.statusMetadata?.convertedAt, label: t('oms.offerDetail.activity.converted', 'Converted to order'), actor: offer?.convertedByUser },
+    { key: 'status', at: offer?.lastStatusChangedAt || offer?.statusMetadata?.lastStatusChangedAt, label: t('oms.offerDetail.activity.statusChanged', 'Status changed'), actor: null },
+    { key: 'updated', at: offer?.updatedAt, label: t('oms.offerDetail.activity.updated', 'Offer updated'), actor: offer?.updatedByUser },
+  ]
+    .filter((item) => item.at)
+    .sort((a, b) => new Date(b.at) - new Date(a.at));
+
+  return items.map((item) => ({
+    ...item,
+    dateLabel: formatDateTime(item.at, locale),
+    actorLabel: userName(item.actor),
+  }));
+}
+
+function getDiscountTotal(items = []) {
+  return items.reduce((sum, item) => {
+    const qty = Math.max(0, asNumber(item.qty, 0));
+    const priceNet = Math.max(0, asNumber(item.priceNet, 0));
+    const baseNet = qty * priceNet;
+    const line = calculateLine(item);
+    return sum + Math.max(0, baseNet - line.lineNet);
+  }, 0);
+}
+
+function lineKindLabel(item, t) {
+  const key = asText(item?.lineType || (item?.productId ? 'product' : 'custom')).toLowerCase();
+  return t(`oms.lineTypes.${key}`, key || 'custom');
+}
+
+function FactLine({ label, children }) {
+  return (
+    <div className={s.factLine}>
+      <span>{label}</span>
+      <strong>{children || '—'}</strong>
+    </div>
+  );
+}
+
+function OfferHero({ offer, form, totals, isCreate, validity, t, locale }) {
+  const currency = form.currency || offer?.currency || 'PLN';
+  const customer = offer?.counterparty ? counterpartyName(offer.counterparty) : '';
+  const gross = isCreate ? totals.gross : Number(offer?.totalGross ?? totals.gross);
+  const number = offer?.number || (isCreate ? t('oms.offerDetail.create.draftNumber', 'Draft') : offer?.id);
+  const subject = form.subject || form.title || t('oms.offerDetail.hero.defaultSubject', 'Proposal prepared for your approval');
+
+  return (
+    <div className={s.heroCraft}>
+      <div className={s.heroMain}>
+        <div className={s.heroIcon}>S</div>
+        <div className={s.heroText}>
+          <span>{t('oms.offerDetail.hero.offerNumberEyebrow', 'Offer')} · {number}</span>
+          <h1>{customer || t('oms.offerDetail.noCustomer', 'No customer selected')}</h1>
+          <p>{subject}</p>
+        </div>
+      </div>
+      <div className={s.heroDecision}>
+        <span>{t('oms.offerDetail.hero.grandTotal', 'Grand total')}</span>
+        <MoneyAmount value={gross} currency={currency} locale={locale} size="hero" />
+        <div className={s.heroMeta}>
+          <span className={s[`validity_${validity.tone}`] || ''}>{validity.label}{validity.detail ? ` · ${validity.detail}` : ''}</span>
+          <span>{isCreate ? statusLabel('draft', t) : statusLabel(offer?.status, t)}</span>
+          {offer?.revision != null ? <span>{t('oms.offerDetail.system.revision', 'Revision')} {offer.revision}</span> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OverviewTab({ offer, form, totals, isCreate, validity, t, locale, onTab }) {
+  const currency = form.currency || offer?.currency || 'PLN';
+  const convertedOrder = offer?.convertedOrder;
+  const invoices = Array.isArray(offer?.invoices) ? offer.invoices : [];
+
+  return (
+    <div className={s.stack}>
+      <DetailSection title={t('oms.offerDetail.tabs.overview', 'Overview')}>
+        <div className={s.overviewGrid}>
+          <FactLine label={t('oms.offerDetail.overview.customer', 'Customer')}>
+            {offer?.counterparty?.id ? (
+              <Link to={`/main/counterparties/${offer.counterparty.id}`}>{counterpartyName(offer.counterparty)}</Link>
+            ) : counterpartyName(offer?.counterparty) || form.counterpartyId || '—'}
+          </FactLine>
+          <FactLine label={t('oms.offerDetail.overview.total', 'Total')}>
+            {formatMoney(isCreate ? totals.gross : offer?.totalGross ?? totals.gross, currency, locale)}
+          </FactLine>
+          <FactLine label={t('oms.offerDetail.overview.validity', 'Validity')}>
+            {validity.label}
+          </FactLine>
+          <FactLine label={t('oms.offerDetail.overview.nextAction', 'Next action')}>
+            {t(`oms.offerDetail.next.${asText(offer?.status || 'draft').toLowerCase()}`, 'Review proposal')}
+          </FactLine>
+        </div>
+      </DetailSection>
+
+      <DetailSection title={t('oms.offerDetail.sections.documentChain', 'Document chain')}>
+        <div className={s.chain}>
+          {offer?.deal?.id || offer?.dealId ? (
+            <Link to={`/main/deals/${offer.deal?.id || offer.dealId}`}>{t('oms.offerDetail.smart.deal', 'Deal')} · {offer.deal?.title || offer.dealId}</Link>
+          ) : <span>{t('oms.offerDetail.chain.noDeal', 'No source deal')}</span>}
+          {convertedOrder?.id || offer?.convertedOrderId ? (
+            <Link to={`/main/oms/orders/${convertedOrder?.id || offer.convertedOrderId}`}>{t('oms.offerDetail.smart.order', 'Order')} · {convertedOrder?.number || offer.convertedOrderId}</Link>
+          ) : <span>{t('oms.offerDetail.chain.noOrder', 'No order yet')}</span>}
+          {invoices.length ? invoices.map((invoice) => (
+            <Link key={invoice.id} to={`/main/oms/invoices/${invoice.id}`}>{t('oms.offerDetail.smart.invoice', 'Invoice')} · {invoice.number || invoice.id}</Link>
+          )) : <span>{t('oms.offerDetail.chain.noInvoice', 'No invoice yet')}</span>}
+        </div>
+      </DetailSection>
+
+      {form.notes ? (
+        <DetailSection title={t('oms.offerDetail.sections.proposalSummary', 'Proposal summary')}>
+          <p className={s.longText}>{form.notes}</p>
+        </DetailSection>
+      ) : null}
+
+      <div className={s.anchorActions}>
+        <button type="button" onClick={() => onTab('items')}>{t('oms.offerDetail.actions.openItems', 'Open items')}</button>
+        <button type="button" onClick={() => onTab('preview')}>{t('oms.offerDetail.actions.openPreview', 'Open preview')}</button>
+      </div>
+    </div>
+  );
+}
+
+function ProposalLines({ items, t, locale, currency }) {
+  return (
+    <div className={s.proposalLines}>
+      {items.map((item, index) => {
+        const line = calculateLine(item);
+        const title = item.name || t('oms.offerDetail.preview.unnamedLine', 'Unnamed line');
+        return (
+          <div className={s.proposalLine} key={item.localId || item.id || index}>
+            <div className={s.lineThumb}>{title.slice(0, 1).toUpperCase() || 'S'}</div>
+            <div className={s.lineCopy}>
+              <strong>{title}</strong>
+              <span>
+                {lineKindLabel(item, t)}
+                {' · '}
+                {t('oms.offerDetail.items.quantityMeta', '{{qty}} pcs', { qty: asNumber(item.qty, 0) })}
+                {' · '}
+                {t('oms.offerDetail.items.unitNetMeta', '{{value}} net/unit', { value: formatMoney(asNumber(item.priceNet, 0), currency, locale) })}
+              </span>
+              <small>
+                {t('oms.offerDetail.items.taxMeta', 'VAT {{rate}}%', { rate: asNumber(item.taxRate, 0) })}
+                {item.discountType && item.discountType !== 'none' ? ` · ${t('oms.offerDetail.items.discountMeta', 'discount {{value}}', { value: item.discountValue || 0 })}` : ''}
+              </small>
+            </div>
+            <div className={s.lineTotal}>
+              <span>{t('oms.offerDetail.items.lineTotal', 'Line total')}</span>
+              <MoneyAmount value={line.lineGross} currency={currency} locale={locale} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TotalsCrescendo({ items, totals, t, locale, currency }) {
+  const discount = getDiscountTotal(items);
+  return (
+    <aside className={s.totalsCrescendo}>
+      <div>
+        <span>{t('oms.summaryLabels.net')}</span>
+        <strong>{formatMoney(totals.net, currency, locale)}</strong>
+      </div>
+      {discount > 0 ? (
+        <div className={s.savingsLine}>
+          <span>{t('oms.offerDetail.totals.savings', 'You save')}</span>
+          <strong>{formatMoney(discount, currency, locale)}</strong>
+        </div>
+      ) : null}
+      <div>
+        <span>{t('oms.summaryLabels.vat')}</span>
+        <strong>{formatMoney(totals.vat, currency, locale)}</strong>
+      </div>
+      <div className={s.grandTotalLine}>
+        <span>{t('oms.offerDetail.hero.grandTotal', 'Grand total')}</span>
+        <MoneyAmount value={totals.gross} currency={currency} locale={locale} size="lg" />
+      </div>
+    </aside>
+  );
+}
+
+function ItemsTab({ items, onItemsChange, errors, discountTypeOptions, readonly, totals, t, locale, currency }) {
+  return (
+    <div className={s.stack}>
+      <DetailSection
+        title={t('oms.offerDetail.tabs.items', 'Items')}
+        subtitle={readonly ? t('oms.offerDetail.readonlyHint', 'Terminal offers are read-only.') : t('oms.offerDetail.itemsHint', 'Build the proposal with products, services, custom lines, discount, tax, and totals.')}
+      >
+        <ProposalLines items={items} t={t} locale={locale} currency={currency} />
+        <div className={s.proposalEditor}>
+          <LineItemsEditor
+            lines={items}
+            onChange={onItemsChange}
+            discountTypeOptions={discountTypeOptions}
+            errors={errors}
+            readonly={readonly}
+            productPickerTitle={t('documents.lines.productPickerTitle')}
+          />
+        </div>
+      </DetailSection>
+      <TotalsCrescendo items={items} totals={totals} t={t} locale={locale} currency={currency} />
+    </div>
+  );
+}
+
+function PreviewTab({ offer, form, items, totals, t, locale }) {
+  const currency = form.currency || offer?.currency || 'PLN';
+
+  return (
+    <DetailSection title={t('oms.offerDetail.tabs.preview', 'Preview')}>
+      <article className={s.preview}>
+        <header className={s.previewHeader}>
+          <div>
+            <span>{t('oms.offerDetail.preview.label', 'Offer')}</span>
+            <h2>{form.title || offer?.number || t('oms.offers.newTitle', 'New offer')}</h2>
+            {form.subject ? <p>{form.subject}</p> : null}
+          </div>
+          <div>
+            <strong>Sunset</strong>
+            <span>{offer?.number || t('oms.offerDetail.create.draftNumber', 'Draft')}</span>
+            <span>{t('oms.detailLabels.issueDate')}: {formatDate(form.issueDate, locale)}</span>
+            <span>{t('oms.detailLabels.validUntil')}: {formatDate(form.validUntil, locale)}</span>
+          </div>
+        </header>
+        <button type="button" className={s.pdfIntent} disabled>
+          {t('oms.offerDetail.preview.pdfPlanned', 'PDF in next phase')}
+        </button>
+        <div className={s.previewCustomer}>
+          <span>{t('oms.offerDetail.preview.preparedFor', 'Prepared for')}</span>
+          <strong>{counterpartyName(offer?.counterparty) || form.counterpartyId || '—'}</strong>
+        </div>
+        <div className={s.previewLines}>
+          {items.map((item, index) => {
+            const line = calculateLine(item);
+            return (
+              <div className={s.previewLine} key={item.localId || item.id || index}>
+                <div>
+                  <strong>{item.name || t('oms.offerDetail.preview.unnamedLine', 'Unnamed line')}</strong>
+                  <span>{asNumber(item.qty, 0)} × {formatMoney(asNumber(item.priceNet, 0), currency, locale)}</span>
+                </div>
+                <strong>{formatMoney(line.lineGross, currency, locale)}</strong>
+              </div>
+            );
+          })}
+        </div>
+        <footer className={s.previewFooter}>
+          <div>
+            <span>{t('oms.offerDetail.preview.terms', 'Terms')}</span>
+            <p>{t('oms.detailLabels.paymentTerms')}: {form.paymentTerms || '—'}</p>
+            <p>{t('oms.detailLabels.deliveryTerms')}: {form.deliveryTerms || '—'}</p>
+          </div>
+          <div className={s.previewGrandTotal}>
+            <span>{t('oms.offerDetail.hero.grandTotal', 'Grand total')}</span>
+            <MoneyAmount value={totals.gross} currency={currency} locale={locale} size="lg" />
+          </div>
+        </footer>
+      </article>
+    </DetailSection>
+  );
+}
+
+function ActivityTab({ offer, t, locale }) {
+  const events = buildActivity(offer, t, locale);
+  return (
+    <DetailSection title={t('oms.offerDetail.tabs.activity', 'Activity')}>
+      {events.length ? (
+        <div className={s.timeline}>
+          {events.map((event) => (
+            <div className={s.timelineRow} key={`${event.key}-${event.at}`}>
+              <span className={s.timelineDot} />
+              <div>
+                <strong>{event.label}</strong>
+                <span>{event.dateLabel}{event.actorLabel ? ` · ${event.actorLabel}` : ''}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className={s.empty}>{t('oms.offerDetail.activity.empty', 'No activity yet.')}</div>
+      )}
+    </DetailSection>
+  );
+}
+
+function SystemTab({ offer, t, locale }) {
+  return (
+    <div className={s.stack}>
+      <DetailSection title={t('oms.offerDetail.tabs.system', 'System')}>
+        <div className={s.systemGrid}>
+          <FactLine label="ID">{offer?.id}</FactLine>
+          <FactLine label={t('oms.detailLabels.number')}>{offer?.number}</FactLine>
+          <FactLine label={t('oms.detailLabels.status')}>{statusLabel(offer?.status, t)}</FactLine>
+          <FactLine label={t('oms.offerDetail.system.revision', 'Revision')}>{offer?.revision ?? offer?.meta?.revision}</FactLine>
+          <FactLine label={t('oms.detailLabels.createdAt')}>{formatDateTime(offer?.createdAt, locale)}</FactLine>
+          <FactLine label={t('oms.detailLabels.updatedAt')}>{formatDateTime(offer?.updatedAt, locale)}</FactLine>
+          <FactLine label={t('oms.offerDetail.system.lastStatusChangedAt', 'Last status change')}>{formatDateTime(offer?.lastStatusChangedAt || offer?.statusMetadata?.lastStatusChangedAt, locale)}</FactLine>
+          <FactLine label={t('oms.offerDetail.system.createdBy', 'Created by')}>{userName(offer?.createdByUser)}</FactLine>
+          <FactLine label={t('oms.offerDetail.system.updatedBy', 'Updated by')}>{userName(offer?.updatedByUser)}</FactLine>
+        </div>
+      </DetailSection>
+    </div>
+  );
 }
 
 export default function OfferDetailPage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const isCreate = !id;
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const locale = i18n.language;
   const { can } = useAclPermissions();
   const canReadOffer = can('offer:read');
-  const canUpdateOffer = can('offer:update');
   const canCreateOffer = can('offer:create');
+  const canUpdateOffer = can('offer:update');
+  const canDeleteOffer = can('offer:delete');
   const canConvertOffer = can('offer:convert');
   const canCreateOrder = can('order:create');
 
-  const [actionLoadingKey, setActionLoadingKey] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [form, setForm] = useState(() => buildFormFromOffer(null, searchParams));
+  const [items, setItems] = useState(() => normalizeItemSortOrder([createEmptyItem()]));
+  const [errors, setErrors] = useState({});
   const [actionError, setActionError] = useState('');
+  const [actionLoading, setActionLoading] = useState('');
+  const [dirty, setDirty] = useState(isCreate);
+  const initRef = useRef('');
+  const itemsHashRef = useRef(stableItemsHash(items));
 
-  const [viewMode, setViewMode] = useState('preview');
-  const [form, setForm] = useState(null);
-  const [items, setItems] = useState([]);
-  const [dirty, setDirty] = useState(false);
-  const initRef = useRef(null);
-
-  const { data: base, isLoading, isFetching, isError, error, refetch } = useGetOfferByIdQuery(id, {
-    skip: !id,
+  const { data: offer, isLoading, isFetching, isError, error, refetch } = useGetOfferByIdQuery(id, {
+    skip: isCreate || !id || !canReadOffer,
     refetchOnMountOrArgChange: true,
   });
+  const { data: meta } = useGetOfferMetaQuery({}, { refetchOnMountOrArgChange: false });
+  const { data: counterpartiesData } = useListCounterpartiesQuery({
+    limit: 150,
+    sort: 'shortName',
+    dir: 'ASC',
+    excludeLeadClient: true,
+  });
+  const { data: contactsData } = useGetContactsByCounterpartyQuery(
+    { counterpartyId: form.counterpartyId, limit: 100 },
+    { skip: !form.counterpartyId }
+  );
+  const { data: ownersData } = useListCompanyUsersQuery({ limit: 200 });
 
+  const [createOffer, { isLoading: isCreating }] = useCreateOfferMutation();
+  const [updateOffer, { isLoading: isUpdating }] = useUpdateOfferMutation();
+  const [saveOfferItems, { isLoading: isSavingItems }] = useSaveOfferItemsMutation();
+  const [deleteOffer, { isLoading: isDeleting }] = useDeleteOfferMutation();
   const [sendOffer] = useSendOfferMutation();
   const [acceptOffer] = useAcceptOfferMutation();
   const [rejectOffer] = useRejectOfferMutation();
@@ -121,34 +648,72 @@ export default function OfferDetailPage() {
   const [expireOffer] = useExpireOfferMutation();
   const [duplicateOffer] = useDuplicateOfferMutation();
   const [convertOfferToOrder] = useConvertOfferToOrderMutation();
-  const [updateOffer, { isLoading: isUpdating }] = useUpdateOfferMutation();
-  const [saveOfferItems, { isLoading: isSavingItems }] = useSaveOfferItemsMutation();
-  const isSaving = isUpdating || isSavingItems;
-
-  const editable = isOfferEditable(base);
 
   useEffect(() => {
-    if (!base?.id || initRef.current === base.id) return;
-    initRef.current = base.id;
-    setForm({
-      currencyCode: base.currency || base.currencyCode || 'PLN',
-      issueDate: asText(base.issueDate).slice(0, 10),
-      validUntil: asText(base.validUntil).slice(0, 10),
-      notes: base.notes || '',
-      paymentTerms: base.paymentTerms || '',
-      deliveryTerms: base.deliveryTerms || '',
-      leadTime: base.leadTime || '',
-    });
-    const mapped = Array.isArray(base.items) && base.items.length
-      ? normalizeItemSortOrder(sortItemsBySortOrder(base.items).map(toEditorItem))
-      : [];
-    setItems(mapped);
+    if (isCreate) return;
+    if (!offer?.id || initRef.current === offer.id) return;
+    initRef.current = offer.id;
+    const nextItems = buildItemsFromOffer(offer);
+    setForm(buildFormFromOffer(offer, searchParams));
+    setItems(nextItems);
+    setErrors({});
     setDirty(false);
-    setViewMode(isOfferEditable(base) ? 'edit' : 'preview');
-  }, [base]);
+    itemsHashRef.current = stableItemsHash(nextItems);
+  }, [isCreate, offer, searchParams]);
+
+  const editable = isCreate || (isOfferEditable(offer) && canUpdateOffer);
+  const readonly = !editable;
+  const totals = useMemo(() => calculateTotals(items), [items]);
+  const currency = form.currency || offer?.currency || 'PLN';
+  const decisionGross = isCreate ? totals.gross : Number(offer?.totalGross ?? totals.gross);
+  const validity = useMemo(() => getValidity(isCreate ? form : offer, t, locale), [form, isCreate, locale, offer, t]);
+  const isSaving = isCreating || isUpdating || isSavingItems || isDeleting;
+
+  const counterpartyOptions = useMemo(() => {
+    const rows = counterpartiesData?.items || [];
+    return [
+      { value: '', label: t('documents.editor.selectCounterparty') },
+      ...rows.map((row) => ({ value: row.id, label: counterpartyName(row) || row.id })),
+    ];
+  }, [counterpartiesData?.items, t]);
+
+  const contactOptions = useMemo(() => {
+    const rows = contactsData?.items || [];
+    return [
+      { value: '', label: t('documents.editor.noContact') },
+      ...rows.map((row) => ({ value: row.id, label: contactName(row) || row.id })),
+    ];
+  }, [contactsData?.items, t]);
+
+  const ownerOptions = useMemo(() => {
+    const rows = ownersData?.items || [];
+    return [
+      { value: '', label: t('documents.editor.noOwner') },
+      ...rows.map((row) => ({ value: row.userId || row.id, label: userName(row) || row.userId || row.id })),
+    ];
+  }, [ownersData?.items, t]);
+
+  const currencyOptions = useMemo(() => {
+    const base = ['PLN', 'EUR', 'USD'];
+    const current = asText(form.currency).toUpperCase();
+    if (current && !base.includes(current)) base.unshift(current);
+    return base.map((code) => ({ value: code, label: code }));
+  }, [form.currency]);
+
+  const discountTypeOptions = useMemo(() => {
+    const source = Array.isArray(meta?.discountTypes) && meta.discountTypes.length
+      ? meta.discountTypes
+      : ['none', 'fixed', 'percent'];
+    return source.map((type) => ({ value: type, label: t(`documents.discountTypes.${type}`, type) }));
+  }, [meta?.discountTypes, t]);
 
   const setField = useCallback((key, value) => {
-    setForm((prev) => ({ ...(prev || {}), [key]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === 'counterpartyId') next.contactId = '';
+      return next;
+    });
+    setErrors((prev) => ({ ...prev, [key]: undefined }));
     setDirty(true);
   }, []);
 
@@ -157,242 +722,384 @@ export default function OfferDetailPage() {
     setDirty(true);
   }, []);
 
-  const currencyOptions = useMemo(() => {
-    const list = ['PLN', 'EUR', 'USD'];
-    const cur = asText(form?.currencyCode).toUpperCase();
-    if (cur && !list.includes(cur)) list.unshift(cur);
-    return list.map((c) => ({ value: c, label: c }));
-  }, [form?.currencyCode]);
-
-  const runAction = useCallback(async (key, runner, { redirect } = {}) => {
-    if (!id) return;
+  const saveOffer = useCallback(async () => {
     setActionError('');
-    setActionLoadingKey(key);
+    const nextErrors = validateOfferForm(form, items, t);
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) {
+      setActionError(nextErrors.counterpartyId || t('documents.editor.validation.itemNameRequired'));
+      return null;
+    }
+
+    const payload = buildPayload(form);
+    const mappedItems = mapLinesToPayload(items);
+
+    try {
+      if (isCreate) {
+        const created = await createOffer({ ...payload, items: mappedItems }).unwrap();
+        const createdId = created?.id || created?.data?.id;
+        if (createdId) navigate(`/main/oms/offers/${createdId}`, { replace: true });
+        return created;
+      }
+
+      await updateOffer({ id, payload }).unwrap();
+      const nextHash = stableItemsHash(items);
+      if (nextHash !== itemsHashRef.current) {
+        await saveOfferItems({ id, items: mappedItems }).unwrap();
+        itemsHashRef.current = nextHash;
+      }
+      await refetch();
+      setDirty(false);
+      return offer;
+    } catch (err) {
+      setActionError(getErrorText(err, t('documents.editor.saveFailed')));
+      return null;
+    }
+  }, [createOffer, form, id, isCreate, items, navigate, offer, refetch, saveOfferItems, t, updateOffer]);
+
+  const runAction = useCallback(async (key, runner, options = {}) => {
+    if (!id) return;
+    if (options.confirm && typeof window !== 'undefined' && !window.confirm(options.confirm)) return;
+    setActionError('');
+    setActionLoading(key);
     try {
       const result = await runner().unwrap();
-      if (typeof redirect === 'function') {
-        const target = redirect(result);
-        if (target) { navigate(target); return; }
+      const redirect = options.redirect?.(result);
+      if (redirect) {
+        navigate(redirect);
+        return;
       }
       await refetch();
     } catch (err) {
-      const message = getErrorText(err, t('oms.errors.actionFailed'));
-      setActionError(message);
-      if (typeof window !== 'undefined' && typeof window.alert === 'function') window.alert(message);
+      setActionError(getErrorText(err, t('oms.errors.actionFailed')));
     } finally {
-      setActionLoadingKey('');
+      setActionLoading('');
     }
   }, [id, navigate, refetch, t]);
 
-  const onSave = useCallback(async () => {
-    setActionError('');
-    const invalid = !items.length || items.some((it) => (
-      !asText(it.name) || asNumber(it.qty, 0) <= 0 || asNumber(it.priceNet, -1) < 0
-    ));
-    if (invalid) { setActionError(t('documents.editor.validation.itemNameRequired')); return; }
-    try {
-      const header = {
-        counterpartyId: base?.counterpartyId || base?.counterparty?.id,
-        contactId: base?.contactId || base?.contact?.id || null,
-        ownerId: base?.ownerId || base?.owner?.id || null,
-        currency: asText(form?.currencyCode).toUpperCase() || 'PLN',
-        issueDate: form?.issueDate || null,
-        validUntil: form?.validUntil || null,
-        title: base?.title || '',
-        subject: base?.subject || '',
-        notes: form?.notes || '',
-        paymentTerms: form?.paymentTerms || '',
-        deliveryTerms: form?.deliveryTerms || '',
-        leadTime: form?.leadTime || '',
-      };
-      await updateOffer({ id, payload: header }).unwrap();
-      await saveOfferItems({ id, items: mapLinesToPayload(items) }).unwrap();
-      await refetch();
-      setDirty(false);
-    } catch (err) {
-      setActionError(getErrorText(err, t('documents.editor.saveFailed')));
-    }
-  }, [base, form, items, id, updateOffer, saveOfferItems, refetch, t]);
+  const duplicateCurrent = useCallback(() => runAction('duplicate', () => duplicateOffer({ id, payload: {} }), {
+    redirect: (result) => {
+      const nextId = result?.id || result?.data?.id || result?.offer?.id || result?.data?.offer?.id;
+      return nextId ? `/main/oms/offers/${nextId}` : null;
+    },
+  }), [duplicateOffer, id, runAction]);
 
-  const handleAction = useCallback((action) => {
-    if (!action?.key) return;
-    if (action.key === 'send') return void runAction('send', () => sendOffer({ id, payload: {} }));
-    if (action.key === 'accept') return void runAction('accept', () => acceptOffer({ id, payload: {} }));
-    if (action.key === 'reject') return void runAction('reject', () => rejectOffer({ id, payload: {} }));
-    if (action.key === 'cancel') return void runAction('cancel', () => cancelOffer({ id, payload: {} }));
-    if (action.key === 'expire') return void runAction('expire', () => expireOffer({ id, payload: {} }));
-    if (action.key === 'duplicate') {
-      return void runAction('duplicate', () => duplicateOffer({ id, payload: {} }), {
-        redirect: (result) => {
-          const newId = result?.id || result?.data?.id;
-          return newId ? `/main/oms/offers/${newId}` : null;
-        },
-      });
+  const convertCurrent = useCallback(() => runAction('convert-to-order', () => convertOfferToOrder({ id, payload: {} }), {
+    redirect: (result) => {
+      const orderId = result?.order?.id || result?.data?.order?.id || result?.id || result?.data?.id;
+      return orderId ? `/main/oms/orders/${orderId}` : null;
+    },
+  }), [convertOfferToOrder, id, runAction]);
+
+  const deleteCurrent = useCallback(async () => {
+    if (!id) return;
+    if (typeof window !== 'undefined' && !window.confirm(t('oms.offerDetail.confirmDelete', 'Delete this offer?'))) return;
+    setActionLoading('delete');
+    setActionError('');
+    try {
+      await deleteOffer(id).unwrap();
+      navigate('/main/oms/offers');
+    } catch (err) {
+      setActionError(getErrorText(err, t('oms.errors.actionFailed')));
+    } finally {
+      setActionLoading('');
     }
-    if (action.key === 'convert-to-order') {
-      return void runAction('convert-to-order', () => convertOfferToOrder({ id, payload: {} }), {
-        redirect: (result) => {
-          const newOrderId = result?.order?.id || result?.data?.order?.id;
-          return newOrderId ? `/main/oms/orders/${newOrderId}` : null;
-        },
-      });
+  }, [deleteOffer, id, navigate, t]);
+
+  const available = offer?.availableActions || {};
+  const primaryAction = useMemo(() => {
+    if (isCreate) {
+      return {
+        key: 'create',
+        label: isSaving ? t('common.saving', 'Saving...') : t('oms.offerDetail.actions.create', 'Create offer'),
+        icon: <Save size={15} aria-hidden="true" />,
+        disabled: isSaving || !canCreateOffer,
+        onClick: saveOffer,
+      };
     }
-  }, [id, runAction, sendOffer, acceptOffer, rejectOffer, cancelOffer, expireOffer, duplicateOffer, convertOfferToOrder]);
+    if (available.canSend && canUpdateOffer) {
+      return { key: 'send', label: t('oms.actionLabels.send'), icon: <Send size={15} aria-hidden="true" />, disabled: actionLoading === 'send', onClick: () => runAction('send', () => sendOffer({ id, payload: {} })) };
+    }
+    if (available.canAccept && canUpdateOffer) {
+      return { key: 'accept', label: t('oms.actionLabels.accept'), icon: <BadgeCheck size={15} aria-hidden="true" />, disabled: actionLoading === 'accept', onClick: () => runAction('accept', () => acceptOffer({ id, payload: {} })) };
+    }
+    if (available.canConvertToOrder && canConvertOffer && canCreateOrder) {
+      return { key: 'convert-to-order', label: t('oms.actionLabels.convertToOrder'), icon: <ReceiptText size={15} aria-hidden="true" />, disabled: actionLoading === 'convert-to-order', onClick: convertCurrent };
+    }
+    if (available.canDuplicate && canCreateOffer) {
+      return { key: 'duplicate', label: t('oms.actionLabels.duplicate'), icon: <Copy size={15} aria-hidden="true" />, disabled: actionLoading === 'duplicate', onClick: duplicateCurrent };
+    }
+    return null;
+  }, [acceptOffer, actionLoading, available.canAccept, available.canConvertToOrder, available.canDuplicate, available.canSend, canConvertOffer, canCreateOffer, canCreateOrder, canUpdateOffer, convertCurrent, duplicateCurrent, id, isCreate, isSaving, runAction, saveOffer, sendOffer, t]);
 
   const headerActions = useMemo(() => {
-    const available = base?.availableActions || {};
-    const defs = [
-      { key: 'send', label: t('oms.actionLabels.send'), enabled: canUpdateOffer && Boolean(available.canSend) },
-      { key: 'accept', label: t('oms.actionLabels.accept'), enabled: canUpdateOffer && Boolean(available.canAccept) },
-      {
-        key: 'reject', label: t('oms.actionLabels.reject'), enabled: canUpdateOffer && Boolean(available.canReject), destructive: true,
-        confirm: { title: t('oms.confirm.offerRejectTitle'), text: t('oms.confirm.offerRejectText'), okText: t('oms.confirm.offerRejectOk') },
-      },
-      {
-        key: 'cancel', label: t('oms.actionLabels.cancel'), enabled: canUpdateOffer && Boolean(available.canCancel), destructive: true,
-        confirm: { title: t('oms.confirm.offerCancelTitle'), text: t('oms.confirm.offerCancelText'), okText: t('oms.confirm.offerCancelOk') },
-      },
-      { key: 'expire', label: t('oms.actionLabels.expire'), enabled: canUpdateOffer && Boolean(available.canExpire) },
-      { key: 'duplicate', label: t('oms.actionLabels.duplicate'), enabled: canCreateOffer && Boolean(available.canDuplicate) },
-      { key: 'convert-to-order', label: t('oms.actionLabels.convertToOrder'), enabled: canConvertOffer && canCreateOrder && Boolean(available.canConvertToOrder), variant: 'primary' },
-    ];
-    return defs
-      .filter((a) => a.enabled)
-      .map((a) => ({ ...a, loadingLabel: t('common.loading'), onClick: handleAction }));
-  }, [base?.availableActions, canConvertOffer, canCreateOffer, canCreateOrder, canUpdateOffer, handleAction, t]);
+    const actions = [];
+    if (!isCreate && dirty && editable) {
+      actions.push({
+        key: 'save',
+        label: isSaving ? t('common.saving', 'Saving...') : t('common.save', 'Save'),
+        icon: <Save size={14} aria-hidden="true" />,
+        disabled: isSaving,
+        onClick: saveOffer,
+      });
+    }
+    if (!isCreate && available.canReject && canUpdateOffer) {
+      actions.push({ key: 'reject', label: t('oms.actionLabels.reject'), destructive: true, onClick: () => runAction('reject', () => rejectOffer({ id, payload: {} }), { confirm: t('oms.confirm.offerRejectText') }) });
+    }
+    if (!isCreate && available.canCancel && canUpdateOffer) {
+      actions.push({ key: 'cancel', label: t('oms.actionLabels.cancel'), destructive: true, onClick: () => runAction('cancel', () => cancelOffer({ id, payload: {} }), { confirm: t('oms.confirm.offerCancelText') }) });
+    }
+    if (!isCreate && available.canExpire && canUpdateOffer) {
+      actions.push({ key: 'expire', label: t('oms.actionLabels.expire'), onClick: () => runAction('expire', () => expireOffer({ id, payload: {} })) });
+    }
+    return actions;
+  }, [available.canCancel, available.canExpire, available.canReject, canUpdateOffer, cancelOffer, dirty, editable, expireOffer, id, isCreate, isSaving, rejectOffer, runAction, saveOffer, t]);
 
-  if (!canReadOffer) {
-    return <DocumentEnginePage.State title={t('common.noPermission')} text={t('documents.editor.noPermissionHint')} />;
-  }
-  if (isLoading || (isFetching && !base)) {
-    return <DocumentEnginePage.State title={t('common.loading')} text={t('documents.editor.loadingHint')} />;
-  }
-  if (isError) {
-    const message = error?.data?.message || error?.data?.error || error?.message || t('oms.errors.offerLoadFailed');
-    return <DocumentEnginePage.State title={t('oms.errors.offerLoadFailed')} text={message} />;
-  }
-  if (!base) {
-    return <DocumentEnginePage.State title={t('oms.errors.offerNotFound')} text={t('documents.editor.notFoundHint')} />;
-  }
+  const overflowActions = useMemo(() => {
+    const items = [];
+    if (!isCreate && available.canDuplicate && canCreateOffer && primaryAction?.key !== 'duplicate') items.push({ key: 'duplicate', label: t('oms.actionLabels.duplicate'), onClick: duplicateCurrent });
+    if (!isCreate && available.canDelete && canDeleteOffer) items.push({ key: 'delete', label: t('common.delete', 'Delete'), destructive: true, onClick: deleteCurrent });
+    return items;
+  }, [available.canDelete, available.canDuplicate, canCreateOffer, canDeleteOffer, deleteCurrent, duplicateCurrent, isCreate, primaryAction?.key, t]);
 
-  const isEdit = viewMode === 'edit' && editable;
-  const model = mapOfferToDocumentModel(base, { t, locale });
-  const documentRelations = buildDocumentRelations(base, t);
-  const timelineEvents = buildTimelineEvents(base, t);
-  const counterparty = base?.counterparty || null;
-  const counterpartyName = counterparty?.name || counterparty?.shortName || counterparty?.fullName || '';
-  const convertedOrder = base?.convertedOrder || null;
-  const convertedOrderId = convertedOrder?.id || base?.convertedOrderId || null;
-  const invoiceLinks = collectOfferInvoices(base);
+  const smartButtons = useMemo(() => {
+    const invoices = Array.isArray(offer?.invoices) ? offer.invoices : [];
+    return [
+      offer?.deal?.id || offer?.dealId ? { key: 'deal', label: t('oms.offerDetail.smart.deal', 'Deal'), value: offer?.deal?.title || '1', to: `/main/deals/${offer?.deal?.id || offer?.dealId}` } : null,
+      offer?.convertedOrder?.id || offer?.convertedOrderId ? { key: 'order', label: t('oms.offerDetail.smart.order', 'Order'), value: offer?.convertedOrder?.number || '1', to: `/main/oms/orders/${offer?.convertedOrder?.id || offer?.convertedOrderId}` } : null,
+      invoices.length ? { key: 'invoice', label: t('oms.offerDetail.smart.invoice', 'Invoice'), value: invoices.length, to: `/main/oms/invoices/${invoices[0].id}` } : null,
+      { key: 'preview', label: t('oms.offerDetail.smart.preview', 'Preview'), value: <FileText size={14} aria-hidden="true" />, onClick: () => setActiveTab('preview') },
+      !isCreate ? { key: 'notes', label: t('oms.offerDetail.smart.notes', 'Notes'), value: '•', onClick: () => setActiveTab('notes') } : null,
+    ].filter(Boolean);
+  }, [isCreate, offer, t]);
 
-  const relationsContent = (
-    <>
-      {documentRelations.length ? <DocumentRelations relations={documentRelations} /> : null}
-      <div className={s.kvList}>
-        <div className={s.kvRow}>
-          <span className={s.kvLabel}>{t('oms.relations.convertedOrder')}</span>
-          <span className={`${s.kvValue} ${s.kvValueLeft}`}>
-            {convertedOrderId ? (
-              <Link className={s.entityLink} to={`/main/oms/orders/${convertedOrderId}`}>{convertedOrder?.number || convertedOrderId}</Link>
-            ) : '—'}
-          </span>
-        </div>
-        <div className={s.kvRow}>
-          <span className={s.kvLabel}>{t('oms.relations.counterparty')}</span>
-          <span className={`${s.kvValue} ${s.kvValueLeft}`}>
-            {counterparty?.id ? (
-              <Link className={s.entityLink} to={`/main/counterparties/${counterparty.id}`}>{counterpartyName || counterparty.id}</Link>
-            ) : '—'}
-          </span>
-        </div>
-        <div className={s.kvRow}>
-          <span className={s.kvLabel}>{t('oms.relations.contact')}</span>
-          <span className={`${s.kvValue} ${s.kvValueLeft}`}>
-            {base?.contact?.id ? (
-              <Link className={s.entityLink} to={`/main/contacts/${base.contact.id}`}>{base.contact.name || base.contact.email || base.contact.id}</Link>
-            ) : (base?.contact?.name || base?.contact?.email || '—')}
-          </span>
-        </div>
-        {invoiceLinks.length ? (
-          <div className={s.kvRow}>
-            <span className={s.kvLabel}>{t('oms.relations.invoices')}</span>
-            <span className={`${s.kvValue} ${s.kvValueLeft}`}>
-              <span className={s.inlineLinks}>
-                {invoiceLinks.map((invoice) => (
-                  <Link key={invoice.id} className={s.entityLink} to={`/main/documents/${invoice.id}`}>{invoice.number || invoice.id}</Link>
-                ))}
-              </span>
-            </span>
-          </div>
-        ) : null}
-      </div>
-    </>
-  );
-
-  const editOverrides = isEdit && form ? {
-    primaryFields: [
-      { label: t('oms.detailLabels.counterparty'), value: counterpartyName },
-      { label: t('oms.detailLabels.contact'), value: base?.contact?.name || base?.contact?.email || '' },
-      { label: t('oms.detailLabels.owner'), value: base?.owner?.name || base?.owner?.email || '' },
-      { label: t('oms.detailLabels.deal'), value: base?.deal?.title || base?.dealId || '' },
-      { label: t('oms.detailLabels.notes'), type: 'textarea', value: form.notes, onChange: (v) => setField('notes', v) },
-    ],
-    secondaryFields: [
-      { label: t('oms.detailLabels.issueDate'), type: 'date', value: form.issueDate, onChange: (v) => setField('issueDate', v) },
-      { label: t('oms.detailLabels.validUntil'), type: 'date', value: form.validUntil, onChange: (v) => setField('validUntil', v) },
-      { label: t('oms.summaryLabels.currency'), type: 'select', value: form.currencyCode, onChange: (v) => setField('currencyCode', v), options: currencyOptions },
-      { label: t('oms.detailLabels.paymentTerms'), type: 'text', value: form.paymentTerms, onChange: (v) => setField('paymentTerms', v) },
-      { label: t('oms.detailLabels.deliveryTerms'), type: 'text', value: form.deliveryTerms, onChange: (v) => setField('deliveryTerms', v) },
-      { label: t('oms.detailLabels.leadTime'), type: 'text', value: form.leadTime, onChange: (v) => setField('leadTime', v) },
-    ],
-    itemsSlot: (
-      <LineItemsEditor
-        lines={items}
-        onChange={onItemsChange}
-        discountTypeOptions={DISCOUNT_TYPE_OPTIONS}
-        productPickerTitle={t('documents.lines.productPickerTitle')}
-      />
-    ),
-    totals: {
-      netLabel: t('oms.summaryLabels.net'),
-      vatLabel: t('oms.summaryLabels.vat'),
-      grossLabel: t('oms.summaryLabels.gross'),
-      ...calculateTotals(items),
+  const tabs = useMemo(() => [
+    {
+      key: 'overview',
+      label: t('oms.offerDetail.tabs.overview', 'Overview'),
+      render: () => (
+        <OverviewTab
+          offer={offer}
+          form={form}
+          totals={totals}
+          isCreate={isCreate}
+          validity={validity}
+          t={t}
+          locale={locale}
+          onTab={setActiveTab}
+        />
+      ),
     },
-  } : {};
+    {
+      key: 'items',
+      label: t('oms.offerDetail.tabs.items', 'Items'),
+      count: items.length,
+      render: () => (
+        <ItemsTab
+          items={items}
+          onItemsChange={onItemsChange}
+          errors={errors}
+          discountTypeOptions={discountTypeOptions}
+          readonly={readonly}
+          totals={totals}
+          t={t}
+          locale={locale}
+          currency={currency}
+        />
+      ),
+    },
+    {
+      key: 'preview',
+      label: t('oms.offerDetail.tabs.preview', 'Preview'),
+      render: () => <PreviewTab offer={offer} form={form} items={items} totals={totals} t={t} locale={locale} />,
+    },
+    {
+      key: 'activity',
+      label: t('oms.offerDetail.tabs.activity', 'Activity'),
+      render: () => <ActivityTab offer={offer} t={t} locale={locale} />,
+    },
+    {
+      key: 'notes',
+      label: t('oms.offerDetail.tabs.notes', 'Notes'),
+      render: () => (
+        isCreate ? (
+          <DetailSection title={t('oms.offerDetail.tabs.notes', 'Notes')}>
+            <div className={s.empty}>{t('oms.offerDetail.notes.saveFirst', 'Create the offer before adding notes.')}</div>
+          </DetailSection>
+        ) : (
+          <EntityNotesSection
+            ownerType="offer"
+            ownerId={id}
+            title={t('oms.offerDetail.notes.title', 'Offer notes')}
+            emptyTitle={t('oms.offerDetail.notes.emptyTitle', 'No notes yet')}
+            emptyText={t('oms.offerDetail.notes.emptyText', 'Notes linked to this offer will appear here.')}
+            addNoteLabel={t('oms.offerDetail.notes.add', 'Add note')}
+            compact
+            hidePagerWhenSingle
+          />
+        )
+      ),
+    },
+    {
+      key: 'system',
+      label: t('oms.offerDetail.tabs.system', 'System'),
+      render: () => <SystemTab offer={offer} t={t} locale={locale} />,
+    },
+  ], [currency, discountTypeOptions, errors, form, id, isCreate, items, locale, offer, onItemsChange, readonly, t, totals, validity]);
+
+  if ((isCreate && !canCreateOffer) || (!isCreate && !canReadOffer)) {
+    return <div className={s.state}>{t('common.noPermission', 'No permission')}</div>;
+  }
+  if (!isCreate && (isLoading || (isFetching && !offer))) {
+    return <div className={s.state}>{t('common.loading', 'Loading')}</div>;
+  }
+  if (!isCreate && isError) {
+    return <div className={s.state}>{getErrorText(error, t('oms.errors.offerLoadFailed'))}</div>;
+  }
+  if (!isCreate && !offer) {
+    return <div className={s.state}>{t('oms.errors.offerNotFound')}</div>;
+  }
 
   return (
-    <DocumentEnginePage
-      model={model}
-      mode={isEdit ? 'edit' : 'preview'}
-      back={{ label: t('oms.offers.title'), onClick: () => navigate('/main/oms/offers') }}
-      breadcrumb={`${t('oms.offers.title')} / ${model.number}`}
-      showViewModeToggle
-      viewMode={viewMode}
-      viewModeDisabledModes={editable ? ['split'] : ['edit', 'split']}
-      onViewModeChange={(mode) => {
-        if (mode === 'split') return;
-        if (mode === 'edit' && !editable) return;
-        setViewMode(mode);
-      }}
-      showPrintButton
-      onPrint={() => { if (typeof window !== 'undefined') window.print(); }}
-      showSaveButton={isEdit}
-      onSave={onSave}
-      saveDisabled={!dirty || isSaving}
-      saveLoading={isSaving}
-      actions={headerActions}
-      actionLoadingKey={actionLoadingKey}
-      actionError={actionError}
-      itemsTitle={t('documents.lines.title')}
-      emptyItemsLabel={t('oms.itemsTable.empty')}
-      summaryTitle={t('documents.editor.summaryTitle')}
-      lockedNote={!editable ? { label: t('documents.locked.label'), text: t('documents.locked.text') } : undefined}
-      sections={[
-        { key: 'relations', title: t('oms.relations.title'), content: relationsContent },
-        { key: 'history', title: t('oms.tabs.history'), content: <DocumentTimeline events={timelineEvents} /> },
+    <DetailLayout
+      mode="entity"
+      className={s.offerDetail}
+      breadcrumbs={[
+        { label: t('oms.offers.title'), to: '/main/oms/offers' },
+        { label: isCreate ? t('oms.offers.newTitle') : offer?.number || offer?.id },
       ]}
-      {...editOverrides}
+      title={form.title || offer?.number || t('oms.offers.newTitle')}
+      subtitle={form.subject || counterpartyName(offer?.counterparty) || t('oms.offerDetail.subtitle', 'Persuasion workspace')}
+      icon={<FileText size={18} aria-hidden="true" />}
+      status={{ value: isCreate ? 'draft' : offer?.status, label: isCreate ? statusLabel('draft', t) : statusLabel(offer?.status, t) }}
+      smartButtons={smartButtons}
+      primaryAction={primaryAction}
+      actions={headerActions}
+      overflowActions={overflowActions}
+      saveState={{
+        dirty,
+        saving: isSaving,
+        error: actionError,
+        label: actionError || (isSaving ? t('common.saving', 'Saving...') : dirty ? t('oms.offerDetail.save.unsaved', 'Unsaved changes') : t('oms.offerDetail.save.saved', 'Saved')),
+      }}
+      header={(
+        <div className={s.headerWrap}>
+          <div className={s.headerTop}>
+            <button type="button" className={s.backBtn} onClick={() => navigate('/main/oms/offers')}>
+              <ArrowLeft size={16} aria-hidden="true" />
+              {t('oms.offers.title')}
+            </button>
+          </div>
+          <OfferHero offer={offer} form={form} totals={totals} isCreate={isCreate} validity={validity} t={t} locale={locale} />
+          <div className={s.headerActions}>
+            <div className={s.smartRow}>
+              {smartButtons.map((item) => (
+                item.to ? (
+                  <Link key={item.key} className={s.smartBtn} to={item.to}>
+                    <strong>{item.value}</strong><span>{item.label}</span>
+                  </Link>
+                ) : (
+                  <button key={item.key} type="button" className={s.smartBtn} onClick={item.onClick}>
+                    <strong>{item.value}</strong><span>{item.label}</span>
+                  </button>
+                )
+              ))}
+            </div>
+            <div className={s.actionRow}>
+              {headerActions.map((action) => (
+                <button
+                  key={action.key}
+                  type="button"
+                  className={`${s.actionBtn} ${action.destructive ? s.actionDanger : ''}`}
+                  onClick={action.onClick}
+                  disabled={action.disabled}
+                >
+                  {action.icon}
+                  {action.label}
+                </button>
+              ))}
+              {overflowActions.length ? (
+                <details className={s.overflowMenu}>
+                  <summary aria-label={t('oms.offerDetail.actions.more', 'More actions')}>•••</summary>
+                  <div>
+                    {overflowActions.map((action) => (
+                      <button
+                        key={action.key}
+                        type="button"
+                        className={`${s.actionBtn} ${s.overflowAction} ${action.destructive ? s.actionDanger : ''}`}
+                        onClick={action.onClick}
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
+                </details>
+              ) : null}
+              {primaryAction ? (
+                <div className={s.primaryDecision}>
+                  <span>
+                    {t('oms.offerDetail.hero.grandTotal', 'Grand total')}
+                    {' '}
+                    {formatMoney(decisionGross, currency, locale)}
+                  </span>
+                  <button type="button" className={s.primaryBtn} onClick={primaryAction.onClick} disabled={primaryAction.disabled}>
+                    {primaryAction.icon}
+                    {primaryAction.label}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+          {actionError ? <div className={s.errorBar}>{actionError}</div> : null}
+        </div>
+      )}
+      sidebar={(
+        <aside className={s.sidebar}>
+          <DetailCard title={t('oms.offerDetail.sections.customer', 'Customer')}>
+            <div className={s.fieldStack}>
+              <SelectField label={t('oms.detailLabels.counterparty')} value={form.counterpartyId} options={counterpartyOptions} onValueChange={(value) => setField('counterpartyId', value)} disabled={readonly} error={errors.counterpartyId} searchable clearable />
+              <SelectField label={t('oms.detailLabels.contact')} value={form.contactId} options={contactOptions} onValueChange={(value) => setField('contactId', value)} disabled={readonly || !form.counterpartyId} searchable clearable />
+              <SelectField label={t('oms.detailLabels.owner')} value={form.ownerId} options={ownerOptions} onValueChange={(value) => setField('ownerId', value)} disabled={readonly} searchable clearable />
+              {offer?.deal?.id || form.dealId ? (
+                <FactLine label={t('oms.detailLabels.deal')}>
+                  {offer?.deal?.id ? <Link to={`/main/deals/${offer.deal.id}`}>{offer.deal.title || offer.deal.id}</Link> : form.dealId}
+                </FactLine>
+              ) : null}
+            </div>
+          </DetailCard>
+
+          <DetailCard title={t('oms.offerDetail.sections.proposal', 'Proposal')}>
+            <div className={s.fieldStack}>
+              <TextField label={t('documents.editor.fieldTitle')} value={form.title} onValueChange={(value) => setField('title', value)} disabled={readonly} />
+              <TextField label={t('documents.editor.fieldSubject')} value={form.subject} onValueChange={(value) => setField('subject', value)} disabled={readonly} />
+              <TextField type="date" label={t('oms.detailLabels.issueDate')} value={form.issueDate} onValueChange={(value) => setField('issueDate', value)} disabled={readonly} />
+              <TextField type="date" label={t('oms.detailLabels.validUntil')} value={form.validUntil} onValueChange={(value) => setField('validUntil', value)} disabled={readonly} />
+            </div>
+          </DetailCard>
+
+          <DetailCard title={t('oms.offerDetail.sections.commercial', 'Commercial')}>
+            <div className={s.fieldStack}>
+              <SelectField label={t('oms.summaryLabels.currency')} value={form.currency} options={currencyOptions} onValueChange={(value) => setField('currency', value)} disabled={readonly} />
+              <TextField label={t('oms.offerDetail.fields.exchangeRate', 'Exchange rate')} value={form.exchangeRate} onValueChange={(value) => setField('exchangeRate', value)} disabled={readonly} inputMode="decimal" />
+              <TextField label={t('oms.detailLabels.paymentTerms')} value={form.paymentTerms} onValueChange={(value) => setField('paymentTerms', value)} disabled={readonly} />
+              <TextField label={t('oms.detailLabels.deliveryTerms')} value={form.deliveryTerms} onValueChange={(value) => setField('deliveryTerms', value)} disabled={readonly} />
+              <TextField label={t('oms.offerDetail.fields.incoterms', 'Incoterms')} value={form.incoterms} onValueChange={(value) => setField('incoterms', value)} disabled={readonly} />
+              <TextField label={t('oms.detailLabels.leadTime')} value={form.leadTime} onValueChange={(value) => setField('leadTime', value)} disabled={readonly} />
+            </div>
+          </DetailCard>
+
+          <DetailCard title={t('oms.offerDetail.sections.notes', 'Notes')}>
+            <TextareaField label={t('oms.detailLabels.notes')} value={form.notes} onValueChange={(value) => setField('notes', value)} disabled={readonly} rows={4} />
+          </DetailCard>
+        </aside>
+      )}
+      content={(
+        <main className={s.content}>
+          <div className={s.workspaceSurface}>
+            <DetailTabs tabs={tabs} activeTab={activeTab} onActiveTabChange={setActiveTab} />
+          </div>
+        </main>
+      )}
     />
   );
 }

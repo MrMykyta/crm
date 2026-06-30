@@ -56,6 +56,11 @@ static associate(models) {
         foreignKey: { name: 'mainResponsibleUserId', field: 'main_responsible_user_id' },
         as: 'responsibleContacts',
       });
+
+      User.hasMany(models.CrmDealActivity, {
+        foreignKey: { name: 'authorId', field: 'author_id' },
+        as: 'dealActivities',
+      });
     }
   }
 

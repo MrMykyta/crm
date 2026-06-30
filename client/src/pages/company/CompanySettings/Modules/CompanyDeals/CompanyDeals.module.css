@@ -1,6 +1,6 @@
 .wrap {
   display: grid;
-  grid-template-rows: auto auto auto 1fr;
+  grid-template-rows: auto auto 1fr;
   gap: 14px;
   height: 100%;
   min-height: 0;
@@ -15,7 +15,9 @@
 }
 
 .header h2,
-.panel h3 {
+.sidebar h3,
+.panel h3,
+.firstRun h3 {
   margin: 0;
   color: var(--text);
 }
@@ -26,8 +28,10 @@
 }
 
 .header p,
+.sidebar p,
 .panel p,
-.cardDescription {
+.firstRun p,
+.templateCard small {
   margin: 4px 0 0;
   color: var(--muted, var(--text-2));
   font-size: var(--font-size-13, 13px);
@@ -37,13 +41,15 @@
 .headerStats,
 .badges,
 .actions,
-.tabs,
 .panelHead,
-.cardTop,
-.pipelineTitle,
-.stageTitle,
+.sidebarHead,
+.stageTop,
 .reasonTitle,
-.probabilityRow {
+.probabilityRow,
+.pipelineButton,
+.navBadges,
+.stageMetrics,
+.firstRunHead {
   display: flex;
   align-items: center;
 }
@@ -51,66 +57,35 @@
 .headerStats,
 .badges,
 .actions,
-.tabs {
+.navBadges,
+.stageMetrics {
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.tabs {
-  padding: 5px;
-  border: 1px solid var(--glass-brd);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--card-bg) 76%, transparent);
-  width: fit-content;
-  max-width: 100%;
-}
-
-.tab {
-  min-height: 34px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--text-2);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.tab:hover,
-.tabActive {
-  background: color-mix(in srgb, var(--primary-start, #2563eb) 16%, transparent);
-  color: var(--text);
-}
-
-.content,
-.stack {
+.builder {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 14px;
   min-height: 0;
 }
 
-.content {
+.sidebar,
+.workspace {
+  min-height: 0;
   overflow: auto;
-  padding-right: 4px;
 }
 
-.stack {
-  display: grid;
-  gap: 14px;
-}
-
-.gridTwo {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
-  gap: 14px;
-  align-items: start;
-}
-
+.sidebar,
 .panel,
-.pipelineCard,
-.stageCard,
-.reasonCard,
+.firstRun,
 .emptyState,
 .notice,
-.error {
+.error,
+.templateCard,
+.pipelineNavItem,
+.stageCard,
+.reasonCard {
   border: 1px solid var(--glass-brd);
   background:
     linear-gradient(180deg, color-mix(in srgb, #fff 6%, transparent), transparent),
@@ -119,46 +94,171 @@
   backdrop-filter: blur(10px);
 }
 
-.panel {
+.sidebar,
+.panel,
+.firstRun {
   border-radius: 14px;
   padding: 16px;
 }
 
-.panelHead {
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-.formGrid,
-.inlineForm,
-.stageForm {
-  display: grid;
-  gap: 12px;
-}
-
-.formGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.inlineForm {
-  grid-template-columns: minmax(180px, 1fr) 96px minmax(220px, 1.2fr) 120px;
-  align-items: end;
-}
-
-.stageForm {
-  grid-template-columns: minmax(180px, 1.2fr) 92px 120px 100px repeat(5, minmax(92px, auto));
-  align-items: end;
-}
-
-.cardList {
+.workspace,
+.editorStack,
+.pipelineList,
+.pipelineGroup,
+.stageList,
+.reasonList,
+.probabilityList,
+.templateStack {
   display: grid;
   gap: 10px;
 }
 
-.pipelineCard,
-.stageCard,
-.reasonCard {
+.workspace,
+.editorStack {
+  gap: 14px;
+}
+
+.sidebar {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.sidebarHead,
+.panelHead,
+.stageTop,
+.firstRunHead {
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.panelHead {
+  margin-bottom: 14px;
+}
+
+.firstRunHead {
+  justify-content: flex-start;
+  margin-bottom: 14px;
+}
+
+.templateGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.templateCard {
+  min-height: 82px;
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.templateCard strong,
+.templateCard small {
+  display: block;
+}
+
+.templateCard:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--primary-start, #2563eb) 46%, var(--glass-brd));
+}
+
+.templateIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.groupTitle {
+  color: var(--text-2);
+  font-size: var(--font-size-12, 12px);
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.pipelineNavItem {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 8px;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.pipelineButton {
+  min-width: 0;
+  min-height: 38px;
+  border: 1px solid var(--glass-brd);
+  border-radius: 10px;
+  padding: 0 8px;
+  gap: 8px;
+  background: color-mix(in srgb, var(--card-bg) 74%, transparent);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.pipelineButtonActive {
+  border-color: color-mix(in srgb, var(--primary-start, #2563eb) 62%, var(--glass-brd));
+  background: color-mix(in srgb, var(--primary-start, #2563eb) 16%, transparent);
+}
+
+.pipelineName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pipelineCount {
+  margin-left: auto;
+  color: var(--text-2);
+  font-size: var(--font-size-12, 12px);
+}
+
+.navBadges {
+  grid-column: 2;
+}
+
+.quickCreate {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 82px;
+  gap: 10px;
+  align-items: end;
+}
+
+.quickCreate .primaryBtn {
+  grid-column: 1 / -1;
+}
+
+.pipelineForm {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 94px 118px 116px;
+  gap: 12px;
+  align-items: end;
+}
+
+.descriptionField {
+  grid-column: 1 / -1;
+}
+
+.stageCreate {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) 90px 120px 100px 120px;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.stageCard {
+  position: relative;
+  overflow: hidden;
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto;
   gap: 12px;
@@ -167,34 +267,112 @@
   padding: 12px;
 }
 
-.stageCard {
-  position: relative;
-  overflow: hidden;
-}
-
-.stageColor {
+.stageAccent {
   position: absolute;
   inset: 0 auto 0 0;
   width: 5px;
 }
 
-.cardBody {
+.stageMain,
+.reasonMain {
   min-width: 0;
   display: grid;
   gap: 10px;
 }
 
-.cardTop {
-  justify-content: space-between;
+.stageIdentity {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stageIdentity strong,
+.reasonTitle span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stageIdentity span {
+  color: var(--text-2);
+  font-weight: 650;
+}
+
+.stageEdit {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) 90px 120px 96px 116px repeat(5, minmax(94px, auto));
   gap: 12px;
+  align-items: end;
+}
+
+.stageMetrics {
+  justify-content: flex-start;
+  color: var(--text-2);
+  font-size: var(--font-size-12, 12px);
+}
+
+.replacementRow {
+  max-width: 360px;
+}
+
+.lowerGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.automationPanel {
+  min-height: 120px;
+}
+
+.reasonCreate,
+.settingsGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.settingsGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+}
+
+.reasonList {
+  margin-top: 12px;
+}
+
+.reasonCard {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.reasonTitle {
+  gap: 10px;
+  min-width: 0;
+  font-weight: 650;
+}
+
+.probabilityRow {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--glass-brd);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card-bg) 74%, transparent);
+  gap: 10px;
+}
+
+.probabilityRow strong {
+  margin-left: auto;
 }
 
 .dragHandle,
 .primaryBtn,
 .secondaryBtn,
-.dangerBtn,
-.pipelineTitle,
-.choiceCard {
+.dangerBtn {
   border: 1px solid var(--glass-brd);
   color: var(--text);
   cursor: pointer;
@@ -203,7 +381,7 @@
 .dragHandle {
   width: 32px;
   min-width: 32px;
-  height: 40px;
+  height: 38px;
   border-radius: 10px;
   background: color-mix(in srgb, var(--card-bg) 84%, transparent);
   display: grid;
@@ -215,7 +393,8 @@
 .primaryBtn:disabled,
 .secondaryBtn:disabled,
 .dangerBtn:disabled,
-.choiceCard:disabled {
+.templateCard:disabled,
+.pipelineButton:disabled {
   opacity: .55;
   cursor: not-allowed;
 }
@@ -249,25 +428,6 @@
   background: color-mix(in srgb, var(--danger, #ef4444) 16%, transparent);
 }
 
-.pipelineTitle {
-  max-width: 100%;
-  min-height: 34px;
-  padding: 0 10px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--card-bg) 70%, transparent);
-  font-weight: 650;
-  gap: 8px;
-  min-width: 0;
-}
-
-.pipelineTitle span:last-child,
-.stageTitle span,
-.reasonTitle span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .colorDot {
   width: 12px;
   height: 12px;
@@ -275,23 +435,6 @@
   display: inline-block;
   flex: 0 0 auto;
   box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 8%, transparent);
-}
-
-.stageTitle {
-  gap: 8px;
-  min-width: 0;
-  font-weight: 650;
-}
-
-.stageTitle small {
-  color: var(--text-2);
-  font-weight: 600;
-}
-
-.reasonTitle {
-  gap: 10px;
-  min-width: 0;
-  font-weight: 650;
 }
 
 .pill {
@@ -322,41 +465,6 @@
   background: color-mix(in srgb, #ef4444 14%, transparent);
 }
 
-.pipelineSelectList,
-.probabilityList {
-  display: grid;
-  gap: 8px;
-}
-
-.choiceCard,
-.probabilityRow {
-  width: 100%;
-  min-height: 42px;
-  padding: 0 12px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--card-bg) 78%, transparent);
-  gap: 10px;
-  justify-content: flex-start;
-}
-
-.choiceCardActive {
-  border-color: color-mix(in srgb, var(--primary-start, #2563eb) 60%, var(--glass-brd));
-  background: color-mix(in srgb, var(--primary-start, #2563eb) 16%, transparent);
-}
-
-.choiceCard strong,
-.probabilityRow strong {
-  margin-left: auto;
-}
-
-.replacementRow {
-  max-width: 360px;
-}
-
-.pipelinePicker {
-  width: min(360px, 100%);
-}
-
 .notice,
 .error,
 .emptyState {
@@ -371,28 +479,45 @@
   border-color: color-mix(in srgb, #ef4444 42%, var(--glass-brd));
 }
 
+@media (max-width: 1160px) {
+  .builder,
+  .lowerGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    max-height: none;
+  }
+
+  .templateStack {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 920px) {
   .header,
   .panelHead,
-  .cardTop {
+  .stageTop {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .gridTwo,
-  .formGrid,
-  .inlineForm,
-  .stageForm {
+  .templateGrid,
+  .templateStack,
+  .pipelineForm,
+  .stageCreate,
+  .stageEdit,
+  .settingsGrid {
     grid-template-columns: 1fr;
   }
 
-  .pipelineCard,
   .stageCard,
   .reasonCard {
     grid-template-columns: 34px minmax(0, 1fr);
   }
 
-  .actions {
+  .stageCard > .actions,
+  .reasonCard > .actions {
     grid-column: 2;
   }
 }
@@ -402,21 +527,16 @@
     gap: 10px;
   }
 
-  .tabs {
-    width: 100%;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-  }
-
-  .tab {
-    flex: 0 0 auto;
-  }
-
+  .sidebar,
   .panel,
-  .pipelineCard,
+  .firstRun,
   .stageCard,
   .reasonCard {
     padding: 10px;
+  }
+
+  .actions {
+    width: 100%;
   }
 
   .primaryBtn,

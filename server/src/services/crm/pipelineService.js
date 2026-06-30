@@ -37,6 +37,7 @@ function cleanStagePayload(dto = {}) {
     'hidden',
     'archived',
     'wipLimit',
+    'rotDays',
   ]) {
     if (Object.prototype.hasOwnProperty.call(dto, key)) out[key] = dto[key];
   }
@@ -50,6 +51,11 @@ function cleanStagePayload(dto = {}) {
     out.wipLimit = Math.max(0, Number(out.wipLimit));
   } else if (out.wipLimit === '') {
     out.wipLimit = null;
+  }
+  if (out.rotDays != null && out.rotDays !== '') {
+    out.rotDays = Math.max(0, Number(out.rotDays));
+  } else if (out.rotDays === '') {
+    out.rotDays = null;
   }
   if (out.order != null) out.order = Number(out.order);
   if (out.position != null) out.position = Number(out.position);

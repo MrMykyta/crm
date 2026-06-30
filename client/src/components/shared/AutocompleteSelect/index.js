@@ -29,6 +29,7 @@ export default function AutocompleteSelect({
   showCreateAction = false,
   createActionLabel = '',
   createActionLoading = false,
+  createActionLoadingLabel = 'Creating...',
   onCreateAction,
   canDeleteOption,
   onDeleteOption,
@@ -193,10 +194,20 @@ const onResize = () => computePosition();
           <button
             type="button"
             className={clsx(s.createAction, opaque && s.createActionOpaque)}
-            onClick={() => onCreateAction?.()}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              await onCreateAction?.();
+              setOpen(false);
+              setActiveIndex(-1);
+            }}
             disabled={createActionLoading}
           >
-            {createActionLoading ? 'Создание...' : createActionLabel}
+            {createActionLoading ? createActionLoadingLabel : createActionLabel}
           </button>
         </div>
       )}
@@ -207,6 +218,7 @@ const onResize = () => computePosition();
             const key = String(getOptionKey(opt));
             const primary = getOptionPrimary(opt);
             const secondary = getOptionSecondary ? getOptionSecondary(opt) : null;
+            const chip = opt?.chip || opt?.typeLabel || opt?.kindLabel || '';
             const active = idx === activeIndex;
             const selected = selectedKey && key === selectedKey;
             const canDelete = Boolean(canDeleteOption?.(opt));
@@ -226,7 +238,10 @@ const onResize = () => computePosition();
                 onMouseEnter={() => setActiveIndex(idx)}
                 onClick={() => pick(opt)}
               >
-                <span className={s.optionPrimary}>{primary}</span>
+                <span className={s.optionMain}>
+                  {chip ? <span className={s.optionChip}>{chip}</span> : null}
+                  <span className={s.optionPrimary}>{primary}</span>
+                </span>
                 <span className={s.optionRight}>
                   {secondary ? <span className={s.optionSecondary}>{secondary}</span> : null}
                   {canEdit ? (
@@ -292,4 +307,3 @@ const onResize = () => computePosition();
     </div>
   );
 }
-

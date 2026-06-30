@@ -86,10 +86,14 @@
 }
 
 .createRow {
-  padding: 8px 8px 0;
+  padding: 8px 8px 4px;
 }
 
 .createAction {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
   width: 100%;
   min-height: 36px;
   border-radius: 10px;
@@ -97,8 +101,13 @@
   background: color-mix(in srgb, var(--primary-start) 16%, transparent);
   color: color-mix(in srgb, var(--ui-text-1) 96%, transparent);
   font-size: var(--font-size-13);
+  font-weight: 650;
+  line-height: 1.2;
   text-align: left;
   padding: 0 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   cursor: pointer;
   transition: background .14s ease, border-color .14s ease;
 }
@@ -178,6 +187,31 @@
 .optionSelected {
   border-color: color-mix(in srgb, var(--primary-start) 54%, transparent);
   background: var(--ui-overlay-selected);
+}
+
+.optionMain {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.optionChip {
+  flex: 0 0 auto;
+  max-width: 96px;
+  overflow: hidden;
+  padding: 3px 6px;
+  border: 1px solid color-mix(in srgb, var(--ui-border-soft) 76%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ui-surface-2) 78%, transparent);
+  color: color-mix(in srgb, var(--ui-text-2) 94%, transparent);
+  font-size: var(--font-size-10);
+  font-weight: 750;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
 }
 
 .optionPrimary {

@@ -98,6 +98,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       field: 'wip_limit'
     },
+    rotDays: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: 'rot_days'
+    },
     createdAt: { 
       type: DataTypes.DATE, 
       allowNull:false, 

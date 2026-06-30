@@ -1,239 +1,1255 @@
-.rowActions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  min-width: 0;
-  white-space: nowrap;
-}
-
-.rowLink {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--link);
-  cursor: pointer;
-  font: inherit;
-}
-
-.rowLink:disabled {
-  color: var(--muted);
-  cursor: not-allowed;
-}
-
-.rowDanger {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--danger);
-  cursor: pointer;
-  font: inherit;
-}
-
-.rowDanger:disabled {
-  color: var(--muted);
-  cursor: not-allowed;
-}
-
-.sep {
-  color: var(--muted);
-}
-
-.headerActions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.viewSwitch {
-  display: inline-grid;
-  grid-template-columns: 1fr 1fr;
-  padding: 3px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--card-bg) 88%, var(--text) 4%);
-}
-
-.viewButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--font-size-13);
-  white-space: nowrap;
-}
-
-.viewButtonActive {
-  color: var(--text);
-  background: var(--card-bg);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
-}
-
-.listPage {
-  display: flex;
-  flex-direction: column;
+.workspace {
+  display: grid;
+  align-content: start;
+  gap: 8px;
   min-width: 0;
   height: 100%;
+  padding: 12px 16px 16px;
+  color: var(--ui-text, var(--text));
+  --sales-surface: var(--detail-surface, color-mix(in srgb, var(--ui-surface-1, var(--card-bg)) 82%, transparent));
+  --sales-surface-soft: var(--detail-surface-soft, color-mix(in srgb, var(--ui-surface-2, var(--card-bg)) 70%, transparent));
+  --sales-border: color-mix(in srgb, var(--detail-border, var(--ui-border, var(--border))) 76%, transparent);
+  --sales-blur: blur(16px) saturate(1.04);
 }
 
-.stageBarSection {
-  min-width: 0;
-  margin: 12px 16px 0;
-}
-
-.boardPage .stageBarSection {
-  margin: 0;
-}
-
-.boardPage {
+.workspaceTopbar {
   display: flex;
-  flex-direction: column;
-  min-width: 0;
-  gap: 12px;
-  height: 100%;
-  padding: 16px;
-}
-
-.boardTopbar {
-  display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   min-width: 0;
 }
 
 .headerMain {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   min-width: 0;
 }
 
-.headerMain h1 {
+.workspaceTopbar h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 22px;
+  font-weight: 750;
   line-height: 1.15;
   letter-spacing: 0;
 }
 
 .subtitleRow {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
-  color: var(--muted);
-  font-size: var(--font-size-13);
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
 }
 
-.subtitleRow span:not(:last-child)::after {
+.subtitleRow p {
+  margin: 0;
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 13px;
+}
+
+.countText {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  color: color-mix(in srgb, var(--ui-text-muted, var(--muted)) 82%, var(--ui-text, var(--text)));
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.countText::before {
   content: "·";
-  margin-left: 8px;
-  color: color-mix(in srgb, var(--muted) 65%, transparent);
+  margin-right: 6px;
+  color: color-mix(in srgb, var(--ui-text-muted, var(--muted)) 74%, transparent);
 }
 
-.boardToolbar,
-.boardFilters {
+.actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-width: 0;
-  flex-wrap: wrap;
-}
-
-.pipelinePicker,
-.boardFilter,
-.boardFilterSearch {
-  display: flex;
-  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  flex-wrap: wrap;
   min-width: 0;
 }
 
-.pipelinePicker > span,
-.boardFilter > span,
-.boardFilterSearch > span {
-  color: var(--muted);
-  font-size: var(--font-size-12);
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
   white-space: nowrap;
 }
 
-.boardFilterSearch {
-  flex: 1 1 260px;
+.primaryAction {
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: var(--accent);
+  color: var(--accent-contrast, #fff);
 }
 
-.boardRefresh {
-  height: 32px;
-  padding: 0 10px;
+.secondaryAction {
+  border: 1px solid var(--sales-border);
+  background: color-mix(in srgb, var(--sales-surface-soft) 76%, transparent);
+  color: var(--ui-text, var(--text));
+}
+
+.controls {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-self: start;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--sales-border) 72%, transparent);
   border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  color: var(--text);
+  background: color-mix(in srgb, var(--sales-surface) 68%, transparent);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  -webkit-backdrop-filter: blur(12px) saturate(1.02);
+  backdrop-filter: blur(12px) saturate(1.02);
+}
+
+.controlsActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 1 1 240px;
+  min-width: min(100%, 240px);
+}
+
+.searchBox,
+.filterBox,
+.quickBox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--sales-border) 64%, transparent);
+  border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, var(--sales-surface-soft) 58%, transparent);
+  color: var(--ui-text-muted, var(--muted));
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.searchBox:hover,
+.searchBox:focus-within,
+.filterBox:hover,
+.filterBox:focus-within,
+.quickBox:hover,
+.quickBox:focus-within {
+  border-color: color-mix(in srgb, var(--focus, #6aa8ff) 42%, var(--sales-border));
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 6%, var(--sales-surface));
+}
+
+.searchBox {
+  flex: 1 1 300px;
+  width: min(360px, 100%);
+  max-width: 360px;
+}
+
+.filterBox {
+  flex: 0 0 210px;
+  width: 210px;
+}
+
+.quickBox {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 0 6px;
+}
+
+.searchBox > div,
+.filterBox > div,
+.quickBox > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.controlLabel {
+  flex: 0 0 auto;
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.searchBox input,
+.filterBox button[role="combobox"] {
+  min-height: 27px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.filterBox button[role="combobox"] {
+  min-width: 0;
+  width: 100%;
+  padding-left: 0 !important;
+}
+
+.viewSwitch {
+  display: inline-grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--sales-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sales-surface) 70%, transparent);
+}
+
+.viewSwitch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 78px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ui-text-muted, var(--muted));
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.viewSwitch .activeView {
+  background: var(--sales-surface);
+  color: var(--ui-text, var(--text));
+  box-shadow: 0 1px 2px rgb(0 0 0 / 14%);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pipelineMode {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.pipelineStageWorkspace {
+  min-width: 0;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--sales-border) 72%, transparent);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sales-surface) 70%, transparent), color-mix(in srgb, var(--sales-surface) 46%, transparent));
+  box-shadow: 0 10px 24px rgb(15 23 42 / 8%);
+  -webkit-backdrop-filter: blur(12px) saturate(1.02);
+  backdrop-filter: blur(12px) saturate(1.02);
+  overflow: hidden;
+}
+
+.pipelineStageScroller {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.pipelineStageCanvas {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: max(100%, var(--stage-canvas-min));
+}
+
+.pipelineLine {
+  width: 100%;
+  min-width: var(--stage-canvas-min);
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--sales-border) 58%, transparent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--sales-surface-soft) 34%, transparent);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.pipelineLineTrack {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.pipelineSegment {
+  position: relative;
+  z-index: auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 190px;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  min-width: 0;
+  padding: 7px 31px 7px 18px;
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--stage-color, #64748b) 22%, var(--sales-surface-soft)), color-mix(in srgb, var(--stage-color, #64748b) 9%, var(--sales-surface)) 72%, color-mix(in srgb, var(--sales-surface) 78%, transparent));
+  color: inherit;
   cursor: pointer;
   font: inherit;
-  font-size: var(--font-size-13);
+  line-height: 1.15;
+  text-align: left;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease, background 140ms ease, color 140ms ease;
 }
 
-.boardError {
-  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
-  background: color-mix(in srgb, var(--danger) 10%, var(--card-bg));
-  color: var(--danger);
+.pipelineSegment::before,
+.pipelineSegment::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 22px;
+  pointer-events: none;
+}
+
+.pipelineSegment::before {
+  right: -22px;
+  z-index: 15;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  background: color-mix(in srgb, var(--sales-border) 76%, transparent);
+}
+
+.pipelineSegment::after {
+  right: -20px;
+  z-index: 16;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--stage-color, #64748b) 16%, var(--sales-surface-soft)), color-mix(in srgb, var(--stage-color, #64748b) 9%, var(--sales-surface)));
+}
+
+.pipelineSegment:first-child {
+  padding-left: 16px;
+}
+
+.pipelineSegment:last-child {
+  padding-right: 18px;
+}
+
+.pipelineSegment:last-child::before,
+.pipelineSegment:last-child::after {
+  display: none;
+}
+
+.pipelineSegment + .pipelineSegment {
+  margin-left: 0;
+  padding-left: 34px;
+}
+
+.pipelineSegment:hover,
+.pipelineSegment:focus-visible {
+  z-index: 20;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--stage-color, #64748b) 28%, var(--sales-surface-soft)), color-mix(in srgb, var(--stage-color, #64748b) 12%, var(--sales-surface)) 72%, color-mix(in srgb, var(--sales-surface) 78%, transparent));
+  transform: none;
+  outline: none;
+}
+
+.pipelineSegment:hover::before,
+.pipelineSegment:focus-visible::before {
+  background: color-mix(in srgb, var(--sales-border) 82%, transparent);
+}
+
+.pipelineSegment:hover::after,
+.pipelineSegment:focus-visible::after {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--stage-color, #64748b) 22%, var(--sales-surface-soft)), color-mix(in srgb, var(--stage-color, #64748b) 12%, var(--sales-surface)));
+}
+
+.pipelineSegmentActive {
+  z-index: 21;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--stage-color, var(--accent)) 34%, var(--sales-surface-soft)), color-mix(in srgb, var(--stage-color, var(--accent)) 15%, var(--sales-surface)) 72%, color-mix(in srgb, var(--stage-color, var(--accent)) 10%, var(--sales-surface)));
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--stage-color, var(--accent)) 86%, transparent);
+}
+
+.pipelineSegmentActive::before {
+  background: color-mix(in srgb, var(--sales-border) 82%, transparent);
+}
+
+.pipelineSegmentActive::after {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--stage-color, var(--accent)) 28%, var(--sales-surface-soft)), color-mix(in srgb, var(--stage-color, var(--accent)) 14%, var(--sales-surface)));
+}
+
+.pipelineSegmentRail {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  border-radius: 0;
+  z-index: 3;
+}
+
+.pipelineSegmentTop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pipelineSegmentTop strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 760;
+}
+
+.pipelineSegmentTop span {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ui-text, var(--text)) 8%, transparent);
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pipelineSegmentStats {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+  font-size: 11.5px;
+}
+
+.pipelineSegmentStats span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pipelineSegmentStats span:first-child {
+  color: var(--ui-text, var(--text));
+  font-weight: 700;
+}
+
+.pipelineSegmentStats span:last-child,
+.pipelineSegmentForecast {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pipelineSegmentWon {
+  border-color: color-mix(in srgb, #22c55e 34%, var(--sales-border));
+  background: linear-gradient(180deg, color-mix(in srgb, #22c55e 12%, var(--sales-surface)), color-mix(in srgb, var(--sales-surface-soft) 88%, transparent));
+}
+
+.pipelineSegmentWon .pipelineSegmentTop span {
+  color: #16a34a;
+  background: color-mix(in srgb, #22c55e 13%, transparent);
+}
+
+.pipelineSegmentLost {
+  border-color: color-mix(in srgb, #ef4444 34%, var(--sales-border));
+  background: linear-gradient(180deg, color-mix(in srgb, #ef4444 10%, var(--sales-surface)), color-mix(in srgb, var(--sales-surface-soft) 88%, transparent));
+}
+
+.pipelineSegmentLost .pipelineSegmentTop span {
+  color: #dc2626;
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+}
+
+.pipelineColumns {
+  display: grid;
+  grid-template-columns: repeat(var(--stage-count), minmax(190px, 1fr));
+  align-items: flex-start;
+  gap: 0;
+  width: 100%;
+  min-width: var(--stage-canvas-min);
+  padding: 0;
+  border-top: 0;
+}
+
+.pipelineStageColumn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-left: 1px solid color-mix(in srgb, var(--sales-border) 40%, transparent);
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.pipelineStageColumn:focus {
+  outline: none;
+}
+
+.pipelineStageColumn:first-child {
+  border-left: 0;
+}
+
+.pipelineStageColumnActive {
+  background: color-mix(in srgb, var(--stage-color, var(--accent)) 5%, transparent);
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--stage-color, var(--accent)) 74%, transparent);
+}
+
+.pipelineColumnRail {
+  display: none;
+}
+
+.pipelineStageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+  min-height: 28px;
+  padding: 4px 6px;
+  border-bottom: 1px solid color-mix(in srgb, var(--sales-border) 30%, transparent);
+  background: color-mix(in srgb, var(--stage-color, #64748b) 5%, transparent);
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 11px;
+}
+
+.pipelineStageToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ui-text, var(--text));
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.pipelineStageToggle svg {
+  flex: 0 0 auto;
+  color: var(--ui-text-muted, var(--muted));
+  transition: transform 140ms ease;
+}
+
+.pipelineStageToggle[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+
+.pipelineStageToggle strong {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.pipelineStageStats {
+  display: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 0;
+  margin-left: auto;
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 11px;
+}
+
+.pipelineStageStats strong {
+  display: none;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text, var(--text));
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pipelineStageAdd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 22px;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--sales-border) 62%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--stage-color, #64748b) 7%, transparent);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.pipelineColumnCards {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 0;
+  padding: 6px;
+}
+
+.pipelineDealCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "identity amount"
+    "signals signals";
+  align-items: start;
+  gap: 4px 7px;
+  min-width: 0;
+  min-height: 62px;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--sales-border) 48%, transparent);
   border-radius: 8px;
-  padding: 10px 12px;
-  font-size: var(--font-size-13);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--stage-color, #64748b) 10%, transparent), transparent 24px),
+    color-mix(in srgb, var(--sales-surface-soft) 64%, transparent);
+  box-shadow: none;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
-.boardState {
+.pipelineDealCard:hover,
+.pipelineDealCard:focus-within {
+  border-color: color-mix(in srgb, var(--stage-color, var(--focus, #6aa8ff)) 34%, var(--sales-border));
+  background: color-mix(in srgb, var(--sales-surface-soft) 74%, transparent);
+  box-shadow: 0 5px 12px rgb(15 23 42 / 7%);
+  transform: translateY(-1px);
+}
+
+.pipelineDealCard:focus {
+  outline: none;
+}
+
+.pipelineDealCard:focus-visible {
+  border-color: color-mix(in srgb, var(--focus, #6aa8ff) 60%, var(--sales-border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus, #6aa8ff) 22%, transparent);
+}
+
+.pipelineDealIdentity {
+  grid-area: identity;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pipelineDealMain {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.pipelineDealMain strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pipelineDealMain strong {
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.pipelineDealAmount {
+  grid-area: amount;
+  justify-self: end;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--ui-text, var(--text));
+  font-size: 12px;
+  font-weight: 760;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pipelineDealAccount {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 11px;
+}
+
+.pipelineDealAccount span,
+.pipelineDealAccount small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pipelineDealFooter {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 11px;
+}
+
+.pipelineDealFooter span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pipelineDealActions {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  justify-self: end;
+  align-self: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(2px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.pipelineDealCard:hover .pipelineDealActions,
+.pipelineDealCard:focus-within .pipelineDealActions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.pipelineDealActions button,
+.pipelineColumnEmpty button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 23px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--sales-border) 68%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--sales-surface) 78%, transparent);
+  color: var(--ui-text-muted, var(--muted));
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.pipelineDealActions button:hover,
+.pipelineColumnEmpty button:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--sales-border));
+  color: var(--accent);
+}
+
+.pipelineDealActions button {
+  width: 23px;
+  padding: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sales-surface) 96%, transparent);
+  box-shadow: 0 4px 10px rgb(15 23 42 / 10%);
+}
+
+.pipelineColumnEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--stage-color, #64748b) 7%, transparent);
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 12px;
+}
+
+.workspaceSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.workspaceSummary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--sales-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sales-surface-soft) 92%, transparent);
+}
+
+.workspaceSummary span {
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 12px;
+}
+
+.workspaceSummary strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+}
+
+.attentionBand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, #f59e0b 42%, var(--sales-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, #f59e0b 6%, var(--sales-surface));
+}
+
+.attentionTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  color: color-mix(in srgb, #d97706 82%, var(--ui-text, var(--text)));
+  font-size: 12.5px;
+}
+
+.attentionItems {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.attentionItem {
+  display: inline-grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 7px;
+  min-width: 0;
+  max-width: 260px;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--sales-border) 64%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sales-surface-soft) 62%, transparent);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.attentionItem span,
+.attentionItem small {
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 11.5px;
+}
+
+.attentionItem strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.attentionItem small {
+  display: none;
+}
+
+.attentionMore {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, #f59e0b 32%, var(--sales-border));
+  border-radius: 999px;
+  color: color-mix(in srgb, #d97706 78%, var(--ui-text, var(--text)));
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.stageSection {
+  display: grid;
+  min-width: 0;
+  border: 1px solid var(--sales-border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--sales-surface) 88%, transparent);
+  overflow: hidden;
+}
+
+.stageSection:focus {
+  outline: none;
+}
+
+.stageSectionActive {
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--sales-border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent), 0 8px 18px rgb(15 23 42 / 9%);
+}
+
+.stageSectionActive .stageHeader {
+  background: color-mix(in srgb, var(--accent) 8%, var(--sales-surface-soft));
+}
+
+.stageHeader {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(240px, auto) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--sales-border);
+  background: color-mix(in srgb, var(--sales-surface-soft) 92%, transparent);
+}
+
+.stageToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.stageToggle strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stageSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.stageStats,
+.columnStats,
+.columnWarnings {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 12px;
+}
+
+.addStageDeal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--sales-border);
+  border-radius: 7px;
+  background: var(--sales-surface);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.stageBody {
+  display: grid;
+  gap: 1px;
+}
+
+.pipelineRow {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.3fr) minmax(110px, 0.5fr) minmax(140px, 0.6fr) minmax(200px, 0.8fr) minmax(170px, 1fr) minmax(80px, 0.35fr) minmax(240px, auto);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px 10px;
+  border-top: 1px solid color-mix(in srgb, var(--sales-border) 65%, transparent);
+}
+
+.pipelineRow:hover,
+.listRow:hover {
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 5%, transparent);
+}
+
+.rowMain,
+.listDealButton,
+.cardTitleButton {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rowMain {
+  display: grid;
+  gap: 2px;
+}
+
+.rowTitle,
+.listDealButton strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.rowAccount,
+.listDealButton small,
+.rowOwner,
+.rowAge {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 12px;
+}
+
+.rowValue {
+  font-weight: 650;
+}
+
+.signals {
+  grid-area: signals;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.healthDot,
+.nextActionChip,
+.rotWarning,
+.priorityChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  min-height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ui-text, var(--text)) 7%, transparent);
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 11px;
+}
+
+.healthDot span,
+.nextActionChip span,
+.rotWarning span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.health_healthy,
+.health_won {
+  color: #16a34a;
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+}
+
+.health_waiting {
+  color: #2563eb;
+  background: color-mix(in srgb, #3b82f6 12%, transparent);
+}
+
+.health_risk,
+.rotWarning,
+.nextActionOverdue {
+  color: #d97706;
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+}
+
+.health_stale,
+.health_lost {
+  color: #dc2626;
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+}
+
+.nextActionMissing {
+  color: #b45309;
+  background: color-mix(in srgb, #f59e0b 10%, transparent);
+}
+
+.rowActions,
+.cardActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.rowActions button,
+.cardActions button,
+.emptyStage button,
+.emptyColumn button,
+.emptyBoard button,
+.boardState button,
+.lostEmpty button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  padding: 0;
+}
+
+.dangerLink {
+  color: var(--danger, #dc2626) !important;
+}
+
+.stageMoveSelect {
+  min-width: 112px;
+  max-width: 145px;
+  height: 28px;
+  border: 1px solid var(--sales-border);
+  border-radius: 7px;
+  background: var(--sales-surface);
+  color: var(--ui-text, var(--text));
+  font: inherit;
+  font-size: 12px;
+}
+
+.emptyStage,
+.emptyColumn,
+.emptyBoard,
+.boardState,
+.boardError {
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  border-radius: 8px;
-  padding: 14px;
-  color: var(--muted);
-  font-size: var(--font-size-14);
+  min-width: 0;
+  padding: 12px;
+  color: var(--ui-text-muted, var(--muted));
 }
 
-.boardViewport {
+.emptyStage {
+  justify-content: space-between;
+  border-top: 1px solid color-mix(in srgb, var(--sales-border) 65%, transparent);
+  background: color-mix(in srgb, var(--sales-surface-soft) 46%, transparent);
+}
+
+.emptyStage button,
+.emptyColumn button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.emptyBoard,
+.boardState,
+.boardError {
+  align-items: flex-start;
+  flex-direction: column;
+  border: 1px solid var(--sales-border);
+  border-radius: 8px;
+  background: var(--sales-surface);
+}
+
+.emptyBoard h2,
+.emptyBoard p {
+  margin: 0;
+}
+
+.boardError {
+  border-color: color-mix(in srgb, #ef4444 42%, var(--sales-border));
+  color: #dc2626;
+}
+
+.boardScroller {
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 8px;
+  scroll-snap-type: x proximity;
 }
 
-.boardGrid {
+.boardColumns {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 304px;
+  grid-auto-columns: minmax(286px, 318px);
   gap: 12px;
   align-items: stretch;
-  min-height: 520px;
+  min-height: 560px;
 }
 
 .boardColumn {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  max-height: calc(100vh - 250px);
-  border: 1px solid var(--border);
+  max-height: calc(100vh - 225px);
+  border: 1px solid var(--sales-border);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--card-bg) 92%, var(--text) 3%);
+  background: color-mix(in srgb, var(--sales-surface) 88%, var(--ui-text, var(--text)) 3%);
   overflow: hidden;
+  scroll-snap-align: start;
 }
 
-.boardColumnOver {
+.columnOver {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.columnWon {
+  border-color: color-mix(in srgb, #22c55e 38%, var(--sales-border));
+}
+
+.columnLost {
+  border-color: color-mix(in srgb, #ef4444 38%, var(--sales-border));
 }
 
 .columnHeader {
@@ -241,374 +1257,485 @@
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  border-bottom: 1px solid var(--border);
-  background: var(--card-bg);
+  border-bottom: 1px solid var(--sales-border);
+  background: var(--sales-surface);
 }
 
-.columnTitleRow {
+.columnTitle {
   display: flex;
   align-items: center;
-  min-width: 0;
   gap: 8px;
+  min-width: 0;
 }
 
-.stageColor {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  flex: 0 0 auto;
-}
-
-.columnTitleRow h2 {
+.columnTitle h2 {
   margin: 0;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--font-size-15);
-  line-height: 1.2;
+  font-size: 15px;
   letter-spacing: 0;
 }
 
 .terminalBadge {
   margin-left: auto;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: var(--text);
+  background: color-mix(in srgb, var(--ui-text, var(--text)) 8%, transparent);
+  color: var(--ui-text-muted, var(--muted));
   font-size: 11px;
-  white-space: nowrap;
 }
 
-.columnStats {
-  display: grid;
-  gap: 3px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.columnCards {
+.columnBody {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 160px;
+  min-height: 0;
   overflow-y: auto;
   padding: 10px;
 }
 
-.dealCard {
+.boardCard {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 9px;
   min-width: 0;
-  border: 1px solid var(--border);
+  padding: 10px 10px 10px 13px;
+  border: 1px solid var(--sales-border);
   border-radius: 8px;
-  background: var(--card-bg);
-  padding: 10px 10px 10px 14px;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+  background: color-mix(in srgb, var(--sales-surface) 96%, var(--ui-text, var(--text)) 2%);
+  box-shadow: 0 8px 18px rgb(15 23 42 / 7%);
 }
 
-.dealCard:hover,
-.dealCard:focus-visible {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-  outline: none;
+.cardDragging {
+  opacity: 0.72;
+  box-shadow: 0 16px 38px rgb(15 23 42 / 18%);
 }
 
-.dealCardDragging {
-  opacity: 0.78;
-  z-index: 5;
-  box-shadow: 0 10px 24px rgb(0 0 0 / 18%);
-}
-
-.cardColorStrip {
+.cardStrip {
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 6px;
-  border-radius: 8px 0 0 8px;
+  inset: 8px auto 8px 7px;
+  width: 3px;
+  border-radius: 999px;
 }
 
-.cardHeader {
+.cardHead {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  padding-left: 2px;
 }
 
-.dragHandle {
+.dragButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 24px;
   height: 24px;
+  padding: 0;
   border: 0;
-  border-radius: 6px;
   background: transparent;
-  color: var(--muted);
-  cursor: grab;
+  color: var(--ui-text-muted, var(--muted));
+  cursor: pointer;
   flex: 0 0 auto;
 }
 
-.dragHandle:active {
-  cursor: grabbing;
+.cardTitleButton {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
 }
 
-.cardTitleBlock {
+.cardTitleButton strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.cardAccount {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 12px;
+}
+
+.cardAccount span,
+.cardAccount small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardValueRow,
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   min-width: 0;
 }
 
-.cardTitle {
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--font-size-14);
-  line-height: 1.25;
-  letter-spacing: 0;
+.cardValueRow span:first-child {
+  font-weight: 700;
 }
 
-.cardCounterparty {
-  margin: 3px 0 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.cardMeta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 13px;
-}
-
-.cardAmount {
-  font-weight: 600;
-  color: var(--text);
-}
-
-.cardProbability {
-  color: var(--muted);
-}
-
-.cardChips {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.statusChip,
-.priorityChip,
-.ownerChip {
-  display: inline-flex;
-  align-items: center;
-  max-width: 100%;
-  min-height: 22px;
-  padding: 0 7px;
+.cardValueRow span:last-child {
+  padding: 2px 7px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--muted) 12%, transparent);
-  color: var(--muted);
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.status_won {
-  background: color-mix(in srgb, var(--success) 18%, transparent);
-}
-
-.status_lost {
-  background: color-mix(in srgb, var(--danger) 16%, transparent);
-}
-
-.status_in_progress {
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-}
-
-.ownerChip {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.cardActions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding-top: 2px;
-}
-
-.cardAction,
-.cardDanger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-height: 28px;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  font: inherit;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
   font-size: 12px;
 }
 
-.cardAction {
-  color: var(--link);
+.cardFooter {
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 12px;
 }
 
-.cardDanger {
-  width: 28px;
-  border-radius: 7px;
-  color: var(--danger);
-}
-
-.cardDanger:hover {
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
+.cardFooter > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .emptyColumn {
-  display: grid;
-  gap: 8px;
-  place-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   min-height: 112px;
-  border: 1px dashed var(--border);
+  border: 1px dashed var(--sales-border);
   border-radius: 8px;
-  color: var(--muted);
-  text-align: center;
-  padding: 14px;
+  background: color-mix(in srgb, var(--sales-surface-soft) 50%, transparent);
 }
 
-.emptyColumn p {
-  margin: 0;
-  font-size: var(--font-size-13);
+.listTable {
+  display: grid;
+  min-width: 0;
+  border: 1px solid var(--sales-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sales-surface) 92%, transparent);
+  overflow: auto;
 }
 
-.emptyColumn button {
-  display: inline-flex;
+.listHead,
+.listRow {
+  display: grid;
+  grid-template-columns: minmax(230px, 1.4fr) minmax(120px, 0.5fr) minmax(140px, 0.6fr) minmax(140px, 0.6fr) minmax(220px, 1fr) minmax(260px, auto);
   align-items: center;
-  gap: 5px;
-  min-height: 30px;
-  padding: 0 10px;
-  border-radius: 7px;
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  color: var(--text);
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--font-size-12);
+  gap: 10px;
+  min-width: 1080px;
+  padding: 9px 10px;
 }
 
-.form {
+.listHead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid var(--sales-border);
+  background: var(--sales-surface-soft);
+  color: var(--ui-text-muted, var(--muted));
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.listRow {
+  border-top: 1px solid color-mix(in srgb, var(--sales-border) 65%, transparent);
+}
+
+.listDealButton {
   display: grid;
-  gap: 12px;
+  gap: 2px;
+  padding: 0;
 }
 
-.row2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.field {
+.lostDialog {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
 }
 
-.label {
-  font-size: var(--font-size-12);
-  color: var(--muted);
+.lostDialog p {
+  margin: 0;
+  color: var(--ui-text-muted, var(--muted));
 }
 
-.input,
-.select,
-.textarea {
-  background: var(--card-bg);
-  border: 1px solid color-mix(in srgb, var(--card-bg) 70%, var(--text) 20%);
-  color: var(--text);
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-
-.textarea {
-  min-height: 90px;
-  resize: vertical;
-}
-
-.error {
-  color: var(--danger);
-  font-size: var(--font-size-12);
-}
-
-.dateRange {
+.lostEmpty {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  color: color-mix(in srgb, #d97706 90%, var(--ui-text, var(--text)));
+  font-size: 13px;
 }
 
-.dateInput {
-  background: var(--card-bg);
-  border: 1px solid color-mix(in srgb, var(--card-bg) 70%, var(--text) 20%);
-  color: var(--text);
-  border-radius: 10px;
-  padding: 8px 10px;
+@media (max-width: 1100px) {
+  .pipelineDealCard {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "identity amount"
+      "signals signals";
+  }
+
+  .pipelineDealFooter {
+    display: none;
+  }
+
+  .pipelineRow {
+    grid-template-columns: minmax(220px, 1fr) minmax(110px, auto) minmax(160px, 1fr) minmax(220px, 1fr);
+  }
+
+  .rowOwner,
+  .rowAge,
+  .pipelineRow > .priorityChip {
+    display: none;
+  }
+
+  .rowActions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
 }
 
-@media (max-width: 860px) {
-  .boardPage {
-    padding: 12px;
+@media (max-width: 760px) {
+  .workspace {
+    padding: 10px;
   }
 
-  .stageBarSection {
-    margin: 10px 12px 0;
-  }
-
-  .boardTopbar {
+  .workspaceTopbar {
+    align-items: flex-start;
     flex-direction: column;
+  }
+
+  .actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .controls {
     align-items: stretch;
   }
 
-  .headerActions {
-    justify-content: space-between;
-  }
-
-  .viewSwitch {
-    flex: 1 1 auto;
-  }
-
-  .boardToolbar,
-  .boardFilters {
-    align-items: stretch;
-  }
-
-  .pipelinePicker,
-  .boardFilter,
-  .boardFilterSearch {
+  .controlsActions {
     flex: 1 1 100%;
-    align-items: stretch;
-    flex-direction: column;
-    gap: 5px;
+    justify-content: flex-start;
   }
 
-  .boardGrid {
-    grid-auto-columns: 286px;
-    min-height: 480px;
+  .searchBox,
+  .filterBox {
+    flex: 1 1 220px;
+    width: auto;
   }
 
-  .boardColumn {
-    max-height: calc(100vh - 310px);
-  }
-
-  .row2 {
+  .workspaceSummary {
     grid-template-columns: 1fr;
   }
 
-  .dateRange {
-    flex-direction: column;
-    align-items: stretch;
+  .pipelineSegment {
+    flex-basis: 205px;
+  }
+
+  .pipelineStageHeader {
+    flex-wrap: nowrap;
+  }
+
+  .pipelineStageStats {
+    margin-left: 0;
+  }
+
+  .pipelineColumnCards {
+    padding: 6px;
+  }
+
+  .pipelineDealCard {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "identity amount"
+      "signals signals";
+    gap: 5px 8px;
+    min-height: 64px;
+  }
+
+  .pipelineDealAmount {
+    justify-self: end;
+    text-align: right;
+  }
+
+  .pipelineDealFooter {
+    display: none;
+  }
+
+  .pipelineDealActions {
+    align-self: end;
+  }
+
+  .stageHeader {
+    grid-template-columns: 1fr auto;
+  }
+
+  .stageStats {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .pipelineRow {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    align-items: flex-start;
+  }
+
+  .rowValue,
+  .rowOwner,
+  .rowAge,
+  .pipelineRow > .priorityChip {
+    display: inline-flex;
+  }
+
+  .rowActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .workspace {
+    padding: 8px;
+  }
+
+  .workspaceTopbar h1 {
+    font-size: 20px;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    flex: 1 1 auto;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .searchBox,
+  .quickBox,
+  .controlsActions {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+  }
+
+  .filterBox {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    padding: 0 7px;
+  }
+
+  .controlLabel {
+    display: none;
+  }
+
+  .controlsActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    min-width: 0;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .primaryAction span,
+  .secondaryAction span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pipelineLine {
+    padding: 0;
+  }
+
+  .pipelineLineTrack {
+    padding: 0;
+  }
+
+  .pipelineSegment {
+    flex-basis: 196px;
+  }
+
+  .pipelineStageWorkspace {
+    padding: 0;
+  }
+
+  .pipelineStageHeader {
+    gap: 4px;
+    padding: 4px 6px;
+  }
+
+  .pipelineStageToggle {
+    flex: 0 1 auto;
+  }
+
+  .pipelineStageStats {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+  }
+
+  .pipelineStageAdd {
+    flex: 0 0 auto;
+  }
+
+  .pipelineColumnCards {
+    padding: 6px;
+  }
+
+  .pipelineDealCard {
+    gap: 4px 7px;
+    min-height: 64px;
+    padding: 6px;
+  }
+
+  .pipelineDealFooter {
+    display: none;
+  }
+
+  .signals {
+    gap: 3px;
+  }
+
+  .stageHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .addStageDeal {
+    width: 100%;
+  }
+
+  .boardColumns {
+    grid-auto-columns: minmax(326px, calc(100vw - 32px));
+    min-height: 520px;
+  }
+
+  .boardColumn {
+    max-height: calc(100vh - 245px);
   }
 }

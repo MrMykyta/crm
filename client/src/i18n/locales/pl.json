@@ -85,7 +85,10 @@
     "all": "Wszystkie",
     "clear": "Wyczyść",
     "refresh": "Odśwież",
-    "hide": "Ukryj"
+    "hide": "Ukryj",
+    "unscheduled": "Nie zaplanowano",
+    "searching": "Szukam...",
+    "archived": "Archiwalny"
   },
   "productPicker": {
     "placeholder": "Szukaj produktu, wariantu, SKU, kodu kreskowego, EAN lub kodu zewnętrznego",
@@ -157,6 +160,230 @@
     }
   },
   "pim": {
+    "product": {
+      "detail": {
+        "loading": "Ładowanie produktu...",
+        "notFound": "Nie znaleziono produktu.",
+        "createTitle": "Nowy produkt",
+        "actions": {
+          "back": "Do produktów",
+          "create": "Utwórz produkt",
+          "products": "Produkty"
+        },
+        "status": {
+          "draft": "Szkic",
+          "active": "Aktywny",
+          "archived": "Archiwum"
+        },
+        "visibility": {
+          "public": "Publiczny",
+          "private": "Ukryty"
+        },
+        "kind": {
+          "product": "Produkt",
+          "service": "Usługa"
+        },
+        "empty": {
+          "sku": "Brak SKU",
+          "ean": "Brak EAN"
+        },
+        "tabs": {
+          "overview": "Przegląd",
+          "prices": "Ceny",
+          "pricing": "Cennik",
+          "inventory": "Stany",
+          "compliance": "Zgodność",
+          "documents": "Dokumenty",
+          "notes": "Notatki",
+          "system": "System"
+        },
+        "sections": {
+          "identity": "Identyfikacja",
+          "catalog": "Katalog",
+          "pricing": "Ceny",
+          "taxes": "Podatki",
+          "supplier": "Dostawca",
+          "inventory": "Magazyn",
+          "inventorySummary": "Podsumowanie stanów",
+          "operationalSnapshot": "Snapshot operacyjny",
+          "priceSummary": "Podsumowanie cen",
+          "documentSummary": "Podsumowanie dokumentów",
+          "catalogSupplier": "Katalog i dostawca",
+          "partners": "Partnerzy",
+          "commerce": "Handel",
+          "commerceCompliance": "Handel i zgodność",
+          "inventoryCompliance": "Magazyn i zgodność",
+          "inventoryControls": "Ustawienia stanów",
+          "compliance": "Zgodność",
+          "description": "Opis",
+          "system": "System"
+        },
+        "fields": {
+          "name": "Nazwa",
+          "barcode": "Kod kreskowy",
+          "slug": "Slug",
+          "category": "Kategoria",
+          "subcategory": "Podkategoria",
+          "brand": "Marka",
+          "productType": "Typ produktu",
+          "price": "Cena",
+          "currency": "Waluta",
+          "oldPrice": "Stara cena",
+          "cost": "Koszt",
+          "sellable": "Sprzedawany",
+          "taxCategory": "Kategoria podatku",
+          "country": "Kraj",
+          "supplier": "Dostawca",
+          "manufacturer": "Producent",
+          "uom": "Jedn.",
+          "trackInventory": "Śledź stany",
+          "serialized": "Numery seryjne",
+          "lotTracked": "Partie",
+          "shelfLife": "Okres ważności",
+          "service": "Usługa",
+          "status": "Status",
+          "visibility": "Widoczność",
+          "createdAt": "Utworzono",
+          "updatedAt": "Zaktualizowano"
+        },
+        "identifiers": {
+          "eanBarcodeHint": "EAN to standardowy numer. Kod kreskowy to dowolny kod skanowany."
+        },
+        "lookup": {
+          "placeholder": "Zacznij pisać...",
+          "hint": "Wpisz nazwę, aby wyszukać albo utworzyć nową wartość.",
+          "partnerHint": "Zacznij pisać, aby znaleźć albo utworzyć firmę.",
+          "empty": "Nic nie znaleziono",
+          "createValue": "Utwórz \"{{value}}\"",
+          "createCategory": "Utwórz kategorię „{{value}}”",
+          "createSubcategory": "Utwórz podkategorię „{{value}}”",
+          "createBrand": "Utwórz markę „{{value}}”",
+          "createProductType": "Utwórz typ produktu „{{value}}”",
+          "createSupplier": "Utwórz dostawcę „{{value}}”",
+          "createManufacturer": "Utwórz producenta „{{value}}”",
+          "createTaxCategory": "Utwórz kategorię podatku „{{value}}”",
+          "createdSelected": "Utworzono i wybrano",
+          "createdCategory": "Kategoria utworzona i wybrana",
+          "createdSubcategory": "Podkategoria utworzona i wybrana",
+          "createdBrand": "Marka utworzona i wybrana",
+          "createdProductType": "Typ produktu utworzony i wybrany",
+          "createdSupplier": "Dostawca utworzony i wybrany",
+          "createdManufacturer": "Producent utworzony i wybrany",
+          "createdTaxCategory": "Kategoria podatku utworzona i wybrana",
+          "saveHelper": "Nowa wartość powstaje od razu. Wybór w produkcie zapisze się po zapisaniu karty.",
+          "createFailed": "Nie udało się utworzyć wartości.",
+          "types": {
+            "category": "Kategoria",
+            "subcategory": "Podkategoria",
+            "brand": "Marka",
+            "productType": "Typ",
+            "supplier": "Dostawca",
+            "manufacturer": "Producent",
+            "taxCategory": "Podatek"
+          }
+        },
+        "partners": {
+          "helper": "Dostawca to firma, od której kupujesz. Producent to firma, która wytworzyła produkt. Często są to różne firmy."
+        },
+        "taxPresets": {
+          "rate": "VAT {{rate}}%",
+          "zw": "ZW — zwolnione",
+          "np": "NP — nie podlega"
+        },
+        "compliance": {
+          "helper": "Identyfikatory fiskalne i celne używane w raportowaniu podatkowym, odprawach i klasyfikacji produktu."
+        },
+          "inventory": {
+          "stock": "Stan",
+          "available": "Dostępne",
+          "availableLabel": "{{value}} dostępne",
+          "notTracked": "Nieśledzone",
+          "onHand": "Na stanie",
+          "reserved": "Zarezerwowane",
+          "ordered": "Zamówione",
+          "disabledTitle": "Śledzenie stanów jest wyłączone",
+          "disabledText": "Włącz śledzenie stanów, gdy produkt ma uczestniczyć w operacjach magazynowych.",
+          "serviceText": "Usługi nie mają stanów magazynowych.",
+          "tracked": "Śledzone",
+          "serialized": "Numery seryjne",
+          "notSerialized": "Bez numerów seryjnych",
+          "lotTracked": "Śledzenie partii",
+          "notLotTracked": "Bez śledzenia partii",
+          "shelfLifeDays": "{{count}} dni ważności"
+        },
+        "overview": {
+          "latestPrice": "Ostatnia cena",
+          "noPrice": "Brak ceny",
+          "priceContext": "Kontekst cen",
+          "priceRows": "{{count}} wierszy cen",
+          "priceHint": "Sprzedaż {{sales}} · Zakup {{purchase}}",
+          "inventoryContext": "Kontekst stanów",
+          "inventoryContextHint": "Szczegóły stanów są w zakładce Stany.",
+          "latestMovement": "Ostatni ruch",
+          "noMovement": "Brak ruchów",
+          "noMovementHint": "Aktywność magazynowa pojawi się tutaj.",
+          "latestDocument": "Ostatni dokument",
+          "noDocument": "Brak dokumentów",
+          "noDocumentHint": "Pliki produktu pojawią się tutaj.",
+          "supplier": "Dostawca",
+          "supplierHint": "Główny kontekst zakupowy"
+        },
+        "prices": {
+          "purchase": "Zakup",
+          "sales": "Sprzedaż",
+          "margin": "Marża",
+          "currency": "Waluta",
+          "noPurchase": "Brak ceny zakupu",
+          "noSales": "Brak ceny sprzedaży",
+          "noMargin": "Brak marży",
+          "priceRows": "{{count}} wierszy cen"
+        },
+        "documents": {
+          "latest": "Ostatni",
+          "media": "Media",
+          "documents": "Dokumenty",
+          "other": "Inne",
+          "noFiles": "Brak plików",
+          "noFilesHint": "Prześlij pliki, aby zbudować kontekst produktu."
+        },
+        "description": {
+          "saveFirstTitle": "Najpierw zapisz produkt",
+          "saveFirstText": "Opis będzie dostępny po utworzeniu produktu.",
+          "placeholder": "Opisz zastosowanie produktu, dane techniczne i warunki sprzedaży...",
+          "emptyText": "Opis jest pusty. Dodaj kontekst dla sprzedaży, magazynu i dokumentów."
+        },
+        "image": {
+          "alt": "Zdjęcie produktu",
+          "upload": "Prześlij",
+          "replace": "Zamień",
+          "remove": "Usuń",
+          "saveFirst": "Zapisz produkt, aby dodać zdjęcie.",
+          "onlyImages": "Można przesłać tylko obraz.",
+          "uploadFailed": "Nie udało się przesłać obrazu.",
+          "removeFailed": "Nie udało się usunąć obrazu."
+        },
+        "notes": {
+          "title": "Notatki produktu",
+          "emptyTitle": "Brak notatek",
+          "emptyText": "Notatki powiązane z produktem pojawią się tutaj.",
+          "add": "Dodaj notatkę"
+        },
+        "system": {
+          "notCreated": "Jeszcze nie utworzono"
+        },
+        "createTab": {
+          "title": "Najpierw zapisz produkt",
+          "heading": "Sekcja odblokuje się po utworzeniu",
+          "text": "Utwórz produkt, aby dodawać ceny, stany, dokumenty i notatki."
+        },
+        "validation": {
+          "nameRequired": "Nazwa produktu jest wymagana."
+        },
+        "messages": {
+          "saveFailed": "Nie udało się zapisać produktu."
+        }
+      }
+    },
     "stock": {
       "tab": "Stany",
       "stock": "Stany",
@@ -499,6 +726,256 @@
       "detailTitle": "Szczegóły oferty",
       "editTitle": "Edycja oferty"
     },
+    "offerDetail": {
+      "kicker": "Oferta handlowa",
+      "subtitle": "Przestrzeń pracy nad ofertą",
+      "noCustomer": "Nie wybrano klienta",
+      "confirmDelete": "Usunąć tę ofertę?",
+      "create": {
+        "draftNumber": "Szkic"
+      },
+      "validity": {
+        "noDate": "Bez terminu",
+        "expiredDisplay": "Wizualnie wygasła",
+        "expiredSoft": "Wymaga odnowienia",
+        "today": "Wygasa dzisiaj",
+        "daysLeft": "Pozostało {{count}} dni"
+      },
+      "hero": {
+        "totalGross": "Razem brutto",
+        "grandTotal": "Suma końcowa",
+        "offerNumberEyebrow": "Oferta",
+        "defaultSubject": "Oferta przygotowana do akceptacji",
+        "validity": "Ważność",
+        "status": "Status"
+      },
+      "tabs": {
+        "overview": "Przegląd",
+        "items": "Pozycje",
+        "preview": "Podgląd",
+        "activity": "Aktywność",
+        "notes": "Notatki",
+        "system": "System"
+      },
+      "overview": {
+        "customer": "Klient",
+        "total": "Razem",
+        "validity": "Ważność",
+        "nextAction": "Następna akcja"
+      },
+      "sections": {
+        "documentChain": "Łańcuch dokumentów",
+        "proposalSummary": "Podsumowanie oferty",
+        "customer": "Klient",
+        "proposal": "Oferta",
+        "commercial": "Warunki handlowe",
+        "notes": "Notatki"
+      },
+      "smart": {
+        "deal": "Deal",
+        "order": "Zamówienie",
+        "invoice": "Faktura",
+        "preview": "Podgląd",
+        "notes": "Notatki"
+      },
+      "chain": {
+        "noDeal": "Brak źródłowego deala",
+        "noOrder": "Brak zamówienia",
+        "noInvoice": "Brak faktury"
+      },
+      "actions": {
+        "create": "Utwórz ofertę",
+        "openItems": "Otwórz pozycje",
+        "openPreview": "Otwórz podgląd",
+        "more": "Więcej akcji"
+      },
+      "readonlyHint": "Oferty końcowe są tylko do odczytu.",
+      "itemsHint": "Zbuduj ofertę z produktów, usług, pozycji własnych, rabatów, podatków i sum.",
+      "items": {
+        "quantityMeta": "{{qty}} szt.",
+        "unitNetMeta": "{{value}} netto/szt.",
+        "taxMeta": "VAT {{rate}}%",
+        "discountMeta": "rabat {{value}}",
+        "lineTotal": "Suma pozycji"
+      },
+      "totals": {
+        "savings": "Oszczędzasz"
+      },
+      "preview": {
+        "label": "Oferta",
+        "preparedFor": "Przygotowano dla",
+        "pdfPlanned": "PDF w następnej fazie",
+        "terms": "Warunki",
+        "unnamedLine": "Pozycja bez nazwy"
+      },
+      "activity": {
+        "created": "Oferta utworzona",
+        "sent": "Oferta wysłana",
+        "viewed": "Oferta wyświetlona",
+        "accepted": "Oferta zaakceptowana",
+        "rejected": "Oferta odrzucona",
+        "cancelled": "Oferta anulowana",
+        "converted": "Przekształcono w zamówienie",
+        "statusChanged": "Status zmieniony",
+        "updated": "Oferta zaktualizowana",
+        "empty": "Brak aktywności."
+      },
+      "notes": {
+        "saveFirst": "Utwórz ofertę, aby dodać notatki.",
+        "title": "Notatki oferty",
+        "emptyTitle": "Brak notatek",
+        "emptyText": "Notatki powiązane z tą ofertą pojawią się tutaj.",
+        "add": "Dodaj notatkę"
+      },
+      "system": {
+        "revision": "Rewizja",
+        "lastStatusChangedAt": "Ostatnia zmiana statusu",
+        "createdBy": "Utworzył",
+        "updatedBy": "Zaktualizował"
+      },
+      "fields": {
+        "exchangeRate": "Kurs wymiany",
+        "incoterms": "Incoterms"
+      },
+      "validation": {
+        "customerRequired": "Klient jest wymagany."
+      },
+      "next": {
+        "draft": "Wyślij ofertę",
+        "sent": "Czekaj na odpowiedź albo zaakceptuj/odrzuć",
+        "viewed": "Zaakceptuj albo odrzuć",
+        "accepted": "Przekształć w zamówienie",
+        "rejected": "W razie potrzeby zduplikuj",
+        "expired": "W razie potrzeby zduplikuj",
+        "cancelled": "W razie potrzeby zduplikuj"
+      },
+      "save": {
+        "unsaved": "Niezapisane zmiany",
+        "saved": "Zapisano"
+      }
+    },
+    "orderDetail": {
+      "subtitle": "Przestrzeń realizacji",
+      "noCustomer": "Nie wybrano klienta",
+      "confirmCancel": "Anulować to zamówienie?",
+      "confirmReturn": "Zwrócić to zamówienie?",
+      "confirmDelete": "Usunąć to zamówienie?",
+      "create": { "draftNumber": "Szkic zamówienia" },
+      "hero": {
+        "orderNumberEyebrow": "Zamówienie",
+        "fulfillment": "Realizacja",
+        "payment": "Płatność"
+      },
+      "tabs": {
+        "overview": "Przegląd",
+        "items": "Pozycje",
+        "fulfillment": "Realizacja",
+        "billing": "Rozliczenia",
+        "activity": "Aktywność",
+        "notes": "Notatki",
+        "system": "System"
+      },
+      "sections": {
+        "customer": "Klient",
+        "execution": "Fakty realizacji",
+        "commercial": "Warunki handlowe",
+        "documentChain": "Łańcuch dokumentów",
+        "itemsSummary": "Podsumowanie pozycji"
+      },
+      "smart": {
+        "deal": "Szansa",
+        "offer": "Oferta",
+        "invoices": "Faktury",
+        "payments": "Płatności",
+        "wms": "WMS",
+        "notes": "Notatki"
+      },
+      "fields": {
+        "warehouse": "Magazyn",
+        "shipTo": "Adres dostawy",
+        "billTo": "Adres rozliczeniowy",
+        "priority": "Priorytet",
+        "sourceOffer": "Oferta źródłowa",
+        "salesChannel": "Kanał sprzedaży"
+      },
+      "overview": {
+        "fulfillment": "Realizacja",
+        "payment": "Płatność",
+        "total": "Suma końcowa",
+        "due": "Do zapłaty",
+        "paid": "Zapłacono",
+        "nextAction": "Następna akcja"
+      },
+      "actions": {
+        "create": "Utwórz zamówienie",
+        "more": "Więcej akcji",
+        "openItems": "Otwórz pozycje",
+        "openFulfillment": "Otwórz realizację",
+        "openBilling": "Otwórz rozliczenia"
+      },
+      "chain": {
+        "noOffer": "Brak oferty źródłowej",
+        "noInvoice": "Brak faktury"
+      },
+      "next": {
+        "create": "Utwórz zamówienie",
+        "confirm": "Potwierdź zamówienie",
+        "ship": "Wyślij zamówienie",
+        "complete": "Zakończ zamówienie",
+        "invoice": "Przekształć w fakturę",
+        "terminal": "Zamówienie końcowe",
+        "monitor": "Monitoruj realizację i płatność"
+      },
+      "fulfillment": {
+        "itemsProgress": "{{count}} pozycji zamówienia",
+        "status": "Status realizacji",
+        "lifecycle": "Status cyklu życia",
+        "shippedAt": "Wysłano",
+        "completedAt": "Zakończono",
+        "shipments": "Wysyłki",
+        "reservations": "Rezerwacje",
+        "noShipments": "Szczegóły wysyłek nie są jeszcze dostępne w aktualnym DTO zamówienia.",
+        "noReservations": "Rezerwacje pojawią się tutaj, gdy WMS udostępni je dla zamówienia."
+      },
+      "billing": {
+        "paymentStatus": "Status płatności",
+        "amountPaid": "Zapłacono",
+        "amountDue": "Do zapłaty",
+        "invoicesCount": "Faktury",
+        "invoices": "Faktury",
+        "payments": "Płatności",
+        "creditNotes": "Korekty",
+        "paymentMethodUnknown": "Nieznana metoda",
+        "noInvoices": "Brak faktur.",
+        "noPayments": "Szczegóły płatności nie są jeszcze dostępne w aktualnym DTO zamówienia.",
+        "noCreditNotes": "Brak korekt."
+      },
+      "activity": {
+        "notExposed": "Prawdziwe zdarzenia zamówienia nie są jeszcze dostępne w aktualnym Detail API."
+      },
+      "items": {
+        "unnamedLine": "Pozycja bez nazwy",
+        "quantityMeta": "{{qty}} szt.",
+        "taxMeta": "VAT {{rate}}%"
+      },
+      "notes": {
+        "saveFirst": "Utwórz zamówienie, aby dodać notatki.",
+        "title": "Notatki zamówienia",
+        "emptyTitle": "Brak notatek",
+        "emptyText": "Notatki powiązane z tym zamówieniem pojawią się tutaj.",
+        "add": "Dodaj notatkę"
+      },
+      "system": {
+        "createdBy": "Utworzył",
+        "updatedBy": "Zaktualizował"
+      },
+      "validation": { "customerRequired": "Klient jest wymagany." },
+      "readonlyHint": "Zablokowanych zamówień nie można edytować bezpośrednio.",
+      "save": {
+        "unsaved": "Niezapisane zmiany",
+        "saved": "Zapisano"
+      }
+    },
     "invoices": {
       "title": "Faktury",
       "search": "Szukaj po numerze lub kontrahencie...",
@@ -511,6 +988,114 @@
         "dueDate": "Termin płatności",
         "totalNet": "Netto razem",
         "totalGross": "Brutto razem"
+      }
+    },
+    "invoiceDetail": {
+      "subtitle": "Obszar roszczenia płatności",
+      "noCustomer": "Klient nie jest wybrany",
+      "hero": {
+        "eyebrow": "Faktura",
+        "amountDue": "Do zapłaty",
+        "dueDate": "Termin",
+        "overdue": "Po terminie"
+      },
+      "tabs": {
+        "overview": "Przegląd",
+        "items": "Pozycje",
+        "payments": "Płatności",
+        "creditNotes": "Korekty",
+        "preview": "Podgląd",
+        "activity": "Aktywność",
+        "system": "System"
+      },
+      "sections": {
+        "claimFacts": "Dane roszczenia",
+        "finance": "Finanse",
+        "sourceOrder": "Zamówienie źródłowe",
+        "items": "Pozycje faktury",
+        "vatBreakdown": "Rozbicie VAT",
+        "payments": "Płatności",
+        "creditNotes": "Korekty"
+      },
+      "fields": {
+        "customer": "Klient",
+        "contact": "Kontakt",
+        "sourceOrder": "Zamówienie źródłowe",
+        "issueDate": "Data wystawienia",
+        "dueDate": "Termin płatności",
+        "paymentTerms": "Warunki płatności",
+        "currency": "Waluta",
+        "vatProfile": "Profil VAT",
+        "vatRates": "{{count}} stawki VAT",
+        "owner": "Opiekun",
+        "bankPayment": "Bank / metoda płatności",
+        "orderId": "ID zamówienia"
+      },
+      "overview": {
+        "amountDue": "Do zapłaty",
+        "amountPaid": "Zapłacono",
+        "outstanding": "Pozostało",
+        "dueDate": "Termin płatności",
+        "paymentState": "Stan płatności",
+        "nextAction": "Następna akcja"
+      },
+      "paymentStates": {
+        "draft": "Szkic",
+        "issued": "Wystawiona",
+        "unpaid": "Nieopłacona",
+        "overdue": "Po terminie",
+        "partially_paid": "Częściowo opłacona",
+        "partially_paid_overdue": "Częściowo opłacona, po terminie",
+        "paid": "Opłacona"
+      },
+      "next": {
+        "issue": "Wystaw fakturę",
+        "registerPayment": "Zarejestruj płatność",
+        "settled": "Faktura rozliczona",
+        "overdue": "Płatność po terminie",
+        "monitor": "Monitoruj płatność"
+      },
+      "actions": {
+        "registerPayment": "Zarejestruj płatność"
+      },
+      "smart": {
+        "order": "Zamówienie",
+        "payments": "Płatności",
+        "creditNotes": "Korekty",
+        "print": "Drukuj",
+        "open": "Otwórz"
+      },
+      "items": {
+        "unnamedLine": "Pozycja bez nazwy",
+        "quantityMeta": "{{qty}} szt.",
+        "taxMeta": "VAT {{rate}}%"
+      },
+      "payments": {
+        "scopeHint": "Tutaj widoczne są płatności na poziomie zamówienia.",
+        "orderScope": "poziom zamówienia",
+        "orderScopedCaveat": "Płatności są powiązane z zamówieniem, dopóki nie ma alokacji faktur.",
+        "methodUnknown": "Nieznana metoda"
+      },
+      "preview": {
+        "label": "Faktura",
+        "claim": "Formalne wezwanie do zapłaty",
+        "billTo": "Nabywca",
+        "sourceOrder": "Zamówienie źródłowe"
+      },
+      "activity": {
+        "created": "Faktura utworzona",
+        "issued": "Faktura wystawiona",
+        "payment": "Płatność zarejestrowana",
+        "paid": "Faktura opłacona",
+        "updated": "Faktura zaktualizowana",
+        "empty": "Brak aktywności."
+      },
+      "empty": {
+        "noSourceOrder": "Brak zamówienia źródłowego",
+        "noItems": "Brak pozycji faktury",
+        "noVat": "Brak rozbicia VAT",
+        "noPayments": "Brak płatności.",
+        "noCreditNotes": "Brak korekt."
       }
     },
     "relations": {
@@ -2903,14 +3488,18 @@
       "lost": "Przegrana",
       "cancelEdit": "Anuluj edycję",
       "archive": "Archiwizuj",
-      "archiving": "Archiwizacja..."
+      "archiving": "Archiwizacja...",
+      "back": "Do transakcji",
+      "call": "Zadzwoń",
+      "email": "Napisz"
     },
     "columns": {
       "title": "Transakcja",
       "amount": "Kwota",
       "status": "Status",
       "owner": "Właściciel",
-      "updated": "Zaktualizowano"
+      "updated": "Zaktualizowano",
+      "actions": "Akcje"
     },
     "filters": {
       "searchPlaceholder": "Szukaj transakcji",
@@ -2932,7 +3521,19 @@
       "status": "Status",
       "description": "Opis",
       "stage": "Etap",
-      "closeDate": "Data zamknięcia"
+      "closeDate": "Data zamknięcia",
+      "relationship": "Klient / lead / kontrahent",
+      "contact": "Kontakt",
+      "company": "Firma",
+      "pipeline": "Lejek",
+      "expectedClose": "Oczekiwane zamknięcie",
+      "priority": "Priorytet",
+      "probability": "Prawdopodobieństwo",
+      "nextAction": "Następne działanie",
+      "nextActionType": "Następne działanie",
+      "createdAt": "Utworzono",
+      "updatedAt": "Zaktualizowano",
+      "stageEnteredAt": "W etapie od"
     },
     "placeholders": {
       "title": "Nazwa transakcji",
@@ -2952,7 +3553,10 @@
       "activities": "Aktywności",
       "files": "Pliki",
       "history": "Historia",
-      "comingSoon": "Wkrótce"
+      "comingSoon": "Wkrótce",
+      "notes": "Notatki",
+      "tasks": "Zadania",
+      "system": "System"
     },
     "details": {
       "loading": "Ładowanie transakcji…",
@@ -2981,11 +3585,190 @@
     },
     "validation": {
       "titleRequired": "Wpisz nazwę",
-      "counterpartyRequired": "Wybierz kontrahenta"
+      "counterpartyRequired": "Wybierz kontrahenta",
+      "pipelineRequired": "Wybierz lejek",
+      "stageRequired": "Wybierz etap"
+    },
+    "workspace": {
+      "subtitle": "przestrzeń lejka",
+      "badge": "{{count}} rekordów",
+      "views": {
+        "pipeline": "Lejek",
+        "board": "Tablica",
+        "list": "Lista"
+      },
+      "viewToggle": "Widok",
+      "controlsAria": "Kontrolki przestrzeni sprzedaży",
+      "configurePipeline": "Konfiguruj lejek",
+      "retry": "Ponów",
+      "deleteAction": "Usuń",
+      "allHealth": "Wszystkie oceny",
+      "healthLabel": "Ocena",
+      "health": {
+        "healthy": "Zdrowa",
+        "waiting": "Oczekuje",
+        "risk": "Ryzyko",
+        "stale": "Zastój",
+        "won": "Zamknięta wygraną",
+        "lost": "Zamknięta przegraną"
+      },
+      "nextActionLabel": "Następna akcja",
+      "allNextActions": "Wszystkie akcje",
+      "noNextAction": "Brak następnej akcji",
+      "overdueNextAction": "Zaległa następna akcja",
+      "overdue": "Zaległe",
+      "dueToday": "Dziś",
+      "upcoming": "Nadchodzące",
+      "nextActionTypes": {
+        "call": "Telefon",
+        "email": "Email",
+        "meeting": "Spotkanie",
+        "task": "Zadanie"
+      },
+      "unassigned": "—",
+      "noCompany": "—",
+      "newInStage": "Nowa w etapie",
+      "daysInStage": "{{count}} dni w etapie",
+      "totalDeals": "Liczba transakcji",
+      "pipelineValue": "Wartość lejka",
+      "weightedForecast": "Prognoza ważona",
+      "weightedValue": "Prognoza {{value}}",
+      "dealCount": "{{count}} transakcji",
+      "rotDays": "Zastój {{count}} dni",
+      "wipWarning": "WIP {{count}}/{{limit}}",
+      "rotWarning": "Zastój",
+      "priorityShort": "P{{value}}",
+      "signals": "Sygnały",
+      "addDeal": "Dodaj transakcję",
+      "addDealShort": "Transakcja",
+      "noDeals": "Brak transakcji",
+      "noDealsInStage": "Brak transakcji",
+      "attentionTitle": "Wymaga uwagi",
+      "needsAttention": "Wymaga uwagi",
+      "moveStage": "Zmień etap",
+      "dragDeal": "Przeciągnij transakcję",
+      "createSalesProcess": "Utwórz proces sprzedaży",
+      "createSalesProcessText": "Pipeline Builder tworzy proces używany przez Sales.",
+      "openBuilder": "Otwórz Pipeline Builder",
+      "noStages": "Brak skonfigurowanych etapów",
+      "noStagesText": "Ten lejek potrzebuje etapów, aby pracować z transakcjami.",
+      "loadFailed": "Nie udało się załadować przestrzeni sprzedaży.",
+      "moveFailed": "Nie udało się przenieść transakcji",
+      "noLostStage": "W tym lejku nie skonfigurowano etapu przegranej.",
+      "noWonStage": "W tym lejku nie skonfigurowano etapu wygranej.",
+      "markLostFailed": "Nie udało się oznaczyć przegranej",
+      "lostModalTitle": "Oznacz transakcję jako przegraną",
+      "lostModalText": "Transakcja „{{title}}” wymaga powodu przegranej przed przeniesieniem do etapu przegranej.",
+      "lostReason": "Powód przegranej",
+      "selectLostReason": "Wybierz powód",
+      "markLost": "Oznacz przegraną",
+      "noLostReasons": "Brak aktywnych powodów przegranej.",
+      "deleteTitle": "Usunąć transakcję?",
+      "deleteText": "Transakcja zostanie usunięta z aktywnej przestrzeni roboczej."
     },
     "common": {
       "nipLabel": "NIP",
       "typeToSearch": "Wpisz nazwę lub NIP"
+    },
+    "sections": {
+      "dealFacts": "Fakty transakcji",
+      "relationship": "Relacja",
+      "ownership": "Odpowiedzialność",
+      "money": "Kwoty",
+      "timing": "Terminy",
+      "details": "Szczegóły"
+    },
+    "detail": {
+      "workspace": "Obszar pracy transakcji"
+    },
+    "pipeline": {
+      "noPipeline": "Brak lejka",
+      "noStage": "Nie wybrano etapu",
+      "noStages": "Ten lejek nie ma jeszcze etapów.",
+      "notConfigured": "Lejek nie jest skonfigurowany",
+      "configureHint": "Skonfiguruj lejki i etapy przed pracą z transakcją.",
+      "configureLink": "Otwórz Pipeline Builder",
+      "daysInStage": "{{count}} dni w etapie"
+    },
+    "health": {
+      "unknown": "Ocena nieobliczona",
+      "atRisk": "Ryzyko"
+    },
+    "nextAction": {
+      "missing": "Brak następnego działania",
+      "action": "Działanie"
+    },
+    "smart": {
+      "title": "Powiązane obiekty sprzedaży",
+      "offers": "Oferty",
+      "orders": "Zamówienia",
+      "invoices": "Faktury",
+      "documents": "Dokumenty",
+      "notes": "Notatki",
+      "tasks": "Zadania",
+      "communication": "Komunikacja"
+    },
+    "activity": {
+      "note": "Notatka",
+      "call": "Telefon",
+      "email": "E-mail",
+      "meeting": "Spotkanie",
+      "task": "Zadanie",
+      "composerTitle": "Aktywność",
+      "composerSubtitle": "Zapisz ostatni kontakt i utrzymaj kolejny krok na widoku.",
+      "futureHint": "Logowanie timeline jest przygotowane na kolejny etap backendu aktywności.",
+      "saveFirstHint": "Zapisz transakcję, aby rejestrować aktywność.",
+      "validationRequired": "Dodaj tytuł albo opis.",
+      "createFailed": "Nie zapisano aktywności.",
+      "deleteFailed": "Nie usunięto aktywności.",
+      "titlePlaceholder": "Opcjonalny tytuł",
+      "submitting": "Zapisywanie...",
+      "nextStepHint": "Dodaj wynik i zaplanuj następny krok.",
+      "placeholder": "Notatka, wynik telefonu albo spotkania...",
+      "log": "Zapisz aktywność",
+      "delete": "Usuń aktywność",
+      "loading": "Ładowanie aktywności...",
+      "loadError": "Nie udało się załadować aktywności.",
+      "emptyTitle": "Brak aktywności",
+      "emptyText": "Notatki, telefony, spotkania i zdarzenia cyklu życia pojawią się tutaj.",
+      "stageChanged": "Etap zmieniony",
+      "statusChanged": "Status zmieniony",
+      "system": "System",
+      "systemAuthor": "System",
+      "systemDealCreated": "Utworzono transakcję",
+      "systemDealCreatedText": "Utworzono obszar pracy transakcji.",
+      "dealWon": "Transakcja wygrana",
+      "dealLost": "Transakcja przegrana",
+      "stageChangedText": "{{from}} → {{to}}",
+      "statusWonText": "Transakcja oznaczona jako wygrana.",
+      "statusLostText": "Transakcja oznaczona jako przegrana.",
+      "stageTitle": "Aktualny etap",
+      "nextActionTitle": "Następne działanie",
+      "noNextActionTitle": "Brak następnego działania",
+      "noNextActionText": "Każda otwarta transakcja powinna mieć następny krok.",
+      "descriptionTitle": "Opis transakcji",
+      "fromDetails": "Ze szczegółów",
+      "createdTitle": "Utworzono transakcję",
+      "timeline": "Oś aktywności",
+      "sidePanel": "Panel aktywności transakcji"
+    },
+    "tasks": {
+      "emptyTitle": "Zadania",
+      "emptyText": "Do tej transakcji nie przypisano jeszcze zadań.",
+      "unavailableText": "Powiązania zadań są przygotowane dla osi aktywności. Powiązanych zadań nie udało się jeszcze załadować."
+    },
+    "notes": {
+      "title": "Notatki transakcji",
+      "emptyTitle": "Brak notatek",
+      "emptyText": "Notatki powiązane z transakcją pojawią się tutaj.",
+      "add": "Dodaj notatkę"
+    },
+    "confirm": {
+      "deleteTitle": "Usunąć transakcję?",
+      "deleteText": "Transakcja zostanie usunięta z aktywnego obszaru sprzedaży."
+    },
+    "create": {
+      "title": "Nowa transakcja"
     }
   },
   "chat": {

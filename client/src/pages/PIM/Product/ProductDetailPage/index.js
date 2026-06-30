@@ -1,60 +1,115 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
-import EntityDetailPage from '../../../_scaffold/EntityDetailPage';
-import Modal from '../../../../components/Modal';
-import ConfirmDialog from '../../../../components/dialogs/ConfirmDialog';
-import { SelectField } from '../../../../components/ui/fields';
 import {
-  productEntitySchema,
+  ArrowLeft,
+  BadgeDollarSign,
+  Boxes,
+  Building2,
+  FileText,
+  Package,
+  PackageCheck,
+  ReceiptText,
+  Save,
+  Settings,
+  ShieldCheck,
+  Tags,
+  Warehouse,
+} from 'lucide-react';
+
+import {
+  DetailCard,
+  DetailLayout,
+  DetailSection,
+  DetailTabs,
+} from '../../../../components/detail';
+import HtmlDescriptionSection from '../../../../components/data/HtmlDescriptionSection';
+import {
+  AutocompleteField,
+  CheckboxField,
+  NumberField,
+  SelectField,
+  TextField,
+} from '../../../../components/ui/fields';
+import {
   toApiProduct,
   toFormProduct,
 } from '../../../../schemas/product.schema';
 import {
-  useGetProductQuery,
+  useCreateProductMutation,
   useCreateBrandLookupMutation,
   useCreateCategoryLookupMutation,
-  useDeleteBrandLookupMutation,
-  useDeleteCategoryLookupMutation,
+  useCreateProductAttachmentMutation,
+  useCreateProductTypeLookupMutation,
+  useCreateTaxCategoryLookupMutation,
+  useDeleteProductAttachmentMutation,
+  useGetProductMovementsQuery,
+  useGetProductPricesQuery,
+  useGetProductQuery,
   useListBrandsLookupQuery,
   useListCategoriesLookupQuery,
-  useMergeBrandLookupMutation,
-  useMergeCategoryLookupMutation,
-  useListProductTypesLookupQuery,
   useListProductAttachmentsQuery,
-  useCreateProductAttachmentMutation,
-  useUpdateProductAttachmentMutation,
-  useDeleteProductAttachmentMutation,
+  useListProductTypesLookupQuery,
   useListTaxCategoriesLookupQuery,
-  useUpdateBrandLookupMutation,
-  useUpdateCategoryLookupMutation,
-  useUpdateProductMutation,
   useListUomsLookupQuery,
+  useUpdateProductAttachmentMutation,
+  useUpdateProductDescriptionMutation,
+  useUpdateProductMutation,
 } from '../../../../store/rtk/productsApi';
 import {
   useGetSignedPreviewUrlQuery,
   useListFilesByOwnerQuery,
   useUploadFileMutation,
 } from '../../../../store/rtk/filesApi';
-import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
-import ProductDetailTabs from './ProductDetailTabs';
-import { formatQuantity, getUomLabel, getUomSymbol } from '../../../../utils/uom';
+import { useCreateCounterpartyMutation, useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
+import EntityNotesSection from '../../../../components/notes/EntityNotesSection';
+import { formatQuantity, getUomSymbol } from '../../../../utils/uom';
 import { withApiOrigin } from '../../../../config/api';
+import ProductDetailTabs from './ProductDetailTabs';
 import s from './ProductDetailPage.module.css';
 
-const BASE_TABS = [
-  { key: 'description', label: 'Описание' },
-  { key: 'files', label: 'Файлы' },
-  { key: 'variants', label: 'Варианты' },
-  { key: 'suppliers-purchase', label: 'Поставщики / Закупка' },
-  { key: 'picker-demo', label: 'Подбор товара' },
-  { key: 'prices', label: 'Цены' },
-  { key: 'specifications', label: 'Характеристики' },
-  { key: 'measurements', label: 'Измерения' },
-  { key: 'movements', label: 'Передвижения' },
-];
+const EMPTY_PRODUCT = {
+  name: '',
+  sku: '',
+  ean: '',
+  barcode: '',
+  slug: '',
+  primaryCategoryId: '',
+  subcategoryId: '',
+  brandId: '',
+  supplierId: '',
+  manufacturerId: '',
+  productTypeId: '',
+  uomId: '',
+  taxCategoryId: '',
+  status: 'draft',
+  visibility: 'public',
+  isSellable: true,
+  isService: false,
+  price: '',
+  oldPrice: '',
+  cost: '',
+  currency: 'PLN',
+  pkwiu: '',
+  cn: '',
+  gtu: '',
+  hsCode: '',
+  countryOfOrigin: '',
+  trackInventory: false,
+  isSerialized: false,
+  isLotTracked: false,
+  shelfLifeDays: '',
+  stockQuantity: '',
+  reservedQuantity: '',
+  orderedQuantity: '',
+  saleStartDate: '',
+  saleEndDate: '',
+  description: '',
+  createdAt: null,
+  updatedAt: null,
+};
 
-const BASE_GTU_OPTIONS = [
+const GTU_OPTIONS = [
   'GTU_01',
   'GTU_02',
   'GTU_03',
@@ -68,13 +123,17 @@ const BASE_GTU_OPTIONS = [
   'GTU_11',
   'GTU_12',
   'GTU_13',
+].map((value) => ({ value, label: value }));
+
+const POLISH_TAX_PRESETS = [
+  { code: 'PL_VAT_23', name: 'VAT 23%', rate: 23 },
+  { code: 'PL_VAT_8', name: 'VAT 8%', rate: 8 },
+  { code: 'PL_VAT_5', name: 'VAT 5%', rate: 5 },
+  { code: 'PL_VAT_0', name: 'VAT 0%', rate: 0 },
+  { code: 'PL_VAT_ZW', name: 'ZW', rate: 0 },
+  { code: 'PL_VAT_NP', name: 'NP', rate: 0 },
 ];
 
-// byLabel: вспомогательная логика компонента.
-function byLabel(a, b) {
-  return String(a?.label || '').localeCompare(String(b?.label || ''), 'ru');
-}
-const PRODUCT_QUANTITY_UOM_FAMILIES = new Set(['piece', 'packaging', 'weight', 'volume', 'length']);
 const IMAGE_MIME = new Set([
   'image/jpeg',
   'image/png',
@@ -89,31 +148,59 @@ const IMAGE_MIME = new Set([
 ]);
 const IMAGE_EXT = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg', 'tif', 'tiff', 'heic', 'heif']);
 
-// useDebouncedValue: инкапсулирует переиспользуемую UI-логику.
-function useDebouncedValue(value, delay = 280) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const id = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(id);
-  }, [value, delay]);
-  return debounced;
+function byLabel(a, b) {
+  return String(a?.label || '').localeCompare(String(b?.label || ''));
 }
 
-// computeEffectiveSellable: вспомогательная логика компонента.
-function computeEffectiveSellable(values = {}) {
-  const manual = Boolean(values?.isSellable);
-  if (!manual) return false;
-
-  const today = new Date().toISOString().slice(0, 10);
-  const start = String(values?.saleStartDate || '').trim();
-  const end = String(values?.saleEndDate || '').trim();
-
-  if (start && today < start) return false;
-  if (end && today > end) return false;
-  return true;
+function asText(value) {
+  if (value === undefined || value === null) return '';
+  return String(value).trim();
 }
 
-function parseListPayload(payload) {
+function normalizeLookupText(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function normalizeInputName(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function lookupCode(value, fallback = 'ITEM') {
+  const normalized = String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
+  return (normalized || fallback).slice(0, 60);
+}
+
+function taxPresetCode(item) {
+  return String(item?.preset?.code || item?.code || '').toUpperCase();
+}
+
+function taxPresetLabel(item) {
+  const code = taxPresetCode(item);
+  if (code === 'PL_VAT_23') return 'VAT 23%';
+  if (code === 'PL_VAT_8') return 'VAT 8%';
+  if (code === 'PL_VAT_5') return 'VAT 5%';
+  if (code === 'PL_VAT_0') return 'VAT 0%';
+  if (code === 'PL_VAT_ZW') return 'ZW';
+  if (code === 'PL_VAT_NP') return 'NP';
+  return item?.name || item?.code || item?.id;
+}
+
+function taxPresetSecondary(item, t) {
+  const code = taxPresetCode(item);
+  if (code === 'PL_VAT_ZW') return t('pim.product.detail.taxPresets.zw', 'ZW — exempt');
+  if (code === 'PL_VAT_NP') return t('pim.product.detail.taxPresets.np', 'NP — not subject');
+  if (item?.rate !== undefined && item?.rate !== null && item?.rate !== '') {
+    return t('pim.product.detail.taxPresets.rate', '{{rate}}% VAT', { rate: Number(item.rate) });
+  }
+  return item?.code || null;
+}
+
+function listItems(payload) {
   if (Array.isArray(payload?.items)) return payload.items;
   if (Array.isArray(payload?.data)) return payload.data;
   if (Array.isArray(payload)) return payload;
@@ -145,7 +232,134 @@ function pickMainAttachment(attachments = []) {
     })[0] || null;
 }
 
-function MainImageBlock({ productId, productName }) {
+function moneyLabel(value, currency, empty = '—') {
+  if (value === null || value === undefined || value === '') return empty;
+  const num = Number(value);
+  if (!Number.isFinite(num)) return `${value} ${currency || ''}`.trim();
+  return `${num.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency || ''}`.trim();
+}
+
+function dateTimeLabel(value, locale) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleString(locale || undefined);
+}
+
+function numberOrNull(value) {
+  if (value === '' || value === null || value === undefined) return null;
+  const next = Number(value);
+  return Number.isFinite(next) ? next : null;
+}
+
+function optionLabel(map, id, fallback = '—') {
+  if (!id) return fallback;
+  return map.get(String(id))?.label || fallback;
+}
+
+function statusLabel(status, t) {
+  if (status === 'active') return t('pim.product.detail.status.active', 'Active');
+  if (status === 'archived') return t('pim.product.detail.status.archived', 'Archived');
+  return t('pim.product.detail.status.draft', 'Draft');
+}
+
+function visibilityLabel(visibility, t) {
+  return visibility === 'private'
+    ? t('pim.product.detail.visibility.private', 'Private')
+    : t('pim.product.detail.visibility.public', 'Public');
+}
+
+function productKindLabel(values, t) {
+  return values?.isService
+    ? t('pim.product.detail.kind.service', 'Service')
+    : t('pim.product.detail.kind.product', 'Product');
+}
+
+function inventoryAvailable(values = {}) {
+  const stock = Number(values.stockQuantity);
+  const reserved = Number(values.reservedQuantity);
+  if (!Number.isFinite(stock)) return null;
+  return stock - (Number.isFinite(reserved) ? reserved : 0);
+}
+
+function latestByDate(rows = []) {
+  return [...rows]
+    .filter(Boolean)
+    .sort((a, b) => new Date(b?.createdAt || b?.updatedAt || 0) - new Date(a?.createdAt || a?.updatedAt || 0))[0] || null;
+}
+
+function priceAmount(row) {
+  const gross = Number(row?.grossPrice);
+  const net = Number(row?.netPrice);
+  if (Number.isFinite(gross)) return gross;
+  if (Number.isFinite(net)) return net;
+  return null;
+}
+
+function priceSnapshot(pricesData, product) {
+  const purchase = Array.isArray(pricesData?.purchase) ? pricesData.purchase : [];
+  const sale = Array.isArray(pricesData?.sale) ? pricesData.sale : [];
+  const firstSale = sale.map((row) => ({ row, amount: priceAmount(row) }))
+    .filter((item) => Number.isFinite(item.amount))
+    .sort((a, b) => a.amount - b.amount)[0] || null;
+  const firstPurchase = purchase.map((row) => ({ row, amount: priceAmount(row) }))
+    .filter((item) => Number.isFinite(item.amount))
+    .sort((a, b) => a.amount - b.amount)[0] || null;
+  const cost = numberOrNull(product?.cost);
+  const saleAmount = firstSale?.amount ?? numberOrNull(product?.price);
+  const margin = Number.isFinite(saleAmount) && Number.isFinite(cost) ? saleAmount - cost : null;
+
+  return {
+    purchaseCount: purchase.length,
+    saleCount: sale.length,
+    purchase: firstPurchase,
+    sale: firstSale,
+    margin,
+    currency: firstSale?.row?.currency || firstPurchase?.row?.currency || product?.currency || 'PLN',
+  };
+}
+
+function FieldGrid({ children }) {
+  return <div className={s.v2FieldGrid}>{children}</div>;
+}
+
+function FactRow({ label, value }) {
+  return (
+    <div className={s.v2FactRow}>
+      <span>{label}</span>
+      <strong>{value || '—'}</strong>
+    </div>
+  );
+}
+
+function FieldHint({ children, compact = false }) {
+  if (!children) return null;
+  return <div className={`${s.v2FieldHint} ${compact ? s.v2FieldHintCompact : ''}`}>{children}</div>;
+}
+
+function Metric({ label, value, tone = 'default', icon }) {
+  return (
+    <div className={`${s.v2Metric} ${s[`v2Metric_${tone}`] || ''}`}>
+      <span className={s.v2MetricIcon}>{icon}</span>
+      <div>
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </div>
+    </div>
+  );
+}
+
+function HeroVital({ label, value, detail, tone = 'default' }) {
+  return (
+    <div className={`${s.v2HeroVital} ${s[`v2HeroVital_${tone}`] || ''}`}>
+      <span>{label}</span>
+      <strong>{value === 0 || value ? value : '—'}</strong>
+      {detail ? <small>{detail}</small> : null}
+    </div>
+  );
+}
+
+function MainImageBlock({ productId, productName, disabled, t }) {
   const fileInputRef = useRef(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -162,8 +376,8 @@ function MainImageBlock({ productId, productName }) {
   const [updateProductAttachment] = useUpdateProductAttachmentMutation();
   const [deleteProductAttachment] = useDeleteProductAttachmentMutation();
 
-  const attachments = useMemo(() => parseListPayload(attachmentData), [attachmentData]);
-  const files = useMemo(() => parseListPayload(filesData), [filesData]);
+  const attachments = useMemo(() => listItems(attachmentData), [attachmentData]);
+  const files = useMemo(() => listItems(filesData), [filesData]);
   const fileById = useMemo(() => {
     const map = new Map();
     files.forEach((file) => {
@@ -180,7 +394,6 @@ function MainImageBlock({ productId, productName }) {
     ? withApiOrigin(mainFile.url)
     : withApiOrigin(signedUrl);
   const initials = String(productName || 'P').trim().slice(0, 2).toUpperCase() || 'P';
-  const imageFiles = useMemo(() => files.filter(isImageFile), [files]);
 
   const promoteAttachment = useCallback(async (fileId) => {
     if (!productId || !fileId) return;
@@ -228,7 +441,7 @@ function MainImageBlock({ productId, productName }) {
     const file = Array.from(fileList || [])[0];
     if (!file || !productId) return;
     if (!isImageFile(file)) {
-      setError('Можно загрузить только изображение');
+      setError(t('pim.product.detail.image.onlyImages', 'Only image files can be uploaded.'));
       return;
     }
     setBusy(true);
@@ -246,12 +459,12 @@ function MainImageBlock({ productId, productName }) {
       if (!fileId) throw new Error('File id is missing');
       await promoteAttachment(fileId);
     } catch (e) {
-      setError(e?.data?.message || e?.message || 'Не удалось загрузить main image');
+      setError(e?.data?.message || e?.message || t('pim.product.detail.image.uploadFailed', 'Failed to upload image.'));
     } finally {
       setBusy(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  }, [productId, promoteAttachment, uploadFile]);
+  }, [productId, promoteAttachment, t, uploadFile]);
 
   const removeMainImage = useCallback(async () => {
     if (!mainAttachment?.id) return;
@@ -261,17 +474,17 @@ function MainImageBlock({ productId, productName }) {
       await deleteProductAttachment({ id: mainAttachment.id, productId }).unwrap();
       await refetchAttachments();
     } catch (e) {
-      setError(e?.data?.message || e?.message || 'Не удалось убрать main image');
+      setError(e?.data?.message || e?.message || t('pim.product.detail.image.removeFailed', 'Failed to remove image.'));
     } finally {
       setBusy(false);
     }
-  }, [deleteProductAttachment, mainAttachment?.id, productId, refetchAttachments]);
+  }, [deleteProductAttachment, mainAttachment?.id, productId, refetchAttachments, t]);
 
   return (
     <div className={s.mainImageBlock}>
       <div className={s.mainImagePreview}>
         {imageUrl ? (
-          <img src={imageUrl} alt={mainFile?.filename || productName || 'Product image'} />
+          <img src={imageUrl} alt={mainFile?.filename || productName || t('pim.product.detail.image.alt', 'Product image')} />
         ) : (
           <span>{initials}</span>
         )}
@@ -281,18 +494,18 @@ function MainImageBlock({ productId, productName }) {
           type="button"
           className={s.mainImageAction}
           onClick={() => fileInputRef.current?.click()}
-          disabled={busy}
+          disabled={busy || disabled || !productId}
         >
-          {mainAttachment ? 'Заменить фото' : 'Загрузить фото'}
+          {mainAttachment ? t('pim.product.detail.image.replace', 'Replace') : t('pim.product.detail.image.upload', 'Upload')}
         </button>
         {mainAttachment ? (
           <button
             type="button"
             className={`${s.mainImageAction} ${s.mainImageActionMuted}`}
             onClick={removeMainImage}
-            disabled={busy}
+            disabled={busy || disabled}
           >
-            Убрать
+            {t('pim.product.detail.image.remove', 'Remove')}
           </button>
         ) : null}
         <input
@@ -303,8 +516,8 @@ function MainImageBlock({ productId, productName }) {
           onChange={(event) => uploadMainImage(event.target.files)}
         />
       </div>
-      {imageFiles.length && !mainAttachment ? (
-        <div className={s.mainImageHint}>В файлах есть изображения. Их можно назначить main image во вкладке «Файлы».</div>
+      {disabled && !productId ? (
+        <div className={s.mainImageHint}>{t('pim.product.detail.image.saveFirst', 'Save the product to add an image.')}</div>
       ) : null}
       {mainFile ? <div className={s.mainImageFileName}>{mainFile.filename || mainFile.safeName}</div> : null}
       {error ? <div className={s.mainImageError}>{error}</div> : null}
@@ -312,1392 +525,899 @@ function MainImageBlock({ productId, productName }) {
   );
 }
 
-// Компонент ProductDetailPage: отвечает за отображение UI и обработку взаимодействий пользователя.
 export default function ProductDetailPage() {
-  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const isCreateMode = id === 'new' || !id;
+  const productId = isCreateMode ? '' : id;
 
   const { data: base, isFetching } = useGetProductQuery(id, {
+    skip: isCreateMode,
     refetchOnMountOrArgChange: true,
   });
 
-  const [updateProduct, { isLoading: saving }] = useUpdateProductMutation();
+  const [createProduct, { isLoading: creating }] = useCreateProductMutation();
+  const [updateProduct, { isLoading: updating }] = useUpdateProductMutation();
+  const [updateDescription] = useUpdateProductDescriptionMutation();
   const [createCategoryLookup, { isLoading: creatingCategory }] = useCreateCategoryLookupMutation();
   const [createBrandLookup, { isLoading: creatingBrand }] = useCreateBrandLookupMutation();
-  const [deleteCategoryLookup, { isLoading: deletingCategory }] = useDeleteCategoryLookupMutation();
-  const [deleteBrandLookup, { isLoading: deletingBrand }] = useDeleteBrandLookupMutation();
-  const [updateCategoryLookup, { isLoading: updatingCategory }] = useUpdateCategoryLookupMutation();
-  const [updateBrandLookup, { isLoading: updatingBrand }] = useUpdateBrandLookupMutation();
-  const [mergeCategoryLookup] = useMergeCategoryLookupMutation();
-  const [mergeBrandLookup] = useMergeBrandLookupMutation();
+  const [createProductTypeLookup, { isLoading: creatingProductType }] = useCreateProductTypeLookupMutation();
+  const [createTaxCategoryLookup, { isLoading: creatingTaxCategory }] = useCreateTaxCategoryLookupMutation();
+  const [createCounterparty, { isLoading: creatingCounterparty }] = useCreateCounterpartyMutation();
+  const [values, setValues] = useState(() => ({ ...EMPTY_PRODUCT }));
+  const [dirty, setDirty] = useState(isCreateMode);
+  const [saveError, setSaveError] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
+  const saving = creating || updating;
 
-  const [categorySearch, setCategorySearch] = useState('');
-  const [brandSearch, setBrandSearch] = useState('');
-  const [subcategorySearch, setSubcategorySearch] = useState('');
-  const [supplierSearch, setSupplierSearch] = useState('');
-  const [createdCategories, setCreatedCategories] = useState([]);
-  const [createdBrands, setCreatedBrands] = useState([]);
-  const [confirmState, setConfirmState] = useState(null);
-  const [renameState, setRenameState] = useState(null);
-  const [managerState, setManagerState] = useState({ open: false, type: null });
-  const [mergeState, setMergeState] = useState(null);
-  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
-  const [activeDetailTab, setActiveDetailTab] = useState(BASE_TABS[0].key);
-  const [managerError, setManagerError] = useState('');
-  const [managerBusyKey, setManagerBusyKey] = useState('');
-  const debouncedCategorySearch = useDebouncedValue(categorySearch, 300);
-  const debouncedBrandSearch = useDebouncedValue(brandSearch, 300);
-  const debouncedSubcategorySearch = useDebouncedValue(subcategorySearch, 300);
-  const debouncedSupplierSearch = useDebouncedValue(supplierSearch, 300);
-
-  const requestConfirm = useCallback(({ title, text, okText = 'Подтвердить' }) => (
-    new Promise((resolve) => {
-      setConfirmState({ title, text, okText, resolve });
-    })
-  ), []);
-
-  const requestRename = useCallback(({ title, label, initialValue = '', okText = 'Сохранить' }) => (
-    new Promise((resolve) => {
-      setRenameState({
-        title,
-        label,
-        value: String(initialValue || ''),
-        okText,
-        error: '',
-        resolve,
-      });
-    })
-  ), []);
-
-  const closeConfirm = useCallback((result) => {
-    setConfirmState((prev) => {
-      prev?.resolve?.(result);
-      return null;
-    });
-  }, []);
-
-  const closeRename = useCallback((nextValue) => {
-    setRenameState((prev) => {
-      prev?.resolve?.(nextValue);
-      return null;
-    });
-  }, []);
-
-  const submitRename = useCallback(() => {
-    setRenameState((prev) => {
-      if (!prev) return prev;
-      const normalized = String(prev.value || '').trim();
-      if (!normalized) {
-        return { ...prev, error: 'Название не может быть пустым' };
-      }
-      prev.resolve?.(normalized);
-      return null;
-    });
-  }, []);
-
-  const { data: brandsData, isFetching: isBrandLookupFetching } = useListBrandsLookupQuery(
-    {
-      limit: 100,
-      sort: 'name',
-      dir: 'ASC',
-      search: debouncedBrandSearch || undefined,
-    },
-    { refetchOnMountOrArgChange: true }
-  );
-
-  const { data: categoriesData, isFetching: isCategoryLookupFetching } = useListCategoriesLookupQuery(
-    {
-      limit: 100,
-      sort: 'name',
-      dir: 'ASC',
-      search: debouncedCategorySearch || undefined,
-    },
-    { refetchOnMountOrArgChange: true }
-  );
-
-  const { data: subcategoriesLookupData, isFetching: isSubcategoryLookupFetching } = useListCategoriesLookupQuery(
-    {
-      limit: 100,
-      sort: 'name',
-      dir: 'ASC',
-      search: debouncedSubcategorySearch || undefined,
-    },
-    { refetchOnMountOrArgChange: true }
-  );
-
-  const { data: categoriesManagerData, isFetching: isCategoriesManagerFetching } = useListCategoriesLookupQuery(
-    {
-      limit: 100,
-      sort: 'name',
-      dir: 'ASC',
-      includeUsage: true,
-    },
-    {
-      skip: !managerState.open || managerState.type !== 'category',
-      refetchOnMountOrArgChange: true,
+  useEffect(() => {
+    if (isCreateMode) {
+      setValues({ ...EMPTY_PRODUCT });
+      setDirty(true);
+      setSaveError('');
+      setActiveTab('overview');
+      return;
     }
-  );
+    if (!base) return;
+    setValues({ ...EMPTY_PRODUCT, ...toFormProduct(base), slug: base?.slug || '' });
+    setDirty(false);
+    setSaveError('');
+  }, [base, isCreateMode]);
 
-  const { data: brandsManagerData, isFetching: isBrandsManagerFetching } = useListBrandsLookupQuery(
-    {
-      limit: 100,
-      sort: 'name',
-      dir: 'ASC',
-      includeUsage: true,
-    },
-    {
-      skip: !managerState.open || managerState.type !== 'brand',
-      refetchOnMountOrArgChange: true,
-    }
+  const { data: categoriesData, isFetching: categoriesLoading } = useListCategoriesLookupQuery(
+    { limit: 200, sort: 'name', dir: 'ASC' },
+    { refetchOnMountOrArgChange: true }
   );
-
-  const { data: suppliersData, isFetching: isSupplierLookupFetching } = useListCounterpartiesQuery(
-    {
-      limit: 100,
-      sort: 'shortName',
-      dir: 'ASC',
-      excludeLeadClient: true,
-      search: debouncedSupplierSearch || undefined,
-    },
+  const { data: brandsData, isFetching: brandsLoading } = useListBrandsLookupQuery(
+    { limit: 200, sort: 'name', dir: 'ASC' },
+    { refetchOnMountOrArgChange: true }
+  );
+  const { data: productTypesData, isFetching: productTypesLoading } = useListProductTypesLookupQuery(
+    { limit: 100, sort: 'name', dir: 'ASC' },
     { refetchOnMountOrArgChange: false }
   );
-
-  const { data: uomsData, isFetching: isUomLookupFetching } = useListUomsLookupQuery(
-    {
-      limit: 100,
-      sort: 'name',
-      dir: 'ASC',
-    },
+  const { data: taxCategoriesData, isFetching: taxCategoriesLoading } = useListTaxCategoriesLookupQuery(
+    { limit: 100, sort: 'name', dir: 'ASC' },
     { refetchOnMountOrArgChange: false }
   );
-
-  const { data: productTypesData, isFetching: isProductTypeLookupFetching } = useListProductTypesLookupQuery(
-    {
-      limit: 100,
-      sort: 'name',
-      dir: 'ASC',
-    },
+  const { data: uomsData, isFetching: uomsLoading } = useListUomsLookupQuery(
+    { limit: 100, sort: 'name', dir: 'ASC' },
     { refetchOnMountOrArgChange: false }
   );
-
-  const { data: taxCategoriesData, isFetching: isTaxCategoryLookupFetching } = useListTaxCategoriesLookupQuery(
-    {
-      limit: 100,
-      sort: 'name',
-      dir: 'ASC',
-    },
+  const { data: suppliersData, isFetching: suppliersLoading } = useListCounterpartiesQuery(
+    { limit: 100, sort: 'shortName', dir: 'ASC', type: 'supplier' },
     { refetchOnMountOrArgChange: false }
   );
+  const { data: manufacturersData, isFetching: manufacturersLoading } = useListCounterpartiesQuery(
+    { limit: 100, sort: 'shortName', dir: 'ASC', type: 'manufacturer' },
+    { refetchOnMountOrArgChange: false }
+  );
+  const { data: overviewPricesData } = useGetProductPricesQuery(productId, {
+    skip: isCreateMode || !productId,
+  });
+  const { data: overviewMovementsData } = useGetProductMovementsQuery(
+    { id: productId, page: 1, limit: 8 },
+    { skip: isCreateMode || !productId }
+  );
+  const { data: overviewFilesData } = useListFilesByOwnerQuery(
+    { ownerType: 'product', ownerId: productId },
+    { skip: isCreateMode || !productId }
+  );
 
-  const allCategories = useMemo(() => {
-    const baseSelected = [
-      base?.primaryCategory ? {
-        id: base.primaryCategory.id,
-        name: base.primaryCategory.name,
-        slug: base.primaryCategory.slug,
-        parentId: base.primaryCategory.parentId || null,
-      } : null,
-      base?.subcategory ? {
-        id: base.subcategory.id,
-        name: base.subcategory.name,
-        slug: base.subcategory.slug,
-        parentId: base.subcategory.parentId || null,
-      } : null,
-    ].filter(Boolean);
-    const categoryItems = Array.isArray(categoriesData?.items) ? categoriesData.items : [];
-    const subcategoryItems = Array.isArray(subcategoriesLookupData?.items) ? subcategoriesLookupData.items : [];
-    const merged = [...baseSelected, ...createdCategories, ...categoryItems, ...subcategoryItems];
+  const categories = useMemo(() => {
+    const selected = [base?.primaryCategory, base?.subcategory].filter(Boolean);
+    const rows = [...selected, ...listItems(categoriesData)];
     const seen = new Set();
-    return merged.filter((item) => {
+    return rows.filter((item) => {
       const key = String(item?.id || '');
       if (!key || seen.has(key)) return false;
       seen.add(key);
       return true;
     });
-  }, [base?.primaryCategory, base?.subcategory, categoriesData?.items, createdCategories, subcategoriesLookupData?.items]);
+  }, [base?.primaryCategory, base?.subcategory, categoriesData]);
 
-  const categoryById = useMemo(() => {
-    return new Map(allCategories.map((item) => [String(item.id), item]));
-  }, [allCategories]);
-
-  const categoryOptions = useMemo(() => (
-    allCategories
+  const selectOptions = useMemo(() => {
+    const mapRows = (rows, labelFn, secondaryFn, chip) => rows
+      .filter((item) => item?.id)
       .map((item) => ({
         value: item.id,
-        label: item.name || item.slug || item.id,
+        label: labelFn(item),
+        secondary: secondaryFn?.(item) || null,
+        chip: typeof chip === 'function' ? chip(item) : chip,
+        preset: item.preset || null,
+        raw: item,
       }))
-      .sort(byLabel)
-  ), [allCategories]);
+      .sort(byLabel);
 
-  const subcategoryOptions = useMemo(() => {
-    const children = allCategories.filter((item) => item?.parentId);
-    return children
-      .map((item) => {
-        const parent = categoryById.get(String(item.parentId || ''));
-        const parentLabel = parent?.name || parent?.slug || '';
-        const label = item.name || item.slug || item.id;
-        return {
+    const taxRows = [
+      base?.taxCategory,
+      ...listItems(taxCategoriesData),
+    ].filter(Boolean);
+    const existingTaxCodes = new Set(taxRows.map((item) => String(item?.code || '').toUpperCase()).filter(Boolean));
+    const taxPresetRows = POLISH_TAX_PRESETS
+      .filter((preset) => !existingTaxCodes.has(preset.code))
+      .map((preset) => ({
+        id: `preset:${preset.code}`,
+        name: preset.name,
+        code: preset.code,
+        rate: preset.rate,
+        preset,
+      }));
+
+    return {
+      categories: mapRows(
+        categories.filter((item) => !item?.parentId),
+        (item) => item.name || item.slug || item.id,
+        null,
+        t('pim.product.detail.lookup.types.category', 'Category')
+      ),
+      subcategories: mapRows(
+        categories.filter((item) => item?.parentId),
+        (item) => item.name || item.slug || item.id,
+        null,
+        t('pim.product.detail.lookup.types.subcategory', 'Subcategory')
+      ),
+      brands: mapRows([
+        base?.brand,
+        ...listItems(brandsData),
+      ].filter(Boolean), (item) => item.name || item.slug || item.id, null, t('pim.product.detail.lookup.types.brand', 'Brand')),
+      suppliers: mapRows([
+        base?.supplier,
+        ...listItems(suppliersData),
+      ].filter(Boolean), (item) => item.shortName || item.fullName || item.name || item.id, null, t('pim.product.detail.lookup.types.supplier', 'Supplier')),
+      manufacturers: mapRows([
+        base?.manufacturer,
+        ...listItems(manufacturersData),
+      ].filter(Boolean), (item) => item.shortName || item.fullName || item.name || item.id, null, t('pim.product.detail.lookup.types.manufacturer', 'Manufacturer')),
+      productTypes: mapRows([
+        base?.type,
+        ...listItems(productTypesData),
+      ].filter(Boolean), (item) => item.name || item.code || item.id, null, t('pim.product.detail.lookup.types.productType', 'Product type')),
+      taxCategories: [...taxRows, ...taxPresetRows]
+        .filter((item) => item?.id)
+        .map((item) => ({
           value: item.id,
-          label,
-          secondary: parentLabel ? `Категория: ${parentLabel}` : null,
-          parentId: item.parentId || null,
-        };
-      })
-      .sort(byLabel);
-  }, [allCategories, categoryById]);
+          label: taxPresetLabel(item),
+          secondary: taxPresetSecondary(item, t),
+          chip: t('pim.product.detail.lookup.types.taxCategory', 'Tax'),
+          preset: item.preset || null,
+          raw: item,
+        }))
+        .sort(byLabel),
+      uoms: mapRows([
+        base?.uom,
+        ...listItems(uomsData),
+      ].filter(Boolean), (item) => getUomSymbol(item, '') || item.code || item.name || item.id),
+    };
+  }, [base?.brand, base?.manufacturer, base?.supplier, base?.taxCategory, base?.type, base?.uom, brandsData, categories, manufacturersData, productTypesData, suppliersData, t, taxCategoriesData, uomsData]);
 
-  const subcategoryOptionsByCategory = useCallback((values) => {
-    const selectedCategoryId = String(values?.primaryCategoryId || '');
-    if (!selectedCategoryId) return subcategoryOptions;
+  const optionMaps = useMemo(() => ({
+    categories: new Map([...selectOptions.categories, ...selectOptions.subcategories].map((item) => [String(item.value), item])),
+    brands: new Map(selectOptions.brands.map((item) => [String(item.value), item])),
+    suppliers: new Map(selectOptions.suppliers.map((item) => [String(item.value), item])),
+    manufacturers: new Map(selectOptions.manufacturers.map((item) => [String(item.value), item])),
+    productTypes: new Map(selectOptions.productTypes.map((item) => [String(item.value), item])),
+    taxCategories: new Map(selectOptions.taxCategories.map((item) => [String(item.value), item])),
+    uoms: new Map(selectOptions.uoms.map((item) => [String(item.value), item])),
+  }), [selectOptions]);
 
-    const filtered = subcategoryOptions.filter(
-      (item) => String(item.parentId || '') === selectedCategoryId
-    );
-
-    const selectedSubcategoryId = String(values?.subcategoryId || '');
-    if (!selectedSubcategoryId) return filtered;
-
-    const alreadyIncluded = filtered.some(
-      (item) => String(item.value || '') === selectedSubcategoryId
-    );
-    if (alreadyIncluded) return filtered;
-
-    const selectedSubcategory = subcategoryOptions.find(
-      (item) => String(item.value || '') === selectedSubcategoryId
-    );
-
-    if (selectedSubcategory) return [selectedSubcategory, ...filtered];
-    return [{ value: selectedSubcategoryId, label: selectedSubcategoryId }, ...filtered];
-  }, [subcategoryOptions]);
-
-  const brandOptions = useMemo(() => {
-    const baseSelected = base?.brand ? [{
-      id: base.brand.id,
-      name: base.brand.name,
-      slug: base.brand.slug,
-    }] : [];
-    const items = Array.isArray(brandsData?.items) ? brandsData.items : [];
-    const merged = [...baseSelected, ...createdBrands, ...items];
-    const seen = new Set();
-    return merged
-      .filter((item) => {
-        const key = String(item?.id || '');
-        if (!key || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .map((item) => ({
-        value: item.id,
-        label: item.name || item.slug || item.id,
-      }))
-      .sort(byLabel);
-  }, [base?.brand, brandsData?.items, createdBrands]);
-
-  const supplierOptions = useMemo(() => {
-    const selectedSupplier = base?.supplier
-      ? [{
-          id: base.supplier.id,
-          shortName: base.supplier.shortName,
-          fullName: base.supplier.fullName,
-          type: base.supplier.type,
-        }]
-      : [];
-    const items = Array.isArray(suppliersData?.items) ? suppliersData.items : [];
-    const merged = [...selectedSupplier, ...items];
-    const seen = new Set();
-    return merged
-      .filter((item) => {
-        const key = String(item?.id || '');
-        if (!key || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .map((item) => ({
-        value: item.id,
-        label: item.shortName || item.fullName || item.id,
-        secondary: [
-          item.type ? `Тип: ${item.type}` : null,
-          item.nip ? `NIP: ${item.nip}` : null,
-          item.city || null,
-        ]
-          .filter(Boolean)
-          .join(' • ') || null,
-      }))
-      .sort(byLabel);
-  }, [base?.supplier, suppliersData?.items]);
-
-  const supplierOptionById = useMemo(
-    () => new Map(supplierOptions.map((item) => [String(item.value), item])),
-    [supplierOptions]
-  );
-
-  const uomOptions = useMemo(() => {
-    const selectedUom = base?.uom
-      ? [{
-          id: base.uom.id,
-          code: base.uom.code,
-          name: base.uom.name,
-          symbol: base.uom.symbol,
-          family: base.uom.family,
-          precision: base.uom.precision,
-        }]
-      : [];
-    const items = Array.isArray(uomsData?.items) ? uomsData.items : [];
-    const merged = [...selectedUom, ...items];
-    const seen = new Set();
-    const selectedUomId = String(base?.uom?.id || '');
-
-    return merged
-      .filter((item) => {
-        const key = String(item?.id || '');
-        if (!key || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .filter((item) => {
-        const family = String(item?.family || '').toLowerCase();
-        const isSelected = selectedUomId && String(item?.id || '') === selectedUomId;
-        return isSelected || !family || PRODUCT_QUANTITY_UOM_FAMILIES.has(family);
-      })
-      .map((item) => ({
-        value: item.id,
-        label: item.symbol || item.code || item.name || item.id,
-        secondary: [
-          item.name || null,
-          item.family ? `Семейство: ${item.family}` : null,
-        ].filter(Boolean).join(' • ') || null,
-        code: item.code || null,
-        name: item.name || null,
-        symbol: item.symbol || null,
-        family: item.family || null,
-        precision: item.precision,
-      }))
-      .sort(byLabel);
-  }, [base?.uom, uomsData?.items]);
-
-  const productTypeOptions = useMemo(() => {
-    const selectedType = base?.type
-      ? [{
-          id: base.type.id,
-          code: base.type.code,
-          name: base.type.name,
-        }]
-      : [];
-    const items = Array.isArray(productTypesData?.items) ? productTypesData.items : [];
-    const merged = [...selectedType, ...items];
-    const seen = new Set();
-    return merged
-      .filter((item) => {
-        const key = String(item?.id || '');
-        if (!key || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .map((item) => ({
-        value: item.id,
-        label: item.name || item.code || item.id,
-        secondary: item.code || null,
-      }))
-      .sort(byLabel);
-  }, [base?.type, productTypesData?.items]);
-
-  const taxCategoryOptions = useMemo(() => {
-    const selectedTaxCategory = base?.taxCategory
-      ? [{
-          id: base.taxCategory.id,
-          code: base.taxCategory.code,
-          name: base.taxCategory.name,
-          rate: base.taxCategory.rate,
-        }]
-      : [];
-    const items = Array.isArray(taxCategoriesData?.items) ? taxCategoriesData.items : [];
-    const merged = [...selectedTaxCategory, ...items];
-    const seen = new Set();
-    return merged
-      .filter((item) => {
-        const key = String(item?.id || '');
-        if (!key || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .map((item) => ({
-        value: item.id,
-        label: item.name || item.code || item.id,
-        secondary: [
-          item.code ? `Код: ${item.code}` : null,
-          item.rate !== undefined && item.rate !== null ? `Ставка: ${item.rate}%` : null,
-        ].filter(Boolean).join(' • ') || null,
-      }))
-      .sort(byLabel);
-  }, [base?.taxCategory, taxCategoriesData?.items]);
-
-  const gtuOptions = useMemo(() => {
-    const set = new Set(BASE_GTU_OPTIONS);
-    const existing = String(base?.gtu || '').trim();
-    if (existing) set.add(existing);
-
-    return Array.from(set)
-      .sort((a, b) => a.localeCompare(b, 'ru'))
-      .map((value) => ({ value, label: value }));
-  }, [base?.gtu]);
-
-  const categoryOptionById = useMemo(
-    () => new Map(categoryOptions.map((item) => [String(item.value), item])),
-    [categoryOptions]
-  );
-  const brandOptionById = useMemo(
-    () => new Map(brandOptions.map((item) => [String(item.value), item])),
-    [brandOptions]
-  );
-  const uomOptionById = useMemo(
-    () => new Map(uomOptions.map((item) => [String(item.value), item])),
-    [uomOptions]
-  );
-  const productTypeOptionById = useMemo(
-    () => new Map(productTypeOptions.map((item) => [String(item.value), item])),
-    [productTypeOptions]
-  );
-  const taxCategoryOptionById = useMemo(
-    () => new Map(taxCategoryOptions.map((item) => [String(item.value), item])),
-    [taxCategoryOptions]
-  );
-
-  const managerRows = useMemo(() => {
-    if (managerState.type === 'category') {
-      const items = Array.isArray(categoriesManagerData?.items) ? categoriesManagerData.items : [];
-      return items.map((item) => ({
-        id: item.id,
-        name: item.name || item.slug || item.id,
-        usageCount: Number(item?.usage?.totalCount || 0),
-        usageExtra: `Основная: ${Number(item?.usage?.primaryCount || 0)}, Подкатегория: ${Number(item?.usage?.subcategoryCount || 0)}`,
-      }));
-    }
-    if (managerState.type === 'brand') {
-      const items = Array.isArray(brandsManagerData?.items) ? brandsManagerData.items : [];
-      return items.map((item) => ({
-        id: item.id,
-        name: item.name || item.slug || item.id,
-        usageCount: Number(item?.usage?.totalCount || 0),
-        usageExtra: '',
-      }));
-    }
-    return [];
-  }, [brandsManagerData?.items, categoriesManagerData?.items, managerState.type]);
-
-  const managerTargetOptions = useMemo(() => {
-    if (!mergeState?.sourceId) return [];
-    return managerRows
-      .filter((row) => String(row.id) !== String(mergeState.sourceId))
-      .map((row) => ({ value: row.id, label: `${row.name} (${row.usageCount})` }));
-  }, [managerRows, mergeState?.sourceId]);
-
-  const closeManager = useCallback(() => {
-    setManagerState({ open: false, type: null });
-    setManagerError('');
+  const setField = useCallback((field, next) => {
+    setValues((prev) => ({ ...prev, [field]: next }));
+    setDirty(true);
+    setSaveError('');
   }, []);
 
-  const openMergeForRow = useCallback((row) => {
-    setMergeState({
-      type: managerState.type,
-      sourceId: row.id,
-      sourceName: row.name,
-      sourceUsage: row.usageCount,
-      targetId: '',
-      error: '',
-    });
-  }, [managerState.type]);
+  const createCategoryOption = useCallback(async ({ name, parentId } = {}) => {
+    const cleanName = normalizeInputName(name);
+    if (!cleanName) return null;
+    return createCategoryLookup(parentId ? { name: cleanName, parentId } : { name: cleanName }).unwrap();
+  }, [createCategoryLookup]);
 
-  const handleManagerRename = useCallback(async (row) => {
-    const nextName = await requestRename({
-      title: managerState.type === 'brand' ? 'Переименование производителя' : 'Переименование категории',
-      label: 'Новое название',
-      initialValue: row.name,
-      okText: 'Сохранить',
-    });
-    if (!nextName || nextName === row.name) return;
+  const createBrandOption = useCallback(async ({ name } = {}) => {
+    const cleanName = normalizeInputName(name);
+    if (!cleanName) return null;
+    return createBrandLookup({ name: cleanName }).unwrap();
+  }, [createBrandLookup]);
 
-    setManagerError('');
-    setManagerBusyKey(`rename:${row.id}`);
-    try {
-      if (managerState.type === 'brand') {
-        await updateBrandLookup({ id: row.id, payload: { name: nextName } }).unwrap();
-      } else {
-        await updateCategoryLookup({ id: row.id, payload: { name: nextName } }).unwrap();
-      }
-    } catch (e) {
-      setManagerError(e?.data?.error || e?.data?.message || e?.message || 'Не удалось переименовать');
-    } finally {
-      setManagerBusyKey('');
-    }
-  }, [managerState.type, requestRename, updateBrandLookup, updateCategoryLookup]);
+  const createProductTypeOption = useCallback(async ({ name } = {}) => {
+    const cleanName = normalizeInputName(name);
+    if (!cleanName) return null;
+    return createProductTypeLookup({
+      name: cleanName,
+      code: lookupCode(cleanName, 'PRODUCT_TYPE'),
+      isActive: true,
+    }).unwrap();
+  }, [createProductTypeLookup]);
 
-  const handleManagerDelete = useCallback(async (row) => {
-    setManagerError('');
+  const createSupplierOption = useCallback(async ({ name } = {}) => {
+    const cleanName = normalizeInputName(name);
+    if (!cleanName) return null;
+    return createCounterparty({
+      type: 'supplier',
+      shortName: cleanName,
+      fullName: cleanName,
+      status: 'active',
+    }).unwrap();
+  }, [createCounterparty]);
 
-    let payload = {};
-    if (row.usageCount > 0) {
-      const confirmUnassign = await requestConfirm({
-        title: 'Удаление используемой сущности',
-        text: `«${row.name}» используется в ${row.usageCount} товарах. Отвязать от всех и удалить?`,
-        okText: 'Отвязать и удалить',
-      });
-      if (!confirmUnassign) return;
-      payload = { unassign: true };
-    } else {
-      const confirmDelete = await requestConfirm({
-        title: managerState.type === 'brand' ? 'Удаление производителя' : 'Удаление категории',
-        text: `Удалить «${row.name}»?`,
-        okText: 'Удалить',
-      });
-      if (!confirmDelete) return;
-    }
+  const createManufacturerOption = useCallback(async ({ name } = {}) => {
+    const cleanName = normalizeInputName(name);
+    if (!cleanName) return null;
+    return createCounterparty({
+      type: 'manufacturer',
+      shortName: cleanName,
+      fullName: cleanName,
+      status: 'active',
+    }).unwrap();
+  }, [createCounterparty]);
 
-    setManagerBusyKey(`delete:${row.id}`);
-    try {
-      if (managerState.type === 'brand') {
-        await deleteBrandLookup({ id: row.id, payload }).unwrap();
-      } else {
-        await deleteCategoryLookup({ id: row.id, payload }).unwrap();
-      }
-    } catch (e) {
-      setManagerError(e?.data?.error || e?.data?.message || e?.message || 'Не удалось удалить');
-    } finally {
-      setManagerBusyKey('');
-    }
-  }, [deleteBrandLookup, deleteCategoryLookup, managerState.type, requestConfirm]);
+  const createTaxCategoryOption = useCallback(async ({ name, code, rate } = {}) => {
+    const cleanName = normalizeInputName(name);
+    if (!cleanName) return null;
+    const numericRate = Number(rate);
+    return createTaxCategoryLookup({
+      name: cleanName,
+      code: code || lookupCode(cleanName, 'VAT'),
+      rate: Number.isFinite(numericRate) ? numericRate : 23,
+      isActive: true,
+    }).unwrap();
+  }, [createTaxCategoryLookup]);
 
-  const submitMerge = useCallback(async () => {
-    if (!mergeState?.sourceId || !mergeState?.targetId) {
-      setMergeState((prev) => (prev ? { ...prev, error: 'Выберите целевую сущность' } : prev));
+  const handleSave = useCallback(async () => {
+    const name = asText(values.name);
+    if (!name) {
+      setSaveError(t('pim.product.detail.validation.nameRequired', 'Product name is required.'));
       return;
     }
-
-    setManagerError('');
-    setManagerBusyKey(`merge:${mergeState.sourceId}`);
+    const payload = toApiProduct({ ...values, name });
     try {
-      if (mergeState.type === 'brand') {
-        await mergeBrandLookup({
-          id: mergeState.sourceId,
-          targetId: mergeState.targetId,
-        }).unwrap();
-      } else {
-        await mergeCategoryLookup({
-          id: mergeState.sourceId,
-          targetId: mergeState.targetId,
-        }).unwrap();
+      if (isCreateMode) {
+        const created = await createProduct(payload).unwrap();
+        setDirty(false);
+        if (created?.id) navigate(`/main/products/${created.id}`, { replace: true });
+        return;
       }
-      setMergeState(null);
-    } catch (e) {
-      const msg = e?.data?.error || e?.data?.message || e?.message || 'Не удалось объединить';
-      setMergeState((prev) => (prev ? { ...prev, error: msg } : prev));
-    } finally {
-      setManagerBusyKey('');
+      const saved = await updateProduct({ id, payload }).unwrap();
+      setValues({ ...EMPTY_PRODUCT, ...toFormProduct(saved), slug: saved?.slug || '' });
+      setDirty(false);
+    } catch (error) {
+      setSaveError(error?.data?.error || error?.data?.message || error?.message || t('pim.product.detail.messages.saveFailed', 'Failed to save product.'));
     }
-  }, [mergeBrandLookup, mergeCategoryLookup, mergeState]);
+  }, [createProduct, id, isCreateMode, navigate, t, updateProduct, values]);
 
-  const schemaBuilder = useCallback(
-    (i18n) => {
-      const baseSchema = productEntitySchema(i18n, {
-                // categoryOptions: вспомогательная логика компонента.
-categoryOptions: (values) => {
-          const selectedId = String(values?.primaryCategoryId || '');
-          const selected = selectedId ? categoryOptionById.get(selectedId) : null;
-          if (selected) return [selected, ...categoryOptions.filter((item) => String(item.value) !== selectedId)];
-          if (selectedId) return [{ value: selectedId, label: selectedId }, ...categoryOptions];
-          return categoryOptions;
-        },
-        subcategoryOptions: subcategoryOptionsByCategory,
-                // brandOptions: вспомогательная логика компонента.
-brandOptions: (values) => {
-          const selectedId = String(values?.brandId || '');
-          const selected = selectedId ? brandOptionById.get(selectedId) : null;
-          if (selected) return [selected, ...brandOptions.filter((item) => String(item.value) !== selectedId)];
-          if (selectedId) return [{ value: selectedId, label: selectedId }, ...brandOptions];
-          return brandOptions;
-        },
-                // supplierOptions: вспомогательная логика компонента.
-supplierOptions: (values) => {
-          const selectedId = String(values?.supplierId || '');
-          const selected = selectedId ? supplierOptionById.get(selectedId) : null;
-          if (selected) return [selected, ...supplierOptions.filter((item) => String(item.value) !== selectedId)];
-          if (selectedId) return [{ value: selectedId, label: selectedId }, ...supplierOptions];
-          return supplierOptions;
-        },
-                // uomOptions: вспомогательная логика компонента.
-uomOptions: (values) => {
-          const selectedId = String(values?.uomId || '');
-          const selected = selectedId ? uomOptionById.get(selectedId) : null;
-          if (selected) return [selected, ...uomOptions.filter((item) => String(item.value) !== selectedId)];
-          if (selectedId) return [{ value: selectedId, label: selectedId }, ...uomOptions];
-          return uomOptions;
-        },
-                // productTypeOptions: вспомогательная логика компонента.
-        productTypeOptions: (values) => {
-          const selectedId = String(values?.productTypeId || '');
-          const selected = selectedId ? productTypeOptionById.get(selectedId) : null;
-          if (selected) return [selected, ...productTypeOptions.filter((item) => String(item.value) !== selectedId)];
-          if (selectedId) return [{ value: selectedId, label: selectedId }, ...productTypeOptions];
-          return productTypeOptions;
-        },
-        taxCategoryOptions: (values) => {
-          const selectedId = String(values?.taxCategoryId || '');
-          const selected = selectedId ? taxCategoryOptionById.get(selectedId) : null;
-          if (selected) return [selected, ...taxCategoryOptions.filter((item) => String(item.value) !== selectedId)];
-          if (selectedId) return [{ value: selectedId, label: selectedId }, ...taxCategoryOptions];
-          return taxCategoryOptions;
-        },
-        gtuOptions,
-      });
+  const selectedUom = optionMaps.uoms.get(String(values.uomId || '')) || base?.uom || null;
+  const categoryLabel = optionLabel(optionMaps.categories, values.primaryCategoryId, t('common.none', '—'));
+  const brandLabel = optionLabel(optionMaps.brands, values.brandId, t('common.none', '—'));
+  const supplierLabel = optionLabel(optionMaps.suppliers, values.supplierId, t('common.none', '—'));
+  const typeLabel = optionLabel(optionMaps.productTypes, values.productTypeId, productKindLabel(values, t));
+  const available = inventoryAvailable(values);
+  const canShowStock = Boolean(values.trackInventory) && !values.isService;
+  const stockLabel = canShowStock
+    ? formatQuantity(numberOrNull(values.stockQuantity) ?? 0, selectedUom, { fallback: '0' })
+    : t('pim.product.detail.inventory.notTracked', 'Not tracked');
+  const snapshot = useMemo(() => priceSnapshot(overviewPricesData, values), [overviewPricesData, values]);
+  const overviewFiles = useMemo(() => listItems(overviewFilesData), [overviewFilesData]);
+  const latestDocument = useMemo(() => latestByDate(overviewFiles), [overviewFiles]);
+  const latestMovement = useMemo(() => latestByDate(listItems(overviewMovementsData)), [overviewMovementsData]);
+  const saveState = saveError
+    || (saving ? t('common.saving', 'Saving...') : dirty ? t('common.unsaved', 'Unsaved') : t('common.saved', 'Saved'));
 
-      return baseSchema.map((field) => {
-        if (field?.name === 'primaryCategoryId') {
-          return {
-            ...field,
-            allowCreate: true,
-            loading: Boolean(
-              isCategoryLookupFetching
-              || creatingCategory
-              || deletingCategory
-              || updatingCategory
-            ),
-            onSearchChange: setCategorySearch,
-                        // createActionLabel: создаёт сущность в рамках UI-компонента.
-createActionLabel: (text) => `Создать категорию «${text}»`,
-            inlineOpenAction: true,
-                        // onOpenSelected: вспомогательная логика компонента.
-onOpenSelected: () => setManagerState({ open: true, type: 'category' }),
-                        // onOpenManager: вспомогательная логика компонента.
-onOpenManager: () => setManagerState({ open: true, type: 'category' }),
-                        // onClearOption: вспомогательная логика компонента.
-onClearOption: async (selectedOption) => {
-              const selectedName = selectedOption?.label || selectedOption?.name || 'категория';
-              return requestConfirm({
-                title: 'Отвязка категории',
-                text: `Отвязать «${selectedName}» от текущего товара?`,
-                okText: 'Отвязать',
-              });
-            },
-                        // canDeleteOption: проверяет доступность действия в рамках UI-компонента.
-canDeleteOption: () => true,
-                        // onDeleteOption: вспомогательная логика компонента.
-onDeleteOption: async (opt) => {
-              const targetId = String(opt?.id || opt?.value || '');
-              if (!targetId) return;
-              const ok = await requestConfirm({
-                title: 'Удаление категории',
-                text: `Удалить категорию «${opt?.name || opt?.label || targetId}»?`,
-                okText: 'Удалить',
-              });
-              if (!ok) return;
-              await deleteCategoryLookup({ id: targetId }).unwrap();
-              setCreatedCategories((prev) => prev.filter((item) => String(item?.id || '') !== targetId));
-            },
-                        // canEditOption: проверяет доступность действия в рамках UI-компонента.
-canEditOption: () => true,
-                        // onEditOption: вспомогательная логика компонента.
-onEditOption: async (opt) => {
-              const targetId = String(opt?.id || opt?.value || '');
-              if (!targetId) return null;
-              const currentName = String(opt?.name || opt?.label || '').trim();
-              const normalized = await requestRename({
-                title: 'Переименование категории',
-                label: 'Название категории',
-                initialValue: currentName,
-                okText: 'Сохранить',
-              });
-              if (!normalized || normalized === currentName) return null;
-              const updated = await updateCategoryLookup({
-                id: targetId,
-                payload: { name: normalized },
-              }).unwrap();
-              if (updated?.id) {
-                setCreatedCategories((prev) => prev.map((item) => (
-                  String(item?.id || '') === String(updated.id)
-                    ? { ...item, name: updated.name || normalized }
-                    : item
-                )));
-              }
-              return { value: updated?.id || targetId, label: updated?.name || normalized };
-            },
-                        // onCreateOption: вспомогательная логика компонента.
-onCreateOption: async (name) => {
-              const created = await createCategoryLookup({ name }).unwrap();
-              if (created?.id) {
-                setCreatedCategories((prev) => {
-                  const key = String(created.id);
-                  const next = prev.filter((item) => String(item?.id || '') !== key);
-                  return [{ id: created.id, name: created.name || name, slug: created.slug, parentId: created.parentId || null }, ...next];
-                });
-              }
-              return {
-                value: created?.id,
-                label: created?.name || name,
-              };
-            },
-          };
-        }
-
-        if (field?.name === 'brandId') {
-          return {
-            ...field,
-            allowCreate: true,
-            loading: Boolean(
-              isBrandLookupFetching
-              || creatingBrand
-              || deletingBrand
-              || updatingBrand
-            ),
-            onSearchChange: setBrandSearch,
-                        // createActionLabel: создаёт сущность в рамках UI-компонента.
-createActionLabel: (text) => `Создать производителя «${text}»`,
-            inlineOpenAction: true,
-                        // onOpenSelected: вспомогательная логика компонента.
-onOpenSelected: () => setManagerState({ open: true, type: 'brand' }),
-                        // onOpenManager: вспомогательная логика компонента.
-onOpenManager: () => setManagerState({ open: true, type: 'brand' }),
-                        // onClearOption: вспомогательная логика компонента.
-onClearOption: async (selectedOption) => {
-              const selectedName = selectedOption?.label || selectedOption?.name || 'производитель';
-              return requestConfirm({
-                title: 'Отвязка производителя',
-                text: `Отвязать «${selectedName}» от текущего товара?`,
-                okText: 'Отвязать',
-              });
-            },
-                        // canDeleteOption: проверяет доступность действия в рамках UI-компонента.
-canDeleteOption: () => true,
-                        // onDeleteOption: вспомогательная логика компонента.
-onDeleteOption: async (opt) => {
-              const targetId = String(opt?.id || opt?.value || '');
-              if (!targetId) return;
-              const ok = await requestConfirm({
-                title: 'Удаление производителя',
-                text: `Удалить производителя «${opt?.name || opt?.label || targetId}»?`,
-                okText: 'Удалить',
-              });
-              if (!ok) return;
-              await deleteBrandLookup({ id: targetId }).unwrap();
-              setCreatedBrands((prev) => prev.filter((item) => String(item?.id || '') !== targetId));
-            },
-                        // canEditOption: проверяет доступность действия в рамках UI-компонента.
-canEditOption: () => true,
-                        // onEditOption: вспомогательная логика компонента.
-onEditOption: async (opt) => {
-              const targetId = String(opt?.id || opt?.value || '');
-              if (!targetId) return null;
-              const currentName = String(opt?.name || opt?.label || '').trim();
-              const normalized = await requestRename({
-                title: 'Переименование производителя',
-                label: 'Название производителя',
-                initialValue: currentName,
-                okText: 'Сохранить',
-              });
-              if (!normalized || normalized === currentName) return null;
-              const updated = await updateBrandLookup({
-                id: targetId,
-                payload: { name: normalized },
-              }).unwrap();
-              if (updated?.id) {
-                setCreatedBrands((prev) => prev.map((item) => (
-                  String(item?.id || '') === String(updated.id)
-                    ? { ...item, name: updated.name || normalized }
-                    : item
-                )));
-              }
-              return { value: updated?.id || targetId, label: updated?.name || normalized };
-            },
-                        // onCreateOption: вспомогательная логика компонента.
-onCreateOption: async (name) => {
-              const created = await createBrandLookup({ name }).unwrap();
-              if (created?.id) {
-                setCreatedBrands((prev) => {
-                  const key = String(created.id);
-                  const next = prev.filter((item) => String(item?.id || '') !== key);
-                  return [{ id: created.id, name: created.name || name, slug: created.slug }, ...next];
-                });
-              }
-              return {
-                value: created?.id,
-                label: created?.name || name,
-              };
-            },
-          };
-        }
-
-        if (field?.name === 'subcategoryId') {
-          return {
-            ...field,
-            allowCreate: true,
-            loading: Boolean(
-              isSubcategoryLookupFetching
-              || creatingCategory
-              || deletingCategory
-              || updatingCategory
-            ),
-            onSearchChange: setSubcategorySearch,
-                        // createActionLabel: создаёт сущность в рамках UI-компонента.
-createActionLabel: (text) => `Создать подкатегорию «${text}»`,
-            inlineOpenAction: true,
-                        // onOpenSelected: вспомогательная логика компонента.
-onOpenSelected: () => setManagerState({ open: true, type: 'category' }),
-                        // onOpenManager: вспомогательная логика компонента.
-onOpenManager: () => setManagerState({ open: true, type: 'category' }),
-                        // onClearOption: вспомогательная логика компонента.
-onClearOption: async (selectedOption) => {
-              const selectedName = selectedOption?.label || selectedOption?.name || 'подкатегория';
-              return requestConfirm({
-                title: 'Отвязка подкатегории',
-                text: `Отвязать «${selectedName}» от текущего товара?`,
-                okText: 'Отвязать',
-              });
-            },
-                        // canDeleteOption: проверяет доступность действия в рамках UI-компонента.
-canDeleteOption: () => true,
-                        // onDeleteOption: вспомогательная логика компонента.
-onDeleteOption: async (opt) => {
-              const targetId = String(opt?.id || opt?.value || '');
-              if (!targetId) return;
-              const ok = await requestConfirm({
-                title: 'Удаление подкатегории',
-                text: `Удалить подкатегорию «${opt?.name || opt?.label || targetId}»?`,
-                okText: 'Удалить',
-              });
-              if (!ok) return;
-              await deleteCategoryLookup({ id: targetId }).unwrap();
-              setCreatedCategories((prev) => prev.filter((item) => String(item?.id || '') !== targetId));
-            },
-                        // canEditOption: проверяет доступность действия в рамках UI-компонента.
-canEditOption: () => true,
-                        // onEditOption: вспомогательная логика компонента.
-onEditOption: async (opt) => {
-              const targetId = String(opt?.id || opt?.value || '');
-              if (!targetId) return null;
-              const currentName = String(opt?.name || opt?.label || '').trim();
-              const normalized = await requestRename({
-                title: 'Переименование подкатегории',
-                label: 'Название подкатегории',
-                initialValue: currentName,
-                okText: 'Сохранить',
-              });
-              if (!normalized || normalized === currentName) return null;
-              const updated = await updateCategoryLookup({
-                id: targetId,
-                payload: { name: normalized },
-              }).unwrap();
-              if (updated?.id) {
-                setCreatedCategories((prev) => prev.map((item) => (
-                  String(item?.id || '') === String(updated.id)
-                    ? { ...item, name: updated.name || normalized }
-                    : item
-                )));
-              }
-              return { value: updated?.id || targetId, label: updated?.name || normalized };
-            },
-                        // onCreateOption: вспомогательная логика компонента.
-onCreateOption: async (name, ctx) => {
-              const parentId = String(ctx?.values?.primaryCategoryId || '').trim();
-              if (!parentId) {
-                throw new Error('Сначала выберите категорию');
-              }
-              const created = await createCategoryLookup({ name, parentId }).unwrap();
-              if (created?.id) {
-                setCreatedCategories((prev) => {
-                  const key = String(created.id);
-                  const next = prev.filter((item) => String(item?.id || '') !== key);
-                  return [{ id: created.id, name: created.name || name, slug: created.slug, parentId: created.parentId || parentId }, ...next];
-                });
-              }
-              return {
-                value: created?.id,
-                label: created?.name || name,
-              };
-            },
-          };
-        }
-
-        if (field?.name === 'supplierId') {
-          return {
-            ...field,
-            loading: Boolean(isSupplierLookupFetching),
-            onSearchChange: setSupplierSearch,
-            inlineOpenAction: true,
-                        // onOpenSelected: вспомогательная логика компонента.
-onOpenSelected: ({ selected }) => {
-              const targetId = String(selected?.value || '').trim();
-              if (!targetId) return;
-              navigate(`/main/counterparties/${targetId}`);
-            },
-                        // onOpenManager: вспомогательная логика компонента.
-onOpenManager: () => navigate('/main/counterparties'),
-                        // onClearOption: вспомогательная логика компонента.
-onClearOption: async (selectedOption) => {
-              const selectedName = selectedOption?.label || selectedOption?.name || 'поставщик';
-              return requestConfirm({
-                title: 'Отвязка поставщика',
-                text: `Отвязать «${selectedName}» от текущего товара?`,
-                okText: 'Отвязать',
-              });
-            },
-          };
-        }
-
-        if (field?.name === 'uomId') {
-          return {
-            ...field,
-            loading: Boolean(isUomLookupFetching),
-          };
-        }
-
-        if (field?.name === 'productTypeId') {
-          return {
-            ...field,
-            loading: Boolean(isProductTypeLookupFetching),
-          };
-        }
-
-        if (field?.name === 'taxCategoryId') {
-          return {
-            ...field,
-            loading: Boolean(isTaxCategoryLookupFetching),
-          };
-        }
-
-        return field;
-      });
-    },
-    [
-      brandOptionById,
-      brandOptions,
-      categoryOptionById,
-      categoryOptions,
-      createBrandLookup,
-      createCategoryLookup,
-      deleteBrandLookup,
-      deleteCategoryLookup,
-      updateBrandLookup,
-      updateCategoryLookup,
-      requestConfirm,
-      requestRename,
-      deletingBrand,
-      deletingCategory,
-      creatingBrand,
-      creatingCategory,
-      updatingBrand,
-      updatingCategory,
-      gtuOptions,
-      isBrandLookupFetching,
-      isCategoryLookupFetching,
-      isSubcategoryLookupFetching,
-      isSupplierLookupFetching,
-      isProductTypeLookupFetching,
-      isTaxCategoryLookupFetching,
-      isUomLookupFetching,
-      subcategoryOptionsByCategory,
-      supplierOptionById,
-      supplierOptions,
-      productTypeOptionById,
-      productTypeOptions,
-      taxCategoryOptionById,
-      taxCategoryOptions,
-      uomOptionById,
-      uomOptions,
-      navigate,
-    ]
-  );
-
-  const save = useCallback(
-    async (entityId, payload) => {
-      const saved = await updateProduct({ id: entityId, payload }).unwrap();
-      return saved;
-    },
-    [updateProduct]
-  );
-
-  const detailTabs = useMemo(() => {
-    const out = [...BASE_TABS];
-    out.splice(3, 0, { key: 'warehouse', label: t('pim.stock.tab') });
-    out.splice(
-      4,
-      0,
-      { key: 'reservations', label: t('wms.reservations.title') },
-      { key: 'lots', label: t('wms.lots.title') },
-      { key: 'serials', label: t('wms.serials.title') }
-    );
-    return out;
-  }, [t]);
-
-  const renderLeftTop = useCallback(
-    ({ values, onChange }) => {
-      const categoryLabel = categoryOptionById.get(String(values?.primaryCategoryId || ''))?.label
-        || base?.primaryCategory?.name
-        || 'Не выбрана';
-      const subcategoryLabel = categoryOptionById.get(String(values?.subcategoryId || ''))?.label
-        || base?.subcategory?.name
-        || 'Не выбрана';
-      const brandLabel = brandOptionById.get(String(values?.brandId || ''))?.label
-        || base?.brand?.name
-        || 'Не выбран';
-      const supplierLabel = supplierOptionById.get(String(values?.supplierId || ''))?.label
-        || base?.supplier?.shortName
-        || 'Не выбран';
-      const productTypeLabel = productTypeOptionById.get(String(values?.productTypeId || ''))?.label
-        || base?.type?.name
-        || 'Не выбран';
-      const taxCategoryLabel = taxCategoryOptionById.get(String(values?.taxCategoryId || ''))?.label
-        || base?.taxCategory?.name
-        || 'Не выбрана';
-      const selectedUom = uomOptionById.get(String(values?.uomId || '')) || base?.uom || null;
-      const uomLabel = getUomSymbol(selectedUom, '') || getUomLabel(selectedUom, 'Не выбрана');
-      const effectiveSellable = computeEffectiveSellable(values);
-      const trackInventory = Boolean(values?.trackInventory);
-      const stockQuantity = Number(values?.stockQuantity ?? base?.stockQuantity);
-      const lastUpdate = new Date(base?.updatedAt || base?.createdAt || Date.now()).toLocaleString();
-      const statusLabel = (
-        values?.status === 'active' ? 'Активен'
-          : values?.status === 'archived' ? 'Архив'
-            : 'Черновик'
-      );
-      const visibilityLabel = values?.visibility === 'private' ? 'Скрытый' : 'Публичный';
-      const hasStock = trackInventory && Number.isFinite(stockQuantity);
-      const formattedStock = formatQuantity(stockQuantity, selectedUom, { fallback: '—' });
-      const active = values?.status === 'active';
-
-      return (
-      <div className={s.heroCard}>
-        <MainImageBlock productId={id} productName={values?.name || base?.name || 'Товар'} />
-        <div className={s.heroMain}>
-          <div className={s.heroIdentity}>
-            <div className={s.heroKicker}>
-              <span>{values?.isService ? 'Услуга' : 'Товар'}</span>
-              <span>{statusLabel}</span>
-            </div>
-            <h2 className={s.heroTitle}>{values?.name || base?.name || 'Товар'}</h2>
-            <div className={s.heroMeta}>
-              {values?.sku ? <span>SKU: {values.sku}</span> : <span>SKU не указан</span>}
-              <span>EAN: {values?.ean || 'не указан'}</span>
-              <span>Производитель: {brandLabel}</span>
-              <span>Категория: {categoryLabel}</span>
-              <span>Обновлен: {lastUpdate}</span>
-            </div>
-          </div>
-          <div className={s.heroStats}>
-            {subcategoryLabel !== 'Не выбрана' ? <span className={s.heroStatChip}><b>Подкатегория:</b> {subcategoryLabel}</span> : null}
-            <span className={s.heroStatChip}><b>Видимость:</b> {visibilityLabel}</span>
-            <span className={s.heroStatChip}><b>Ед. изм.:</b> {uomLabel}</span>
-            {supplierLabel !== 'Не выбран' ? <span className={s.heroStatChip}><b>Поставщик:</b> {supplierLabel}</span> : null}
-            {productTypeLabel !== 'Не выбран' ? <span className={s.heroStatChip}><b>Тип:</b> {productTypeLabel}</span> : null}
-            {taxCategoryLabel !== 'Не выбрана' ? <span className={s.heroStatChip}><b>Налог:</b> {taxCategoryLabel}</span> : null}
-            {hasStock ? <span className={s.heroStatChip}><b>Остаток:</b> {formattedStock}</span> : null}
-          </div>
-          <div className={s.heroActions}>
-            <button
-              type="button"
-              className={s.heroActionBtn}
-              onClick={() => {
-                setHeaderMenuOpen(false);
-                const field = document.getElementById('name');
-                if (field && typeof field.focus === 'function') field.focus();
-              }}
-            >
-              Редактировать
-            </button>
-            <div className={s.heroMenuWrap}>
-              <button
-                type="button"
-                className={s.heroActionBtn}
-                onClick={() => setHeaderMenuOpen((prev) => !prev)}
-                aria-expanded={headerMenuOpen}
-              >
-                ⋯
-              </button>
-              {headerMenuOpen ? (
-                <div className={s.heroMenu}>
-                  <button
-                    type="button"
-                    className={s.heroMenuItem}
-                    onClick={() => {
-                      setHeaderMenuOpen(false);
-                      navigate('/main/products');
-                    }}
-                  >
-                    Перейти к списку товаров
-                  </button>
-                  <button
-                    type="button"
-                    className={s.heroMenuItem}
-                    onClick={() => {
-                      onChange?.('status', 'active');
-                      setHeaderMenuOpen(false);
-                    }}
-                  >
-                    Статус: Активен
-                  </button>
-                  <button
-                    type="button"
-                    className={s.heroMenuItem}
-                    onClick={() => {
-                      onChange?.('status', 'archived');
-                      setHeaderMenuOpen(false);
-                    }}
-                  >
-                    Статус: Архив
-                  </button>
-                  <button
-                    type="button"
-                    className={s.heroMenuItem}
-                    onClick={() => {
-                      onChange?.('visibility', values?.visibility === 'private' ? 'public' : 'private');
-                      setHeaderMenuOpen(false);
-                    }}
-                  >
-                    {values?.visibility === 'private' ? 'Сделать публичным' : 'Скрыть товар'}
-                  </button>
-                  <button
-                    type="button"
-                    className={`${s.heroMenuItem} ${s.heroMenuItemDanger}`}
-                    disabled
-                    title="Удаление будет доступно после отдельного endpoint"
-                  >
-                    Удалить товар
-                  </button>
+  const tabs = useMemo(() => ([
+    {
+      key: 'overview',
+      label: t('pim.product.detail.tabs.overview', 'Overview'),
+      render: () => (
+        <div className={s.v2Overview}>
+          <OverviewSnapshot
+            t={t}
+            priceInfo={snapshot}
+            latestMovement={latestMovement}
+            latestDocument={latestDocument}
+            supplierLabel={supplierLabel}
+            selectedUom={selectedUom}
+            locale={i18n.language}
+          />
+          {isCreateMode ? (
+            <DetailSection title={t('pim.product.detail.sections.description', 'Description')}>
+              <div className={s.v2EmptyDescription}>
+                <FileText size={22} aria-hidden="true" />
+                <div>
+                  <strong>{t('pim.product.detail.description.saveFirstTitle', 'Save product first')}</strong>
+                  <p>{t('pim.product.detail.description.saveFirstText', 'Description is available after the product exists.')}</p>
                 </div>
-              ) : null}
-            </div>
-          </div>
+              </div>
+            </DetailSection>
+          ) : (
+            <HtmlDescriptionSection
+              title={t('pim.product.detail.sections.description', 'Description')}
+              value={String(values.description || '')}
+              onSave={async (nextHtml) => {
+                const saved = await updateDescription({
+                  id: productId,
+                  description: nextHtml || '',
+                }).unwrap();
+                const finalHtml = saved?.description ?? nextHtml ?? '';
+                setValues((current) => ({ ...current, description: finalHtml }));
+                return finalHtml;
+              }}
+              placeholder={t('pim.product.detail.description.placeholder', 'Describe product usage, technical details, and sales conditions...')}
+              emptyText={t('pim.product.detail.description.emptyText', 'Description is empty. Add product context for sales, warehouse, and documents.')}
+              minHeight={180}
+            />
+          )}
         </div>
-
-        <div className={s.heroStatusPanel} aria-label="Статус товара">
-          <span className={active ? s.heroStateChipOn : s.heroStateChipOff}>
-            {active ? 'Активен' : statusLabel}
-          </span>
-          <button
-            type="button"
-            className={effectiveSellable ? s.heroStateChipOn : s.heroStateChipOff}
-            onClick={() => onChange?.('isSellable', !Boolean(values?.isSellable))}
-            title="Быстрое переключение признака «Продаётся»"
-          >
-            {effectiveSellable
-              ? 'Продаётся'
-              : (values?.isSellable ? 'Не продаётся сейчас' : 'Не продаётся')}
-          </button>
-          <span className={trackInventory ? s.heroStateChipOn : s.heroStateChipOff}>
-            {trackInventory ? 'Учитываются остатки' : 'Без учета остатков'}
-          </span>
-          <span className={values?.isService ? s.heroStateChipService : s.heroStateChipProduct}>
-            {values?.isService ? 'Услуга' : 'Товар'}
-          </span>
-        </div>
-      </div>
-      );
+      ),
     },
-    [
-      base?.brand?.name,
-      base?.createdAt,
-      base?.name,
-      base?.primaryCategory?.name,
-      base?.stockQuantity,
-      base?.subcategory?.name,
-      base?.supplier?.shortName,
-      base?.taxCategory?.name,
-      base?.type?.name,
-      base?.uom,
-      base?.updatedAt,
-      brandOptionById,
-      categoryOptionById,
-      productTypeOptionById,
-      supplierOptionById,
-      taxCategoryOptionById,
-      headerMenuOpen,
-      id,
-      navigate,
-      uomOptionById,
-    ]
-  );
+    {
+      key: 'pricing',
+      label: t('pim.product.detail.tabs.pricing', 'Pricing'),
+      disabled: isCreateMode,
+      render: () => isCreateMode ? <CreateTabHint t={t} /> : (
+        <div className={s.v2TabStack}>
+          <PriceSummary t={t} product={values} priceInfo={snapshot} />
+          <ProductDetailTabs tab="prices" data={base} values={values} onChange={setField} />
+        </div>
+      ),
+    },
+    {
+      key: 'inventory',
+      label: t('pim.product.detail.tabs.inventory', 'Inventory'),
+      disabled: isCreateMode,
+      render: () => isCreateMode ? <CreateTabHint t={t} /> : (
+        <div className={s.v2NestedStack}>
+          <InventoryControls
+            values={values}
+            setField={setField}
+            selectedUom={selectedUom}
+            selectOptions={selectOptions}
+            uomsLoading={uomsLoading}
+            t={t}
+          />
+          <ProductDetailTabs tab="warehouse" data={base} values={values} onChange={setField} />
+          <ProductDetailTabs tab="movements" data={base} values={values} onChange={setField} />
+          {values.isLotTracked ? <ProductDetailTabs tab="lots" data={base} values={values} onChange={setField} /> : null}
+          {values.isSerialized ? <ProductDetailTabs tab="serials" data={base} values={values} onChange={setField} /> : null}
+          <ProductDetailTabs tab="reservations" data={base} values={values} onChange={setField} />
+        </div>
+      ),
+    },
+    {
+      key: 'compliance',
+      label: t('pim.product.detail.tabs.compliance', 'Compliance'),
+      disabled: isCreateMode,
+      render: () => isCreateMode ? <CreateTabHint t={t} /> : (
+        <ComplianceSection
+          values={values}
+          setField={setField}
+          t={t}
+        />
+      ),
+    },
+    {
+      key: 'documents',
+      label: t('pim.product.detail.tabs.documents', 'Documents'),
+      disabled: isCreateMode,
+      render: () => isCreateMode ? <CreateTabHint t={t} /> : (
+        <ProductDetailTabs tab="files" data={base} values={values} onChange={setField} />
+      ),
+    },
+    {
+      key: 'notes',
+      label: t('pim.product.detail.tabs.notes', 'Notes'),
+      disabled: isCreateMode,
+      render: () => isCreateMode ? <CreateTabHint t={t} /> : (
+        <EntityNotesSection
+          ownerType="product"
+          ownerId={productId}
+          title={t('pim.product.detail.notes.title', 'Product notes')}
+          emptyTitle={t('pim.product.detail.notes.emptyTitle', 'No notes yet')}
+          emptyText={t('pim.product.detail.notes.emptyText', 'Notes linked to this product will appear here.')}
+          addNoteLabel={t('pim.product.detail.notes.add', 'Add note')}
+          hideFiltersWhenEmpty
+          hidePagerWhenSingle
+        />
+      ),
+    },
+    {
+      key: 'system',
+      label: t('pim.product.detail.tabs.system', 'System'),
+      render: () => (
+        <DetailSection title={t('pim.product.detail.sections.system', 'System')}>
+          <div className={s.v2FactsList}>
+            <FactRow label="ID" value={productId || t('pim.product.detail.system.notCreated', 'Not created yet')} />
+            <FactRow label={t('pim.product.detail.fields.status', 'Status')} value={statusLabel(values.status, t)} />
+            <FactRow label={t('pim.product.detail.fields.visibility', 'Visibility')} value={visibilityLabel(values.visibility, t)} />
+            <FactRow label={t('pim.product.detail.fields.createdAt', 'Created')} value={dateTimeLabel(values.createdAt, i18n.language)} />
+            <FactRow label={t('pim.product.detail.fields.updatedAt', 'Updated')} value={dateTimeLabel(values.updatedAt, i18n.language)} />
+          </div>
+        </DetailSection>
+      ),
+    },
+  ]), [base, i18n.language, isCreateMode, latestDocument, latestMovement, productId, selectOptions, selectedUom, setField, snapshot, supplierLabel, t, uomsLoading, updateDescription, values]);
 
-  if (!base && isFetching) return null;
-  if (!base) return null;
+  const visibleTabs = tabs.map((tab) => ({
+    ...tab,
+    hidden: false,
+    render: tab.disabled ? () => <CreateTabHint t={t} /> : tab.render,
+  }));
+
+  if (!isCreateMode && isFetching && !base) {
+    return <div className={s.v2State}>{t('pim.product.detail.loading', 'Loading product...')}</div>;
+  }
+
+  if (!isCreateMode && !base) {
+    return <div className={s.v2State}>{t('pim.product.detail.notFound', 'Product not found.')}</div>;
+  }
 
   return (
-    <>
-      <EntityDetailPage
-        id={id}
-        tabs={detailTabs}
-        tabsNamespace="pim.product.detail"
-        schemaBuilder={schemaBuilder}
-        toForm={toFormProduct}
-        toApi={toApiProduct}
-        isSaving={saving}
-        load={async () => base}
-        save={save}
-        storageKeyPrefix="product"
-        autosave={{ debounceMs: 500 }}
-        saveOnExit
-        clearDraftOnUnmount
-        leftTop={renderLeftTop}
-        RightTabsComponent={ProductDetailTabs}
-        activeTab={activeDetailTab}
-        onActiveTabChange={setActiveDetailTab}
-        layoutClassName={s.layout}
-        leftPaneClassName={s.leftPane}
-        rightPaneClassName={s.rightPane}
-        tabsClassName={s.tabsArea}
-        panelClassName={s.panel}
-        formClassName={s.leftForm}
-        formVariant="productDetail"
-      />
-
-      <ConfirmDialog
-        open={Boolean(confirmState)}
-        title={confirmState?.title || 'Подтверждение'}
-        text={confirmState?.text || ''}
-        okText={confirmState?.okText || 'Подтвердить'}
-        cancelText="Отмена"
-        onOk={() => closeConfirm(true)}
-        onCancel={() => closeConfirm(false)}
-      />
-
-      <Modal
-        open={Boolean(renameState)}
-        onClose={() => closeRename(null)}
-        title={renameState?.title || 'Переименование'}
-        footer={(
-          <>
-            <Modal.Button onClick={() => closeRename(null)}>Отмена</Modal.Button>
-            <Modal.Button variant="primary" onClick={submitRename}>
-              {renameState?.okText || 'Сохранить'}
-            </Modal.Button>
-          </>
-        )}
-      >
-        <div className={s.modalForm}>
-          <div className={s.field}>
-            <label className={s.label}>
-              {renameState?.label || 'Название'}
-            </label>
-            <input
-              className={s.input}
-              value={renameState?.value || ''}
-              onChange={(e) => {
-                const next = e.target.value;
-                setRenameState((prev) => (
-                  prev
-                    ? { ...prev, value: next, error: '' }
-                    : prev
-                ));
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  submitRename();
-                }
-              }}
-              autoFocus
-              maxLength={160}
-            />
+    <DetailLayout
+      mode="entity"
+      className={s.productDetailV2}
+      header={(
+        <header className={s.v2Hero}>
+          <div className={s.v2HeroTop}>
+            <button type="button" onClick={() => navigate('/main/products')} className={s.v2BackButton}>
+              <ArrowLeft size={15} aria-hidden="true" />
+              {t('pim.product.detail.actions.back', 'Back to products')}
+            </button>
+            <span className={`${s.v2SaveState} ${saveError ? s.v2SaveStateError : dirty ? s.v2SaveStateDirty : ''}`}>{saveState}</span>
           </div>
-          {renameState?.error ? <div className={s.error}>{renameState.error}</div> : null}
-        </div>
-      </Modal>
-
-      <Modal
-        open={Boolean(managerState.open)}
-        onClose={closeManager}
-        title={managerState.type === 'brand' ? 'Управление производителями' : 'Управление категориями'}
-        size="md"
-        footer={(
-          <>
-            <Modal.Button onClick={closeManager}>Закрыть</Modal.Button>
-          </>
-        )}
-      >
-        <div className={s.managerWrap}>
-          <div className={s.managerHint}>
-            {managerState.type === 'brand'
-              ? 'Переименование обновит отображение во всех связанных товарах. Для дублей используйте объединение.'
-              : 'Переименование обновит отображение во всех связанных товарах. Для дублей используйте объединение.'}
-          </div>
-          <div className={s.managerTable}>
-            <div className={s.managerHead}>
-              <span>Название</span>
-              <span>Связано</span>
-              <span>Действия</span>
+          <div className={s.v2HeroMain}>
+            <MainImageBlock productId={productId} productName={values.name} disabled={isCreateMode} t={t} />
+            <div className={s.v2HeroIdentity}>
+              <h1>{values.name || t('pim.product.detail.createTitle', 'New product')}</h1>
+              <div className={s.v2HeroIdentityLine}>
+                <span>SKU {values.sku || t('pim.product.detail.empty.sku', 'No SKU')}</span>
+                <span>EAN {values.ean || t('pim.product.detail.empty.ean', 'No EAN')}</span>
+              </div>
+              <div className={s.v2HeroMetaLine}>
+                <span><Tags size={13} aria-hidden="true" />{categoryLabel}</span>
+                <span><Building2 size={13} aria-hidden="true" />{brandLabel}</span>
+                <span>{typeLabel}</span>
+              </div>
             </div>
-            {(managerRows || []).map((row) => (
-              <div key={row.id} className={s.managerRow}>
-                <div className={s.managerName}>
-                  <div>{row.name}</div>
-                  {row.usageExtra ? <small>{row.usageExtra}</small> : null}
-                </div>
-                <div className={s.managerUsage}>{row.usageCount}</div>
-                <div className={s.managerActions}>
-                  <button
-                    type="button"
-                    className={s.actionBtn}
-                    onClick={() => handleManagerRename(row)}
-                    disabled={Boolean(managerBusyKey)}
-                  >
-                    {managerBusyKey === `rename:${row.id}` ? '...' : 'Переименовать'}
-                  </button>
-                  <button
-                    type="button"
-                    className={s.actionBtn}
-                    onClick={() => openMergeForRow(row)}
-                    disabled={Boolean(managerBusyKey)}
-                  >
-                    Объединить
-                  </button>
-                  <button
-                    type="button"
-                    className={`${s.actionBtn} ${s.actionDanger}`}
-                    onClick={() => handleManagerDelete(row)}
-                    disabled={Boolean(managerBusyKey)}
-                  >
-                    {managerBusyKey === `delete:${row.id}` ? '...' : 'Удалить'}
-                  </button>
-                </div>
-              </div>
-            ))}
-            {((managerRows || []).length === 0) ? (
-              <div className={s.emptyInline}>
-                {isCategoriesManagerFetching || isBrandsManagerFetching ? 'Загрузка...' : 'Нет данных'}
-              </div>
-            ) : null}
+            <div className={s.v2HeroSignals}>
+              <HeroVital
+                label={t('pim.product.detail.fields.price', 'Price')}
+                value={values.price === null || values.price === undefined || values.price === '' ? '—' : moneyLabel(values.price, '')}
+                detail={values.currency || 'PLN'}
+                tone="money"
+              />
+              <HeroVital
+                label={t('pim.product.detail.inventory.stock', 'Stock')}
+                value={stockLabel}
+                tone={canShowStock ? 'stock' : 'muted'}
+                detail={canShowStock && available !== null
+                  ? t('pim.product.detail.inventory.availableLabel', '{{value}} available', { value: formatQuantity(available, selectedUom, { fallback: '0' }) })
+                  : productKindLabel(values, t)}
+              />
+              <HeroVital
+                label={t('pim.product.detail.fields.status', 'Status')}
+                value={statusLabel(values.status, t)}
+                detail={`${productKindLabel(values, t)} · ${visibilityLabel(values.visibility, t)}`}
+                tone={String(values.status || '').toLowerCase() === 'active' ? 'ok' : 'muted'}
+              />
+            </div>
+            <div className={s.v2HeroActions}>
+              <button type="button" onClick={handleSave} disabled={saving}>
+                <Save size={15} aria-hidden="true" />
+                {isCreateMode ? t('pim.product.detail.actions.create', 'Create product') : t('common.save', 'Save')}
+              </button>
+              <Link to="/main/products">
+                <Package size={15} aria-hidden="true" />
+                {t('pim.product.detail.actions.products', 'Products')}
+              </Link>
+            </div>
           </div>
-          {managerError ? <div className={s.error}>{managerError}</div> : null}
-        </div>
-      </Modal>
+        </header>
+      )}
+      sidebar={(
+        <aside className={s.v2Sidebar}>
+          <DetailCard title={t('pim.product.detail.sections.identity', 'Identity')}>
+            <FieldGrid>
+              <TextField label={t('pim.product.detail.fields.name', 'Name')} value={values.name} onValueChange={(next) => setField('name', next)} required />
+              <TextField label="SKU" value={values.sku} onValueChange={(next) => setField('sku', next)} />
+              <TextField label="EAN" value={values.ean} onValueChange={(next) => setField('ean', next)} />
+              <TextField label={t('pim.product.detail.fields.barcode', 'Barcode')} value={values.barcode} onValueChange={(next) => setField('barcode', next)} />
+              <TextField label={t('pim.product.detail.fields.slug', 'Slug')} value={values.slug} onValueChange={(next) => setField('slug', next)} disabled />
+            </FieldGrid>
+            <FieldHint>{t('pim.product.detail.identifiers.eanBarcodeHint', 'EAN is the standard number. Barcode is any scannable code.')}</FieldHint>
+          </DetailCard>
 
-      <Modal
-        open={Boolean(mergeState)}
-        onClose={() => setMergeState(null)}
-        title={mergeState?.type === 'brand' ? 'Объединение производителей' : 'Объединение категорий'}
-        size="sm"
-        footer={(
-          <>
-            <Modal.Button onClick={() => setMergeState(null)}>Отмена</Modal.Button>
-            <Modal.Button variant="primary" onClick={submitMerge} disabled={Boolean(managerBusyKey)}>
-              {Boolean(managerBusyKey) ? 'Объединение...' : 'Объединить'}
-            </Modal.Button>
-          </>
-        )}
-      >
-        <div className={s.modalForm}>
-          <div className={s.hint}>
-            Источник: <b>{mergeState?.sourceName || '—'}</b>
-            {typeof mergeState?.sourceUsage === 'number' ? ` (товаров: ${mergeState.sourceUsage})` : ''}
-          </div>
-          <label className={s.field}>
-            <span className={s.label}>Перенести в</span>
-            <SelectField
-              value={mergeState?.targetId || ''}
-              onValueChange={(value) => setMergeState((prev) => (prev ? { ...prev, targetId: value, error: '' } : prev))}
-              options={[{ value: '', label: 'Выберите целевую сущность' }, ...managerTargetOptions]}
+          <DetailCard title={t('pim.product.detail.sections.catalog', 'Catalog')}>
+            <FieldGrid>
+              <CreatableLookupField
+                label={t('pim.product.detail.fields.category', 'Category')}
+                value={values.primaryCategoryId}
+                options={selectOptions.categories}
+                onValueChange={(next) => setField('primaryCategoryId', next || '')}
+                onCreate={createCategoryOption}
+                loading={categoriesLoading}
+                creating={creatingCategory}
+                createLabel={(query) => t('pim.product.detail.lookup.createCategory', 'Create category "{{value}}"', { value: query })}
+                createdMessage={t('pim.product.detail.lookup.createdCategory', 'Category created and selected')}
+                t={t}
+              />
+              <CreatableLookupField
+                label={t('pim.product.detail.fields.subcategory', 'Subcategory')}
+                value={values.subcategoryId}
+                options={selectOptions.subcategories}
+                onValueChange={(next) => setField('subcategoryId', next || '')}
+                onCreate={(payload) => createCategoryOption({ ...payload, parentId: values.primaryCategoryId || null })}
+                loading={categoriesLoading}
+                creating={creatingCategory}
+                createLabel={(query) => t('pim.product.detail.lookup.createSubcategory', 'Create subcategory "{{value}}"', { value: query })}
+                createdMessage={t('pim.product.detail.lookup.createdSubcategory', 'Subcategory created and selected')}
+                t={t}
+              />
+              <CreatableLookupField
+                label={t('pim.product.detail.fields.brand', 'Brand')}
+                value={values.brandId}
+                options={selectOptions.brands}
+                onValueChange={(next) => setField('brandId', next || '')}
+                onCreate={createBrandOption}
+                loading={brandsLoading}
+                creating={creatingBrand}
+                createLabel={(query) => t('pim.product.detail.lookup.createBrand', 'Create brand "{{value}}"', { value: query })}
+                createdMessage={t('pim.product.detail.lookup.createdBrand', 'Brand created and selected')}
+                t={t}
+              />
+              <CreatableLookupField
+                label={t('pim.product.detail.fields.productType', 'Product type')}
+                value={values.productTypeId}
+                options={selectOptions.productTypes}
+                onValueChange={(next) => setField('productTypeId', next || '')}
+                onCreate={createProductTypeOption}
+                loading={productTypesLoading}
+                creating={creatingProductType}
+                createLabel={(query) => t('pim.product.detail.lookup.createProductType', 'Create product type "{{value}}"', { value: query })}
+                createdMessage={t('pim.product.detail.lookup.createdProductType', 'Product type created and selected')}
+                t={t}
+              />
+            </FieldGrid>
+            <FieldHint>{t('pim.product.detail.lookup.saveHelper', 'New values are created immediately. The product selection is saved when you save the card.')}</FieldHint>
+          </DetailCard>
+
+          <DetailCard title={t('pim.product.detail.sections.partners', 'Partners')}>
+            <FieldGrid>
+              <CreatableLookupField
+                label={t('pim.product.detail.fields.manufacturer', 'Manufacturer')}
+                value={values.manufacturerId}
+                options={selectOptions.manufacturers}
+                onValueChange={(next) => setField('manufacturerId', next || '')}
+                onCreate={createManufacturerOption}
+                loading={manufacturersLoading}
+                creating={creatingCounterparty}
+                createLabel={(query) => t('pim.product.detail.lookup.createManufacturer', 'Create manufacturer "{{value}}"', { value: query })}
+                createdMessage={t('pim.product.detail.lookup.createdManufacturer', 'Manufacturer created and selected')}
+                hint={t('pim.product.detail.lookup.partnerHint', 'Start typing to find or create a company.')}
+                t={t}
+              />
+              <CreatableLookupField
+                label={t('pim.product.detail.fields.supplier', 'Supplier')}
+                value={values.supplierId}
+                options={selectOptions.suppliers}
+                onValueChange={(next) => setField('supplierId', next || '')}
+                onCreate={createSupplierOption}
+                loading={suppliersLoading}
+                creating={creatingCounterparty}
+                createLabel={(query) => t('pim.product.detail.lookup.createSupplier', 'Create supplier "{{value}}"', { value: query })}
+                createdMessage={t('pim.product.detail.lookup.createdSupplier', 'Supplier created and selected')}
+                hint={t('pim.product.detail.lookup.partnerHint', 'Start typing to find or create a company.')}
+                t={t}
+              />
+            </FieldGrid>
+            <FieldHint>{t('pim.product.detail.partners.helper', 'Supplier is who you buy from. Manufacturer is who made it. They are often different companies.')}</FieldHint>
+            <FieldHint compact>{t('pim.product.detail.lookup.saveHelper', 'New values are created immediately. The product selection is saved when you save the card.')}</FieldHint>
+          </DetailCard>
+
+          <DetailCard title={t('pim.product.detail.sections.commerce', 'Commerce')}>
+            <FieldGrid>
+              <NumberField label={t('pim.product.detail.fields.price', 'Price')} value={values.price} emitAs="string" step="0.01" onValueChange={(next) => setField('price', next)} />
+              <TextField label={t('pim.product.detail.fields.currency', 'Currency')} value={values.currency} onValueChange={(next) => setField('currency', String(next || '').toUpperCase())} />
+              <NumberField label={t('pim.product.detail.fields.oldPrice', 'Old price')} value={values.oldPrice} emitAs="string" step="0.01" onValueChange={(next) => setField('oldPrice', next)} />
+              <NumberField label={t('pim.product.detail.fields.cost', 'Cost')} value={values.cost} emitAs="string" step="0.01" onValueChange={(next) => setField('cost', next)} />
+              <CreatableLookupField
+                label={t('pim.product.detail.fields.taxCategory', 'Tax category')}
+                value={values.taxCategoryId}
+                options={selectOptions.taxCategories}
+                onValueChange={(next) => setField('taxCategoryId', next || '')}
+                onCreate={createTaxCategoryOption}
+                loading={taxCategoriesLoading}
+                creating={creatingTaxCategory}
+                createLabel={(query) => t('pim.product.detail.lookup.createTaxCategory', 'Create tax category "{{value}}"', { value: query })}
+                createdMessage={t('pim.product.detail.lookup.createdTaxCategory', 'Tax category created and selected')}
+                t={t}
+              />
+              <CheckboxField label={t('pim.product.detail.fields.sellable', 'Sellable')} checked={values.isSellable} onValueChange={(next) => setField('isSellable', next)} />
+            </FieldGrid>
+          </DetailCard>
+        </aside>
+      )}
+      content={(
+        <main className={s.v2Content}>
+          <div className={s.v2WorkspaceSurface}>
+            <DetailTabs
+              tabs={visibleTabs}
+              activeTab={activeTab}
+              onActiveTabChange={setActiveTab}
             />
-          </label>
-          {mergeState?.error ? <div className={s.error}>{mergeState.error}</div> : null}
+          </div>
+        </main>
+      )}
+    />
+  );
+}
+
+function InventoryControls({ values, setField, selectedUom, selectOptions, uomsLoading, t }) {
+  const available = inventoryAvailable(values);
+  const stock = numberOrNull(values.stockQuantity);
+  const reserved = numberOrNull(values.reservedQuantity);
+  const ordered = numberOrNull(values.orderedQuantity);
+
+  return (
+    <DetailSection title={t('pim.product.detail.sections.inventoryControls', 'Inventory controls')}>
+      <div className={s.v2NestedStack}>
+        <div className={s.v2InventoryMetrics}>
+          <Metric label={t('pim.product.detail.inventory.onHand', 'On hand')} value={formatQuantity(stock ?? 0, selectedUom, { fallback: '0' })} icon={<Boxes size={16} aria-hidden="true" />} tone="stock" />
+          <Metric label={t('pim.product.detail.inventory.reserved', 'Reserved')} value={formatQuantity(reserved ?? 0, selectedUom, { fallback: '0' })} icon={<ShieldCheck size={16} aria-hidden="true" />} tone="muted" />
+          <Metric label={t('pim.product.detail.inventory.ordered', 'Ordered')} value={formatQuantity(ordered ?? 0, selectedUom, { fallback: '0' })} icon={<ReceiptText size={16} aria-hidden="true" />} tone="muted" />
+          <Metric label={t('pim.product.detail.inventory.available', 'Available')} value={formatQuantity(available ?? 0, selectedUom, { fallback: '0' })} icon={<PackageCheck size={16} aria-hidden="true" />} tone={(available ?? 0) > 0 ? 'ok' : 'warning'} />
         </div>
-      </Modal>
-    </>
+        <FieldGrid>
+          <CheckboxField label={t('pim.product.detail.fields.trackInventory', 'Track inventory')} checked={values.trackInventory} onValueChange={(next) => setField('trackInventory', next)} />
+          <SelectField clearable searchable loading={uomsLoading} label={t('pim.product.detail.fields.uom', 'UoM')} value={values.uomId} options={selectOptions.uoms} onValueChange={(next) => setField('uomId', next || '')} />
+          <CheckboxField label={t('pim.product.detail.fields.service', 'Service')} checked={values.isService} onValueChange={(next) => setField('isService', next)} />
+          <CheckboxField label={t('pim.product.detail.fields.serialized', 'Serialized')} checked={values.isSerialized} onValueChange={(next) => setField('isSerialized', next)} />
+          <CheckboxField label={t('pim.product.detail.fields.lotTracked', 'Lot tracked')} checked={values.isLotTracked} onValueChange={(next) => setField('isLotTracked', next)} />
+          <NumberField label={t('pim.product.detail.fields.shelfLife', 'Shelf life')} value={values.shelfLifeDays} emitAs="string" onValueChange={(next) => setField('shelfLifeDays', next)} />
+        </FieldGrid>
+      </div>
+    </DetailSection>
+  );
+}
+
+function ComplianceSection({ values, setField, t }) {
+  return (
+    <DetailSection title={t('pim.product.detail.sections.compliance', 'Compliance')}>
+      <div className={s.v2NestedStack}>
+        <FieldHint>{t('pim.product.detail.compliance.helper', 'Fiscal and customs identifiers used for tax reporting, customs, and product classification.')}</FieldHint>
+        <FieldGrid>
+          <TextField label="PKWiU" value={values.pkwiu} onValueChange={(next) => setField('pkwiu', next)} />
+          <TextField label="CN" value={values.cn} onValueChange={(next) => setField('cn', next)} />
+          <SelectField clearable label="GTU" value={values.gtu} options={GTU_OPTIONS} onValueChange={(next) => setField('gtu', next || '')} />
+          <TextField label="HS" value={values.hsCode} onValueChange={(next) => setField('hsCode', next)} />
+          <TextField label={t('pim.product.detail.fields.country', 'Country')} value={values.countryOfOrigin} onValueChange={(next) => setField('countryOfOrigin', String(next || '').toUpperCase())} />
+        </FieldGrid>
+      </div>
+    </DetailSection>
+  );
+}
+
+function CreatableLookupField({
+  label,
+  value,
+  options = [],
+  onValueChange,
+  onCreate,
+  loading,
+  creating,
+  t,
+  placeholder,
+  hint,
+  createLabel,
+  createdMessage,
+}) {
+  const selectedOption = useMemo(
+    () => options.find((option) => String(option?.value || '') === String(value || '')) || null,
+    [options, value]
+  );
+  const [inputValue, setInputValue] = useState('');
+  const [error, setError] = useState('');
+  const [createdNotice, setCreatedNotice] = useState('');
+  const noticeTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (selectedOption) {
+      setInputValue(selectedOption.label || '');
+    } else if (!value) {
+      setInputValue('');
+    }
+  }, [selectedOption, value]);
+
+  useEffect(() => () => {
+    if (noticeTimerRef.current) {
+      window.clearTimeout(noticeTimerRef.current);
+    }
+  }, []);
+
+  const autocompleteOptions = useMemo(() => options.map((option) => ({
+    ...option,
+    id: option.value,
+    name: option.label,
+  })), [options]);
+
+  const query = normalizeInputName(inputValue);
+  const shouldShowCreate = Boolean(query)
+    && !autocompleteOptions.some((option) => normalizeLookupText(option.name) === normalizeLookupText(query));
+
+  const showCreatedNotice = useCallback(() => {
+    setCreatedNotice(createdMessage || t('pim.product.detail.lookup.createdSelected', 'Created and selected'));
+    if (noticeTimerRef.current) {
+      window.clearTimeout(noticeTimerRef.current);
+    }
+    noticeTimerRef.current = window.setTimeout(() => setCreatedNotice(''), 3600);
+  }, [createdMessage, t]);
+
+  const handleSelect = useCallback(async (option) => {
+    if (!option) return;
+    setError('');
+    setCreatedNotice('');
+    if (option.preset && onCreate) {
+      try {
+        const created = await onCreate(option.preset);
+        if (created?.id) {
+          onValueChange?.(String(created.id));
+          setInputValue(created.name || option.name || '');
+          showCreatedNotice();
+        }
+      } catch (err) {
+        setError(err?.data?.error || err?.data?.message || err?.message || t('pim.product.detail.lookup.createFailed', 'Failed to create value.'));
+      }
+      return;
+    }
+    onValueChange?.(String(option.id || ''));
+    setInputValue(option.name || '');
+  }, [onCreate, onValueChange, showCreatedNotice, t]);
+
+  const handleCreate = useCallback(async () => {
+    if (!query || !onCreate) return;
+    setError('');
+    setCreatedNotice('');
+    try {
+      const created = await onCreate({ name: query });
+      if (created?.id) {
+        onValueChange?.(String(created.id));
+        setInputValue(created.name || query);
+        showCreatedNotice();
+      }
+    } catch (err) {
+      setError(err?.data?.error || err?.data?.message || err?.message || t('pim.product.detail.lookup.createFailed', 'Failed to create value.'));
+    }
+  }, [onCreate, onValueChange, query, showCreatedNotice, t]);
+
+  return (
+    <AutocompleteField
+      label={label}
+      value={selectedOption ? { id: selectedOption.value, name: selectedOption.label } : null}
+      inputValue={inputValue}
+      onInputChange={(next) => {
+        setInputValue(next);
+        setError('');
+        if (selectedOption && normalizeLookupText(next) !== normalizeLookupText(selectedOption.label)) {
+          onValueChange?.('');
+        }
+      }}
+      options={autocompleteOptions}
+      onSelect={handleSelect}
+      getOptionSecondary={(option) => option?.secondary || null}
+      placeholder={placeholder || t('pim.product.detail.lookup.placeholder', 'Start typing...')}
+      hint={hint || t('pim.product.detail.lookup.hint', 'Type to search or create a new value.')}
+      emptyLabel={t('pim.product.detail.lookup.empty', 'Nothing found')}
+      searchingLabel={t('common.searching', 'Searching...')}
+      loading={loading}
+      error={error}
+      helperText={createdNotice}
+      opaque
+      clearable
+      showCreateAction={shouldShowCreate}
+      createActionLabel={createLabel ? createLabel(query) : t('pim.product.detail.lookup.createValue', 'Create "{{value}}"', { value: query })}
+      createActionLoading={creating}
+      createActionLoadingLabel={t('common.creating', 'Creating…')}
+      onCreateAction={handleCreate}
+    />
+  );
+}
+
+function SummaryCard({ icon, label, value, hint, tone = 'default' }) {
+  return (
+    <div className={`${s.v2SummaryCard} ${s[`v2SummaryCard_${tone}`] || ''}`}>
+      <span className={s.v2SummaryIcon}>{icon}</span>
+      <div>
+        <span>{label}</span>
+        <strong>{value === 0 || value ? value : '—'}</strong>
+        {hint ? <small>{hint}</small> : null}
+      </div>
+    </div>
+  );
+}
+
+function OverviewSnapshot({ t, priceInfo, latestMovement, latestDocument, supplierLabel, selectedUom, locale }) {
+  const movementQty = numberOrNull(latestMovement?.qty);
+  const movementValue = Number.isFinite(movementQty)
+    ? formatQuantity(movementQty, selectedUom, { fallback: '0' })
+    : t('pim.product.detail.overview.noMovement', 'No movement yet');
+  const movementDate = latestMovement?.createdAt || latestMovement?.updatedAt;
+  const documentName = latestDocument?.filename || latestDocument?.safeName || latestDocument?.name || '';
+  const supplierValue = supplierLabel || t('common.none', '—');
+  const priceRows = (priceInfo?.saleCount || 0) + (priceInfo?.purchaseCount || 0);
+
+  return (
+    <DetailSection title={t('pim.product.detail.sections.operationalSnapshot', 'Operational snapshot')}>
+      <div className={s.v2BriefGrid}>
+        <SummaryCard
+          icon={<BadgeDollarSign size={16} aria-hidden="true" />}
+          label={t('pim.product.detail.overview.priceContext', 'Price context')}
+          value={t('pim.product.detail.overview.priceRows', '{{count}} price rows', { count: priceRows })}
+          hint={t('pim.product.detail.overview.priceHint', 'Sales {{sales}} · Purchase {{purchase}}', {
+            sales: priceInfo?.saleCount ?? 0,
+            purchase: priceInfo?.purchaseCount ?? 0,
+          })}
+        />
+        <SummaryCard
+          icon={<Warehouse size={16} aria-hidden="true" />}
+          label={t('pim.product.detail.overview.latestMovement', 'Latest movement')}
+          value={movementValue}
+          hint={movementDate ? dateTimeLabel(movementDate, locale) : t('pim.product.detail.overview.noMovementHint', 'Warehouse activity will appear here.')}
+          tone={movementQty > 0 ? 'ok' : movementQty < 0 ? 'warning' : 'default'}
+        />
+        <SummaryCard
+          icon={<FileText size={16} aria-hidden="true" />}
+          label={t('pim.product.detail.overview.latestDocument', 'Latest document')}
+          value={documentName || t('pim.product.detail.overview.noDocument', 'No document yet')}
+          hint={latestDocument?.createdAt ? dateTimeLabel(latestDocument.createdAt, locale) : t('pim.product.detail.overview.noDocumentHint', 'Files linked to this product will appear here.')}
+        />
+        <SummaryCard
+          icon={<Building2 size={16} aria-hidden="true" />}
+          label={t('pim.product.detail.overview.supplier', 'Supplier')}
+          value={supplierValue}
+          hint={t('pim.product.detail.overview.supplierHint', 'Primary purchase context')}
+        />
+      </div>
+    </DetailSection>
+  );
+}
+
+function PriceSummary({ t, product, priceInfo }) {
+  const purchase = priceInfo?.purchase?.amount;
+  const sale = priceInfo?.sale?.amount ?? numberOrNull(product?.price);
+  const margin = priceInfo?.margin;
+  const currency = priceInfo?.currency || product?.currency || 'PLN';
+  const rowsCount = (priceInfo?.purchaseCount || 0) + (priceInfo?.saleCount || 0);
+  const marginTone = Number.isFinite(margin) && margin >= 0 ? 'ok' : Number.isFinite(margin) ? 'warning' : 'muted';
+
+  return (
+    <DetailSection title={t('pim.product.detail.sections.priceSummary', 'Price summary')}>
+      <div className={s.v2PriceStory}>
+        <div>
+          <span>{t('pim.product.detail.prices.purchase', 'Purchase')}</span>
+          <strong>{Number.isFinite(purchase) ? moneyLabel(purchase, currency) : t('pim.product.detail.prices.noPurchase', 'No purchase price')}</strong>
+        </div>
+        <div>
+          <span>{t('pim.product.detail.prices.sales', 'Sales')}</span>
+          <strong>{Number.isFinite(sale) ? moneyLabel(sale, currency) : t('pim.product.detail.prices.noSales', 'No sales price')}</strong>
+        </div>
+        <div className={`${s.v2PriceStoryMargin} ${s[`v2PriceStoryMargin_${marginTone}`] || ''}`}>
+          <span>{t('pim.product.detail.prices.margin', 'Margin')}</span>
+          <strong>{Number.isFinite(margin) ? moneyLabel(margin, currency) : t('pim.product.detail.prices.noMargin', 'No margin')}</strong>
+        </div>
+        <small>{currency} · {t('pim.product.detail.prices.priceRows', '{{count}} price rows', { count: rowsCount })}</small>
+      </div>
+    </DetailSection>
+  );
+}
+
+function CreateTabHint({ t }) {
+  return (
+    <DetailSection title={t('pim.product.detail.createTab.title', 'Save product first')}>
+      <div className={s.v2EmptyDescription}>
+        <Settings size={22} aria-hidden="true" />
+        <div>
+          <strong>{t('pim.product.detail.createTab.heading', 'This section unlocks after create')}</strong>
+          <p>{t('pim.product.detail.createTab.text', 'Create the product to attach prices, stock, documents, and notes.')}</p>
+        </div>
+      </div>
+    </DetailSection>
   );
 }

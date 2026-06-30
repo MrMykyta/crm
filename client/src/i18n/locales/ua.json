@@ -84,7 +84,10 @@
     "all": "Усі",
     "clear": "Очистити",
     "refresh": "Оновити",
-    "hide": "Сховати"
+    "hide": "Сховати",
+    "unscheduled": "Не заплановано",
+    "searching": "Пошук...",
+    "archived": "В архіві"
   },
   "productPicker": {
     "placeholder": "Пошук за товаром, варіантом, SKU, штрихкодом, EAN або зовнішнім кодом",
@@ -156,6 +159,230 @@
     }
   },
   "pim": {
+    "product": {
+      "detail": {
+        "loading": "Завантаження товару...",
+        "notFound": "Товар не знайдено.",
+        "createTitle": "Новий товар",
+        "actions": {
+          "back": "До товарів",
+          "create": "Створити товар",
+          "products": "Товари"
+        },
+        "status": {
+          "draft": "Чернетка",
+          "active": "Активний",
+          "archived": "Архів"
+        },
+        "visibility": {
+          "public": "Публічний",
+          "private": "Прихований"
+        },
+        "kind": {
+          "product": "Товар",
+          "service": "Послуга"
+        },
+        "empty": {
+          "sku": "SKU не вказано",
+          "ean": "EAN не вказано"
+        },
+        "tabs": {
+          "overview": "Огляд",
+          "prices": "Ціни",
+          "pricing": "Ціноутворення",
+          "inventory": "Залишки",
+          "compliance": "Відповідність",
+          "documents": "Документи",
+          "notes": "Нотатки",
+          "system": "Система"
+        },
+        "sections": {
+          "identity": "Ідентичність",
+          "catalog": "Каталог",
+          "pricing": "Ціни",
+          "taxes": "Податки",
+          "supplier": "Постачальник",
+          "inventory": "Склад",
+          "inventorySummary": "Підсумок залишків",
+          "operationalSnapshot": "Операційний огляд",
+          "priceSummary": "Підсумок цін",
+          "documentSummary": "Підсумок документів",
+          "catalogSupplier": "Каталог і постачальник",
+          "partners": "Партнери",
+          "commerce": "Комерція",
+          "commerceCompliance": "Комерція і відповідність",
+          "inventoryCompliance": "Склад і відповідність",
+          "inventoryControls": "Керування залишками",
+          "compliance": "Відповідність",
+          "description": "Опис",
+          "system": "Система"
+        },
+        "fields": {
+          "name": "Назва",
+          "barcode": "Штрихкод",
+          "slug": "Slug",
+          "category": "Категорія",
+          "subcategory": "Підкатегорія",
+          "brand": "Бренд",
+          "productType": "Тип товару",
+          "price": "Ціна",
+          "currency": "Валюта",
+          "oldPrice": "Стара ціна",
+          "cost": "Собівартість",
+          "sellable": "Продається",
+          "taxCategory": "Податкова категорія",
+          "country": "Країна",
+          "supplier": "Постачальник",
+          "manufacturer": "Виробник",
+          "uom": "Од. вим.",
+          "trackInventory": "Облік залишків",
+          "serialized": "Серійний облік",
+          "lotTracked": "Партійний облік",
+          "shelfLife": "Термін придатності",
+          "service": "Послуга",
+          "status": "Статус",
+          "visibility": "Видимість",
+          "createdAt": "Створено",
+          "updatedAt": "Оновлено"
+        },
+        "identifiers": {
+          "eanBarcodeHint": "EAN — стандартний номер. Штрихкод — будь-який сканований код."
+        },
+        "lookup": {
+          "placeholder": "Почніть вводити...",
+          "hint": "Введіть назву, щоб знайти або створити нове значення.",
+          "partnerHint": "Почніть вводити, щоб знайти або створити компанію.",
+          "empty": "Нічого не знайдено",
+          "createValue": "Створити \"{{value}}\"",
+          "createCategory": "Створити категорію «{{value}}»",
+          "createSubcategory": "Створити підкатегорію «{{value}}»",
+          "createBrand": "Створити бренд «{{value}}»",
+          "createProductType": "Створити тип товару «{{value}}»",
+          "createSupplier": "Створити постачальника «{{value}}»",
+          "createManufacturer": "Створити виробника «{{value}}»",
+          "createTaxCategory": "Створити податкову категорію «{{value}}»",
+          "createdSelected": "Створено і вибрано",
+          "createdCategory": "Категорію створено і вибрано",
+          "createdSubcategory": "Підкатегорію створено і вибрано",
+          "createdBrand": "Бренд створено і вибрано",
+          "createdProductType": "Тип товару створено і вибрано",
+          "createdSupplier": "Постачальника створено і вибрано",
+          "createdManufacturer": "Виробника створено і вибрано",
+          "createdTaxCategory": "Податкову категорію створено і вибрано",
+          "saveHelper": "Нове значення створюється одразу, а вибір у товарі збережеться після збереження картки.",
+          "createFailed": "Не вдалося створити значення.",
+          "types": {
+            "category": "Категорія",
+            "subcategory": "Підкатегорія",
+            "brand": "Бренд",
+            "productType": "Тип",
+            "supplier": "Постачальник",
+            "manufacturer": "Виробник",
+            "taxCategory": "Податок"
+          }
+        },
+        "partners": {
+          "helper": "Постачальник — у кого закуповуєте. Виробник — хто виготовив товар. Часто це різні компанії."
+        },
+        "taxPresets": {
+          "rate": "VAT {{rate}}%",
+          "zw": "ZW — звільнення",
+          "np": "NP — не підлягає"
+        },
+        "compliance": {
+          "helper": "Фіскальні та митні ідентифікатори для податкової звітності, митниці та класифікації товару."
+        },
+          "inventory": {
+          "stock": "Залишок",
+          "available": "Доступно",
+          "availableLabel": "Доступно {{value}}",
+          "notTracked": "Не обліковується",
+          "onHand": "В наявності",
+          "reserved": "У резерві",
+          "ordered": "Замовлено",
+          "disabledTitle": "Облік залишків вимкнено",
+          "disabledText": "Увімкніть облік залишків, якщо товар має брати участь у складських операціях.",
+          "serviceText": "Послуги не мають складських залишків.",
+          "tracked": "Обліковується",
+          "serialized": "Серійний облік",
+          "notSerialized": "Без серійного обліку",
+          "lotTracked": "Партійний облік",
+          "notLotTracked": "Без партійного обліку",
+          "shelfLifeDays": "Термін придатності {{count}} дн."
+        },
+        "overview": {
+          "latestPrice": "Остання ціна",
+          "noPrice": "Ціни поки немає",
+          "priceContext": "Контекст цін",
+          "priceRows": "{{count}} рядків цін",
+          "priceHint": "Продаж {{sales}} · Купівля {{purchase}}",
+          "inventoryContext": "Контекст залишків",
+          "inventoryContextHint": "Деталі залишків знаходяться у вкладці Залишки.",
+          "latestMovement": "Останній рух",
+          "noMovement": "Рухів поки немає",
+          "noMovementHint": "Складська активність з'явиться тут.",
+          "latestDocument": "Останній документ",
+          "noDocument": "Документів поки немає",
+          "noDocumentHint": "Файли товару з'являться тут.",
+          "supplier": "Постачальник",
+          "supplierHint": "Основний закупівельний контекст"
+        },
+        "prices": {
+          "purchase": "Купівля",
+          "sales": "Продаж",
+          "margin": "Маржа",
+          "currency": "Валюта",
+          "noPurchase": "Немає закупівельної ціни",
+          "noSales": "Немає продажної ціни",
+          "noMargin": "Маржу не розраховано",
+          "priceRows": "{{count}} рядків цін"
+        },
+        "documents": {
+          "latest": "Останній",
+          "media": "Медіа",
+          "documents": "Документи",
+          "other": "Інше",
+          "noFiles": "Файлів поки немає",
+          "noFilesHint": "Завантажте файли, щоб зібрати контекст товару."
+        },
+        "description": {
+          "saveFirstTitle": "Спочатку збережіть товар",
+          "saveFirstText": "Опис доступний після створення товару.",
+          "placeholder": "Опишіть призначення товару, технічні деталі та умови продажу...",
+          "emptyText": "Опис поки порожній. Додайте контекст для продажів, складу і документів."
+        },
+        "image": {
+          "alt": "Зображення товару",
+          "upload": "Завантажити",
+          "replace": "Замінити",
+          "remove": "Прибрати",
+          "saveFirst": "Збережіть товар, щоб додати зображення.",
+          "onlyImages": "Можна завантажити лише зображення.",
+          "uploadFailed": "Не вдалося завантажити зображення.",
+          "removeFailed": "Не вдалося прибрати зображення."
+        },
+        "notes": {
+          "title": "Нотатки товару",
+          "emptyTitle": "Нотаток поки немає",
+          "emptyText": "Нотатки, пов'язані з товаром, з'являться тут.",
+          "add": "Додати нотатку"
+        },
+        "system": {
+          "notCreated": "Ще не створено"
+        },
+        "createTab": {
+          "title": "Спочатку збережіть товар",
+          "heading": "Розділ відкриється після створення",
+          "text": "Створіть товар, щоб додавати ціни, залишки, документи й нотатки."
+        },
+        "validation": {
+          "nameRequired": "Назва товару обов'язкова."
+        },
+        "messages": {
+          "saveFailed": "Не вдалося зберегти товар."
+        }
+      }
+    },
     "stock": {
       "tab": "Залишки",
       "stock": "Залишки",
@@ -498,6 +725,256 @@
       "detailTitle": "Деталі пропозиції",
       "editTitle": "Редагування пропозиції"
     },
+    "offerDetail": {
+      "kicker": "Комерційна пропозиція",
+      "subtitle": "Робочий простір пропозиції",
+      "noCustomer": "Клієнта не вибрано",
+      "confirmDelete": "Видалити цю пропозицію?",
+      "create": {
+        "draftNumber": "Чернетка"
+      },
+      "validity": {
+        "noDate": "Без строку",
+        "expiredDisplay": "Візуально прострочена",
+        "expiredSoft": "Потрібно оновити строк",
+        "today": "Спливає сьогодні",
+        "daysLeft": "Залишилось {{count}} дн."
+      },
+      "hero": {
+        "totalGross": "Разом брутто",
+        "grandTotal": "Підсумок до сплати",
+        "offerNumberEyebrow": "Пропозиція",
+        "defaultSubject": "Пропозицію підготовлено для погодження",
+        "validity": "Строк",
+        "status": "Статус"
+      },
+      "tabs": {
+        "overview": "Огляд",
+        "items": "Позиції",
+        "preview": "Превʼю",
+        "activity": "Активність",
+        "notes": "Нотатки",
+        "system": "Система"
+      },
+      "overview": {
+        "customer": "Клієнт",
+        "total": "Разом",
+        "validity": "Строк дії",
+        "nextAction": "Наступна дія"
+      },
+      "sections": {
+        "documentChain": "Ланцюг документів",
+        "proposalSummary": "Зведення пропозиції",
+        "customer": "Клієнт",
+        "proposal": "Пропозиція",
+        "commercial": "Комерція",
+        "notes": "Нотатки"
+      },
+      "smart": {
+        "deal": "Угода",
+        "order": "Замовлення",
+        "invoice": "Рахунок",
+        "preview": "Превʼю",
+        "notes": "Нотатки"
+      },
+      "chain": {
+        "noDeal": "Немає вихідної угоди",
+        "noOrder": "Замовлення ще немає",
+        "noInvoice": "Рахунку ще немає"
+      },
+      "actions": {
+        "create": "Створити пропозицію",
+        "openItems": "Відкрити позиції",
+        "openPreview": "Відкрити превʼю",
+        "more": "Інші дії"
+      },
+      "readonlyHint": "Термінальні пропозиції доступні тільки для читання.",
+      "itemsHint": "Зберіть пропозицію з товарів, послуг, власних рядків, знижок, податків та підсумків.",
+      "items": {
+        "quantityMeta": "{{qty}} шт.",
+        "unitNetMeta": "{{value}} нетто/од.",
+        "taxMeta": "ПДВ {{rate}}%",
+        "discountMeta": "знижка {{value}}",
+        "lineTotal": "Підсумок рядка"
+      },
+      "totals": {
+        "savings": "Економія"
+      },
+      "preview": {
+        "label": "Пропозиція",
+        "preparedFor": "Підготовлено для",
+        "pdfPlanned": "PDF у наступній фазі",
+        "terms": "Умови",
+        "unnamedLine": "Рядок без назви"
+      },
+      "activity": {
+        "created": "Пропозицію створено",
+        "sent": "Пропозицію надіслано",
+        "viewed": "Пропозицію переглянуто",
+        "accepted": "Пропозицію прийнято",
+        "rejected": "Пропозицію відхилено",
+        "cancelled": "Пропозицію скасовано",
+        "converted": "Конвертовано в замовлення",
+        "statusChanged": "Статус змінено",
+        "updated": "Пропозицію оновлено",
+        "empty": "Активності поки немає."
+      },
+      "notes": {
+        "saveFirst": "Створіть пропозицію, щоб додавати нотатки.",
+        "title": "Нотатки пропозиції",
+        "emptyTitle": "Нотаток поки немає",
+        "emptyText": "Нотатки, повʼязані з цією пропозицією, зʼявляться тут.",
+        "add": "Додати нотатку"
+      },
+      "system": {
+        "revision": "Ревізія",
+        "lastStatusChangedAt": "Остання зміна статусу",
+        "createdBy": "Створив",
+        "updatedBy": "Оновив"
+      },
+      "fields": {
+        "exchangeRate": "Курс",
+        "incoterms": "Incoterms"
+      },
+      "validation": {
+        "customerRequired": "Клієнт обовʼязковий."
+      },
+      "next": {
+        "draft": "Надіслати пропозицію",
+        "sent": "Чекати відповіді або прийняти/відхилити",
+        "viewed": "Прийняти або відхилити",
+        "accepted": "Конвертувати в замовлення",
+        "rejected": "За потреби дублювати",
+        "expired": "За потреби дублювати",
+        "cancelled": "За потреби дублювати"
+      },
+      "save": {
+        "unsaved": "Є незбережені зміни",
+        "saved": "Збережено"
+      }
+    },
+    "orderDetail": {
+      "subtitle": "Робочий простір виконання",
+      "noCustomer": "Клієнта не вибрано",
+      "confirmCancel": "Скасувати це замовлення?",
+      "confirmReturn": "Оформити повернення за цим замовленням?",
+      "confirmDelete": "Видалити це замовлення?",
+      "create": { "draftNumber": "Чернетка замовлення" },
+      "hero": {
+        "orderNumberEyebrow": "Замовлення",
+        "fulfillment": "Виконання",
+        "payment": "Оплата"
+      },
+      "tabs": {
+        "overview": "Огляд",
+        "items": "Позиції",
+        "fulfillment": "Виконання",
+        "billing": "Оплата",
+        "activity": "Активність",
+        "notes": "Нотатки",
+        "system": "Система"
+      },
+      "sections": {
+        "customer": "Клієнт",
+        "execution": "Факти виконання",
+        "commercial": "Комерційні умови",
+        "documentChain": "Ланцюг документів",
+        "itemsSummary": "Зведення позицій"
+      },
+      "smart": {
+        "deal": "Угода",
+        "offer": "Пропозиція",
+        "invoices": "Рахунки",
+        "payments": "Платежі",
+        "wms": "WMS",
+        "notes": "Нотатки"
+      },
+      "fields": {
+        "warehouse": "Склад",
+        "shipTo": "Адреса доставки",
+        "billTo": "Адреса оплати",
+        "priority": "Пріоритет",
+        "sourceOffer": "Вихідна пропозиція",
+        "salesChannel": "Канал продажу"
+      },
+      "overview": {
+        "fulfillment": "Виконання",
+        "payment": "Оплата",
+        "total": "Разом",
+        "due": "До сплати",
+        "paid": "Сплачено",
+        "nextAction": "Наступна дія"
+      },
+      "actions": {
+        "create": "Створити замовлення",
+        "more": "Інші дії",
+        "openItems": "Відкрити позиції",
+        "openFulfillment": "Відкрити виконання",
+        "openBilling": "Відкрити оплату"
+      },
+      "chain": {
+        "noOffer": "Немає вихідної пропозиції",
+        "noInvoice": "Рахунку ще немає"
+      },
+      "next": {
+        "create": "Створити замовлення",
+        "confirm": "Підтвердити замовлення",
+        "ship": "Відвантажити замовлення",
+        "complete": "Завершити замовлення",
+        "invoice": "Конвертувати в рахунок",
+        "terminal": "Термінальне замовлення",
+        "monitor": "Стежити за виконанням і оплатою"
+      },
+      "fulfillment": {
+        "itemsProgress": "{{count}} позицій замовлення",
+        "status": "Статус виконання",
+        "lifecycle": "Статус життєвого циклу",
+        "shippedAt": "Відвантажено",
+        "completedAt": "Завершено",
+        "shipments": "Відвантаження",
+        "reservations": "Резерви",
+        "noShipments": "Деталі відвантажень поки не віддаються поточним DTO замовлення.",
+        "noReservations": "Резерви зʼявляться тут, коли WMS віддасть їх для замовлення."
+      },
+      "billing": {
+        "paymentStatus": "Статус оплати",
+        "amountPaid": "Сплачено",
+        "amountDue": "До сплати",
+        "invoicesCount": "Рахунки",
+        "invoices": "Рахунки",
+        "payments": "Платежі",
+        "creditNotes": "Коригування",
+        "paymentMethodUnknown": "Метод не вказано",
+        "noInvoices": "Рахунків поки немає.",
+        "noPayments": "Деталі платежів поки не віддаються поточним DTO замовлення.",
+        "noCreditNotes": "Коригувань поки немає."
+      },
+      "activity": {
+        "notExposed": "Реальні події замовлення поки не віддаються поточним Detail API."
+      },
+      "items": {
+        "unnamedLine": "Рядок без назви",
+        "quantityMeta": "{{qty}} шт.",
+        "taxMeta": "ПДВ {{rate}}%"
+      },
+      "notes": {
+        "saveFirst": "Створіть замовлення, щоб додавати нотатки.",
+        "title": "Нотатки замовлення",
+        "emptyTitle": "Нотаток поки немає",
+        "emptyText": "Нотатки, повʼязані з цим замовленням, зʼявляться тут.",
+        "add": "Додати нотатку"
+      },
+      "system": {
+        "createdBy": "Створив",
+        "updatedBy": "Оновив"
+      },
+      "validation": { "customerRequired": "Клієнт обовʼязковий." },
+      "readonlyHint": "Заблоковані замовлення не можна редагувати напряму.",
+      "save": {
+        "unsaved": "Є незбережені зміни",
+        "saved": "Збережено"
+      }
+    },
     "invoices": {
       "title": "Рахунки",
       "search": "Пошук за номером або контрагентом...",
@@ -510,6 +987,114 @@
         "dueDate": "Термін оплати",
         "totalNet": "Нетто",
         "totalGross": "Брутто"
+      }
+    },
+    "invoiceDetail": {
+      "subtitle": "Робочий простір вимоги оплати",
+      "noCustomer": "Клієнта не вибрано",
+      "hero": {
+        "eyebrow": "Рахунок",
+        "amountDue": "До оплати",
+        "dueDate": "Термін",
+        "overdue": "Прострочено"
+      },
+      "tabs": {
+        "overview": "Огляд",
+        "items": "Позиції",
+        "payments": "Платежі",
+        "creditNotes": "Коригування",
+        "preview": "Превʼю",
+        "activity": "Активність",
+        "system": "Система"
+      },
+      "sections": {
+        "claimFacts": "Факти вимоги",
+        "finance": "Фінанси",
+        "sourceOrder": "Джерельне замовлення",
+        "items": "Позиції рахунку",
+        "vatBreakdown": "Розбивка ПДВ",
+        "payments": "Платежі",
+        "creditNotes": "Коригування"
+      },
+      "fields": {
+        "customer": "Клієнт",
+        "contact": "Контакт",
+        "sourceOrder": "Джерельне замовлення",
+        "issueDate": "Дата виставлення",
+        "dueDate": "Термін оплати",
+        "paymentTerms": "Умови оплати",
+        "currency": "Валюта",
+        "vatProfile": "Профіль ПДВ",
+        "vatRates": "{{count}} ставки ПДВ",
+        "owner": "Відповідальний",
+        "bankPayment": "Банк / спосіб оплати",
+        "orderId": "ID замовлення"
+      },
+      "overview": {
+        "amountDue": "До оплати",
+        "amountPaid": "Оплачено",
+        "outstanding": "Залишок",
+        "dueDate": "Термін оплати",
+        "paymentState": "Стан оплати",
+        "nextAction": "Наступна дія"
+      },
+      "paymentStates": {
+        "draft": "Чернетка",
+        "issued": "Виставлено",
+        "unpaid": "Не оплачено",
+        "overdue": "Прострочено",
+        "partially_paid": "Частково оплачено",
+        "partially_paid_overdue": "Частково оплачено, прострочено",
+        "paid": "Оплачено"
+      },
+      "next": {
+        "issue": "Виставити рахунок",
+        "registerPayment": "Зареєструвати платіж",
+        "settled": "Рахунок закрито",
+        "overdue": "Платіж прострочено",
+        "monitor": "Контролювати оплату"
+      },
+      "actions": {
+        "registerPayment": "Зареєструвати платіж"
+      },
+      "smart": {
+        "order": "Замовлення",
+        "payments": "Платежі",
+        "creditNotes": "Коригування",
+        "print": "Друк",
+        "open": "Відкрити"
+      },
+      "items": {
+        "unnamedLine": "Рядок без назви",
+        "quantityMeta": "{{qty}} шт.",
+        "taxMeta": "ПДВ {{rate}}%"
+      },
+      "payments": {
+        "scopeHint": "Тут показані платежі рівня замовлення.",
+        "orderScope": "рівень замовлення",
+        "orderScopedCaveat": "Платежі привʼязані до замовлення, доки немає invoice allocation.",
+        "methodUnknown": "Метод не вказано"
+      },
+      "preview": {
+        "label": "Рахунок",
+        "claim": "Формальна вимога оплати",
+        "billTo": "Платник",
+        "sourceOrder": "Джерельне замовлення"
+      },
+      "activity": {
+        "created": "Рахунок створено",
+        "issued": "Рахунок виставлено",
+        "payment": "Платіж зафіксовано",
+        "paid": "Рахунок оплачено",
+        "updated": "Рахунок оновлено",
+        "empty": "Активності поки немає."
+      },
+      "empty": {
+        "noSourceOrder": "Немає джерельного замовлення",
+        "noItems": "Позицій рахунку немає",
+        "noVat": "Розбивки ПДВ немає",
+        "noPayments": "Платежів поки немає.",
+        "noCreditNotes": "Коригувань поки немає."
       }
     },
     "relations": {
@@ -2528,6 +3113,271 @@
         "cacheMiss": "Кеш: miss",
         "cacheStale": "Кеш: stale fallback"
       }
+    }
+  },
+  "deals": {
+    "title": "Угоди",
+    "actions": {
+      "new": "Нова угода",
+      "create": "Створити угоду",
+      "open": "Відкрити",
+      "won": "Виграна",
+      "lost": "Програна",
+      "back": "До угод",
+      "call": "Подзвонити",
+      "email": "Написати"
+    },
+    "columns": {
+      "title": "Угода",
+      "amount": "Сума",
+      "status": "Статус",
+      "owner": "Відповідальний",
+      "updated": "Оновлено",
+      "actions": "Дії"
+    },
+    "filters": {
+      "searchPlaceholder": "Пошук угод",
+      "pipeline": "Воронка",
+      "owner": "Відповідальний",
+      "allOwners": "Усі відповідальні"
+    },
+    "fields": {
+      "stage": "Стадія",
+      "relationship": "Клієнт / лід / контрагент",
+      "contact": "Контакт",
+      "company": "Компанія",
+      "pipeline": "Воронка",
+      "expectedClose": "Очікуване закриття",
+      "priority": "Пріоритет",
+      "probability": "Ймовірність",
+      "nextAction": "Наступна дія",
+      "nextActionType": "Наступна дія",
+      "createdAt": "Створено",
+      "updatedAt": "Оновлено",
+      "stageEnteredAt": "У стадії з",
+      "title": "Назва",
+      "amount": "Сума",
+      "currency": "Валюта",
+      "status": "Статус",
+      "description": "Опис",
+      "owner": "Відповідальний"
+    },
+    "details": {
+      "untitled": "Угода без назви"
+    },
+    "workspace": {
+      "subtitle": "робочий простір воронки",
+      "badge": "{{count}} записів",
+      "views": {
+        "pipeline": "Воронка",
+        "board": "Дошка",
+        "list": "Список"
+      },
+      "viewToggle": "Вид",
+      "controlsAria": "Керування робочим простором продажів",
+      "configurePipeline": "Налаштувати воронку",
+      "retry": "Повторити",
+      "deleteAction": "Видалити",
+      "allHealth": "Усі оцінки",
+      "healthLabel": "Оцінка",
+      "health": {
+        "healthy": "Здорова",
+        "waiting": "Очікує",
+        "risk": "Ризик",
+        "stale": "Застій",
+        "won": "Закрита виграшем",
+        "lost": "Закрита програшем"
+      },
+      "nextActionLabel": "Наступна дія",
+      "allNextActions": "Усі дії",
+      "noNextAction": "Немає наступної дії",
+      "overdueNextAction": "Прострочена наступна дія",
+      "overdue": "Прострочено",
+      "dueToday": "Сьогодні",
+      "upcoming": "Майбутні",
+      "nextActionTypes": {
+        "call": "Дзвінок",
+        "email": "Email",
+        "meeting": "Зустріч",
+        "task": "Завдання"
+      },
+      "unassigned": "—",
+      "noCompany": "—",
+      "newInStage": "Нова у стадії",
+      "daysInStage": "{{count}} дн. у стадії",
+      "totalDeals": "Усього угод",
+      "pipelineValue": "Сума воронки",
+      "weightedForecast": "Зважений прогноз",
+      "weightedValue": "Прогноз {{value}}",
+      "dealCount": "{{count}} угод",
+      "rotDays": "Застій {{count}} дн.",
+      "wipWarning": "WIP {{count}}/{{limit}}",
+      "rotWarning": "Застій",
+      "priorityShort": "P{{value}}",
+      "signals": "Сигнали",
+      "addDeal": "Додати угоду",
+      "addDealShort": "Угода",
+      "noDeals": "Немає угод",
+      "noDealsInStage": "Немає угод",
+      "attentionTitle": "Потребує уваги",
+      "needsAttention": "Потребує уваги",
+      "moveStage": "Перемістити стадію",
+      "dragDeal": "Перетягнути угоду",
+      "createSalesProcess": "Створіть процес продажів",
+      "createSalesProcessText": "Pipeline Builder створює процес, який використовує Sales.",
+      "openBuilder": "Відкрити Pipeline Builder",
+      "noStages": "Стадії не налаштовані",
+      "noStagesText": "Цій воронці потрібні стадії, щоб працювати з угодами.",
+      "loadFailed": "Не вдалося завантажити робочий простір продажів.",
+      "moveFailed": "Не вдалося перемістити угоду",
+      "noLostStage": "У цій воронці не налаштована стадія програшу.",
+      "noWonStage": "У цій воронці не налаштована стадія виграшу.",
+      "markLostFailed": "Не вдалося позначити програш",
+      "lostModalTitle": "Позначити угоду програною",
+      "lostModalText": "Для перенесення угоди «{{title}}» у програш потрібна причина.",
+      "lostReason": "Причина програшу",
+      "selectLostReason": "Оберіть причину",
+      "markLost": "Позначити програш",
+      "noLostReasons": "Немає активних причин програшу.",
+      "deleteTitle": "Видалити угоду?",
+      "deleteText": "Угоду буде прибрано з активного робочого простору."
+    },
+    "placeholders": {
+      "relationship": "Введіть компанію, клієнта або ліда",
+      "description": "Опис (необов’язково)"
+    },
+    "form": {
+      "ownerUnassigned": "Не призначено"
+    },
+    "status": {
+      "new": "Нова",
+      "inProgress": "В роботі",
+      "won": "Виграна",
+      "lost": "Програна"
+    },
+    "tabs": {
+      "overview": "Огляд",
+      "notes": "Нотатки",
+      "tasks": "Завдання",
+      "system": "Система",
+      "activities": "Активності",
+      "files": "Файли",
+      "history": "Історія",
+      "comingSoon": "Скоро"
+    },
+    "validation": {
+      "titleRequired": "Введіть назву",
+      "counterpartyRequired": "Оберіть контрагента",
+      "pipelineRequired": "Оберіть воронку",
+      "stageRequired": "Оберіть стадію"
+    },
+    "common": {
+      "typeToSearch": "Введіть назву або NIP"
+    },
+    "modal": {
+      "new": {
+        "counterpartyEmpty": "Контрагентів не знайдено"
+      }
+    },
+    "sections": {
+      "dealFacts": "Факти угоди",
+      "relationship": "Зв’язок",
+      "ownership": "Відповідальність",
+      "money": "Гроші",
+      "timing": "Терміни",
+      "details": "Деталі"
+    },
+    "detail": {
+      "workspace": "Робоче місце угоди"
+    },
+    "pipeline": {
+      "noPipeline": "Немає воронки",
+      "noStage": "Стадію не вибрано",
+      "noStages": "У цій воронці ще немає стадій.",
+      "notConfigured": "Воронку не налаштовано",
+      "configureHint": "Налаштуйте воронки та стадії перед роботою з угодою.",
+      "configureLink": "Відкрити Pipeline Builder",
+      "daysInStage": "{{count}} дн. у стадії"
+    },
+    "health": {
+      "unknown": "Оцінку не розраховано",
+      "atRisk": "Ризик"
+    },
+    "nextAction": {
+      "missing": "Немає наступної дії",
+      "action": "Дія"
+    },
+    "smart": {
+      "title": "Пов’язані об’єкти продажів",
+      "offers": "Оферти",
+      "orders": "Замовлення",
+      "invoices": "Рахунки",
+      "documents": "Документи",
+      "notes": "Нотатки",
+      "tasks": "Завдання",
+      "communication": "Комунікації"
+    },
+    "activity": {
+      "note": "Нотатка",
+      "call": "Дзвінок",
+      "email": "Лист",
+      "meeting": "Зустріч",
+      "task": "Завдання",
+      "composerTitle": "Активність",
+      "composerSubtitle": "Зафіксуйте контакт і тримайте наступний крок видимим.",
+      "futureHint": "Логування timeline підготовлено для наступного backend-етапу активності.",
+      "saveFirstHint": "Збережіть угоду, щоб записувати активність.",
+      "validationRequired": "Додайте заголовок або опис.",
+      "createFailed": "Активність не збережено.",
+      "deleteFailed": "Активність не видалено.",
+      "titlePlaceholder": "Необов'язковий заголовок",
+      "submitting": "Збереження...",
+      "nextStepHint": "Додайте результат і заплануйте наступний крок.",
+      "placeholder": "Нотатка, результат дзвінка або зустрічі...",
+      "log": "Записати активність",
+      "delete": "Видалити активність",
+      "loading": "Завантаження активності...",
+      "loadError": "Не вдалося завантажити активність.",
+      "emptyTitle": "Активності поки немає",
+      "emptyText": "Нотатки, дзвінки, зустрічі та lifecycle-події з'являться тут.",
+      "stageChanged": "Стадію змінено",
+      "statusChanged": "Статус змінено",
+      "system": "Система",
+      "systemAuthor": "Система",
+      "systemDealCreated": "Угоду створено",
+      "systemDealCreatedText": "Робоче місце угоди створено.",
+      "dealWon": "Угоду виграно",
+      "dealLost": "Угоду програно",
+      "stageChangedText": "{{from}} → {{to}}",
+      "statusWonText": "Угоду позначено як виграну.",
+      "statusLostText": "Угоду позначено як програну.",
+      "stageTitle": "Поточна стадія",
+      "nextActionTitle": "Наступна дія",
+      "noNextActionTitle": "Немає наступної дії",
+      "noNextActionText": "Кожна відкрита угода має мати наступний крок.",
+      "descriptionTitle": "Коротко про угоду",
+      "fromDetails": "З деталей",
+      "createdTitle": "Угоду створено",
+      "timeline": "Стрічка активності",
+      "sidePanel": "Панель активності угоди"
+    },
+    "tasks": {
+      "emptyTitle": "Завдання",
+      "emptyText": "До цієї угоди ще не прив’язано завдань.",
+      "unavailableText": "Зв’язок завдань підготовлено для стрічки активності. Пов’язані завдання поки не завантажені."
+    },
+    "notes": {
+      "title": "Нотатки угоди",
+      "emptyTitle": "Нотаток поки немає",
+      "emptyText": "Нотатки, пов’язані з угодою, з’являться тут.",
+      "add": "Додати нотатку"
+    },
+    "confirm": {
+      "deleteTitle": "Видалити угоду?",
+      "deleteText": "Угоду буде прибрано з активного робочого простору продажів."
+    },
+    "create": {
+      "title": "Нова угода"
     }
   },
   "companySettings": {

@@ -17,11 +17,16 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   Archive,
   CheckCircle2,
-  CircleDashed,
+  CircleDollarSign,
   GripVertical,
+  Layers3,
   Plus,
   Save,
+  ShieldCheck,
+  Target,
   Trash2,
+  Wand2,
+  Workflow,
 } from 'lucide-react';
 
 import {
@@ -29,6 +34,7 @@ import {
   ColorField,
   NumberField,
   SelectField,
+  TextareaField,
   TextField,
 } from '../../../../../components/ui/fields';
 import useAclPermissions from '../../../../../hooks/useAclPermissions';
@@ -53,20 +59,12 @@ import {
 
 import s from './CompanyDeals.module.css';
 
-const TABS = [
-  { id: 'general', label: 'General' },
-  { id: 'pipelines', label: 'Pipelines' },
-  { id: 'stages', label: 'Stages' },
-  { id: 'lostReasons', label: 'Lost Reasons' },
-  { id: 'forecast', label: 'Probability' },
-  { id: 'defaults', label: 'Defaults' },
-];
-
 const DEFAULT_PIPELINE_DRAFT = {
   name: '',
   color: '#2563eb',
   description: '',
   isDefault: false,
+  archived: false,
 };
 
 const DEFAULT_STAGE_DRAFT = {
@@ -79,6 +77,7 @@ const DEFAULT_STAGE_DRAFT = {
   hidden: false,
   archived: false,
   wipLimit: '',
+  rotDays: '',
 };
 
 const DEFAULT_SETTINGS_DRAFT = {
@@ -89,6 +88,51 @@ const DEFAULT_SETTINGS_DRAFT = {
   dealNumberingEnabled: false,
   dealNumberPrefix: 'DL',
 };
+
+const PIPELINE_TEMPLATES = [
+  {
+    id: 'standard',
+    name: 'Standard Sales',
+    color: '#2563eb',
+    icon: Target,
+    description: 'Qualify, propose, negotiate, close.',
+    stages: [
+      { name: 'Qualification', probability: 10, color: '#64748b', isDefaultEntry: true, rotDays: 7, wipLimit: 12 },
+      { name: 'Proposal', probability: 40, color: '#0ea5e9', rotDays: 10, wipLimit: 10 },
+      { name: 'Negotiation', probability: 70, color: '#f59e0b', rotDays: 8, wipLimit: 8 },
+      { name: 'Won', probability: 100, color: '#22c55e', isWon: true },
+      { name: 'Lost', probability: 0, color: '#ef4444', isLost: true },
+    ],
+  },
+  {
+    id: 'service',
+    name: 'Service',
+    color: '#0891b2',
+    icon: ShieldCheck,
+    description: 'Request, estimate, scheduled work, outcome.',
+    stages: [
+      { name: 'Request', probability: 15, color: '#06b6d4', isDefaultEntry: true, rotDays: 3, wipLimit: 20 },
+      { name: 'Estimate', probability: 35, color: '#3b82f6', rotDays: 5, wipLimit: 12 },
+      { name: 'Scheduled', probability: 75, color: '#8b5cf6', rotDays: 7, wipLimit: 10 },
+      { name: 'Won', probability: 100, color: '#22c55e', isWon: true },
+      { name: 'Lost', probability: 0, color: '#ef4444', isLost: true },
+    ],
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    color: '#7c3aed',
+    icon: Workflow,
+    description: 'Discovery, stakeholder buy-in, legal, close.',
+    stages: [
+      { name: 'Discovery', probability: 10, color: '#6366f1', isDefaultEntry: true, rotDays: 14, wipLimit: 8 },
+      { name: 'Business case', probability: 35, color: '#8b5cf6', rotDays: 21, wipLimit: 8 },
+      { name: 'Legal', probability: 70, color: '#f97316', rotDays: 14, wipLimit: 6 },
+      { name: 'Won', probability: 100, color: '#22c55e', isWon: true },
+      { name: 'Lost', probability: 0, color: '#ef4444', isLost: true },
+    ],
+  },
+];
 
 function getOrder(item = {}, fallback = 0) {
   const raw = item.order ?? item.position ?? fallback;
@@ -119,6 +163,7 @@ function toStageDraft(stage = DEFAULT_STAGE_DRAFT) {
     hidden: Boolean(stage.hidden),
     archived: Boolean(stage.archived),
     wipLimit: stage.wipLimit ?? '',
+    rotDays: stage.rotDays ?? '',
   };
 }
 
@@ -134,7 +179,17 @@ function toPipelineDraft(pipeline = DEFAULT_PIPELINE_DRAFT) {
 
 function formatCount(value) {
   const number = Number(value || 0);
-  return `${number.toLocaleString()} deals`;
+  return `${number.toLocaleString()} ${number === 1 ? 'deal' : 'deals'}`;
+}
+
+function cleanStagePayload(draft) {
+  return {
+    ...draft,
+    name: draft.name.trim(),
+    probability: Number(draft.probability || 0),
+    wipLimit: draft.wipLimit === '' ? null : Number(draft.wipLimit),
+    rotDays: draft.rotDays === '' ? null : Number(draft.rotDays),
+  };
 }
 
 function getErrorMessage(error) {
@@ -182,11 +237,9 @@ export default function CompanyDeals() {
   const canUpdateSettings = can('company:settings:update');
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
-  const [activeTab, setActiveTab] = useState('general');
   const [selectedPipelineId, setSelectedPipelineId] = useState('');
   const [pipelineDraft, setPipelineDraft] = useState(DEFAULT_PIPELINE_DRAFT);
-  const [editingPipelineId, setEditingPipelineId] = useState('');
-  const [editingPipelineDraft, setEditingPipelineDraft] = useState(DEFAULT_PIPELINE_DRAFT);
+  const [newPipelineDraft, setNewPipelineDraft] = useState(DEFAULT_PIPELINE_DRAFT);
   const [stageDraft, setStageDraft] = useState(DEFAULT_STAGE_DRAFT);
   const [editingStageId, setEditingStageId] = useState('');
   const [editingStageDraft, setEditingStageDraft] = useState(DEFAULT_STAGE_DRAFT);
@@ -201,9 +254,12 @@ export default function CompanyDeals() {
   const { data: pipelinesData = [], isFetching: pipelinesFetching } = useGetPipelinesQuery();
   const { data: dealSettings } = useGetDealSettingsQuery();
   const { data: lostReasonsData = [], isFetching: lostReasonsFetching } = useGetLostReasonsQuery();
+
   const pipelines = useMemo(() => normalizePipelines(pipelinesData), [pipelinesData]);
   const activePipelines = pipelines.filter((pipeline) => !pipeline.archived);
+  const archivedPipelines = pipelines.filter((pipeline) => pipeline.archived);
   const selectedPipeline = pipelines.find((pipeline) => String(pipeline.id) === String(selectedPipelineId))
+    || activePipelines.find((pipeline) => pipeline.isDefault)
     || activePipelines[0]
     || pipelines[0]
     || null;
@@ -247,6 +303,12 @@ export default function CompanyDeals() {
   }, [selectedPipeline?.id, selectedPipelineId]);
 
   useEffect(() => {
+    if (selectedPipeline) {
+      setPipelineDraft(toPipelineDraft(selectedPipeline));
+    }
+  }, [selectedPipeline?.id, selectedPipeline?.updatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     if (dealSettings) {
       setSettingsDraft({
         ...DEFAULT_SETTINGS_DRAFT,
@@ -268,28 +330,44 @@ export default function CompanyDeals() {
   };
 
   const handleCreatePipeline = () => run(async () => {
-    const name = pipelineDraft.name.trim();
+    const name = newPipelineDraft.name.trim();
     if (!name) throw new Error('Pipeline name is required');
     const created = await createPipeline({
-      ...pipelineDraft,
+      ...newPipelineDraft,
       name,
     }).unwrap();
-    setPipelineDraft(DEFAULT_PIPELINE_DRAFT);
+    setNewPipelineDraft(DEFAULT_PIPELINE_DRAFT);
     setSelectedPipelineId(created.id);
-    setActiveTab('stages');
   }, 'Pipeline created');
 
-  const handleSavePipeline = (pipelineId) => run(async () => {
-    const name = editingPipelineDraft.name.trim();
+  const handleCreateTemplate = (template) => run(async () => {
+    const created = await createPipeline({
+      name: template.name,
+      color: template.color,
+      description: template.description,
+      isDefault: !activePipelines.length,
+    }).unwrap();
+
+    for (const stage of template.stages) {
+      await createStage({
+        pipelineId: created.id,
+        payload: cleanStagePayload({ ...DEFAULT_STAGE_DRAFT, ...stage }),
+      }).unwrap();
+    }
+    setSelectedPipelineId(created.id);
+  }, `${template.name} pipeline created`);
+
+  const handleSavePipeline = () => run(async () => {
+    if (!selectedPipeline?.id) return;
+    const name = pipelineDraft.name.trim();
     if (!name) throw new Error('Pipeline name is required');
     await updatePipeline({
-      pipelineId,
+      pipelineId: selectedPipeline.id,
       payload: {
-        ...editingPipelineDraft,
+        ...pipelineDraft,
         name,
       },
     }).unwrap();
-    setEditingPipelineId('');
   }, 'Pipeline saved');
 
   const handleArchivePipeline = (pipeline) => run(async () => {
@@ -303,6 +381,7 @@ export default function CompanyDeals() {
     if (!window.confirm(`Delete pipeline "${pipeline.name}"? Pipelines with deals will be archived.`)) return;
     run(async () => {
       await deletePipeline(pipeline.id).unwrap();
+      if (String(selectedPipelineId) === String(pipeline.id)) setSelectedPipelineId('');
     }, 'Pipeline removed');
   };
 
@@ -311,6 +390,7 @@ export default function CompanyDeals() {
       pipelineId: pipeline.id,
       payload: { isDefault: true, archived: false },
     }).unwrap();
+    setSelectedPipelineId(pipeline.id);
   }, 'Default pipeline updated');
 
   const handlePipelineDragEnd = ({ active, over }) => {
@@ -330,11 +410,7 @@ export default function CompanyDeals() {
     if (!name) throw new Error('Stage name is required');
     await createStage({
       pipelineId: selectedPipeline.id,
-      payload: {
-        ...stageDraft,
-        name,
-        wipLimit: stageDraft.wipLimit === '' ? null : Number(stageDraft.wipLimit),
-      },
+      payload: cleanStagePayload({ ...stageDraft, name }),
     }).unwrap();
     setStageDraft(DEFAULT_STAGE_DRAFT);
   }, 'Stage created');
@@ -346,11 +422,7 @@ export default function CompanyDeals() {
     await updateStage({
       pipelineId: selectedPipeline.id,
       stageId,
-      payload: {
-        ...editingStageDraft,
-        name,
-        wipLimit: editingStageDraft.wipLimit === '' ? null : Number(editingStageDraft.wipLimit),
-      },
+      payload: cleanStagePayload({ ...editingStageDraft, name }),
     }).unwrap();
     setEditingStageId('');
   }, 'Stage saved');
@@ -394,7 +466,7 @@ export default function CompanyDeals() {
         ? null
         : Number(settingsDraft.defaultExpectedCloseDays),
     }).unwrap();
-  }, 'Deal settings saved');
+  }, 'Defaults saved');
 
   const handleCreateLostReason = () => run(async () => {
     const name = lostReasonDraft.trim();
@@ -421,244 +493,184 @@ export default function CompanyDeals() {
     });
   };
 
-  const pipelineOptions = pipelines.map((pipeline) => ({
-    value: pipeline.id,
-    label: `${pipeline.name}${pipeline.archived ? ' (archived)' : ''}`,
-  }));
-  const renderGeneral = () => (
-    <div className={s.gridTwo}>
-      <section className={s.panel}>
-        <div className={s.panelHead}>
-          <div>
-            <h3>General deal behavior</h3>
-            <p>Company-wide defaults used by Deal Create, Detail, Kanban and Forecast.</p>
-          </div>
-          <button type="button" className={s.primaryBtn} onClick={handleSaveSettings} disabled={!canUpdateSettings || busy}>
-            <Save size={16} aria-hidden="true" /> Save
+  const renderTemplates = (compact = false) => (
+    <div className={compact ? s.templateStack : s.templateGrid}>
+      {PIPELINE_TEMPLATES.map((template) => {
+        const Icon = template.icon;
+        return (
+          <button
+            key={template.id}
+            type="button"
+            className={s.templateCard}
+            onClick={() => handleCreateTemplate(template)}
+            disabled={!canUpdateSettings || busy}
+          >
+            <span className={s.templateIcon} style={{ color: template.color }}>
+              <Icon size={18} aria-hidden="true" />
+            </span>
+            <span>
+              <strong>{template.name}</strong>
+              <small>{template.description}</small>
+            </span>
           </button>
-        </div>
-        <div className={s.formGrid}>
-          <SelectField
-            label="Probability mode"
-            value={settingsDraft.probabilityMode}
-            options={[
-              { value: 'manual', label: 'Manual' },
-              { value: 'automatic', label: 'Automatic' },
-              { value: 'hybrid', label: 'Hybrid' },
-            ]}
-            disabled={!canUpdateSettings}
-            onValueChange={(probabilityMode) => setSettingsDraft((prev) => ({ ...prev, probabilityMode }))}
-          />
-          <TextField
-            label="Default currency"
-            value={settingsDraft.defaultCurrency}
-            upper
-            maxLength={8}
-            disabled={!canUpdateSettings}
-            onValueChange={(defaultCurrency) => setSettingsDraft((prev) => ({ ...prev, defaultCurrency }))}
-          />
-          <NumberField
-            label="Default expected close"
-            value={settingsDraft.defaultExpectedCloseDays}
-            min={0}
-            max={3650}
-            disabled={!canUpdateSettings}
-            onValueChange={(defaultExpectedCloseDays) => setSettingsDraft((prev) => ({ ...prev, defaultExpectedCloseDays }))}
-          />
-          <SelectField
-            label="Visibility"
-            value={settingsDraft.visibility}
-            options={[
-              { value: 'company', label: 'Company' },
-              { value: 'team', label: 'Team' },
-              { value: 'owner', label: 'Owner' },
-            ]}
-            disabled={!canUpdateSettings}
-            onValueChange={(visibility) => setSettingsDraft((prev) => ({ ...prev, visibility }))}
-          />
-          <CheckboxField
-            label="Deal numbering enabled"
-            checked={settingsDraft.dealNumberingEnabled}
-            disabled={!canUpdateSettings}
-            onValueChange={(dealNumberingEnabled) => setSettingsDraft((prev) => ({ ...prev, dealNumberingEnabled }))}
-          />
-          <TextField
-            label="Deal number prefix"
-            value={settingsDraft.dealNumberPrefix}
-            upper
-            maxLength={16}
-            disabled={!canUpdateSettings || !settingsDraft.dealNumberingEnabled}
-            onValueChange={(dealNumberPrefix) => setSettingsDraft((prev) => ({ ...prev, dealNumberPrefix }))}
-          />
-        </div>
-      </section>
-
-      <section className={s.panel}>
-        <div className={s.panelHead}>
-          <div>
-            <h3>Default pipeline</h3>
-            <p>New deals start from the default pipeline and its default-entry stage.</p>
-          </div>
-        </div>
-        <div className={s.pipelineSelectList}>
-          {activePipelines.map((pipeline) => (
-            <button
-              key={pipeline.id}
-              type="button"
-              className={`${s.choiceCard} ${pipeline.isDefault ? s.choiceCardActive : ''}`}
-              onClick={() => canUpdateSettings && handleSetDefaultPipeline(pipeline)}
-              disabled={!canUpdateSettings || busy}
-            >
-              <span className={s.colorDot} style={{ background: pipeline.color || '#2563eb' }} />
-              <span>{pipeline.name}</span>
-              {pipeline.isDefault ? <CheckCircle2 size={16} aria-hidden="true" /> : null}
-            </button>
-          ))}
-          {!activePipelines.length ? <div className={s.emptyState}>No active pipelines yet.</div> : null}
-        </div>
-      </section>
+        );
+      })}
     </div>
   );
 
-  const renderPipelines = () => (
-    <div className={s.stack}>
-      <section className={s.panel}>
-        <div className={s.panelHead}>
-          <div>
-            <h3>Create pipeline</h3>
-            <p>New pipelines are immediately available in Deal Create, Detail and Kanban.</p>
-          </div>
-          <button type="button" className={s.primaryBtn} onClick={handleCreatePipeline} disabled={!canUpdateSettings || busy}>
-            <Plus size={16} aria-hidden="true" /> Create
-          </button>
+  const renderPipelineNav = (items, title) => {
+    if (!items.length) return null;
+    return (
+      <div className={s.pipelineGroup}>
+        <div className={s.groupTitle}>{title}</div>
+        {items.map((pipeline) => (
+          <SortableShell key={pipeline.id} id={pipeline.id} disabled={!canUpdateSettings || busy} className={s.pipelineNavItem}>
+            <button
+              type="button"
+              className={`${s.pipelineButton} ${String(selectedPipeline?.id) === String(pipeline.id) ? s.pipelineButtonActive : ''}`}
+              onClick={() => setSelectedPipelineId(pipeline.id)}
+            >
+              <span className={s.colorDot} style={{ background: pipeline.color || '#2563eb' }} />
+              <span className={s.pipelineName}>{pipeline.name}</span>
+              <span className={s.pipelineCount}>{Number(pipeline.stages?.length || 0)}</span>
+            </button>
+            <div className={s.navBadges}>
+              {pipeline.isDefault ? <Pill tone="success">Default</Pill> : null}
+              {pipeline.archived ? <Pill tone="warning">Archive</Pill> : null}
+            </div>
+          </SortableShell>
+        ))}
+      </div>
+    );
+  };
+
+  const renderPipelineList = () => (
+    <aside className={s.sidebar}>
+      <div className={s.sidebarHead}>
+        <div>
+          <h3>Pipeline List</h3>
+          <p>{activePipelines.length} active · {archivedPipelines.length} archived</p>
         </div>
-        <div className={s.inlineForm}>
-          <TextField label="Name" value={pipelineDraft.name} disabled={!canUpdateSettings} onValueChange={(name) => setPipelineDraft((prev) => ({ ...prev, name }))} />
-          <ColorField label="Color" value={pipelineDraft.color} disabled={!canUpdateSettings} onValueChange={(color) => setPipelineDraft((prev) => ({ ...prev, color }))} />
-          <TextField label="Description" value={pipelineDraft.description} disabled={!canUpdateSettings} onValueChange={(description) => setPipelineDraft((prev) => ({ ...prev, description }))} />
-          <CheckboxField label="Default" checked={pipelineDraft.isDefault} disabled={!canUpdateSettings} onValueChange={(isDefault) => setPipelineDraft((prev) => ({ ...prev, isDefault }))} />
-        </div>
-      </section>
+        <Layers3 size={19} aria-hidden="true" />
+      </div>
+
+      {renderTemplates(true)}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={handlePipelineDragEnd}>
         <SortableContext items={pipelines.map((pipeline) => pipeline.id)} strategy={verticalListSortingStrategy}>
-          <div className={s.cardList}>
-            {pipelines.map((pipeline) => {
-              const editing = editingPipelineId === pipeline.id;
-              return (
-                <SortableShell key={pipeline.id} id={pipeline.id} disabled={!canUpdateSettings || busy} className={s.pipelineCard}>
-                  <div className={s.cardBody}>
-                    <div className={s.cardTop}>
-                      <button
-                        type="button"
-                        className={s.pipelineTitle}
-                        onClick={() => setSelectedPipelineId(pipeline.id)}
-                      >
-                        <span className={s.colorDot} style={{ background: pipeline.color || '#2563eb' }} />
-                        <span>{pipeline.name}</span>
-                      </button>
-                      <div className={s.badges}>
-                        {pipeline.isDefault ? <Pill tone="success">Default</Pill> : null}
-                        {pipeline.archived ? <Pill tone="warning">Archived</Pill> : null}
-                        <Pill>{formatCount(pipeline.dealsCount)}</Pill>
-                      </div>
-                    </div>
-
-                    {editing ? (
-                      <div className={s.inlineForm}>
-                        <TextField label="Name" value={editingPipelineDraft.name} disabled={!canUpdateSettings} onValueChange={(name) => setEditingPipelineDraft((prev) => ({ ...prev, name }))} />
-                        <ColorField label="Color" value={editingPipelineDraft.color} disabled={!canUpdateSettings} onValueChange={(color) => setEditingPipelineDraft((prev) => ({ ...prev, color }))} />
-                        <TextField label="Description" value={editingPipelineDraft.description} disabled={!canUpdateSettings} onValueChange={(description) => setEditingPipelineDraft((prev) => ({ ...prev, description }))} />
-                        <CheckboxField label="Default" checked={editingPipelineDraft.isDefault} disabled={!canUpdateSettings || editingPipelineDraft.archived} onValueChange={(isDefault) => setEditingPipelineDraft((prev) => ({ ...prev, isDefault }))} />
-                      </div>
-                    ) : (
-                      <p className={s.cardDescription}>{pipeline.description || 'No description'}</p>
-                    )}
-                  </div>
-                  <div className={s.actions}>
-                    {editing ? (
-                      <>
-                        <button type="button" className={s.secondaryBtn} onClick={() => setEditingPipelineId('')}>Cancel</button>
-                        <button type="button" className={s.primaryBtn} onClick={() => handleSavePipeline(pipeline.id)} disabled={!canUpdateSettings || busy}><Save size={15} aria-hidden="true" /> Save</button>
-                      </>
-                    ) : (
-                      <>
-                        <button type="button" className={s.secondaryBtn} onClick={() => { setEditingPipelineId(pipeline.id); setEditingPipelineDraft(toPipelineDraft(pipeline)); }} disabled={!canUpdateSettings || busy}>Edit</button>
-                        <button type="button" className={s.secondaryBtn} onClick={() => handleSetDefaultPipeline(pipeline)} disabled={!canUpdateSettings || pipeline.isDefault || pipeline.archived || busy}>Set default</button>
-                        <button type="button" className={s.secondaryBtn} onClick={() => handleArchivePipeline(pipeline)} disabled={!canUpdateSettings || busy}><Archive size={15} aria-hidden="true" /> {pipeline.archived ? 'Restore' : 'Archive'}</button>
-                        <button type="button" className={s.dangerBtn} onClick={() => handleDeletePipeline(pipeline)} disabled={!canUpdateSettings || busy}><Trash2 size={15} aria-hidden="true" /> Delete</button>
-                      </>
-                    )}
-                  </div>
-                </SortableShell>
-              );
-            })}
-            {!pipelines.length && !pipelinesFetching ? <div className={s.emptyState}>No pipelines yet.</div> : null}
+          <div className={s.pipelineList}>
+            {renderPipelineNav(activePipelines, 'Active')}
+            {renderPipelineNav(archivedPipelines, 'Archive')}
           </div>
         </SortableContext>
       </DndContext>
-    </div>
+
+      <div className={s.quickCreate}>
+        <TextField
+          label="New pipeline"
+          value={newPipelineDraft.name}
+          disabled={!canUpdateSettings}
+          onValueChange={(name) => setNewPipelineDraft((prev) => ({ ...prev, name }))}
+        />
+        <ColorField
+          label="Color"
+          value={newPipelineDraft.color}
+          disabled={!canUpdateSettings}
+          onValueChange={(color) => setNewPipelineDraft((prev) => ({ ...prev, color }))}
+        />
+        <button type="button" className={s.primaryBtn} onClick={handleCreatePipeline} disabled={!canUpdateSettings || busy}>
+          <Plus size={16} aria-hidden="true" /> Create
+        </button>
+      </div>
+    </aside>
   );
 
-  const renderStages = () => (
-    <div className={s.stack}>
-      <section className={s.panel}>
-        <div className={s.panelHead}>
-          <div>
-            <h3>Stage editor</h3>
-            <p>One default-entry, one won and one lost stage are allowed per pipeline.</p>
+  const renderPipelineEditor = () => {
+    if (!selectedPipeline) {
+      return (
+        <section className={s.firstRun}>
+          <div className={s.firstRunHead}>
+            <Wand2 size={24} aria-hidden="true" />
+            <div>
+              <h3>Templates</h3>
+              <p>Create a working pipeline with stages, probabilities, WIP and rot days.</p>
+            </div>
           </div>
-          <SelectField
-            className={s.pipelinePicker}
-            value={selectedPipeline?.id || ''}
-            options={pipelineOptions}
-            disabled={!pipelines.length}
-            onValueChange={setSelectedPipelineId}
-          />
-        </div>
-      </section>
+          {renderTemplates()}
+        </section>
+      );
+    }
 
-      {selectedPipeline ? (
-        <>
-          <section className={s.panel}>
-            <div className={s.panelHead}>
-              <div>
-                <h3>Add stage</h3>
-                <p>{selectedPipeline.name}</p>
-              </div>
-              <button type="button" className={s.primaryBtn} onClick={handleCreateStage} disabled={!canUpdateSettings || busy}>
-                <Plus size={16} aria-hidden="true" /> Add
+    return (
+      <div className={s.editorStack}>
+        <section className={s.panel}>
+          <div className={s.panelHead}>
+            <div>
+              <h3>Pipeline Editor</h3>
+              <p>{formatCount(selectedPipeline.dealsCount)} · {selectedStages.length} stages</p>
+            </div>
+            <div className={s.actions}>
+              <button type="button" className={s.secondaryBtn} onClick={() => handleSetDefaultPipeline(selectedPipeline)} disabled={!canUpdateSettings || selectedPipeline.isDefault || busy}>
+                <CheckCircle2 size={15} aria-hidden="true" /> Default
+              </button>
+              <button type="button" className={s.secondaryBtn} onClick={() => handleArchivePipeline(selectedPipeline)} disabled={!canUpdateSettings || busy}>
+                <Archive size={15} aria-hidden="true" /> {selectedPipeline.archived ? 'Restore' : 'Archive'}
+              </button>
+              <button type="button" className={s.dangerBtn} onClick={() => handleDeletePipeline(selectedPipeline)} disabled={!canUpdateSettings || busy}>
+                <Trash2 size={15} aria-hidden="true" /> Delete
+              </button>
+              <button type="button" className={s.primaryBtn} onClick={handleSavePipeline} disabled={!canUpdateSettings || busy}>
+                <Save size={16} aria-hidden="true" /> Save
               </button>
             </div>
-            <div className={s.stageForm}>
-              <TextField label="Name" value={stageDraft.name} disabled={!canUpdateSettings} onValueChange={(name) => setStageDraft((prev) => ({ ...prev, name }))} />
-              <ColorField label="Color" value={stageDraft.color} disabled={!canUpdateSettings} onValueChange={(color) => setStageDraft((prev) => ({ ...prev, color }))} />
-              <NumberField label="Probability" value={stageDraft.probability} min={0} max={100} disabled={!canUpdateSettings} onValueChange={(probability) => setStageDraft((prev) => ({ ...prev, probability }))} />
-              <NumberField label="WIP" value={stageDraft.wipLimit} min={0} disabled={!canUpdateSettings} onValueChange={(wipLimit) => setStageDraft((prev) => ({ ...prev, wipLimit }))} />
-              <CheckboxField label="Default Entry" checked={stageDraft.isDefaultEntry} disabled={!canUpdateSettings || stageDraft.isWon || stageDraft.isLost} onValueChange={(isDefaultEntry) => setStageDraft((prev) => ({ ...prev, isDefaultEntry }))} />
-              <CheckboxField label="Won" checked={stageDraft.isWon} disabled={!canUpdateSettings} onValueChange={(isWon) => setStageDraft((prev) => ({ ...prev, isWon, isLost: isWon ? false : prev.isLost, isDefaultEntry: isWon ? false : prev.isDefaultEntry, probability: isWon ? 100 : prev.probability }))} />
-              <CheckboxField label="Lost" checked={stageDraft.isLost} disabled={!canUpdateSettings} onValueChange={(isLost) => setStageDraft((prev) => ({ ...prev, isLost, isWon: isLost ? false : prev.isWon, isDefaultEntry: isLost ? false : prev.isDefaultEntry, probability: isLost ? 0 : prev.probability }))} />
-              <CheckboxField label="Hidden" checked={stageDraft.hidden} disabled={!canUpdateSettings} onValueChange={(hidden) => setStageDraft((prev) => ({ ...prev, hidden }))} />
+          </div>
+
+          <div className={s.pipelineForm}>
+            <TextField label="Name" value={pipelineDraft.name} disabled={!canUpdateSettings} onValueChange={(name) => setPipelineDraft((prev) => ({ ...prev, name }))} />
+            <ColorField label="Color" value={pipelineDraft.color} disabled={!canUpdateSettings} onValueChange={(color) => setPipelineDraft((prev) => ({ ...prev, color }))} />
+            <CheckboxField label="Default" checked={pipelineDraft.isDefault} disabled={!canUpdateSettings || pipelineDraft.archived} onValueChange={(isDefault) => setPipelineDraft((prev) => ({ ...prev, isDefault }))} />
+            <CheckboxField label="Archive" checked={pipelineDraft.archived} disabled={!canUpdateSettings} onValueChange={(archived) => setPipelineDraft((prev) => ({ ...prev, archived, isDefault: archived ? false : prev.isDefault }))} />
+            <TextareaField className={s.descriptionField} label="Description" rows={3} value={pipelineDraft.description} disabled={!canUpdateSettings} onValueChange={(description) => setPipelineDraft((prev) => ({ ...prev, description }))} />
+          </div>
+        </section>
+
+        <section className={s.panel}>
+          <div className={s.panelHead}>
+            <div>
+              <h3>Stages</h3>
+              <p>Drag cards to reorder this pipeline.</p>
             </div>
-          </section>
+            <button type="button" className={s.primaryBtn} onClick={handleCreateStage} disabled={!canUpdateSettings || busy}>
+              <Plus size={16} aria-hidden="true" /> Add stage
+            </button>
+          </div>
+
+          <div className={s.stageCreate}>
+            <TextField label="Stage name" value={stageDraft.name} disabled={!canUpdateSettings} onValueChange={(name) => setStageDraft((prev) => ({ ...prev, name }))} />
+            <ColorField label="Color" value={stageDraft.color} disabled={!canUpdateSettings} onValueChange={(color) => setStageDraft((prev) => ({ ...prev, color }))} />
+            <NumberField label="Probability" value={stageDraft.probability} min={0} max={100} disabled={!canUpdateSettings} onValueChange={(probability) => setStageDraft((prev) => ({ ...prev, probability }))} />
+            <NumberField label="WIP" value={stageDraft.wipLimit} min={0} disabled={!canUpdateSettings} onValueChange={(wipLimit) => setStageDraft((prev) => ({ ...prev, wipLimit }))} />
+            <NumberField label="Rot Days" value={stageDraft.rotDays} min={0} disabled={!canUpdateSettings} onValueChange={(rotDays) => setStageDraft((prev) => ({ ...prev, rotDays }))} />
+          </div>
 
           <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={handleStageDragEnd}>
             <SortableContext items={selectedStages.map((stage) => stage.id)} strategy={verticalListSortingStrategy}>
-              <div className={s.cardList}>
+              <div className={s.stageList}>
                 {selectedStages.map((stage) => {
                   const editing = editingStageId === stage.id;
                   const draft = editing ? editingStageDraft : toStageDraft(stage);
                   const alternatives = selectedStages
                     .filter((item) => String(item.id) !== String(stage.id))
                     .map((item) => ({ value: item.id, label: item.name }));
+
                   return (
                     <SortableShell key={stage.id} id={stage.id} disabled={!canUpdateSettings || busy} className={s.stageCard}>
-                      <div className={s.stageColor} style={{ background: stage.color || '#3b82f6' }} />
-                      <div className={s.cardBody}>
-                        <div className={s.cardTop}>
-                          <div className={s.stageTitle}>
-                            <span>{stage.name}</span>
-                            <small>{Number(stage.probability || 0)}%</small>
+                      <span className={s.stageAccent} style={{ background: stage.color || '#3b82f6' }} />
+                      <div className={s.stageMain}>
+                        <div className={s.stageTop}>
+                          <div className={s.stageIdentity}>
+                            <strong>{stage.name}</strong>
+                            <span>{Number(stage.probability || 0)}%</span>
                           </div>
                           <div className={s.badges}>
                             {stage.isDefaultEntry ? <Pill tone="success">Default Entry</Pill> : null}
@@ -671,23 +683,29 @@ export default function CompanyDeals() {
                         </div>
 
                         {editing ? (
-                          <div className={s.stageForm}>
+                          <div className={s.stageEdit}>
                             <TextField label="Name" value={draft.name} disabled={!canUpdateSettings} onValueChange={(name) => setEditingStageDraft((prev) => ({ ...prev, name }))} />
                             <ColorField label="Color" value={draft.color} disabled={!canUpdateSettings} onValueChange={(color) => setEditingStageDraft((prev) => ({ ...prev, color }))} />
                             <NumberField label="Probability" value={draft.probability} min={0} max={100} disabled={!canUpdateSettings} onValueChange={(probability) => setEditingStageDraft((prev) => ({ ...prev, probability }))} />
                             <NumberField label="WIP" value={draft.wipLimit} min={0} disabled={!canUpdateSettings} onValueChange={(wipLimit) => setEditingStageDraft((prev) => ({ ...prev, wipLimit }))} />
+                            <NumberField label="Rot Days" value={draft.rotDays} min={0} disabled={!canUpdateSettings} onValueChange={(rotDays) => setEditingStageDraft((prev) => ({ ...prev, rotDays }))} />
                             <CheckboxField label="Default Entry" checked={draft.isDefaultEntry} disabled={!canUpdateSettings || draft.isWon || draft.isLost} onValueChange={(isDefaultEntry) => setEditingStageDraft((prev) => ({ ...prev, isDefaultEntry }))} />
                             <CheckboxField label="Won" checked={draft.isWon} disabled={!canUpdateSettings} onValueChange={(isWon) => setEditingStageDraft((prev) => ({ ...prev, isWon, isLost: isWon ? false : prev.isLost, isDefaultEntry: isWon ? false : prev.isDefaultEntry, probability: isWon ? 100 : prev.probability }))} />
                             <CheckboxField label="Lost" checked={draft.isLost} disabled={!canUpdateSettings} onValueChange={(isLost) => setEditingStageDraft((prev) => ({ ...prev, isLost, isWon: isLost ? false : prev.isWon, isDefaultEntry: isLost ? false : prev.isDefaultEntry, probability: isLost ? 0 : prev.probability }))} />
                             <CheckboxField label="Hidden" checked={draft.hidden} disabled={!canUpdateSettings} onValueChange={(hidden) => setEditingStageDraft((prev) => ({ ...prev, hidden }))} />
                             <CheckboxField label="Archived" checked={draft.archived} disabled={!canUpdateSettings} onValueChange={(archived) => setEditingStageDraft((prev) => ({ ...prev, archived }))} />
                           </div>
-                        ) : null}
+                        ) : (
+                          <div className={s.stageMetrics}>
+                            <span>WIP {stage.wipLimit ?? 'none'}</span>
+                            <span>Rot {stage.rotDays ?? 'none'}</span>
+                          </div>
+                        )}
 
                         {Number(stage.dealsCount || 0) > 0 ? (
                           <div className={s.replacementRow}>
                             <SelectField
-                              label="Replacement stage for delete"
+                              label="Replacement stage"
                               value={replacementStageById[stage.id] || ''}
                               options={alternatives}
                               disabled={!canUpdateSettings || !alternatives.length}
@@ -713,46 +731,43 @@ export default function CompanyDeals() {
                     </SortableShell>
                   );
                 })}
-                {!selectedStages.length ? <div className={s.emptyState}>No stages in this pipeline yet.</div> : null}
+                {!selectedStages.length ? <div className={s.emptyState}>Add the first stage from the row above.</div> : null}
               </div>
             </SortableContext>
           </DndContext>
-        </>
-      ) : (
-        <div className={s.emptyState}>Create a pipeline before editing stages.</div>
-      )}
-    </div>
-  );
+        </section>
+      </div>
+    );
+  };
 
   const renderLostReasons = () => (
-    <div className={s.stack}>
-      <section className={s.panel}>
-        <div className={s.panelHead}>
-          <div>
-            <h3>Create lost reason</h3>
-            <p>Reasons are available for future lost-deal workflows and reporting.</p>
-          </div>
-          <button type="button" className={s.primaryBtn} onClick={handleCreateLostReason} disabled={!canUpdateSettings || busy}>
-            <Plus size={16} aria-hidden="true" /> Create
-          </button>
+    <section className={s.panel}>
+      <div className={s.panelHead}>
+        <div>
+          <h3>Lost Reasons</h3>
+          <p>Company-wide reasons used by lost deal flows.</p>
         </div>
-        <TextField label="Reason name" value={lostReasonDraft} disabled={!canUpdateSettings} onValueChange={setLostReasonDraft} />
-      </section>
-
+        <button type="button" className={s.primaryBtn} onClick={handleCreateLostReason} disabled={!canUpdateSettings || busy}>
+          <Plus size={16} aria-hidden="true" /> Add
+        </button>
+      </div>
+      <div className={s.reasonCreate}>
+        <TextField label="Reason" value={lostReasonDraft} disabled={!canUpdateSettings} onValueChange={setLostReasonDraft} />
+      </div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={handleLostReasonDragEnd}>
         <SortableContext items={lostReasons.map((reason) => reason.id)} strategy={verticalListSortingStrategy}>
-          <div className={s.cardList}>
+          <div className={s.reasonList}>
             {lostReasons.map((reason) => {
               const editing = editingLostReasonId === reason.id;
               return (
                 <SortableShell key={reason.id} id={reason.id} disabled={!canUpdateSettings || busy} className={s.reasonCard}>
-                  <div className={s.cardBody}>
+                  <div className={s.reasonMain}>
                     {editing ? (
-                      <TextField label="Reason name" value={editingLostReasonName} disabled={!canUpdateSettings} onValueChange={setEditingLostReasonName} />
+                      <TextField label="Reason" value={editingLostReasonName} disabled={!canUpdateSettings} onValueChange={setEditingLostReasonName} />
                     ) : (
                       <div className={s.reasonTitle}>
                         <span>{reason.name}</span>
-                        {reason.archived ? <Pill tone="warning">Archived</Pill> : null}
+                        {reason.archived ? <Pill tone="warning">Archive</Pill> : null}
                       </div>
                     )}
                   </div>
@@ -773,24 +788,26 @@ export default function CompanyDeals() {
                 </SortableShell>
               );
             })}
-            {!lostReasons.length && !lostReasonsFetching ? <div className={s.emptyState}>No lost reasons yet.</div> : null}
+            {!lostReasons.length && !lostReasonsFetching ? <div className={s.emptyState}>Add a lost reason from the field above.</div> : null}
           </div>
         </SortableContext>
       </DndContext>
-    </div>
+    </section>
   );
 
-  const renderForecast = () => (
-    <div className={s.gridTwo}>
+  const renderBottom = () => (
+    <div className={s.lowerGrid}>
+      {renderLostReasons()}
+
       <section className={s.panel}>
         <div className={s.panelHead}>
           <div>
-            <h3>Probability input</h3>
-            <p>Probability uses stage values from the selected pipeline. Reports are intentionally out of scope.</p>
+            <h3>Forecast</h3>
+            <p>Stage probabilities feed weighted pipeline value.</p>
           </div>
-          <CircleDashed size={20} aria-hidden="true" />
+          <CircleDollarSign size={20} aria-hidden="true" />
         </div>
-        <div className={s.formGrid}>
+        <div className={s.settingsGrid}>
           <SelectField
             label="Probability mode"
             value={settingsDraft.probabilityMode}
@@ -803,20 +820,11 @@ export default function CompanyDeals() {
             onValueChange={(probabilityMode) => setSettingsDraft((prev) => ({ ...prev, probabilityMode }))}
           />
           <button type="button" className={s.primaryBtn} onClick={handleSaveSettings} disabled={!canUpdateSettings || busy}>
-            <Save size={16} aria-hidden="true" /> Save probability settings
+            <Save size={16} aria-hidden="true" /> Save
           </button>
         </div>
-      </section>
-
-      <section className={s.panel}>
-        <div className={s.panelHead}>
-          <div>
-            <h3>Pipeline probabilities</h3>
-            <p>Stage probabilities below feed Kanban summaries and Deal Detail stage path.</p>
-          </div>
-        </div>
         <div className={s.probabilityList}>
-          {(selectedPipeline?.stages || []).map((stage) => (
+          {selectedStages.map((stage) => (
             <div key={stage.id} className={s.probabilityRow}>
               <span className={s.colorDot} style={{ background: stage.color || '#3b82f6' }} />
               <span>{stage.name}</span>
@@ -825,115 +833,72 @@ export default function CompanyDeals() {
           ))}
         </div>
       </section>
-    </div>
-  );
 
-  const renderDefaults = () => (
-    <div className={s.gridTwo}>
       <section className={s.panel}>
         <div className={s.panelHead}>
           <div>
-            <h3>Creation defaults</h3>
-            <p>Defaults used when a deal is created without explicit pipeline context.</p>
+            <h3>Defaults</h3>
+            <p>Creation defaults used by new deals.</p>
           </div>
           <button type="button" className={s.primaryBtn} onClick={handleSaveSettings} disabled={!canUpdateSettings || busy}>
             <Save size={16} aria-hidden="true" /> Save
           </button>
         </div>
-        <div className={s.formGrid}>
+        <div className={s.settingsGrid}>
+          <TextField label="Currency" value={settingsDraft.defaultCurrency} upper maxLength={8} disabled={!canUpdateSettings} onValueChange={(defaultCurrency) => setSettingsDraft((prev) => ({ ...prev, defaultCurrency }))} />
+          <NumberField label="Expected Close" value={settingsDraft.defaultExpectedCloseDays} min={0} max={3650} disabled={!canUpdateSettings} onValueChange={(defaultExpectedCloseDays) => setSettingsDraft((prev) => ({ ...prev, defaultExpectedCloseDays }))} />
           <SelectField
-            label="Default Pipeline"
-            value={activePipelines.find((pipeline) => pipeline.isDefault)?.id || ''}
-            options={activePipelines.map((pipeline) => ({ value: pipeline.id, label: pipeline.name }))}
+            label="Visibility"
+            value={settingsDraft.visibility}
+            options={[
+              { value: 'company', label: 'Company' },
+              { value: 'team', label: 'Team' },
+              { value: 'owner', label: 'Owner' },
+            ]}
             disabled={!canUpdateSettings}
-            onValueChange={(pipelineId) => {
-              const pipeline = activePipelines.find((item) => item.id === pipelineId);
-              if (pipeline) handleSetDefaultPipeline(pipeline);
-            }}
+            onValueChange={(visibility) => setSettingsDraft((prev) => ({ ...prev, visibility }))}
           />
-          <TextField
-            label="Currency"
-            value={settingsDraft.defaultCurrency}
-            upper
-            maxLength={8}
-            disabled={!canUpdateSettings}
-            onValueChange={(defaultCurrency) => setSettingsDraft((prev) => ({ ...prev, defaultCurrency }))}
-          />
-          <NumberField
-            label="Expected close days"
-            value={settingsDraft.defaultExpectedCloseDays}
-            min={0}
-            max={3650}
-            disabled={!canUpdateSettings}
-            onValueChange={(defaultExpectedCloseDays) => setSettingsDraft((prev) => ({ ...prev, defaultExpectedCloseDays }))}
-          />
+          <CheckboxField label="Numbering" checked={settingsDraft.dealNumberingEnabled} disabled={!canUpdateSettings} onValueChange={(dealNumberingEnabled) => setSettingsDraft((prev) => ({ ...prev, dealNumberingEnabled }))} />
+          <TextField label="Prefix" value={settingsDraft.dealNumberPrefix} upper maxLength={16} disabled={!canUpdateSettings || !settingsDraft.dealNumberingEnabled} onValueChange={(dealNumberPrefix) => setSettingsDraft((prev) => ({ ...prev, dealNumberPrefix }))} />
         </div>
       </section>
 
-      <section className={s.panel}>
+      <section className={`${s.panel} ${s.automationPanel}`}>
         <div className={s.panelHead}>
           <div>
-            <h3>Current entry stages</h3>
-            <p>Each pipeline has one default-entry stage.</p>
+            <h3>Automation</h3>
+            <p>Stage automation engine is not enabled in this backend.</p>
           </div>
+          <Workflow size={20} aria-hidden="true" />
         </div>
-        <div className={s.pipelineSelectList}>
-          {pipelines.map((pipeline) => {
-            const entry = pipeline.stages?.find((stage) => stage.isDefaultEntry);
-            return (
-              <div key={pipeline.id} className={s.choiceCard}>
-                <span className={s.colorDot} style={{ background: pipeline.color || '#2563eb' }} />
-                <span>{pipeline.name}</span>
-                <strong>{entry?.name || 'No entry stage'}</strong>
-              </div>
-            );
-          })}
-        </div>
+        <Pill tone="warning">Deferred</Pill>
       </section>
     </div>
   );
-
-  const content = {
-    general: renderGeneral,
-    pipelines: renderPipelines,
-    stages: renderStages,
-    lostReasons: renderLostReasons,
-    forecast: renderForecast,
-    defaults: renderDefaults,
-  }[activeTab];
 
   return (
     <div className={s.wrap}>
       <header className={s.header}>
         <div>
-          <h2>Deals Settings</h2>
-          <p>Company sales configuration for pipelines, stages, forecast defaults and lost reasons.</p>
+          <h2>Pipeline Builder</h2>
+          <p>Pipeline is the sales process. Stages, reasons, forecast and defaults live around it.</p>
         </div>
         <div className={s.headerStats}>
-          <Pill tone="success">{activePipelines.length} active pipelines</Pill>
-          <Pill>{pipelines.length} total pipelines</Pill>
+          <Pill tone="success">{activePipelines.length} active</Pill>
+          <Pill>{pipelines.length} total</Pill>
         </div>
       </header>
 
-      <nav className={s.tabs} aria-label="Deals settings tabs">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`${s.tab} ${activeTab === tab.id ? s.tabActive : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-
       {notice ? <div className={s.notice}>{notice}</div> : null}
       {errorText ? <div className={s.error}>{errorText}</div> : null}
-      {pipelinesFetching ? <div className={s.notice}>Loading deal settings...</div> : null}
+      {pipelinesFetching ? <div className={s.notice}>Loading pipeline builder...</div> : null}
 
-      <main className={s.content}>
-        {content ? content() : null}
+      <main className={s.builder}>
+        {renderPipelineList()}
+        <section className={s.workspace}>
+          {renderPipelineEditor()}
+          {selectedPipeline ? renderBottom() : null}
+        </section>
       </main>
     </div>
   );

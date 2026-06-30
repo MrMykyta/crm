@@ -36,6 +36,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'supplier_id',
         as: 'supplier'
       });
+      Product.belongsTo(models.Counterparty, {
+        foreignKey: 'manufacturer_id',
+        as: 'manufacturer'
+      });
 
       Product.belongsToMany(models.Category, {
         through: models.ProductCategory,
@@ -151,6 +155,10 @@ module.exports = (sequelize, DataTypes) => {
     supplierId: {
       type: DataTypes.UUID,
       field: 'supplier_id'
+    },
+    manufacturerId: {
+      type: DataTypes.UUID,
+      field: 'manufacturer_id'
     },
 
     sku: {

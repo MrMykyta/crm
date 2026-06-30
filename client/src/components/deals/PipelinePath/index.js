@@ -17,6 +17,7 @@ export default function PipelinePath({
   stages = [],
   currentStageId,
   aggregates = {},
+  className = '',
   showAll = false,
   allSelected = false,
   allLabel = 'All stages',
@@ -36,7 +37,7 @@ export default function PipelinePath({
   }
 
   return (
-    <div className={s.path} role="list" aria-label={ariaLabel}>
+    <div className={`${s.path} ${className}`.trim()} role="list" aria-label={ariaLabel}>
       {showAll ? (
         <button
           type="button"
@@ -59,8 +60,9 @@ export default function PipelinePath({
       {visibleStages.map((stage) => {
         const isCurrent = String(stage.id) === String(currentStageId || '');
         const terminalLabel = stage.isWon ? wonLabel : stage.isLost ? lostLabel : '';
-        const aggregate = aggregates[String(stage.id)] || aggregates[stage.id] || {};
-        const totalLabel = formatTotal(aggregate.totals);
+          const aggregate = aggregates[String(stage.id)] || aggregates[stage.id] || {};
+          const totalLabel = formatTotal(aggregate.totals);
+          const weightedLabel = formatTotal(aggregate.weighted);
         const classes = [
           s.segment,
           isCurrent ? s.current : '',
@@ -89,6 +91,7 @@ export default function PipelinePath({
                   <span>{Number(aggregate.count).toLocaleString()}</span>
                 ) : null}
                 {totalLabel ? <span>{totalLabel}</span> : null}
+                {weightedLabel ? <span>{weightedLabel}</span> : null}
                 <span>{Number(stage.probability ?? 0)}%</span>
               </span>
             </span>

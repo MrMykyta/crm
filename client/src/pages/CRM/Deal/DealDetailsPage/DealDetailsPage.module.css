@@ -1,175 +1,717 @@
-.emptyState {
-  padding: 32px;
-  background: color-mix(in srgb, var(--card-bg) 84%, var(--text) 4%);
-  border: 1px solid color-mix(in srgb, var(--card-bg) 72%, var(--text) 12%);
-  border-radius: 8px;
-  color: var(--text);
+.detailV3 {
+  --deal-surface: color-mix(in srgb, var(--detail-surface, var(--card-bg)) 76%, transparent);
+  --deal-soft: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 70%, transparent);
+  --deal-border: color-mix(in srgb, var(--detail-border, var(--border)) 72%, transparent);
+  --deal-muted: var(--detail-muted, var(--muted));
 }
 
-.sidebar {
+.detailV3 > :last-child {
+  grid-template-columns: minmax(280px, 29%) minmax(0, 1fr);
+}
+
+.emptyState {
+  padding: 32px;
+  border: 1px solid var(--deal-border, var(--detail-border, var(--border)));
+  border-radius: 8px;
+  background: var(--deal-surface, var(--detail-surface, var(--card-bg)));
+  color: var(--ui-text, var(--text));
+}
+
+.dealHero {
   display: grid;
-  gap: 12px;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--deal-border);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--focus, #6aa8ff) 7%, transparent), transparent 56%),
+    var(--deal-surface);
+  box-shadow: 0 14px 34px rgb(0 0 0 / 16%);
+  -webkit-backdrop-filter: blur(11px) saturate(1.03);
+  backdrop-filter: blur(11px) saturate(1.03);
+}
+
+.heroNav,
+.heroSummary,
+.heroSubline,
+.heroMetrics,
+.heroSignals,
+.heroActions,
+.smartBar,
+.composerModes,
+.composerFooter,
+.panelTabs,
+.quickContactActions,
+.overviewSignals {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.heroNav {
+  justify-content: space-between;
+  color: var(--deal-muted);
+  font-size: 12px;
+}
+
+.heroNav button,
+.heroActions button,
+.smartBar button,
+.composerModes button,
+.composerFooter button,
+.panelTabs button,
+.quickContactActions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  border: 1px solid var(--deal-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--deal-soft) 78%, transparent);
+  color: var(--ui-text, var(--text));
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.heroNav button {
+  padding: 0 9px;
+  color: var(--deal-muted);
+}
+
+.saveState {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--deal-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--deal-soft) 68%, transparent);
+  color: var(--deal-muted);
+  font-size: 11px;
+  font-weight: 720;
+}
+
+.saveStateDirty {
+  color: #d97706;
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+}
+
+.saveStateError {
+  color: #dc2626;
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+}
+
+.heroSummary {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 6px 0 2px;
+}
+
+.heroIdentity {
+  display: grid;
+  gap: 5px;
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.heroIdentity h1 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ui-text, var(--text));
+  font-size: 22px;
+  font-weight: 780;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.heroSubline {
+  flex-wrap: wrap;
+  color: var(--deal-muted);
+  font-size: 12px;
+}
+
+.heroSubline span,
+.heroMetrics > span,
+.heroSignals > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.heroMetrics {
+  flex: 1 1 330px;
+  flex-wrap: wrap;
+}
+
+.heroMetrics > span {
+  min-height: 34px;
+  padding: 5px 8px;
+  border: 1px solid color-mix(in srgb, var(--deal-border) 62%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--deal-soft) 48%, transparent);
+}
+
+.heroMetrics span span {
+  color: var(--deal-muted);
+  font-size: 10px;
+  font-weight: 720;
+  text-transform: uppercase;
+}
+
+.heroMetrics strong {
+  max-width: 120px;
+  overflow: hidden;
+  color: var(--ui-text, var(--text));
+  font-size: 13px;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.heroSignals {
+  flex: 1 1 230px;
+  flex-wrap: wrap;
+}
+
+.healthBadge,
+.nextActionBadge,
+.stageAge {
+  min-height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ui-text, var(--text)) 7%, transparent);
+  color: var(--deal-muted);
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.healthBadge span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.health_healthy,
+.health_won {
+  color: #16a34a;
+  background: color-mix(in srgb, #22c55e 13%, transparent);
+}
+
+.health_waiting {
+  color: #2563eb;
+  background: color-mix(in srgb, #3b82f6 12%, transparent);
+}
+
+.health_risk,
+.nextActionMissing {
+  color: #d97706;
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+}
+
+.health_lost {
+  color: #dc2626;
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+}
+
+.heroActions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.heroActions button {
+  min-height: 31px;
+  padding: 0 9px;
+}
+
+.heroActions .deleteAction {
+  width: 32px;
+  padding: 0;
+}
+
+.winAction {
+  border-color: color-mix(in srgb, #22c55e 38%, var(--deal-border)) !important;
+  color: #16a34a !important;
+}
+
+.lostAction,
+.deleteAction {
+  border-color: color-mix(in srgb, #ef4444 38%, var(--deal-border)) !important;
+  color: #dc2626 !important;
+}
+
+.saveAction {
+  border-color: color-mix(in srgb, var(--focus, #6aa8ff) 48%, var(--deal-border)) !important;
+  background: var(--focus, #6aa8ff) !important;
+  color: var(--accent-contrast, #fff) !important;
+}
+
+.heroPath {
+  min-width: 0;
+  padding-top: 4px;
+  border-top: 1px solid color-mix(in srgb, var(--deal-border) 48%, transparent);
+}
+
+.heroActions button:disabled,
+.smartBar button:disabled,
+.composer button:disabled,
+.composer input:disabled,
+.composer textarea:disabled,
+.timelineDelete:disabled,
+.quickContactActions button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.factsColumn {
+  min-width: 0;
+}
+
+.factsPanel,
+.composer,
+.timeline,
+.activitySide {
+  border: 1px solid var(--deal-border);
+  border-radius: 8px;
+  background: var(--deal-surface);
+  -webkit-backdrop-filter: blur(10px) saturate(1.02);
+  backdrop-filter: blur(10px) saturate(1.02);
+}
+
+.factsPanel {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+}
+
+.factsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--deal-border);
+}
+
+.factsHeader span,
+.factGroup h3 {
+  color: var(--deal-muted);
+  font-size: 11px;
+  font-weight: 780;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.factsHeader strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text, var(--text));
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.factGroup {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--deal-border) 54%, transparent);
+}
+
+.factGroup:last-child {
+  border-bottom: 0;
+}
+
+.factGroup h3 {
+  margin: 0;
+}
+
+.factGroupBody {
+  display: grid;
+  gap: 8px;
   min-width: 0;
 }
 
 .twoCols {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(88px, 0.45fr);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, .55fr);
+  gap: 8px;
 }
 
-.hero {
+.inlineFacts {
   display: grid;
-  gap: 14px;
-  margin-bottom: 16px;
-  padding: 18px 18px 16px;
-  border: 1px solid color-mix(in srgb, var(--card-bg) 70%, var(--text) 14%);
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--focus, #3b82f6) 10%, transparent), transparent 54%),
-    color-mix(in srgb, var(--card-bg) 88%, var(--focus, #3b82f6) 5%);
+  gap: 0;
+  min-width: 0;
 }
 
-.heroTop {
+.infoRow {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  align-items: flex-start;
-}
-
-.heroTop h2 {
-  margin: 2px 0 4px;
-  font-size: var(--font-size-24, 24px);
-  font-weight: 750;
-  color: var(--text);
-  letter-spacing: 0;
-}
-
-.heroTop p {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--font-size-13);
-}
-
-.eyebrow {
-  color: var(--muted);
-  font-size: var(--font-size-11);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0;
-}
-
-.heroActions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-  min-width: 180px;
-}
-
-.winAction,
-.lostAction {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 34px;
-  border: 1px solid color-mix(in srgb, var(--card-bg) 70%, var(--text) 18%);
-  border-radius: 8px;
-  padding: 7px 10px;
-  background: color-mix(in srgb, var(--card-bg) 88%, var(--text) 4%);
-  color: var(--text);
-  font: inherit;
-  font-size: var(--font-size-13);
-  cursor: pointer;
-}
-
-.winAction {
-  border-color: color-mix(in srgb, #16a34a 42%, var(--card-bg));
-  color: color-mix(in srgb, #16a34a 72%, var(--text));
-}
-
-.lostAction {
-  border-color: color-mix(in srgb, #dc2626 42%, var(--card-bg));
-  color: color-mix(in srgb, #dc2626 72%, var(--text));
-}
-
-.winAction:disabled,
-.lostAction:disabled {
-  opacity: 0.52;
-  cursor: not-allowed;
-}
-
-.heroMain {
+  gap: 10px;
   min-width: 0;
+  padding: 6px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--deal-border) 36%, transparent);
 }
 
-.heroMetrics {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+.inlineFacts .infoRow:last-child,
+.overviewPanel .infoRow:last-child {
+  border-bottom: 0;
+}
+
+.infoRow span {
+  color: var(--deal-muted);
+  font-size: 11px;
+}
+
+.infoRow strong,
+.infoRow a {
   min-width: 0;
-}
-
-.heroMetrics span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 26px;
-  padding: 0 9px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--card-bg) 68%, var(--text) 12%);
-  background: color-mix(in srgb, var(--card-bg) 86%, var(--text) 3%);
-  color: var(--muted);
-  font-size: var(--font-size-12);
+  overflow: hidden;
+  color: var(--ui-text, var(--text));
+  font-size: 12px;
+  font-weight: 720;
+  text-align: right;
+  text-decoration: none;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.heroMetrics .moneyMetric {
-  color: var(--text);
-  font-weight: 750;
+.quickContactActions button {
+  flex: 1 1 110px;
+  min-height: 28px;
+  padding: 0 8px;
 }
 
-.stageFact {
+.fieldError {
+  margin: 0;
+  color: #dc2626;
+  font-size: 12px;
+}
+
+.activityWorkspace {
   display: grid;
-  gap: 3px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 34%);
+  gap: 10px;
   min-width: 0;
-  border: 1px solid color-mix(in srgb, var(--card-bg) 72%, var(--text) 10%);
+}
+
+.activityMain,
+.activitySide {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.smartBar {
+  flex-wrap: wrap;
+  padding: 6px;
+  border: 1px solid var(--deal-border);
   border-radius: 8px;
-  padding: 10px 12px;
-  background: color-mix(in srgb, var(--card-bg) 92%, var(--text) 2%);
+  background: color-mix(in srgb, var(--deal-surface) 74%, transparent);
 }
 
-.stageFact span {
-  color: var(--muted);
-  font-size: var(--font-size-12);
+.smartBar button {
+  flex: 1 1 105px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 8px;
 }
 
-.stageFact strong {
+.smartBar button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.smartBar button strong {
+  margin-left: auto;
+  color: var(--deal-muted);
+}
+
+.composer {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.composerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.composerHeader div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.composerHeader strong {
+  color: var(--ui-text, var(--text));
+  font-size: 13px;
+}
+
+.composerHeader span,
+.composerHeader small,
+.composerFooter {
+  color: var(--deal-muted);
+  font-size: 12px;
+}
+
+.composerHeader small {
+  max-width: 220px;
+  text-align: right;
+}
+
+.composerModes {
+  flex-wrap: wrap;
+}
+
+.composerModes button {
+  min-height: 28px;
+  padding: 0 9px;
+}
+
+.modeActive,
+.panelTabActive {
+  border-color: color-mix(in srgb, var(--focus, #6aa8ff) 48%, var(--deal-border)) !important;
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 14%, var(--deal-soft)) !important;
+  color: var(--ui-text, var(--text)) !important;
+}
+
+.composerTitleInput,
+.composer textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--deal-border) 64%, transparent);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: color-mix(in srgb, var(--deal-soft) 62%, transparent);
+  color: var(--ui-text, var(--text));
+  font: inherit;
+  font-size: 13px;
+}
+
+.composerTitleInput {
+  min-height: 34px;
+}
+
+.composer textarea {
+  resize: vertical;
+}
+
+.composerError {
+  margin: -2px 0 0;
+  color: #dc2626;
+  font-size: 12px;
+}
+
+.composerFooter {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.composerFooter button {
+  padding: 0 10px;
+}
+
+.timeline {
+  display: grid;
+  gap: 0;
+  padding: 4px 8px;
+}
+
+.timelineItem {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--deal-border) 40%, transparent);
+}
+
+.timelineItem:last-child {
+  border-bottom: 0;
+}
+
+.timelineItemSystem .timelineIcon {
+  background: color-mix(in srgb, #64748b 15%, transparent);
+  color: #94a3b8;
+}
+
+.timelineIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--focus, #6aa8ff) 13%, transparent);
+  color: var(--focus, #6aa8ff);
+}
+
+.timelineItem header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.timelineItem strong {
+  color: var(--ui-text, var(--text));
+  font-size: 13px;
+}
+
+.timelineItem header span,
+.timelineItem p,
+.timelineItem small {
+  color: var(--deal-muted);
+  font-size: 12px;
+}
+
+.timelineItem p {
+  margin: 3px 0 0;
   overflow-wrap: anywhere;
 }
 
-.stageFact small,
-.stageFact em {
-  color: var(--muted);
-  font-size: var(--font-size-12);
-  font-style: normal;
+.timelineItem small {
+  display: inline-flex;
+  margin-top: 5px;
+  min-height: 20px;
+  align-items: center;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--deal-muted) 88%, var(--focus, #6aa8ff));
+  font-weight: 700;
 }
 
-.stageFact em {
-  color: var(--danger);
+.timelineDelete {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--deal-muted);
+  cursor: pointer;
 }
 
-.tabStack {
+.timelineDelete:hover {
+  border-color: color-mix(in srgb, #ef4444 34%, var(--deal-border));
+  background: color-mix(in srgb, #ef4444 10%, transparent);
+  color: #dc2626;
+}
+
+.timelineState {
   display: grid;
-  gap: 14px;
+  gap: 3px;
+  padding: 16px 8px;
+  color: var(--deal-muted);
+  font-size: 13px;
+}
+
+.timelineState strong {
+  color: var(--ui-text, var(--text));
+  font-size: 13px;
+}
+
+.activitySide {
+  overflow: hidden;
+}
+
+.panelTabs {
+  gap: 0;
+  padding: 6px;
+  border-bottom: 1px solid var(--deal-border);
+}
+
+.panelTabs button {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-radius: 7px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--deal-muted);
+}
+
+.panelBody {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.overviewPanel,
+.systemRows,
+.taskList {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.overviewSignals {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.overviewSignals > span:last-child {
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--deal-soft) 70%, transparent);
+  color: var(--deal-muted);
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.taskRow,
+.systemRows div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--deal-border) 56%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--deal-soft) 52%, transparent);
+  color: var(--ui-text, var(--text));
+  text-decoration: none;
+}
+
+.taskRow span,
+.systemRows strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taskRow small,
+.systemRows span {
+  color: var(--deal-muted);
+  font-size: 12px;
 }
 
 .placeholder {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--muted);
-  font-size: var(--font-size-14);
+  color: var(--deal-muted);
+  font-size: 13px;
 }
 
 .pipelineEmpty {
@@ -177,88 +719,84 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
-  border: 1px dashed color-mix(in srgb, var(--card-bg) 65%, var(--text) 18%);
+  min-width: 0;
+  padding: 9px;
+  border: 1px dashed var(--deal-border);
   border-radius: 8px;
-  padding: 12px 14px;
-  background: color-mix(in srgb, var(--card-bg) 90%, transparent);
-  color: var(--muted);
+  background: color-mix(in srgb, var(--deal-soft) 60%, transparent);
+  color: var(--deal-muted);
 }
 
 .pipelineEmpty strong {
-  display: block;
-  color: var(--text);
+  color: var(--ui-text, var(--text));
 }
 
 .pipelineEmpty p {
   margin: 2px 0 0;
-  font-size: var(--font-size-12);
+  font-size: 12px;
 }
 
 .pipelineEmpty a {
-  color: var(--link);
+  color: var(--focus, #6aa8ff);
   text-decoration: none;
-  font-weight: 650;
+  font-weight: 700;
   white-space: nowrap;
 }
 
-.taskList,
-.overviewFacts,
-.systemRows {
-  display: grid;
-  gap: 8px;
+@media (max-width: 1280px) {
+  .activityWorkspace {
+    grid-template-columns: 1fr;
+  }
 }
 
-.taskRow,
-.overviewFacts div,
-.systemRows div {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  min-width: 0;
-  border: 1px solid color-mix(in srgb, var(--card-bg) 72%, var(--text) 10%);
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: color-mix(in srgb, var(--card-bg) 92%, var(--text) 2%);
+@media (max-width: 1120px) {
+  .detailV3 > :last-child {
+    grid-template-columns: 1fr;
+  }
 }
 
-.taskRow {
-  color: var(--text);
-  text-decoration: none;
-}
+@media (max-width: 760px) {
+  .dealHero {
+    padding: 9px;
+  }
 
-.taskRow span,
-.overviewFacts strong,
-.systemRows strong {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
+  .heroNav {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
 
-.taskRow small,
-.overviewFacts span,
-.systemRows span {
-  color: var(--muted);
-  font-size: var(--font-size-12);
-}
+  .heroIdentity h1 {
+    font-size: 21px;
+    white-space: normal;
+  }
 
-@media (max-width: 720px) {
-  .heroTop {
-    display: grid;
+  .heroMetrics,
+  .heroSignals,
+  .heroActions {
+    width: 100%;
   }
 
   .heroActions {
-    justify-content: flex-start;
-    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .winAction,
-  .lostAction {
-    flex: 1 1 124px;
-    justify-content: center;
+  .heroActions .deleteAction {
+    width: auto;
   }
 
   .twoCols {
     grid-template-columns: 1fr;
+  }
+
+  .composerHeader,
+  .composerFooter {
+    display: grid;
+  }
+
+  .composerHeader small {
+    max-width: none;
+    text-align: left;
   }
 
   .pipelineEmpty {

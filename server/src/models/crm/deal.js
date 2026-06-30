@@ -32,11 +32,28 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: { name: 'stageId', field: 'stage_id' },
         as: 'stage',
       });
+      Deal.belongsTo(models.Contact, {
+        foreignKey: { name: 'contactId', field: 'contact_id' },
+        as: 'contact',
+      });
+      Deal.belongsTo(models.CrmDealLostReason, {
+        foreignKey: { name: 'lostReasonId', field: 'lost_reason_id' },
+        as: 'lostReason',
+      });
+      Deal.belongsTo(models.Task, {
+        foreignKey: { name: 'nextActionTaskId', field: 'next_action_task_id' },
+        as: 'nextActionTask',
+      });
 
 
       Deal.hasMany(models.Task, {
         foreignKey: { name: 'dealId', field: 'deal_id' },
         as: 'tasks',
+      });
+
+      Deal.hasMany(models.CrmDealActivity, {
+        foreignKey: { name: 'dealId', field: 'deal_id' },
+        as: 'activities',
       });
     }
   }
@@ -104,6 +121,70 @@ module.exports = (sequelize, DataTypes) => {
       allowNull:true,
       field:'stage_entered_at'
     },
+    contactId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'contact_id'
+    },
+    expectedCloseDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      field: 'expected_close_date'
+    },
+    closedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'closed_at'
+    },
+    lostReasonId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'lost_reason_id'
+    },
+    lostNote: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'lost_note'
+    },
+    priority: {
+      type: DataTypes.SMALLINT,
+      allowNull: true,
+      validate: { min: 0, max: 100 }
+    },
+    source: {
+      type: DataTypes.STRING(80),
+      allowNull: true
+    },
+    probability: {
+      type: DataTypes.SMALLINT,
+      allowNull: true,
+      validate: { min: 0, max: 100 }
+    },
+    nextActionAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'next_action_at'
+    },
+    nextActionType: {
+      type: DataTypes.STRING(40),
+      allowNull: true,
+      field: 'next_action_type'
+    },
+    nextActionTaskId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'next_action_task_id'
+    },
+    healthStatus: {
+      type: DataTypes.STRING(40),
+      allowNull: true,
+      field: 'health_status'
+    },
+    healthComputedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'health_computed_at'
+    },
     createdAt: {
       type: DataTypes.DATE,
       field: 'created_at'
@@ -111,13 +192,19 @@ module.exports = (sequelize, DataTypes) => {
     updatedAt: {
       type: DataTypes.DATE,
       field: 'updated_at'
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'deleted_at'
     }
   }, {
     sequelize,
     modelName: 'Deal',
     tableName: 'deals',
     underscored: true,
-    timestamps: true
+    timestamps: true,
+    paranoid: true
   });
   return Deal;
 };

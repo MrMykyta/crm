@@ -240,6 +240,10 @@ async function validateReferences(companyId, payload = {}) {
     await assertExistsInCompany(Counterparty, companyId, payload.supplierId, 'Supplier');
   }
 
+  if (payload.manufacturerId !== undefined && payload.manufacturerId !== null && payload.manufacturerId !== '') {
+    await assertExistsInCompany(Counterparty, companyId, payload.manufacturerId, 'Manufacturer');
+  }
+
   if (payload.replacedByProductId !== undefined && payload.replacedByProductId !== null && payload.replacedByProductId !== '') {
     await assertExistsInCompany(Product, companyId, payload.replacedByProductId, 'Replacement product');
   }
@@ -250,6 +254,7 @@ const productInclude = [
   { model: Category, as: 'primaryCategory', attributes: ['id', 'name', 'slug', 'parentId'] },
   { model: Category, as: 'subcategory', attributes: ['id', 'name', 'slug', 'parentId'] },
   { model: Counterparty, as: 'supplier', attributes: ['id', 'shortName', 'fullName', 'type'] },
+  { model: Counterparty, as: 'manufacturer', attributes: ['id', 'shortName', 'fullName', 'type'], required: false },
   { model: Uom, as: 'uom', attributes: UOM_ATTRIBUTES },
   { model: TaxCategory, as: 'taxCategory', attributes: ['id', 'name', 'rate'] },
   { model: ShippingClass, as: 'shippingClass', attributes: ['id', 'name', 'code'], required: false },
@@ -643,6 +648,7 @@ async function buildWritePayload(companyId, payload = {}, existing = null) {
     primaryCategoryId: payload.primaryCategoryId,
     subcategoryId: payload.subcategoryId,
     supplierId: payload.supplierId,
+    manufacturerId: payload.manufacturerId,
     uomId: payload.uomId,
     productTypeId: payload.productTypeId,
     taxCategoryId: payload.taxCategoryId,

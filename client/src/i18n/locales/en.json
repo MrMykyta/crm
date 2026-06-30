@@ -85,7 +85,10 @@
     "all": "All",
     "clear": "Clear",
     "refresh": "Refresh",
-    "hide": "Hide"
+    "hide": "Hide",
+    "unscheduled": "Unscheduled",
+    "searching": "Searching...",
+    "archived": "Archived"
   },
   "visibility": {
     "label": "Visibility",
@@ -124,6 +127,230 @@
     "available": "Available"
   },
   "pim": {
+    "product": {
+      "detail": {
+        "loading": "Loading product...",
+        "notFound": "Product not found.",
+        "createTitle": "New product",
+        "actions": {
+          "back": "Back to products",
+          "create": "Create product",
+          "products": "Products"
+        },
+        "status": {
+          "draft": "Draft",
+          "active": "Active",
+          "archived": "Archived"
+        },
+        "visibility": {
+          "public": "Public",
+          "private": "Private"
+        },
+        "kind": {
+          "product": "Product",
+          "service": "Service"
+        },
+        "empty": {
+          "sku": "No SKU",
+          "ean": "No EAN"
+        },
+        "tabs": {
+          "overview": "Overview",
+          "prices": "Prices",
+          "pricing": "Pricing",
+          "inventory": "Inventory",
+          "compliance": "Compliance",
+          "documents": "Documents",
+          "notes": "Notes",
+          "system": "System"
+        },
+        "sections": {
+          "identity": "Identity",
+          "catalog": "Catalog",
+          "pricing": "Pricing",
+          "taxes": "Taxes",
+          "supplier": "Supplier",
+          "inventory": "Inventory",
+          "inventorySummary": "Inventory summary",
+          "operationalSnapshot": "Operational snapshot",
+          "priceSummary": "Price summary",
+          "documentSummary": "Document summary",
+          "catalogSupplier": "Catalog & supplier",
+          "partners": "Partners",
+          "commerce": "Commerce",
+          "commerceCompliance": "Commerce & compliance",
+          "inventoryCompliance": "Inventory & compliance",
+          "inventoryControls": "Inventory controls",
+          "compliance": "Compliance",
+          "description": "Description",
+          "system": "System"
+        },
+        "fields": {
+          "name": "Name",
+          "barcode": "Barcode",
+          "slug": "Slug",
+          "category": "Category",
+          "subcategory": "Subcategory",
+          "brand": "Brand",
+          "productType": "Product type",
+          "price": "Price",
+          "currency": "Currency",
+          "oldPrice": "Old price",
+          "cost": "Cost",
+          "sellable": "Sellable",
+          "taxCategory": "Tax category",
+          "country": "Country",
+          "supplier": "Supplier",
+          "manufacturer": "Manufacturer",
+          "uom": "UoM",
+          "trackInventory": "Track inventory",
+          "serialized": "Serialized",
+          "lotTracked": "Lot tracked",
+          "shelfLife": "Shelf life",
+          "service": "Service",
+          "status": "Status",
+          "visibility": "Visibility",
+          "createdAt": "Created",
+          "updatedAt": "Updated"
+        },
+        "identifiers": {
+          "eanBarcodeHint": "EAN is the standard number. Barcode is any scannable code."
+        },
+        "lookup": {
+          "placeholder": "Start typing...",
+          "hint": "Type to search or create a new value.",
+          "partnerHint": "Start typing to find or create a company.",
+          "empty": "Nothing found",
+          "createValue": "Create \"{{value}}\"",
+          "createCategory": "Create category \"{{value}}\"",
+          "createSubcategory": "Create subcategory \"{{value}}\"",
+          "createBrand": "Create brand \"{{value}}\"",
+          "createProductType": "Create product type \"{{value}}\"",
+          "createSupplier": "Create supplier \"{{value}}\"",
+          "createManufacturer": "Create manufacturer \"{{value}}\"",
+          "createTaxCategory": "Create tax category \"{{value}}\"",
+          "createdSelected": "Created and selected",
+          "createdCategory": "Category created and selected",
+          "createdSubcategory": "Subcategory created and selected",
+          "createdBrand": "Brand created and selected",
+          "createdProductType": "Product type created and selected",
+          "createdSupplier": "Supplier created and selected",
+          "createdManufacturer": "Manufacturer created and selected",
+          "createdTaxCategory": "Tax category created and selected",
+          "saveHelper": "New values are created immediately. The product selection is saved when you save the card.",
+          "createFailed": "Failed to create value.",
+          "types": {
+            "category": "Category",
+            "subcategory": "Subcategory",
+            "brand": "Brand",
+            "productType": "Type",
+            "supplier": "Supplier",
+            "manufacturer": "Manufacturer",
+            "taxCategory": "Tax"
+          }
+        },
+        "partners": {
+          "helper": "Supplier is who you buy from. Manufacturer is who made it. They are often different companies."
+        },
+        "taxPresets": {
+          "rate": "{{rate}}% VAT",
+          "zw": "ZW — exempt",
+          "np": "NP — not subject"
+        },
+        "compliance": {
+          "helper": "Fiscal and customs identifiers used for tax reporting, customs, and product classification."
+        },
+          "inventory": {
+          "stock": "Stock",
+          "available": "Available",
+          "availableLabel": "{{value}} available",
+          "notTracked": "Not tracked",
+          "onHand": "On hand",
+          "reserved": "Reserved",
+          "ordered": "Ordered",
+          "disabledTitle": "Inventory tracking is off",
+          "disabledText": "Enable inventory tracking when this product should participate in stock operations.",
+          "serviceText": "Service products do not carry stock.",
+          "tracked": "Tracked",
+          "serialized": "Serialized",
+          "notSerialized": "Not serialized",
+          "lotTracked": "Lot tracked",
+          "notLotTracked": "No lot tracking",
+          "shelfLifeDays": "{{count}} days shelf life"
+        },
+        "overview": {
+          "latestPrice": "Latest price",
+          "noPrice": "No price yet",
+          "priceContext": "Price context",
+          "priceRows": "{{count}} price rows",
+          "priceHint": "Sales {{sales}} · Purchase {{purchase}}",
+          "inventoryContext": "Inventory context",
+          "inventoryContextHint": "Stock details live in Inventory.",
+          "latestMovement": "Latest movement",
+          "noMovement": "No movement yet",
+          "noMovementHint": "Warehouse activity will appear here.",
+          "latestDocument": "Latest document",
+          "noDocument": "No document yet",
+          "noDocumentHint": "Files linked to this product will appear here.",
+          "supplier": "Supplier",
+          "supplierHint": "Primary purchase context"
+        },
+        "prices": {
+          "purchase": "Purchase",
+          "sales": "Sales",
+          "margin": "Margin",
+          "currency": "Currency",
+          "noPurchase": "No purchase price",
+          "noSales": "No sales price",
+          "noMargin": "No margin",
+          "priceRows": "{{count}} price rows"
+        },
+        "documents": {
+          "latest": "Latest",
+          "media": "Media",
+          "documents": "Documents",
+          "other": "Other",
+          "noFiles": "No files yet",
+          "noFilesHint": "Upload files to build product context."
+        },
+        "description": {
+          "saveFirstTitle": "Save product first",
+          "saveFirstText": "Description is available after the product exists.",
+          "placeholder": "Describe product usage, technical details, and sales conditions...",
+          "emptyText": "Description is empty. Add product context for sales, warehouse, and documents."
+        },
+        "image": {
+          "alt": "Product image",
+          "upload": "Upload",
+          "replace": "Replace",
+          "remove": "Remove",
+          "saveFirst": "Save the product to add an image.",
+          "onlyImages": "Only image files can be uploaded.",
+          "uploadFailed": "Failed to upload image.",
+          "removeFailed": "Failed to remove image."
+        },
+        "notes": {
+          "title": "Product notes",
+          "emptyTitle": "No notes yet",
+          "emptyText": "Notes linked to this product will appear here.",
+          "add": "Add note"
+        },
+        "system": {
+          "notCreated": "Not created yet"
+        },
+        "createTab": {
+          "title": "Save product first",
+          "heading": "This section unlocks after create",
+          "text": "Create the product to attach prices, stock, documents, and notes."
+        },
+        "validation": {
+          "nameRequired": "Product name is required."
+        },
+        "messages": {
+          "saveFailed": "Failed to save product."
+        }
+      }
+    },
     "stock": {
       "tab": "Stock",
       "stock": "Stock",
@@ -466,6 +693,256 @@
       "detailTitle": "Offer details",
       "editTitle": "Edit offer"
     },
+    "offerDetail": {
+      "kicker": "Commercial offer",
+      "subtitle": "Persuasion workspace",
+      "noCustomer": "No customer selected",
+      "confirmDelete": "Delete this offer?",
+      "create": {
+        "draftNumber": "Draft"
+      },
+      "validity": {
+        "noDate": "No expiry",
+        "expiredDisplay": "Expired visually",
+        "expiredSoft": "Needs renewal",
+        "today": "Expires today",
+        "daysLeft": "{{count}} days left"
+      },
+      "hero": {
+        "totalGross": "Total gross",
+        "grandTotal": "Grand total",
+        "offerNumberEyebrow": "Offer",
+        "defaultSubject": "Proposal prepared for your approval",
+        "validity": "Validity",
+        "status": "Status"
+      },
+      "tabs": {
+        "overview": "Overview",
+        "items": "Items",
+        "preview": "Preview",
+        "activity": "Activity",
+        "notes": "Notes",
+        "system": "System"
+      },
+      "overview": {
+        "customer": "Customer",
+        "total": "Total",
+        "validity": "Validity",
+        "nextAction": "Next action"
+      },
+      "sections": {
+        "documentChain": "Document chain",
+        "proposalSummary": "Proposal summary",
+        "customer": "Customer",
+        "proposal": "Proposal",
+        "commercial": "Commercial",
+        "notes": "Notes"
+      },
+      "smart": {
+        "deal": "Deal",
+        "order": "Order",
+        "invoice": "Invoice",
+        "preview": "Preview",
+        "notes": "Notes"
+      },
+      "chain": {
+        "noDeal": "No source deal",
+        "noOrder": "No order yet",
+        "noInvoice": "No invoice yet"
+      },
+      "actions": {
+        "create": "Create offer",
+        "openItems": "Open items",
+        "openPreview": "Open preview",
+        "more": "More actions"
+      },
+      "readonlyHint": "Terminal offers are read-only.",
+      "itemsHint": "Build the proposal with products, services, custom lines, discount, tax, and totals.",
+      "items": {
+        "quantityMeta": "{{qty}} pcs",
+        "unitNetMeta": "{{value}} net/unit",
+        "taxMeta": "VAT {{rate}}%",
+        "discountMeta": "discount {{value}}",
+        "lineTotal": "Line total"
+      },
+      "totals": {
+        "savings": "You save"
+      },
+      "preview": {
+        "label": "Offer",
+        "preparedFor": "Prepared for",
+        "pdfPlanned": "PDF in next phase",
+        "terms": "Terms",
+        "unnamedLine": "Unnamed line"
+      },
+      "activity": {
+        "created": "Offer created",
+        "sent": "Offer sent",
+        "viewed": "Offer viewed",
+        "accepted": "Offer accepted",
+        "rejected": "Offer rejected",
+        "cancelled": "Offer cancelled",
+        "converted": "Converted to order",
+        "statusChanged": "Status changed",
+        "updated": "Offer updated",
+        "empty": "No activity yet."
+      },
+      "notes": {
+        "saveFirst": "Create the offer before adding notes.",
+        "title": "Offer notes",
+        "emptyTitle": "No notes yet",
+        "emptyText": "Notes linked to this offer will appear here.",
+        "add": "Add note"
+      },
+      "system": {
+        "revision": "Revision",
+        "lastStatusChangedAt": "Last status change",
+        "createdBy": "Created by",
+        "updatedBy": "Updated by"
+      },
+      "fields": {
+        "exchangeRate": "Exchange rate",
+        "incoterms": "Incoterms"
+      },
+      "validation": {
+        "customerRequired": "Customer is required."
+      },
+      "next": {
+        "draft": "Send the proposal",
+        "sent": "Wait for response or accept/reject",
+        "viewed": "Accept or reject",
+        "accepted": "Convert to order",
+        "rejected": "Duplicate if needed",
+        "expired": "Duplicate if needed",
+        "cancelled": "Duplicate if needed"
+      },
+      "save": {
+        "unsaved": "Unsaved changes",
+        "saved": "Saved"
+      }
+    },
+    "orderDetail": {
+      "subtitle": "Execution workspace",
+      "noCustomer": "Customer not selected",
+      "confirmCancel": "Cancel this order?",
+      "confirmReturn": "Return this order?",
+      "confirmDelete": "Delete this order?",
+      "create": { "draftNumber": "Draft order" },
+      "hero": {
+        "orderNumberEyebrow": "Order",
+        "fulfillment": "Fulfillment",
+        "payment": "Payment"
+      },
+      "tabs": {
+        "overview": "Overview",
+        "items": "Items",
+        "fulfillment": "Fulfillment",
+        "billing": "Billing",
+        "activity": "Activity",
+        "notes": "Notes",
+        "system": "System"
+      },
+      "sections": {
+        "customer": "Customer",
+        "execution": "Execution facts",
+        "commercial": "Commercial terms",
+        "documentChain": "Document chain",
+        "itemsSummary": "Items summary"
+      },
+      "smart": {
+        "deal": "Deal",
+        "offer": "Offer",
+        "invoices": "Invoices",
+        "payments": "Payments",
+        "wms": "WMS",
+        "notes": "Notes"
+      },
+      "fields": {
+        "warehouse": "Warehouse",
+        "shipTo": "Ship-to address",
+        "billTo": "Bill-to address",
+        "priority": "Priority",
+        "sourceOffer": "Source offer",
+        "salesChannel": "Sales channel"
+      },
+      "overview": {
+        "fulfillment": "Fulfillment",
+        "payment": "Payment",
+        "total": "Grand total",
+        "due": "Amount due",
+        "paid": "Amount paid",
+        "nextAction": "Next action"
+      },
+      "actions": {
+        "create": "Create order",
+        "more": "More actions",
+        "openItems": "Open items",
+        "openFulfillment": "Open fulfillment",
+        "openBilling": "Open billing"
+      },
+      "chain": {
+        "noOffer": "No source offer",
+        "noInvoice": "No invoice yet"
+      },
+      "next": {
+        "create": "Create the order",
+        "confirm": "Confirm this order",
+        "ship": "Ship this order",
+        "complete": "Complete this order",
+        "invoice": "Convert to invoice",
+        "terminal": "Terminal order",
+        "monitor": "Monitor fulfillment and payment"
+      },
+      "fulfillment": {
+        "itemsProgress": "{{count}} order lines",
+        "status": "Fulfillment status",
+        "lifecycle": "Lifecycle status",
+        "shippedAt": "Shipped at",
+        "completedAt": "Completed at",
+        "shipments": "Shipments",
+        "reservations": "Reservations",
+        "noShipments": "Shipment details are not exposed by the current order DTO yet.",
+        "noReservations": "Reservation details will appear here when WMS exposes them for this order."
+      },
+      "billing": {
+        "paymentStatus": "Payment status",
+        "amountPaid": "Amount paid",
+        "amountDue": "Amount due",
+        "invoicesCount": "Invoices",
+        "invoices": "Invoices",
+        "payments": "Payments",
+        "creditNotes": "Credit notes",
+        "paymentMethodUnknown": "Unknown method",
+        "noInvoices": "No invoices yet.",
+        "noPayments": "Payment details are not exposed by the current order DTO yet.",
+        "noCreditNotes": "No credit notes yet."
+      },
+      "activity": {
+        "notExposed": "Real order events are not exposed by the current detail API yet."
+      },
+      "items": {
+        "unnamedLine": "Unnamed line",
+        "quantityMeta": "{{qty}} pcs",
+        "taxMeta": "VAT {{rate}}%"
+      },
+      "notes": {
+        "saveFirst": "Create the order before adding notes.",
+        "title": "Order notes",
+        "emptyTitle": "No notes yet",
+        "emptyText": "Notes linked to this order will appear here.",
+        "add": "Add note"
+      },
+      "system": {
+        "createdBy": "Created by",
+        "updatedBy": "Updated by"
+      },
+      "validation": { "customerRequired": "Customer is required." },
+      "readonlyHint": "Locked orders cannot be edited directly.",
+      "save": {
+        "unsaved": "Unsaved changes",
+        "saved": "Saved"
+      }
+    },
     "invoices": {
       "title": "Invoices",
       "search": "Search by number or counterparty...",
@@ -478,6 +955,114 @@
         "dueDate": "Due date",
         "totalNet": "Total net",
         "totalGross": "Total gross"
+      }
+    },
+    "invoiceDetail": {
+      "subtitle": "Claim workspace",
+      "noCustomer": "Customer not selected",
+      "hero": {
+        "eyebrow": "Invoice",
+        "amountDue": "Amount due",
+        "dueDate": "Due",
+        "overdue": "Overdue"
+      },
+      "tabs": {
+        "overview": "Overview",
+        "items": "Items",
+        "payments": "Payments",
+        "creditNotes": "Credit notes",
+        "preview": "Preview",
+        "activity": "Activity",
+        "system": "System"
+      },
+      "sections": {
+        "claimFacts": "Claim facts",
+        "finance": "Finance",
+        "sourceOrder": "Source order",
+        "items": "Invoice items",
+        "vatBreakdown": "VAT breakdown",
+        "payments": "Payments",
+        "creditNotes": "Credit notes"
+      },
+      "fields": {
+        "customer": "Customer",
+        "contact": "Contact",
+        "sourceOrder": "Source order",
+        "issueDate": "Issue date",
+        "dueDate": "Due date",
+        "paymentTerms": "Payment terms",
+        "currency": "Currency",
+        "vatProfile": "VAT profile",
+        "vatRates": "{{count}} VAT rates",
+        "owner": "Owner",
+        "bankPayment": "Bank / payment method",
+        "orderId": "Order ID"
+      },
+      "overview": {
+        "amountDue": "Amount due",
+        "amountPaid": "Amount paid",
+        "outstanding": "Outstanding",
+        "dueDate": "Due date",
+        "paymentState": "Payment state",
+        "nextAction": "Next action"
+      },
+      "paymentStates": {
+        "draft": "Draft",
+        "issued": "Issued",
+        "unpaid": "Unpaid",
+        "overdue": "Overdue",
+        "partially_paid": "Partially paid",
+        "partially_paid_overdue": "Partially paid, overdue",
+        "paid": "Paid"
+      },
+      "next": {
+        "issue": "Issue this invoice",
+        "registerPayment": "Register payment",
+        "settled": "Invoice settled",
+        "overdue": "Payment overdue",
+        "monitor": "Monitor payment"
+      },
+      "actions": {
+        "registerPayment": "Register payment"
+      },
+      "smart": {
+        "order": "Order",
+        "payments": "Payments",
+        "creditNotes": "Credit notes",
+        "print": "Print",
+        "open": "Open"
+      },
+      "items": {
+        "unnamedLine": "Unnamed line",
+        "quantityMeta": "{{qty}} pcs",
+        "taxMeta": "VAT {{rate}}%"
+      },
+      "payments": {
+        "scopeHint": "Payments shown here are currently order-level payments.",
+        "orderScope": "order scope",
+        "orderScopedCaveat": "Payment rows are order-scoped until invoice allocation exists.",
+        "methodUnknown": "Unknown method"
+      },
+      "preview": {
+        "label": "Invoice",
+        "claim": "Formal claim for payment",
+        "billTo": "Bill to",
+        "sourceOrder": "Source order"
+      },
+      "activity": {
+        "created": "Invoice created",
+        "issued": "Invoice issued",
+        "payment": "Payment recorded",
+        "paid": "Invoice paid",
+        "updated": "Invoice updated",
+        "empty": "No activity yet."
+      },
+      "empty": {
+        "noSourceOrder": "No source order",
+        "noItems": "No invoice items",
+        "noVat": "No VAT breakdown",
+        "noPayments": "No payments yet.",
+        "noCreditNotes": "No credit notes yet."
       }
     },
     "relations": {
@@ -2610,14 +3195,18 @@
       "lost": "Lost",
       "cancelEdit": "Cancel edit",
       "archive": "Archive",
-      "archiving": "Archiving..."
+      "archiving": "Archiving...",
+      "back": "Deals",
+      "call": "Call",
+      "email": "Email"
     },
     "columns": {
       "title": "Deal",
       "amount": "Amount",
       "status": "Status",
       "owner": "Owner",
-      "updated": "Updated"
+      "updated": "Updated",
+      "actions": "Actions"
     },
     "filters": {
       "searchPlaceholder": "Search deals",
@@ -2639,7 +3228,19 @@
       "status": "Status",
       "description": "Description",
       "stage": "Stage",
-      "closeDate": "Close date"
+      "closeDate": "Close date",
+      "relationship": "Client / Lead / Counterparty",
+      "contact": "Contact",
+      "company": "Company",
+      "pipeline": "Pipeline",
+      "expectedClose": "Expected close",
+      "priority": "Priority",
+      "probability": "Probability",
+      "nextAction": "Next action",
+      "nextActionType": "Next action",
+      "createdAt": "Created",
+      "updatedAt": "Updated",
+      "stageEnteredAt": "Stage entered"
     },
     "placeholders": {
       "title": "Deal title",
@@ -2659,7 +3260,10 @@
       "activities": "Activities",
       "files": "Files",
       "history": "History",
-      "comingSoon": "Coming soon"
+      "comingSoon": "Coming soon",
+      "notes": "Notes",
+      "tasks": "Tasks",
+      "system": "System"
     },
     "details": {
       "loading": "Loading deal…",
@@ -2688,11 +3292,190 @@
     },
     "validation": {
       "titleRequired": "Title is required",
-      "counterpartyRequired": "Select a counterparty"
+      "counterpartyRequired": "Select a counterparty",
+      "pipelineRequired": "Select a pipeline",
+      "stageRequired": "Select a stage"
+    },
+    "workspace": {
+      "subtitle": "Pipeline workspace",
+      "badge": "{{count}} records",
+      "views": {
+        "pipeline": "Pipeline",
+        "board": "Board",
+        "list": "List"
+      },
+      "viewToggle": "View",
+      "controlsAria": "Sales workspace controls",
+      "configurePipeline": "Configure Pipeline",
+      "retry": "Retry",
+      "deleteAction": "Delete",
+      "allHealth": "All health",
+      "healthLabel": "Health",
+      "health": {
+        "healthy": "Healthy",
+        "waiting": "Waiting",
+        "risk": "At risk",
+        "stale": "Stale",
+        "won": "Closed won",
+        "lost": "Closed lost"
+      },
+      "nextActionLabel": "Next Action",
+      "allNextActions": "All next actions",
+      "noNextAction": "No next action",
+      "overdueNextAction": "Overdue next action",
+      "overdue": "Overdue",
+      "dueToday": "Due today",
+      "upcoming": "Upcoming",
+      "nextActionTypes": {
+        "call": "Call",
+        "email": "Email",
+        "meeting": "Meeting",
+        "task": "Task"
+      },
+      "unassigned": "—",
+      "noCompany": "—",
+      "newInStage": "New in stage",
+      "daysInStage": "{{count}}d in stage",
+      "totalDeals": "Total deals",
+      "pipelineValue": "Pipeline value",
+      "weightedForecast": "Weighted forecast",
+      "weightedValue": "Weighted {{value}}",
+      "dealCount": "{{count}} deals",
+      "rotDays": "Rot {{count}}d",
+      "wipWarning": "WIP {{count}}/{{limit}}",
+      "rotWarning": "Rotting",
+      "priorityShort": "P{{value}}",
+      "signals": "Signals",
+      "addDeal": "Add deal",
+      "addDealShort": "Deal",
+      "noDeals": "No deals",
+      "noDealsInStage": "No deals",
+      "attentionTitle": "Needs attention",
+      "needsAttention": "Needs attention",
+      "moveStage": "Move stage",
+      "dragDeal": "Drag deal",
+      "createSalesProcess": "Create a sales process",
+      "createSalesProcessText": "Pipeline Builder creates the process used by Sales.",
+      "openBuilder": "Open Pipeline Builder",
+      "noStages": "No stages configured",
+      "noStagesText": "This pipeline needs stages before deals can be worked.",
+      "loadFailed": "Could not load Sales workspace.",
+      "moveFailed": "Failed to move deal",
+      "noLostStage": "Lost stage is not configured for this pipeline.",
+      "noWonStage": "Won stage is not configured for this pipeline.",
+      "markLostFailed": "Failed to mark lost",
+      "lostModalTitle": "Mark deal as lost",
+      "lostModalText": "{{title}} needs a lost reason before moving to a lost stage.",
+      "lostReason": "Lost reason",
+      "selectLostReason": "Select reason",
+      "markLost": "Mark lost",
+      "noLostReasons": "No active lost reasons configured.",
+      "deleteTitle": "Delete deal?",
+      "deleteText": "The deal will be removed from the active workspace."
     },
     "common": {
       "nipLabel": "NIP",
       "typeToSearch": "Type a name or NIP"
+    },
+    "sections": {
+      "dealFacts": "Deal facts",
+      "relationship": "Relationship",
+      "ownership": "Ownership",
+      "money": "Money",
+      "timing": "Timing",
+      "details": "Details"
+    },
+    "detail": {
+      "workspace": "Deal workspace"
+    },
+    "pipeline": {
+      "noPipeline": "No pipeline",
+      "noStage": "No stage selected",
+      "noStages": "This pipeline has no stages yet.",
+      "notConfigured": "Pipeline not configured",
+      "configureHint": "Set up pipelines and stages before working this deal.",
+      "configureLink": "Open Pipeline Builder",
+      "daysInStage": "{{count}}d in stage"
+    },
+    "health": {
+      "unknown": "Health pending",
+      "atRisk": "At risk"
+    },
+    "nextAction": {
+      "missing": "No next action",
+      "action": "Action"
+    },
+    "smart": {
+      "title": "Linked sales objects",
+      "offers": "Offers",
+      "orders": "Orders",
+      "invoices": "Invoices",
+      "documents": "Documents",
+      "notes": "Notes",
+      "tasks": "Tasks",
+      "communication": "Communication"
+    },
+    "activity": {
+      "note": "Note",
+      "call": "Call",
+      "email": "Email",
+      "meeting": "Meeting",
+      "task": "Task",
+      "composerTitle": "Activity",
+      "composerSubtitle": "Capture the last touch and keep the next step visible.",
+      "futureHint": "Timeline logging is prepared for the next activity backend phase.",
+      "saveFirstHint": "Save the deal to log activity.",
+      "validationRequired": "Add a title or description.",
+      "createFailed": "Activity was not saved.",
+      "deleteFailed": "Activity was not deleted.",
+      "titlePlaceholder": "Optional title",
+      "submitting": "Saving...",
+      "nextStepHint": "Add outcome, then schedule the next action.",
+      "placeholder": "Write a note, call outcome, or meeting summary...",
+      "log": "Log activity",
+      "delete": "Delete activity",
+      "loading": "Loading activity...",
+      "loadError": "Activity could not be loaded.",
+      "emptyTitle": "No activity yet",
+      "emptyText": "Notes, calls, meetings, and lifecycle changes will appear here.",
+      "stageChanged": "Stage changed",
+      "statusChanged": "Status changed",
+      "system": "System",
+      "systemAuthor": "System",
+      "systemDealCreated": "Deal created",
+      "systemDealCreatedText": "Deal workspace was created.",
+      "dealWon": "Deal won",
+      "dealLost": "Deal lost",
+      "stageChangedText": "{{from}} → {{to}}",
+      "statusWonText": "Deal marked as won.",
+      "statusLostText": "Deal marked as lost.",
+      "stageTitle": "Current stage",
+      "nextActionTitle": "Next action",
+      "noNextActionTitle": "No next action",
+      "noNextActionText": "Open deals should always have a next step.",
+      "descriptionTitle": "Deal brief",
+      "fromDetails": "From details",
+      "createdTitle": "Deal created",
+      "timeline": "Activity timeline",
+      "sidePanel": "Deal activity panel"
+    },
+    "tasks": {
+      "emptyTitle": "Tasks",
+      "emptyText": "No tasks are linked to this deal yet.",
+      "unavailableText": "Task links are prepared for the activity timeline. No linked tasks could be loaded yet."
+    },
+    "notes": {
+      "title": "Deal notes",
+      "emptyTitle": "No notes yet",
+      "emptyText": "Notes linked to this deal will appear here.",
+      "add": "Add note"
+    },
+    "confirm": {
+      "deleteTitle": "Delete deal?",
+      "deleteText": "The deal will be removed from the active sales workspace."
+    },
+    "create": {
+      "title": "New deal"
     }
   },
   "chat": {

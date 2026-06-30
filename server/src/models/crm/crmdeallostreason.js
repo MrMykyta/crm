@@ -11,6 +11,10 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
       });
+      CrmDealLostReason.hasMany(models.Deal, {
+        foreignKey: { name: 'lostReasonId', field: 'lost_reason_id' },
+        as: 'deals',
+      });
     }
   }
 

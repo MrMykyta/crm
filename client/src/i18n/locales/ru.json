@@ -122,7 +122,10 @@
     "no": "Нет",
     "all": "Все",
     "refresh": "Обновить",
-    "hide": "Скрыть"
+    "hide": "Скрыть",
+    "unscheduled": "Не запланировано",
+    "searching": "Поиск...",
+    "archived": "В архиве"
   },
   "visibility": {
     "label": "Видимость",
@@ -161,6 +164,230 @@
     "available": "Доступно"
   },
   "pim": {
+    "product": {
+      "detail": {
+        "loading": "Загрузка товара...",
+        "notFound": "Товар не найден.",
+        "createTitle": "Новый товар",
+        "actions": {
+          "back": "К товарам",
+          "create": "Создать товар",
+          "products": "Товары"
+        },
+        "status": {
+          "draft": "Черновик",
+          "active": "Активен",
+          "archived": "Архив"
+        },
+        "visibility": {
+          "public": "Публичный",
+          "private": "Скрытый"
+        },
+        "kind": {
+          "product": "Товар",
+          "service": "Услуга"
+        },
+        "empty": {
+          "sku": "SKU не указан",
+          "ean": "EAN не указан"
+        },
+        "tabs": {
+          "overview": "Обзор",
+          "prices": "Цены",
+          "pricing": "Ценообразование",
+          "inventory": "Остатки",
+          "compliance": "Соответствие",
+          "documents": "Документы",
+          "notes": "Заметки",
+          "system": "Система"
+        },
+        "sections": {
+          "identity": "Идентичность",
+          "catalog": "Каталог",
+          "pricing": "Ценообразование",
+          "taxes": "Налоги",
+          "supplier": "Поставщик",
+          "inventory": "Инвентарь",
+          "inventorySummary": "Сводка остатков",
+          "operationalSnapshot": "Операционный обзор",
+          "priceSummary": "Сводка цен",
+          "documentSummary": "Сводка документов",
+          "catalogSupplier": "Каталог и поставщик",
+          "partners": "Партнёры",
+          "commerce": "Коммерция",
+          "commerceCompliance": "Коммерция и соответствие",
+          "inventoryCompliance": "Инвентарь и соответствие",
+          "inventoryControls": "Управление остатками",
+          "compliance": "Соответствие",
+          "description": "Описание",
+          "system": "Система"
+        },
+        "fields": {
+          "name": "Название",
+          "barcode": "Штрихкод",
+          "slug": "Slug",
+          "category": "Категория",
+          "subcategory": "Подкатегория",
+          "brand": "Бренд",
+          "productType": "Тип товара",
+          "price": "Цена",
+          "currency": "Валюта",
+          "oldPrice": "Старая цена",
+          "cost": "Себестоимость",
+          "sellable": "Продаётся",
+          "taxCategory": "Налоговая категория",
+          "country": "Страна",
+          "supplier": "Поставщик",
+          "manufacturer": "Производитель",
+          "uom": "Ед. изм.",
+          "trackInventory": "Учитывать остатки",
+          "serialized": "Серийный учёт",
+          "lotTracked": "Партионный учёт",
+          "shelfLife": "Срок годности",
+          "service": "Услуга",
+          "status": "Статус",
+          "visibility": "Видимость",
+          "createdAt": "Создан",
+          "updatedAt": "Обновлён"
+        },
+        "identifiers": {
+          "eanBarcodeHint": "EAN — стандартный номер. Штрихкод — любой сканируемый код."
+        },
+        "lookup": {
+          "placeholder": "Начните вводить...",
+          "hint": "Введите название, чтобы найти или создать новое значение.",
+          "partnerHint": "Начните вводить, чтобы найти или создать компанию.",
+          "empty": "Ничего не найдено",
+          "createValue": "Создать \"{{value}}\"",
+          "createCategory": "Создать категорию «{{value}}»",
+          "createSubcategory": "Создать подкатегорию «{{value}}»",
+          "createBrand": "Создать бренд «{{value}}»",
+          "createProductType": "Создать тип товара «{{value}}»",
+          "createSupplier": "Создать поставщика «{{value}}»",
+          "createManufacturer": "Создать производителя «{{value}}»",
+          "createTaxCategory": "Создать налоговую категорию «{{value}}»",
+          "createdSelected": "Создано и выбрано",
+          "createdCategory": "Категория создана и выбрана",
+          "createdSubcategory": "Подкатегория создана и выбрана",
+          "createdBrand": "Бренд создан и выбран",
+          "createdProductType": "Тип товара создан и выбран",
+          "createdSupplier": "Поставщик создан и выбран",
+          "createdManufacturer": "Производитель создан и выбран",
+          "createdTaxCategory": "Налоговая категория создана и выбрана",
+          "saveHelper": "Новое значение создаётся сразу, а выбор сохранится в товаре после сохранения карточки.",
+          "createFailed": "Не удалось создать значение.",
+          "types": {
+            "category": "Категория",
+            "subcategory": "Подкатегория",
+            "brand": "Бренд",
+            "productType": "Тип",
+            "supplier": "Поставщик",
+            "manufacturer": "Производитель",
+            "taxCategory": "Налог"
+          }
+        },
+        "partners": {
+          "helper": "Поставщик — у кого закупаете. Производитель — кто произвёл. Часто это разные компании."
+        },
+        "taxPresets": {
+          "rate": "VAT {{rate}}%",
+          "zw": "ZW — освобождение",
+          "np": "NP — не подлежит"
+        },
+        "compliance": {
+          "helper": "Фискальные и таможенные идентификаторы для налоговой отчётности, таможни и классификации товара."
+        },
+          "inventory": {
+          "stock": "Остаток",
+          "available": "Доступно",
+          "availableLabel": "Доступно {{value}}",
+          "notTracked": "Не учитывается",
+          "onHand": "В наличии",
+          "reserved": "В резерве",
+          "ordered": "Заказано",
+          "disabledTitle": "Учёт остатков выключен",
+          "disabledText": "Включите учёт остатков, если товар должен участвовать в складских операциях.",
+          "serviceText": "Услуги не имеют складских остатков.",
+          "tracked": "Учитывается",
+          "serialized": "Серийный учёт",
+          "notSerialized": "Без серийного учёта",
+          "lotTracked": "Партионный учёт",
+          "notLotTracked": "Без партионного учёта",
+          "shelfLifeDays": "Срок годности {{count}} дн."
+        },
+        "overview": {
+          "latestPrice": "Последняя цена",
+          "noPrice": "Цены пока нет",
+          "priceContext": "Контекст цен",
+          "priceRows": "{{count}} строк цен",
+          "priceHint": "Продажа {{sales}} · Покупка {{purchase}}",
+          "inventoryContext": "Контекст остатков",
+          "inventoryContextHint": "Детали остатков находятся во вкладке Остатки.",
+          "latestMovement": "Последнее движение",
+          "noMovement": "Движений пока нет",
+          "noMovementHint": "Складская активность появится здесь.",
+          "latestDocument": "Последний документ",
+          "noDocument": "Документов пока нет",
+          "noDocumentHint": "Файлы товара появятся здесь.",
+          "supplier": "Поставщик",
+          "supplierHint": "Основной закупочный контекст"
+        },
+        "prices": {
+          "purchase": "Покупка",
+          "sales": "Продажа",
+          "margin": "Маржа",
+          "currency": "Валюта",
+          "noPurchase": "Нет закупочной цены",
+          "noSales": "Нет продажной цены",
+          "noMargin": "Маржа не рассчитана",
+          "priceRows": "{{count}} строк цен"
+        },
+        "documents": {
+          "latest": "Последний",
+          "media": "Медиа",
+          "documents": "Документы",
+          "other": "Другое",
+          "noFiles": "Файлов пока нет",
+          "noFilesHint": "Загрузите файлы, чтобы собрать контекст товара."
+        },
+        "description": {
+          "saveFirstTitle": "Сначала сохраните товар",
+          "saveFirstText": "Описание доступно после создания товара.",
+          "placeholder": "Опишите назначение товара, технические детали и условия продажи...",
+          "emptyText": "Описание пока пустое. Добавьте контекст для продаж, склада и документов."
+        },
+        "image": {
+          "alt": "Изображение товара",
+          "upload": "Загрузить",
+          "replace": "Заменить",
+          "remove": "Убрать",
+          "saveFirst": "Сохраните товар, чтобы добавить изображение.",
+          "onlyImages": "Можно загрузить только изображение.",
+          "uploadFailed": "Не удалось загрузить изображение.",
+          "removeFailed": "Не удалось убрать изображение."
+        },
+        "notes": {
+          "title": "Заметки товара",
+          "emptyTitle": "Заметок пока нет",
+          "emptyText": "Заметки, связанные с товаром, появятся здесь.",
+          "add": "Добавить заметку"
+        },
+        "system": {
+          "notCreated": "Ещё не создан"
+        },
+        "createTab": {
+          "title": "Сначала сохраните товар",
+          "heading": "Раздел откроется после создания",
+          "text": "Создайте товар, чтобы добавлять цены, остатки, документы и заметки."
+        },
+        "validation": {
+          "nameRequired": "Название товара обязательно."
+        },
+        "messages": {
+          "saveFailed": "Не удалось сохранить товар."
+        }
+      }
+    },
     "stock": {
       "tab": "Остатки",
       "stock": "Остатки",
@@ -505,6 +732,256 @@
       "detailTitle": "Детали оферты",
       "editTitle": "Редактирование оферты"
     },
+    "offerDetail": {
+      "kicker": "Коммерческое предложение",
+      "subtitle": "Рабочее пространство предложения",
+      "noCustomer": "Клиент не выбран",
+      "confirmDelete": "Удалить эту оферту?",
+      "create": {
+        "draftNumber": "Черновик"
+      },
+      "validity": {
+        "noDate": "Без срока",
+        "expiredDisplay": "Визуально истекла",
+        "expiredSoft": "Нужно обновить срок",
+        "today": "Истекает сегодня",
+        "daysLeft": "Осталось {{count}} дн."
+      },
+      "hero": {
+        "totalGross": "Итого брутто",
+        "grandTotal": "Итог к оплате",
+        "offerNumberEyebrow": "Оферта",
+        "defaultSubject": "Предложение подготовлено для согласования",
+        "validity": "Срок",
+        "status": "Статус"
+      },
+      "tabs": {
+        "overview": "Обзор",
+        "items": "Позиции",
+        "preview": "Превью",
+        "activity": "Активность",
+        "notes": "Заметки",
+        "system": "Система"
+      },
+      "overview": {
+        "customer": "Клиент",
+        "total": "Итого",
+        "validity": "Срок действия",
+        "nextAction": "Следующее действие"
+      },
+      "sections": {
+        "documentChain": "Цепочка документов",
+        "proposalSummary": "Сводка предложения",
+        "customer": "Клиент",
+        "proposal": "Предложение",
+        "commercial": "Коммерция",
+        "notes": "Заметки"
+      },
+      "smart": {
+        "deal": "Сделка",
+        "order": "Заказ",
+        "invoice": "Счёт",
+        "preview": "Превью",
+        "notes": "Заметки"
+      },
+      "chain": {
+        "noDeal": "Нет исходной сделки",
+        "noOrder": "Заказ ещё не создан",
+        "noInvoice": "Счёта ещё нет"
+      },
+      "actions": {
+        "create": "Создать оферту",
+        "openItems": "Открыть позиции",
+        "openPreview": "Открыть превью",
+        "more": "Другие действия"
+      },
+      "readonlyHint": "Терминальные оферты доступны только для чтения.",
+      "itemsHint": "Соберите предложение из товаров, услуг, строк, скидок, налогов и итогов.",
+      "items": {
+        "quantityMeta": "{{qty}} шт.",
+        "unitNetMeta": "{{value}} нетто/ед.",
+        "taxMeta": "НДС {{rate}}%",
+        "discountMeta": "скидка {{value}}",
+        "lineTotal": "Итого строка"
+      },
+      "totals": {
+        "savings": "Экономия"
+      },
+      "preview": {
+        "label": "Оферта",
+        "preparedFor": "Подготовлено для",
+        "pdfPlanned": "PDF в следующей фазе",
+        "terms": "Условия",
+        "unnamedLine": "Строка без названия"
+      },
+      "activity": {
+        "created": "Оферта создана",
+        "sent": "Оферта отправлена",
+        "viewed": "Оферта просмотрена",
+        "accepted": "Оферта принята",
+        "rejected": "Оферта отклонена",
+        "cancelled": "Оферта отменена",
+        "converted": "Конвертирована в заказ",
+        "statusChanged": "Статус изменён",
+        "updated": "Оферта обновлена",
+        "empty": "Активности пока нет."
+      },
+      "notes": {
+        "saveFirst": "Создайте оферту, чтобы добавлять заметки.",
+        "title": "Заметки оферты",
+        "emptyTitle": "Заметок пока нет",
+        "emptyText": "Заметки, связанные с этой офертой, появятся здесь.",
+        "add": "Добавить заметку"
+      },
+      "system": {
+        "revision": "Ревизия",
+        "lastStatusChangedAt": "Последнее изменение статуса",
+        "createdBy": "Создал",
+        "updatedBy": "Обновил"
+      },
+      "fields": {
+        "exchangeRate": "Курс",
+        "incoterms": "Incoterms"
+      },
+      "validation": {
+        "customerRequired": "Клиент обязателен."
+      },
+      "next": {
+        "draft": "Отправить предложение",
+        "sent": "Ждать ответа или принять/отклонить",
+        "viewed": "Принять или отклонить",
+        "accepted": "Конвертировать в заказ",
+        "rejected": "При необходимости дублировать",
+        "expired": "При необходимости дублировать",
+        "cancelled": "При необходимости дублировать"
+      },
+      "save": {
+        "unsaved": "Есть несохранённые изменения",
+        "saved": "Сохранено"
+      }
+    },
+    "orderDetail": {
+      "subtitle": "Рабочее пространство выполнения",
+      "noCustomer": "Клиент не выбран",
+      "confirmCancel": "Отменить этот заказ?",
+      "confirmReturn": "Оформить возврат по заказу?",
+      "confirmDelete": "Удалить этот заказ?",
+      "create": { "draftNumber": "Черновик заказа" },
+      "hero": {
+        "orderNumberEyebrow": "Заказ",
+        "fulfillment": "Выполнение",
+        "payment": "Оплата"
+      },
+      "tabs": {
+        "overview": "Обзор",
+        "items": "Позиции",
+        "fulfillment": "Выполнение",
+        "billing": "Оплата",
+        "activity": "Активность",
+        "notes": "Заметки",
+        "system": "Система"
+      },
+      "sections": {
+        "customer": "Клиент",
+        "execution": "Факты выполнения",
+        "commercial": "Коммерческие условия",
+        "documentChain": "Цепочка документов",
+        "itemsSummary": "Сводка позиций"
+      },
+      "smart": {
+        "deal": "Сделка",
+        "offer": "Оферта",
+        "invoices": "Счета",
+        "payments": "Платежи",
+        "wms": "WMS",
+        "notes": "Заметки"
+      },
+      "fields": {
+        "warehouse": "Склад",
+        "shipTo": "Адрес доставки",
+        "billTo": "Адрес оплаты",
+        "priority": "Приоритет",
+        "sourceOffer": "Исходная оферта",
+        "salesChannel": "Канал продаж"
+      },
+      "overview": {
+        "fulfillment": "Выполнение",
+        "payment": "Оплата",
+        "total": "Итого",
+        "due": "К оплате",
+        "paid": "Оплачено",
+        "nextAction": "Следующее действие"
+      },
+      "actions": {
+        "create": "Создать заказ",
+        "more": "Другие действия",
+        "openItems": "Открыть позиции",
+        "openFulfillment": "Открыть выполнение",
+        "openBilling": "Открыть оплату"
+      },
+      "chain": {
+        "noOffer": "Нет исходной оферты",
+        "noInvoice": "Счёта ещё нет"
+      },
+      "next": {
+        "create": "Создать заказ",
+        "confirm": "Подтвердить заказ",
+        "ship": "Отгрузить заказ",
+        "complete": "Завершить заказ",
+        "invoice": "Конвертировать в счёт",
+        "terminal": "Терминальный заказ",
+        "monitor": "Следить за выполнением и оплатой"
+      },
+      "fulfillment": {
+        "itemsProgress": "{{count}} позиций заказа",
+        "status": "Статус выполнения",
+        "lifecycle": "Статус жизненного цикла",
+        "shippedAt": "Отгружено",
+        "completedAt": "Завершено",
+        "shipments": "Отгрузки",
+        "reservations": "Резервы",
+        "noShipments": "Детали отгрузок пока не отдаются текущим DTO заказа.",
+        "noReservations": "Резервы появятся здесь, когда WMS отдаст их для заказа."
+      },
+      "billing": {
+        "paymentStatus": "Статус оплаты",
+        "amountPaid": "Оплачено",
+        "amountDue": "К оплате",
+        "invoicesCount": "Счета",
+        "invoices": "Счета",
+        "payments": "Платежи",
+        "creditNotes": "Корректировки",
+        "paymentMethodUnknown": "Метод не указан",
+        "noInvoices": "Счетов пока нет.",
+        "noPayments": "Детали платежей пока не отдаются текущим DTO заказа.",
+        "noCreditNotes": "Корректировок пока нет."
+      },
+      "activity": {
+        "notExposed": "Реальные события заказа пока не отдаются текущим Detail API."
+      },
+      "items": {
+        "unnamedLine": "Строка без названия",
+        "quantityMeta": "{{qty}} шт.",
+        "taxMeta": "НДС {{rate}}%"
+      },
+      "notes": {
+        "saveFirst": "Создайте заказ, чтобы добавлять заметки.",
+        "title": "Заметки заказа",
+        "emptyTitle": "Заметок пока нет",
+        "emptyText": "Заметки, связанные с этим заказом, появятся здесь.",
+        "add": "Добавить заметку"
+      },
+      "system": {
+        "createdBy": "Создал",
+        "updatedBy": "Обновил"
+      },
+      "validation": { "customerRequired": "Клиент обязателен." },
+      "readonlyHint": "Заблокированные заказы нельзя редактировать напрямую.",
+      "save": {
+        "unsaved": "Есть несохранённые изменения",
+        "saved": "Сохранено"
+      }
+    },
     "invoices": {
       "title": "Счета",
       "search": "Поиск по номеру или контрагенту...",
@@ -517,6 +994,114 @@
         "dueDate": "Срок оплаты",
         "totalNet": "Нетто",
         "totalGross": "Брутто"
+      }
+    },
+    "invoiceDetail": {
+      "subtitle": "Рабочее пространство требования оплаты",
+      "noCustomer": "Клиент не выбран",
+      "hero": {
+        "eyebrow": "Счёт",
+        "amountDue": "К оплате",
+        "dueDate": "Срок",
+        "overdue": "Просрочено"
+      },
+      "tabs": {
+        "overview": "Обзор",
+        "items": "Позиции",
+        "payments": "Платежи",
+        "creditNotes": "Корректировки",
+        "preview": "Превью",
+        "activity": "Активность",
+        "system": "Система"
+      },
+      "sections": {
+        "claimFacts": "Факты требования",
+        "finance": "Финансы",
+        "sourceOrder": "Исходный заказ",
+        "items": "Позиции счёта",
+        "vatBreakdown": "Разбивка НДС",
+        "payments": "Платежи",
+        "creditNotes": "Корректировки"
+      },
+      "fields": {
+        "customer": "Клиент",
+        "contact": "Контакт",
+        "sourceOrder": "Исходный заказ",
+        "issueDate": "Дата выставления",
+        "dueDate": "Срок оплаты",
+        "paymentTerms": "Условия оплаты",
+        "currency": "Валюта",
+        "vatProfile": "Профиль НДС",
+        "vatRates": "{{count}} ставки НДС",
+        "owner": "Ответственный",
+        "bankPayment": "Банк / способ оплаты",
+        "orderId": "ID заказа"
+      },
+      "overview": {
+        "amountDue": "К оплате",
+        "amountPaid": "Оплачено",
+        "outstanding": "Остаток",
+        "dueDate": "Срок оплаты",
+        "paymentState": "Состояние оплаты",
+        "nextAction": "Следующее действие"
+      },
+      "paymentStates": {
+        "draft": "Черновик",
+        "issued": "Выставлен",
+        "unpaid": "Не оплачен",
+        "overdue": "Просрочен",
+        "partially_paid": "Частично оплачен",
+        "partially_paid_overdue": "Частично оплачен, просрочен",
+        "paid": "Оплачен"
+      },
+      "next": {
+        "issue": "Выставить счёт",
+        "registerPayment": "Зарегистрировать платёж",
+        "settled": "Счёт закрыт",
+        "overdue": "Платёж просрочен",
+        "monitor": "Контролировать оплату"
+      },
+      "actions": {
+        "registerPayment": "Зарегистрировать платёж"
+      },
+      "smart": {
+        "order": "Заказ",
+        "payments": "Платежи",
+        "creditNotes": "Корректировки",
+        "print": "Печать",
+        "open": "Открыть"
+      },
+      "items": {
+        "unnamedLine": "Строка без названия",
+        "quantityMeta": "{{qty}} шт.",
+        "taxMeta": "НДС {{rate}}%"
+      },
+      "payments": {
+        "scopeHint": "Здесь показаны платежи уровня заказа.",
+        "orderScope": "уровень заказа",
+        "orderScopedCaveat": "Платежи привязаны к заказу, пока нет invoice allocation.",
+        "methodUnknown": "Метод не указан"
+      },
+      "preview": {
+        "label": "Счёт",
+        "claim": "Формальное требование оплаты",
+        "billTo": "Плательщик",
+        "sourceOrder": "Исходный заказ"
+      },
+      "activity": {
+        "created": "Счёт создан",
+        "issued": "Счёт выставлен",
+        "payment": "Платёж зафиксирован",
+        "paid": "Счёт оплачен",
+        "updated": "Счёт обновлён",
+        "empty": "Активности пока нет."
+      },
+      "empty": {
+        "noSourceOrder": "Нет исходного заказа",
+        "noItems": "Позиций счёта нет",
+        "noVat": "Разбивки НДС нет",
+        "noPayments": "Платежей пока нет.",
+        "noCreditNotes": "Корректировок пока нет."
       }
     },
     "relations": {
@@ -2957,14 +3542,18 @@
       "lost": "Проиграна",
       "cancelEdit": "Отменить редактирование",
       "archive": "В архив",
-      "archiving": "Архивируем..."
+      "archiving": "Архивируем...",
+      "back": "К сделкам",
+      "call": "Позвонить",
+      "email": "Написать"
     },
     "columns": {
       "title": "Сделка",
       "amount": "Сумма",
       "status": "Статус",
       "owner": "Ответственный",
-      "updated": "Обновлено"
+      "updated": "Обновлено",
+      "actions": "Действия"
     },
     "filters": {
       "searchPlaceholder": "Поиск сделок",
@@ -2986,7 +3575,19 @@
       "status": "Статус",
       "description": "Описание",
       "stage": "Стадия",
-      "closeDate": "Дата закрытия"
+      "closeDate": "Дата закрытия",
+      "relationship": "Клиент / лид / контрагент",
+      "contact": "Контакт",
+      "company": "Компания",
+      "pipeline": "Воронка",
+      "expectedClose": "Ожидаемое закрытие",
+      "priority": "Приоритет",
+      "probability": "Вероятность",
+      "nextAction": "Следующее действие",
+      "nextActionType": "Следующее действие",
+      "createdAt": "Создано",
+      "updatedAt": "Обновлено",
+      "stageEnteredAt": "В стадии с"
     },
     "placeholders": {
       "title": "Название сделки",
@@ -3006,7 +3607,10 @@
       "activities": "Активности",
       "files": "Файлы",
       "history": "История",
-      "comingSoon": "Скоро будет"
+      "comingSoon": "Скоро будет",
+      "notes": "Заметки",
+      "tasks": "Задачи",
+      "system": "Система"
     },
     "details": {
       "loading": "Загрузка сделки…",
@@ -3035,11 +3639,190 @@
     },
     "validation": {
       "titleRequired": "Введите название",
-      "counterpartyRequired": "Выберите контрагента"
+      "counterpartyRequired": "Выберите контрагента",
+      "pipelineRequired": "Выберите воронку",
+      "stageRequired": "Выберите стадию"
+    },
+    "workspace": {
+      "subtitle": "рабочее пространство воронки",
+      "badge": "{{count}} записей",
+      "views": {
+        "pipeline": "Воронка",
+        "board": "Доска",
+        "list": "Список"
+      },
+      "viewToggle": "Вид",
+      "controlsAria": "Управление рабочим пространством продаж",
+      "configurePipeline": "Настроить воронку",
+      "retry": "Повторить",
+      "deleteAction": "Удалить",
+      "allHealth": "Все оценки",
+      "healthLabel": "Оценка",
+      "health": {
+        "healthy": "Здоровая",
+        "waiting": "Ожидает",
+        "risk": "Риск",
+        "stale": "Застоялась",
+        "won": "Закрыта выигрышем",
+        "lost": "Закрыта проигрышем"
+      },
+      "nextActionLabel": "Следующее действие",
+      "allNextActions": "Все действия",
+      "noNextAction": "Нет следующего действия",
+      "overdueNextAction": "Просрочено следующее действие",
+      "overdue": "Просрочено",
+      "dueToday": "Сегодня",
+      "upcoming": "Будущие",
+      "nextActionTypes": {
+        "call": "Звонок",
+        "email": "Email",
+        "meeting": "Встреча",
+        "task": "Задача"
+      },
+      "unassigned": "—",
+      "noCompany": "—",
+      "newInStage": "Новая в стадии",
+      "daysInStage": "{{count}} дн. в стадии",
+      "totalDeals": "Всего сделок",
+      "pipelineValue": "Сумма воронки",
+      "weightedForecast": "Взвешенный прогноз",
+      "weightedValue": "Прогноз {{value}}",
+      "dealCount": "{{count}} сделок",
+      "rotDays": "Застой {{count}} дн.",
+      "wipWarning": "WIP {{count}}/{{limit}}",
+      "rotWarning": "Застой",
+      "priorityShort": "P{{value}}",
+      "signals": "Сигналы",
+      "addDeal": "Добавить сделку",
+      "addDealShort": "Сделка",
+      "noDeals": "Нет сделок",
+      "noDealsInStage": "Нет сделок",
+      "attentionTitle": "Требует внимания",
+      "needsAttention": "Требует внимания",
+      "moveStage": "Переместить стадию",
+      "dragDeal": "Перетащить сделку",
+      "createSalesProcess": "Создайте процесс продаж",
+      "createSalesProcessText": "Pipeline Builder создаёт процесс, который использует Sales.",
+      "openBuilder": "Открыть Pipeline Builder",
+      "noStages": "Стадии не настроены",
+      "noStagesText": "В этой воронке нужны стадии, чтобы работать со сделками.",
+      "loadFailed": "Не удалось загрузить рабочее пространство продаж.",
+      "moveFailed": "Не удалось переместить сделку",
+      "noLostStage": "В этой воронке не настроена стадия проигрыша.",
+      "noWonStage": "В этой воронке не настроена стадия выигрыша.",
+      "markLostFailed": "Не удалось отметить проигрыш",
+      "lostModalTitle": "Отметить сделку проигранной",
+      "lostModalText": "Для переноса сделки «{{title}}» в проигрыш нужна причина.",
+      "lostReason": "Причина проигрыша",
+      "selectLostReason": "Выберите причину",
+      "markLost": "Отметить проигрыш",
+      "noLostReasons": "Нет активных причин проигрыша.",
+      "deleteTitle": "Удалить сделку?",
+      "deleteText": "Сделка будет убрана из активного рабочего пространства."
     },
     "common": {
       "nipLabel": "NIP",
       "typeToSearch": "Введите название или NIP"
+    },
+    "sections": {
+      "dealFacts": "Факты сделки",
+      "relationship": "Связь",
+      "ownership": "Ответственность",
+      "money": "Деньги",
+      "timing": "Сроки",
+      "details": "Детали"
+    },
+    "detail": {
+      "workspace": "Рабочее место сделки"
+    },
+    "pipeline": {
+      "noPipeline": "Нет воронки",
+      "noStage": "Стадия не выбрана",
+      "noStages": "В этой воронке пока нет стадий.",
+      "notConfigured": "Воронка не настроена",
+      "configureHint": "Настройте воронки и стадии перед работой со сделкой.",
+      "configureLink": "Открыть Pipeline Builder",
+      "daysInStage": "{{count}} дн. в стадии"
+    },
+    "health": {
+      "unknown": "Оценка не рассчитана",
+      "atRisk": "Риск"
+    },
+    "nextAction": {
+      "missing": "Нет следующего действия",
+      "action": "Действие"
+    },
+    "smart": {
+      "title": "Связанные объекты продаж",
+      "offers": "Оферты",
+      "orders": "Заказы",
+      "invoices": "Счета",
+      "documents": "Документы",
+      "notes": "Заметки",
+      "tasks": "Задачи",
+      "communication": "Коммуникации"
+    },
+    "activity": {
+      "note": "Заметка",
+      "call": "Звонок",
+      "email": "Письмо",
+      "meeting": "Встреча",
+      "task": "Задача",
+      "composerTitle": "Активность",
+      "composerSubtitle": "Зафиксируйте контакт и держите следующий шаг на виду.",
+      "futureHint": "Логирование timeline подготовлено для следующего backend-этапа активности.",
+      "saveFirstHint": "Сохраните сделку, чтобы записывать активность.",
+      "validationRequired": "Добавьте заголовок или описание.",
+      "createFailed": "Активность не сохранена.",
+      "deleteFailed": "Активность не удалена.",
+      "titlePlaceholder": "Необязательный заголовок",
+      "submitting": "Сохранение...",
+      "nextStepHint": "Добавьте результат и запланируйте следующий шаг.",
+      "placeholder": "Заметка, итог звонка или встречи...",
+      "log": "Записать активность",
+      "delete": "Удалить активность",
+      "loading": "Загрузка активности...",
+      "loadError": "Не удалось загрузить активность.",
+      "emptyTitle": "Активности пока нет",
+      "emptyText": "Заметки, звонки, встречи и lifecycle-события появятся здесь.",
+      "stageChanged": "Стадия изменена",
+      "statusChanged": "Статус изменен",
+      "system": "Система",
+      "systemAuthor": "Система",
+      "systemDealCreated": "Сделка создана",
+      "systemDealCreatedText": "Рабочее место сделки создано.",
+      "dealWon": "Сделка выиграна",
+      "dealLost": "Сделка проиграна",
+      "stageChangedText": "{{from}} → {{to}}",
+      "statusWonText": "Сделка отмечена как выигранная.",
+      "statusLostText": "Сделка отмечена как проигранная.",
+      "stageTitle": "Текущая стадия",
+      "nextActionTitle": "Следующее действие",
+      "noNextActionTitle": "Нет следующего действия",
+      "noNextActionText": "У каждой открытой сделки должен быть следующий шаг.",
+      "descriptionTitle": "Кратко о сделке",
+      "fromDetails": "Из деталей",
+      "createdTitle": "Сделка создана",
+      "timeline": "Лента активности",
+      "sidePanel": "Панель активности сделки"
+    },
+    "tasks": {
+      "emptyTitle": "Задачи",
+      "emptyText": "К этой сделке пока не привязаны задачи.",
+      "unavailableText": "Связь задач подготовлена для ленты активности. Связанные задачи пока не загружены."
+    },
+    "notes": {
+      "title": "Заметки сделки",
+      "emptyTitle": "Заметок пока нет",
+      "emptyText": "Заметки, связанные со сделкой, появятся здесь.",
+      "add": "Добавить заметку"
+    },
+    "confirm": {
+      "deleteTitle": "Удалить сделку?",
+      "deleteText": "Сделка будет убрана из активного рабочего пространства продаж."
+    },
+    "create": {
+      "title": "Новая сделка"
     }
   },
   "notifications": {

@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { Op } = require('sequelize');
-const { Invoice, InvoiceItem, Order, OrderItem, Counterparty } = require('../../models');
+const { Invoice, InvoiceItem, Order, OrderItem, Counterparty, Payment } = require('../../models');
 const AppError = require('../../errors/AppError');
 const { assertDocumentTypeEnabled, generateNextDocumentNumber } = require('../crm/documentNumberingService');
 const {
@@ -51,6 +51,27 @@ function deriveInvoiceStatus(invoice) {
   return 'draft';
 }
 
+function asNumber(value, fallback = 0) {
+  if (value === undefined || value === null || value === '') return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function round(value, places = 2) {
+  const factor = 10 ** places;
+  return Math.round((asNumber(value, 0) + Number.EPSILON) * factor) / factor;
+}
+
+function isPastDate(value) {
+  if (!value) return false;
+  const due = new Date(value);
+  if (Number.isNaN(due.getTime())) return false;
+  const today = new Date();
+  due.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  return due < today;
+}
+
 function counterpartyDto(order) {
   const counterparty = order?.counterparty || order?.customer || null;
   if (!counterparty) return null;
@@ -64,11 +85,23 @@ function counterpartyDto(order) {
 
 function orderDto(order) {
   if (!order) return null;
+  const counterparty = counterpartyDto(order);
   return {
     id: order.id,
     number: order.number || null,
     status: order.status || null,
-    counterparty: counterpartyDto(order),
+    paymentStatus: order.paymentStatus || null,
+    fulfillmentStatus: order.fulfillmentStatus || null,
+    currencyCode: order.currencyCode || null,
+    totalNet: asNumber(order.totalNet, 0),
+    totalTax: asNumber(order.totalTax, 0),
+    totalGross: asNumber(order.totalGross, 0),
+    placedAt: order.placedAt || null,
+    createdAt: order.createdAt || null,
+    updatedAt: order.updatedAt || null,
+    customerId: order.customerId || null,
+    counterparty,
+    customer: counterparty,
   };
 }
 
@@ -80,17 +113,125 @@ function invoiceItemDto(item) {
   };
 }
 
-function invoiceDto(invoice, { includeItems = false } = {}) {
+function paymentDto(payment, fallbackCurrencyCode = null) {
+  if (!payment) return null;
+  return {
+    id: payment.id,
+    method: payment.method || null,
+    status: payment.status || null,
+    amount: asNumber(payment.amount, 0),
+    currency: payment.currency || payment.currencyCode || fallbackCurrencyCode || null,
+    currencyCode: payment.currencyCode || payment.currency || fallbackCurrencyCode || null,
+    paidAt: payment.processedAt || (['paid', 'authorized'].includes(asText(payment.status).toLowerCase()) ? payment.createdAt : null),
+    processedAt: payment.processedAt || null,
+    createdAt: payment.createdAt || null,
+    updatedAt: payment.updatedAt || null,
+  };
+}
+
+function calculateAmountPaid(payments = []) {
+  return round(
+    payments
+      .filter((payment) => ['paid', 'authorized'].includes(asText(payment?.status).toLowerCase()))
+      .reduce((sum, payment) => sum + asNumber(payment.amount, 0), 0),
+    2
+  );
+}
+
+function buildVatBreakdown(items = []) {
+  const groups = new Map();
+
+  items.forEach((item) => {
+    const raw = typeof item?.toJSON === 'function' ? item.toJSON() : (item || {});
+    const rate = round(raw.taxRate ?? raw.vatRateSnapshot ?? 0, 4);
+    const totalNet = asNumber(raw.lineTotalNet ?? raw.lineSubtotalNet, 0);
+    const totalTax = asNumber(raw.lineVat ?? raw.lineTax, 0);
+    const totalGross = asNumber(raw.lineTotalGross, totalNet + totalTax);
+    const key = String(rate);
+    const current = groups.get(key) || {
+      rate,
+      totalNet: 0,
+      totalTax: 0,
+      totalGross: 0,
+      count: 0,
+    };
+
+    current.totalNet = round(current.totalNet + totalNet, 2);
+    current.totalTax = round(current.totalTax + totalTax, 2);
+    current.totalGross = round(current.totalGross + totalGross, 2);
+    current.count += 1;
+    groups.set(key, current);
+  });
+
+  return Array.from(groups.values()).sort((left, right) => left.rate - right.rate);
+}
+
+function derivePaymentState(invoice, { amountPaid = 0, amountDue = 0, overdue = false } = {}) {
+  const status = deriveInvoiceStatus(invoice);
+  if (status === 'draft') return 'draft';
+  if (asNumber(amountDue, 0) <= 0 || invoice?.paidDate) return 'paid';
+  if (asNumber(amountPaid, 0) > 0) return overdue ? 'partially_paid_overdue' : 'partially_paid';
+  return overdue ? 'overdue' : 'unpaid';
+}
+
+function getAvailableActions(invoice, { amountDue = 0, paymentState = null } = {}) {
+  const status = deriveInvoiceStatus(invoice);
+  const isPaid = paymentState === 'paid';
+
+  return {
+    canEdit: status === 'draft',
+    canIssue: false,
+    canRegisterPayment: false,
+    canPrint: false,
+    canCreditNote: false,
+    canCancel: false,
+    canDelete: false,
+    isTerminal: isPaid,
+    deferred: {
+      issue: status === 'draft',
+      registerPayment: asNumber(amountDue, 0) > 0,
+      creditNote: status === 'issued' || isPaid,
+      cancel: status === 'draft' || status === 'issued',
+      print: Boolean(invoice?.id),
+    },
+  };
+}
+
+function invoiceDto(invoice, { includeItems = false, payments = [] } = {}) {
   if (!invoice) return null;
   const raw = typeof invoice.toJSON === 'function' ? invoice.toJSON() : invoice;
+  const items = Array.isArray(raw.items) ? raw.items.map(invoiceItemDto) : [];
+  const fallbackCurrencyCode = raw.order?.currencyCode || raw.currencyCode || null;
+  const paymentRows = Array.isArray(payments) ? payments : [];
+  const mappedPayments = paymentRows.map((payment) => paymentDto(payment, fallbackCurrencyCode)).filter(Boolean);
+  const totalGross = asNumber(raw.totalGross, 0);
+  const paidFromPayments = calculateAmountPaid(paymentRows);
+  const amountPaid = raw.paidDate && paidFromPayments <= 0
+    ? totalGross
+    : round(Math.min(totalGross, paidFromPayments), 2);
+  const amountDue = round(Math.max(0, totalGross - amountPaid), 2);
+  const overdue = amountDue > 0 && isPastDate(raw.dueDate);
+  const paymentState = derivePaymentState(raw, { amountPaid, amountDue, overdue });
   const dto = {
     ...raw,
     status: raw.status || deriveInvoiceStatus(raw),
     counterparty: counterpartyDto(raw.order),
     order: orderDto(raw.order),
+    amountPaid,
+    amountDue,
+    overdue,
+    paymentState,
+    payments: mappedPayments,
+    paymentSource: {
+      scope: 'order',
+      reason: 'payments_are_order_scoped',
+    },
+    vatBreakdown: buildVatBreakdown(items),
+    creditNotes: [],
+    availableActions: getAvailableActions(raw, { amountDue, paymentState }),
   };
   if (includeItems) {
-    dto.items = Array.isArray(raw.items) ? raw.items.map(invoiceItemDto) : [];
+    dto.items = items;
   }
   return dto;
 }
@@ -316,6 +457,7 @@ module.exports.list = async (q = {}, userContext = {}) => {
 // get: возвращает данные по входным параметрам сервиса.
 module.exports.get = async (id, userContext = {}) => {
   const companyId = assertCompanyContext(userContext);
+  const transaction = userContext.transaction || null;
   const invoice = await Invoice.findOne({
     where: { id, companyId },
     include: [
@@ -323,7 +465,21 @@ module.exports.get = async (id, userContext = {}) => {
       {
         model: Order,
         as: 'order',
-        attributes: ['id', 'number', 'status', 'customerId'],
+        attributes: [
+          'id',
+          'number',
+          'status',
+          'paymentStatus',
+          'fulfillmentStatus',
+          'customerId',
+          'currencyCode',
+          'totalNet',
+          'totalTax',
+          'totalGross',
+          'placedAt',
+          'createdAt',
+          'updatedAt',
+        ],
         required: false,
         include: [
           {
@@ -336,8 +492,20 @@ module.exports.get = async (id, userContext = {}) => {
       },
     ],
     order: [[{ model: InvoiceItem, as: 'items' }, 'sortOrder', 'ASC']],
+    transaction,
   });
-  return invoiceDto(invoice, { includeItems: true });
+  if (!invoice) return null;
+
+  const orderId = invoice.orderId || invoice.order?.id || null;
+  const payments = orderId
+    ? await Payment.findAll({
+      where: { companyId, orderId },
+      order: [['createdAt', 'DESC']],
+      transaction,
+    })
+    : [];
+
+  return invoiceDto(invoice, { includeItems: true, payments });
 };
 
 // cancel: переводит счёт в статус cancelled.

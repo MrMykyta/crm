@@ -744,7 +744,21 @@ query: (args = {}) => ({
         params: buildParams(args),
       }),
       transformResponse: mapLookupList,
+      providesTags: (res) => [
+        { type: 'ProductTypeLookup', id: 'LIST' },
+        ...((res?.items || []).map((item) => ({ type: 'ProductTypeLookup', id: item.id }))),
+      ],
       keepUnusedDataFor: 300,
+    }),
+
+    createProductTypeLookup: build.mutation({
+      query: (payload) => ({
+        url: '/product-types',
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      invalidatesTags: [{ type: 'ProductTypeLookup', id: 'LIST' }],
     }),
 
     listTaxCategoriesLookup: build.query({
@@ -755,7 +769,21 @@ query: (args = {}) => ({
         params: buildParams(args),
       }),
       transformResponse: mapLookupList,
+      providesTags: (res) => [
+        { type: 'TaxCategoryLookup', id: 'LIST' },
+        ...((res?.items || []).map((item) => ({ type: 'TaxCategoryLookup', id: item.id }))),
+      ],
       keepUnusedDataFor: 300,
+    }),
+
+    createTaxCategoryLookup: build.mutation({
+      query: (payload) => ({
+        url: '/tax-categories',
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      transformResponse: (resp) => resp?.data ?? resp,
+      invalidatesTags: [{ type: 'TaxCategoryLookup', id: 'LIST' }],
     }),
 
     listShippingClassesLookup: build.query({
@@ -833,7 +861,9 @@ export const {
   useMergeCategoryLookupMutation,
   useListUomsLookupQuery,
   useListProductTypesLookupQuery,
+  useCreateProductTypeLookupMutation,
   useListTaxCategoriesLookupQuery,
+  useCreateTaxCategoryLookupMutation,
   useListShippingClassesLookupQuery,
   useListPriceListsLookupQuery,
 } = productsApi;

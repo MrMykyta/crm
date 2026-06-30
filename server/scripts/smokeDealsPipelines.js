@@ -101,6 +101,7 @@ async function createCounterparty(companyId, label, suffix) {
       probability: 10,
       color: '#94a3b8',
       isDefaultEntry: true,
+      rotDays: 7,
     });
     const proposal = await pipelineService.addStage(primary.company.id, pipeline.id, {
       name: 'Proposal',
@@ -121,7 +122,7 @@ async function createCounterparty(companyId, label, suffix) {
       color: '#ef4444',
       isLost: true,
     });
-    check('create stages with order/default/won/lost', entry.isDefaultEntry && won.isWon && !won.isLost && lost.isLost);
+    check('create stages with order/default/won/lost/rotDays', entry.isDefaultEntry && Number(entry.rotDays) === 7 && won.isWon && !won.isLost && lost.isLost);
 
     const listed = await pipelineService.list(primary.company.id);
     const listedPipeline = listed.find((item) => item.id === pipeline.id);
@@ -143,6 +144,7 @@ async function createCounterparty(companyId, label, suffix) {
     });
     check('update stage isWon clears isLost', updatedTerminal.isWon === true && updatedTerminal.isLost === false);
     await pipelineService.updateStage(primary.company.id, pipeline.id, lost.id, { isWon: false, isLost: true });
+    await pipelineService.updateStage(primary.company.id, pipeline.id, won.id, { isWon: true });
 
     const reorderResult = await pipelineService.reorderStages(primary.company.id, pipeline.id, [
       lost.id,
@@ -184,6 +186,21 @@ async function createCounterparty(companyId, label, suffix) {
       user: userCtx(primary.owner, primary.company.id),
     });
     check('move deal to lost stage sets status lost', movedLost.status === 'lost' && movedLost.stageId === lost.id);
+
+    const board = await dealService.board({
+      query: { pipelineId: pipeline.id, perStageLimit: 20 },
+      companyId: primary.company.id,
+      user: userCtx(primary.owner, primary.company.id),
+    });
+    const lostColumn = board.stages.find((stage) => stage.id === lost.id);
+    check(
+      'server board returns pipeline stages counts totals forecast',
+      board.pipeline?.id === pipeline.id
+        && board.totals.count === 1
+        && lostColumn?.count === 1
+        && Number(lostColumn?.sum?.PLN || 0) === 1000
+        && Number(lostColumn?.weighted?.PLN || 0) === 0
+    );
 
     const foreignPipeline = await pipelineService.createPipeline(secondary.company.id, {
       name: `Foreign ${suffix}`,

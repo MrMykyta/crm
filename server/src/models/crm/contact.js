@@ -34,6 +34,11 @@ static associate(models) {
         constraints: false,
         scope: { ownerType: 'contact' },
       });
+
+      Contact.hasMany(models.Deal, {
+        foreignKey: { name: 'contactId', field: 'contact_id' },
+        as: 'deals',
+      });
     }
 
     // Собирает отображаемое ФИО из частей имени с fallback на displayName.

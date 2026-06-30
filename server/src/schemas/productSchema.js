@@ -28,6 +28,7 @@ const baseFields = {
   primaryCategoryId: uuid.allow(null, ''),
   subcategoryId: uuid.allow(null, ''),
   supplierId: uuid.allow(null, ''),
+  manufacturerId: uuid.allow(null, ''),
   uomId: uuid.allow(null, ''),
   productTypeId: uuid.allow(null, ''),
   taxCategoryId: uuid.allow(null, ''),

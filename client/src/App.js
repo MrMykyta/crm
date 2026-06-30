@@ -67,9 +67,7 @@ const OffersListPage = lazy(() => import('./pages/oms/Offers/OffersListPage'));
 const InvoicesListPage = lazy(() => import('./pages/oms/Invoices/InvoicesListPage'));
 const OrderDetailPage = lazy(() => import('./pages/oms/Orders/OrderDetailPage'));
 const InvoiceDetailPage = lazy(() => import('./pages/oms/Invoices/InvoiceDetailPage'));
-const OrderEditorPage = lazy(() => import('./pages/oms/Orders/OrderEditorPage'));
 const OfferDetailPage = lazy(() => import('./pages/oms/Offers/OfferDetailPage'));
-const OfferEditorPage = lazy(() => import('./pages/oms/Offers/OfferEditorPage'));
 const ReceiptDetailPage = lazy(() => import('./pages/wms/ReceiptDetailPage'));
 const TransferDetailPage = lazy(() => import('./pages/wms/TransferDetailPage'));
 const ShipmentDetailPage = lazy(() => import('./pages/wms/ShipmentDetailPage'));
@@ -91,6 +89,11 @@ const LazyPage = ({ children }) => (
   </Suspense>
 );
 
+const OrderEditRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/main/oms/orders/${id}`} replace />;
+};
+
 const WmsParcelsRoute = () => {
   const [searchParams] = useSearchParams();
   const shipmentId = searchParams.get('shipmentId');
@@ -105,6 +108,11 @@ const WmsParcelsRoute = () => {
 const LegacyUserRedirect = () => {
   const { userId } = useParams();
   return <Navigate to={`/main/company-users/people/${encodeURIComponent(userId || "")}`} replace />;
+};
+
+const LegacyOfferEditRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/main/oms/offers/${encodeURIComponent(id || "")}`} replace />;
 };
 
 // ===== Protected
@@ -255,14 +263,14 @@ function AppShell() {
           <Route path="documents/:id" element={<RequirePermission requiredPermission="document:read"><DocumentDetailsPage /></RequirePermission>} />
 
           <Route path="oms/orders" element={<LazyPage><OrdersListPage /></LazyPage>} />
-          <Route path="oms/orders/new" element={<LazyPage><OrderEditorPage /></LazyPage>} />
+          <Route path="oms/orders/new" element={<LazyPage><OrderDetailPage /></LazyPage>} />
           <Route path="oms/orders/:id" element={<LazyPage><OrderDetailPage /></LazyPage>} />
-          <Route path="oms/orders/:id/edit" element={<LazyPage><OrderEditorPage /></LazyPage>} />
+          <Route path="oms/orders/:id/edit" element={<OrderEditRedirect />} />
 
           <Route path="oms/offers" element={<LazyPage><OffersListPage /></LazyPage>} />
-          <Route path="oms/offers/new" element={<LazyPage><OfferEditorPage /></LazyPage>} />
+          <Route path="oms/offers/new" element={<LazyPage><OfferDetailPage /></LazyPage>} />
           <Route path="oms/offers/:id" element={<LazyPage><OfferDetailPage /></LazyPage>} />
-          <Route path="oms/offers/:id/edit" element={<LazyPage><OfferEditorPage /></LazyPage>} />
+          <Route path="oms/offers/:id/edit" element={<LazyPage><LegacyOfferEditRedirect /></LazyPage>} />
 
           <Route path="oms/invoices" element={<LazyPage><InvoicesListPage /></LazyPage>} />
           <Route path="oms/invoices/:id" element={<LazyPage><InvoiceDetailPage /></LazyPage>} />

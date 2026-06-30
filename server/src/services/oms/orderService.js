@@ -18,10 +18,15 @@ const {
   ProductType,
   Channel,
   ShippingClass,
+  Warehouse,
+  Deal,
   Invoice,
   Payment,
+  CreditNote,
   Shipment,
   ShipmentItem,
+  Reservation,
+  OrderEvent,
   InventoryItem,
   StockMove,
 } = require('../../models');
@@ -302,6 +307,146 @@ function mapInvoiceSummary(invoice, fallbackCurrencyCode = null) {
   };
 }
 
+function mapDealSummary(deal) {
+  if (!deal) return null;
+  return {
+    id: deal.id,
+    title: deal.title || null,
+    status: deal.status || null,
+    value: asNumber(deal.value, 0),
+    currency: deal.currency || null,
+  };
+}
+
+function mapOrderEventSummary(event) {
+  if (!event) return null;
+  const label = asOptionalText(event.message) || asOptionalText(event.type);
+  return {
+    id: event.id,
+    type: event.type || null,
+    label,
+    message: event.message || label || null,
+    occurredAt: event.createdAt || null,
+    createdAt: event.createdAt || null,
+    actor: mapUserSummary(event.actor),
+    payload: null,
+  };
+}
+
+function buildOrderItemLookup(items = []) {
+  const map = new Map();
+  items.forEach((item) => {
+    if (!item?.productId) return;
+    const key = `${item.productId}|${item.variantId || ''}`;
+    if (!map.has(key)) map.set(key, item.id);
+  });
+  return map;
+}
+
+function mapWarehouseSummary(warehouse) {
+  if (!warehouse) return null;
+  return {
+    id: warehouse.id,
+    name: warehouse.name || null,
+    code: warehouse.code || null,
+  };
+}
+
+function mapProductSummary(product) {
+  if (!product) return null;
+  return {
+    id: product.id,
+    name: product.name || null,
+    sku: product.sku || null,
+  };
+}
+
+function mapShipmentSummary(shipment, orderItemByProductKey = new Map()) {
+  if (!shipment) return null;
+  return {
+    id: shipment.id,
+    number: shipment.number || null,
+    status: shipment.status || null,
+    trackingNumber: shipment.trackingNumber || null,
+    warehouse: mapWarehouseSummary(shipment.warehouse),
+    shippedAt: shipment.status === 'shipped' ? shipment.updatedAt || shipment.createdAt || null : null,
+    createdAt: shipment.createdAt || null,
+    updatedAt: shipment.updatedAt || null,
+    items: Array.isArray(shipment.items)
+      ? shipment.items.map((item) => {
+        const productKey = `${item.productId}|${item.variantId || ''}`;
+        return {
+          id: item.id,
+          orderItemId: item.orderItemId || orderItemByProductKey.get(productKey) || null,
+          product: mapProductSummary(item.product),
+          productId: item.productId || null,
+          variantId: item.variantId || null,
+          qty: asNumber(item.qty, 0),
+        };
+      })
+      : [],
+  };
+}
+
+function mapReservationSummary(reservation, productById = new Map(), warehouseById = new Map()) {
+  if (!reservation) return null;
+  return {
+    id: reservation.id,
+    orderItemId: reservation.orderItemId || null,
+    product: mapProductSummary(productById.get(String(reservation.productId))),
+    productId: reservation.productId || null,
+    variantId: reservation.variantId || null,
+    warehouse: mapWarehouseSummary(warehouseById.get(String(reservation.warehouseId))),
+    warehouseId: reservation.warehouseId || null,
+    qty: asNumber(reservation.qty, 0),
+    status: reservation.status || null,
+    createdAt: reservation.createdAt || null,
+    updatedAt: reservation.updatedAt || null,
+  };
+}
+
+function mapPaymentSummary(payment, fallbackCurrencyCode = null) {
+  if (!payment) return null;
+  return {
+    id: payment.id,
+    method: payment.method || null,
+    status: payment.status || null,
+    amount: asNumber(payment.amount, 0),
+    currency: payment.currency || payment.currencyCode || fallbackCurrencyCode || null,
+    currencyCode: payment.currencyCode || payment.currency || fallbackCurrencyCode || null,
+    paidAt: payment.processedAt || (['paid', 'authorized'].includes(payment.status) ? payment.createdAt : null),
+    processedAt: payment.processedAt || null,
+    createdAt: payment.createdAt || null,
+  };
+}
+
+function mapCreditNoteSummary(creditNote, fallbackCurrencyCode = null) {
+  if (!creditNote) return null;
+  return {
+    id: creditNote.id,
+    number: creditNote.number || null,
+    status: creditNote.status || null,
+    amount: asNumber(creditNote.amountGross, 0),
+    amountNet: asNumber(creditNote.amountNet, 0),
+    amountTax: asNumber(creditNote.amountTax, 0),
+    amountGross: asNumber(creditNote.amountGross, 0),
+    currency: creditNote.currency || creditNote.currencyCode || fallbackCurrencyCode || null,
+    currencyCode: creditNote.currencyCode || creditNote.currency || fallbackCurrencyCode || null,
+    invoiceId: creditNote.invoiceId || null,
+    reason: creditNote.reason || null,
+    createdAt: creditNote.createdAt || null,
+  };
+}
+
+function calculateAmountPaid(payments = []) {
+  return round(
+    payments
+      .filter((payment) => ['paid', 'authorized'].includes(asText(payment?.status).toLowerCase()))
+      .reduce((sum, payment) => sum + asNumber(payment.amount, 0), 0),
+    2
+  );
+}
+
 function mapOrderItemDto(item) {
   return {
     id: item.id,
@@ -401,6 +546,27 @@ function mapOrderToListDto(order) {
 
 function mapOrderToDetailDto(order, links = {}, related = {}) {
   const listDto = mapOrderToListDto(order);
+  const invoices = Array.isArray(related.invoices) ? related.invoices : [];
+  const events = Array.isArray(related.events) ? related.events : [];
+  const shipments = Array.isArray(related.shipments) ? related.shipments : [];
+  const reservations = Array.isArray(related.reservations) ? related.reservations : [];
+  const payments = Array.isArray(related.payments) ? related.payments : [];
+  const creditNotes = Array.isArray(related.creditNotes) ? related.creditNotes : [];
+  const amountPaid = Number.isFinite(Number(related.amountPaid))
+    ? asNumber(related.amountPaid, 0)
+    : calculateAmountPaid(payments);
+  const amountDue = Number.isFinite(Number(related.amountDue))
+    ? asNumber(related.amountDue, 0)
+    : round(Math.max(0, asNumber(order.totalGross, 0) - amountPaid), 2);
+  const counts = {
+    shipments: shipments.length,
+    reservations: reservations.length,
+    invoices: invoices.length,
+    payments: payments.length,
+    creditNotes: creditNotes.length,
+    events: events.length,
+    ...(related.counts || {}),
+  };
   const statusMetadata = {
     status: order.status || null,
     placedAt: order.placedAt || null,
@@ -427,7 +593,16 @@ function mapOrderToDetailDto(order, links = {}, related = {}) {
     sourceType: order.sourceType || null,
     sourceId: order.sourceId || null,
     sourceOffer: mapSourceOfferSummary(order.sourceOffer),
-    invoices: Array.isArray(related.invoices) ? related.invoices : [],
+    deal: related.deal || mapDealSummary(order.sourceOffer?.deal),
+    invoices,
+    events,
+    shipments,
+    reservations,
+    payments,
+    creditNotes,
+    counts,
+    amountPaid,
+    amountDue,
     items: Array.isArray(order.items) ? order.items.map(mapOrderItemDto) : [],
     availableActions: getAvailableActions(order, links),
     statusMetadata,
@@ -899,8 +1074,16 @@ async function getOrderEntity({
     {
       model: Offer,
       as: 'sourceOffer',
-      attributes: ['id', 'number', 'status', 'currency', 'currencyCode', 'totalGross'],
+      attributes: ['id', 'number', 'status', 'currency', 'currencyCode', 'totalGross', 'dealId'],
       required: false,
+      include: [
+        {
+          model: Deal,
+          as: 'deal',
+          attributes: ['id', 'title', 'status', 'value', 'currency'],
+          required: false,
+        },
+      ],
     },
     {
       model: User,
@@ -934,6 +1117,147 @@ async function getOrderEntity({
     order: includeItems ? [[{ model: OrderItem, as: 'items' }, 'sortOrder', 'ASC']] : undefined,
     transaction,
   });
+}
+
+async function loadOrderDetailRelated(order, { companyId, transaction } = {}) {
+  if (!order?.id) {
+    return {
+      invoices: [],
+      events: [],
+      shipments: [],
+      reservations: [],
+      payments: [],
+      creditNotes: [],
+      counts: {
+        shipments: 0,
+        reservations: 0,
+        invoices: 0,
+        payments: 0,
+        creditNotes: 0,
+        events: 0,
+      },
+      amountPaid: 0,
+      amountDue: 0,
+      deal: null,
+    };
+  }
+
+  const orderId = order.id;
+  const currencyCode = order.currencyCode || null;
+  const orderItemByProductKey = buildOrderItemLookup(order.items || []);
+
+  const [
+    invoiceRows,
+    eventRows,
+    shipmentRows,
+    reservationRows,
+    paymentRows,
+  ] = await Promise.all([
+    Invoice.findAll({
+      where: { companyId, orderId },
+      order: [['createdAt', 'ASC']],
+      transaction,
+    }),
+    OrderEvent.findAll({
+      where: { companyId, orderId },
+      include: [
+        { model: User, as: 'actor', attributes: ['id', 'firstName', 'lastName', 'email'], required: false },
+      ],
+      order: [['createdAt', 'ASC']],
+      transaction,
+    }),
+    Shipment.findAll({
+      where: { companyId, orderId },
+      include: [
+        { model: Warehouse, as: 'warehouse', attributes: ['id', 'code', 'name'], required: false },
+        {
+          model: ShipmentItem,
+          as: 'items',
+          required: false,
+          include: [
+            { model: Product, as: 'product', attributes: ['id', 'name', 'sku'], required: false },
+          ],
+        },
+      ],
+      order: [
+        ['createdAt', 'ASC'],
+        [{ model: ShipmentItem, as: 'items' }, 'createdAt', 'ASC'],
+      ],
+      transaction,
+    }),
+    Reservation.findAll({
+      where: { companyId, orderId },
+      order: [['createdAt', 'ASC']],
+      transaction,
+    }),
+    Payment.findAll({
+      where: { companyId, orderId },
+      order: [['createdAt', 'ASC']],
+      transaction,
+    }),
+  ]);
+
+  const invoiceIds = invoiceRows.map((invoice) => invoice.id).filter(Boolean);
+  const creditNoteRows = invoiceIds.length
+    ? await CreditNote.findAll({
+      where: { companyId, invoiceId: { [Op.in]: invoiceIds } },
+      order: [['createdAt', 'ASC']],
+      transaction,
+    })
+    : [];
+
+  const productIds = [...new Set(reservationRows.map((row) => String(row.productId || '')).filter(Boolean))];
+  const warehouseIds = [...new Set(reservationRows.map((row) => String(row.warehouseId || '')).filter(Boolean))];
+  const [reservationProducts, reservationWarehouses] = await Promise.all([
+    productIds.length
+      ? Product.findAll({
+        where: { companyId, id: { [Op.in]: productIds } },
+        attributes: ['id', 'name', 'sku'],
+        transaction,
+      })
+      : [],
+    warehouseIds.length
+      ? Warehouse.findAll({
+        where: { companyId, id: { [Op.in]: warehouseIds } },
+        attributes: ['id', 'code', 'name'],
+        transaction,
+      })
+      : [],
+  ]);
+
+  const productById = new Map(reservationProducts.map((product) => [String(product.id), product]));
+  const warehouseById = new Map(reservationWarehouses.map((warehouse) => [String(warehouse.id), warehouse]));
+  const payments = paymentRows.map((payment) => mapPaymentSummary(payment, currencyCode)).filter(Boolean);
+  const amountPaid = calculateAmountPaid(paymentRows);
+  const amountDue = round(Math.max(0, asNumber(order.totalGross, 0) - amountPaid), 2);
+
+  const invoices = invoiceRows.map((invoice) => mapInvoiceSummary(invoice, currencyCode)).filter(Boolean);
+  const events = eventRows.map(mapOrderEventSummary).filter(Boolean);
+  const shipments = shipmentRows.map((shipment) => mapShipmentSummary(shipment, orderItemByProductKey)).filter(Boolean);
+  const reservations = reservationRows
+    .map((reservation) => mapReservationSummary(reservation, productById, warehouseById))
+    .filter(Boolean);
+  const creditNotes = creditNoteRows.map((creditNote) => mapCreditNoteSummary(creditNote, currencyCode)).filter(Boolean);
+
+  return {
+    invoices,
+    events,
+    shipments,
+    reservations,
+    payments,
+    creditNotes,
+    counts: {
+      shipments: shipments.length,
+      reservations: reservations.length,
+      invoices: invoices.length,
+      payments: payments.length,
+      creditNotes: creditNotes.length,
+      events: events.length,
+    },
+    amountPaid,
+    amountDue,
+    deal: mapDealSummary(order.sourceOffer?.deal),
+  };
 }
 
 async function logOrderEvent({ companyId, type, orderId, userId, payload = {} }) {
@@ -1238,30 +1562,24 @@ async function listOrders(query = {}, userContext = {}) {
 
 async function getOrderById(id, userContext = {}) {
   const companyId = assertCompanyContext(userContext);
-  const [order, invoiceRows, paymentCount, shipmentCount] = await Promise.all([
-    getOrderEntity({
-      id,
-      companyId,
-      includeItems: true,
-    }),
-    Invoice.findAll({
-      where: { companyId, orderId: id },
-      order: [['createdAt', 'ASC']],
-    }),
-    Payment.count({ where: { companyId, orderId: id } }),
-    Shipment.count({ where: { companyId, orderId: id } }),
-  ]);
+  const transaction = userContext?.transaction || null;
+  const order = await getOrderEntity({
+    id,
+    companyId,
+    includeItems: true,
+    transaction,
+  });
   if (!order) {
     throw new AppError(404, 'Order not found', { code: 'NOT_FOUND' });
   }
 
+  const related = await loadOrderDetailRelated(order, { companyId, transaction });
   const links = {
-    hasInvoices: invoiceRows.length > 0,
-    hasPayments: paymentCount > 0,
-    hasShipments: shipmentCount > 0,
+    hasInvoices: related.invoices.length > 0,
+    hasPayments: related.payments.length > 0,
+    hasShipments: related.shipments.length > 0,
   };
-  const invoices = invoiceRows.map((invoice) => mapInvoiceSummary(invoice, order.currencyCode || null));
-  return mapOrderToDetailDto(order, links, { invoices });
+  return mapOrderToDetailDto(order, links, related);
 }
 
 async function createOrder(payload = {}, userContext = {}, options = {}) {
@@ -1422,29 +1740,21 @@ async function createOrder(payload = {}, userContext = {}, options = {}) {
   }
 
   if (externalTx) {
-    const [createdOrder, invoiceRows, paymentCount, shipmentCount] = await Promise.all([
-      getOrderEntity({
-        id: createdOrderId,
-        companyId,
-        includeItems: true,
-        transaction: tx,
-      }),
-      Invoice.findAll({ where: { companyId, orderId: createdOrderId }, order: [['createdAt', 'ASC']], transaction: tx }),
-      Payment.count({ where: { companyId, orderId: createdOrderId }, transaction: tx }),
-      Shipment.count({ where: { companyId, orderId: createdOrderId }, transaction: tx }),
-    ]);
+    const createdOrder = await getOrderEntity({
+      id: createdOrderId,
+      companyId,
+      includeItems: true,
+      transaction: tx,
+    });
     if (!createdOrder) {
       throw new AppError(404, 'Order not found', { code: 'NOT_FOUND' });
     }
-    return mapOrderToDetailDto(
-      createdOrder,
-      {
-        hasInvoices: invoiceRows.length > 0,
-        hasPayments: paymentCount > 0,
-        hasShipments: shipmentCount > 0,
-      },
-      { invoices: invoiceRows.map((invoice) => mapInvoiceSummary(invoice, createdOrder.currencyCode || null)) }
-    );
+    const related = await loadOrderDetailRelated(createdOrder, { companyId, transaction: tx });
+    return mapOrderToDetailDto(createdOrder, {
+      hasInvoices: related.invoices.length > 0,
+      hasPayments: related.payments.length > 0,
+      hasShipments: related.shipments.length > 0,
+    }, related);
   }
 
   return getOrderById(createdOrderId, userContext);
@@ -1769,29 +2079,21 @@ async function changeOrderStatus(id, targetStatus, payload = {}, userContext = {
   }
 
   if (externalTx) {
-    const [updatedOrder, invoiceRows, paymentCount, shipmentCount] = await Promise.all([
-      getOrderEntity({
-        id: order.id,
-        companyId,
-        includeItems: true,
-        transaction: tx,
-      }),
-      Invoice.findAll({ where: { companyId, orderId: order.id }, order: [['createdAt', 'ASC']], transaction: tx }),
-      Payment.count({ where: { companyId, orderId: order.id }, transaction: tx }),
-      Shipment.count({ where: { companyId, orderId: order.id }, transaction: tx }),
-    ]);
+    const updatedOrder = await getOrderEntity({
+      id: order.id,
+      companyId,
+      includeItems: true,
+      transaction: tx,
+    });
     if (!updatedOrder) {
       throw new AppError(404, 'Order not found', { code: 'NOT_FOUND' });
     }
-    return mapOrderToDetailDto(
-      updatedOrder,
-      {
-        hasInvoices: invoiceRows.length > 0,
-        hasPayments: paymentCount > 0,
-        hasShipments: shipmentCount > 0,
-      },
-      { invoices: invoiceRows.map((invoice) => mapInvoiceSummary(invoice, updatedOrder.currencyCode || null)) }
-    );
+    const related = await loadOrderDetailRelated(updatedOrder, { companyId, transaction: tx });
+    return mapOrderToDetailDto(updatedOrder, {
+      hasInvoices: related.invoices.length > 0,
+      hasPayments: related.payments.length > 0,
+      hasShipments: related.shipments.length > 0,
+    }, related);
   }
 
   return getOrderById(order.id, userContext);
