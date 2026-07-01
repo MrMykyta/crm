@@ -1,0 +1,112 @@
+.rendererShell {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.printBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--detail-border);
+  border-radius: 10px;
+  background: var(--detail-surface-soft);
+  color: var(--ui-text, #fff);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.printBtn:hover {
+  border-color: color-mix(in srgb, var(--detail-border) 65%, #ffffff 35%);
+  background: color-mix(in srgb, var(--detail-surface-soft) 76%, #ffffff 12%);
+}
+
+.printScope {
+  min-width: 0;
+  overflow-x: auto;
+  padding: 2px;
+}
+
+.paperShell {
+  width: min(100%, 794px);
+  min-height: 1123px;
+  margin: 0 auto;
+  border: 1px solid color-mix(in srgb, var(--detail-border) 82%, transparent);
+  border-radius: 10px;
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .28);
+}
+
+.paperContent {
+  min-height: 1123px;
+  padding: 42px;
+}
+
+@media (max-width: 760px) {
+  .printScope {
+    margin-inline: -4px;
+  }
+
+  .paperShell {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .paperContent {
+    min-height: 0;
+    padding: 20px;
+  }
+}
+
+@media print {
+  :global(body.customer-document-printing) {
+    background: #fff !important;
+  }
+
+  :global(body.customer-document-printing *) {
+    visibility: hidden !important;
+  }
+
+  :global(body.customer-document-printing) .printScope,
+  :global(body.customer-document-printing) .printScope * {
+    visibility: visible !important;
+  }
+
+  :global(body.customer-document-printing) .printScope {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .toolbar {
+    display: none !important;
+  }
+
+  .paperShell {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .paperContent {
+    min-height: 297mm;
+    padding: 16mm;
+  }
+}

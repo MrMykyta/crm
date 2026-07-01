@@ -65,9 +65,12 @@ import {
 const OrdersListPage = lazy(() => import('./pages/oms/Orders/OrdersListPage'));
 const OffersListPage = lazy(() => import('./pages/oms/Offers/OffersListPage'));
 const InvoicesListPage = lazy(() => import('./pages/oms/Invoices/InvoicesListPage'));
+const PaymentsListPage = lazy(() => import('./pages/oms/Payments/PaymentsListPage'));
 const OrderDetailPage = lazy(() => import('./pages/oms/Orders/OrderDetailPage'));
 const InvoiceDetailPage = lazy(() => import('./pages/oms/Invoices/InvoiceDetailPage'));
 const OfferDetailPage = lazy(() => import('./pages/oms/Offers/OfferDetailPage'));
+const PaymentDetailPage = lazy(() => import('./pages/oms/Payments/PaymentDetailPage'));
+const CreditNoteDetailPage = lazy(() => import('./pages/oms/CreditNotes/CreditNoteDetailPage'));
 const ReceiptDetailPage = lazy(() => import('./pages/wms/ReceiptDetailPage'));
 const TransferDetailPage = lazy(() => import('./pages/wms/TransferDetailPage'));
 const ShipmentDetailPage = lazy(() => import('./pages/wms/ShipmentDetailPage'));
@@ -274,6 +277,11 @@ function AppShell() {
 
           <Route path="oms/invoices" element={<LazyPage><InvoicesListPage /></LazyPage>} />
           <Route path="oms/invoices/:id" element={<LazyPage><InvoiceDetailPage /></LazyPage>} />
+          <Route path="oms/payments" element={<LazyPage><PaymentsListPage /></LazyPage>} />
+          <Route path="oms/payments/new" element={<LazyPage><PaymentDetailPage createMode /></LazyPage>} />
+          <Route path="oms/payments/:id" element={<LazyPage><PaymentDetailPage /></LazyPage>} />
+          <Route path="oms/credit-notes/new" element={<LazyPage><CreditNoteDetailPage createMode /></LazyPage>} />
+          <Route path="oms/credit-notes/:id" element={<LazyPage><CreditNoteDetailPage /></LazyPage>} />
 
           {/* UI-PLACEHOLDER-1: sidebar items present, pages planned but not yet implemented. */}
           <Route path="oms/receipts" element={<ComingSoonPage titleKey="menu.receipts" fallbackTitle="Receipts" moduleName="oms.receipts" />} />

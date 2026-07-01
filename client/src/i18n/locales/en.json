@@ -80,6 +80,7 @@
     "primary": "Primary",
     "saved": "Saved",
     "unsaved": "Unsaved changes",
+    "create": "Create",
     "yes": "Yes",
     "no": "No",
     "all": "All",
@@ -633,6 +634,7 @@
     "calendar": "Calendar",
     "oms": "OMS",
     "invoices": "Invoices",
+    "payments": "Payments",
     "receipts": "Receipts",
     "orders": "Orders",
     "offers": "Offers",
@@ -957,6 +959,34 @@
         "totalGross": "Total gross"
       }
     },
+    "payments": {
+      "title": "Payments",
+      "search": "Search payments, customer, method...",
+      "open": "Open payment",
+      "workspaceCount": "{{count}}",
+      "emptyTitle": "No payments",
+      "emptyText": "Payments recorded on orders will appear here.",
+      "errorTitle": "Failed to load payments",
+      "columns": {
+        "reference": "Reference",
+        "amount": "Amount",
+        "allocated": "Allocated",
+        "unapplied": "Unapplied",
+        "direction": "Direction",
+        "status": "Status",
+        "application": "Application",
+        "date": "Date"
+      }
+    },
+    "paymentMethods": {
+      "bank_transfer": "Bank transfer",
+      "card": "Card",
+      "cash": "Cash",
+      "cod": "Cash on delivery",
+      "paypal": "PayPal",
+      "stripe": "Stripe",
+      "other": "Other"
+    },
     "invoiceDetail": {
       "subtitle": "Claim workspace",
       "noCustomer": "Customer not selected",
@@ -1025,9 +1055,51 @@
       "actions": {
         "registerPayment": "Register payment"
       },
+      "registerPayment": {
+        "eyebrow": "Secure payment action",
+        "title": "Register payment",
+        "save": "Register payment",
+        "invoice": "Invoice",
+        "remaining": "Remaining",
+        "amountToApply": "Amount to apply",
+        "allocationTitle": "Allocation",
+        "allocationSubtitle": "Apply the payment to this invoice. Any remainder stays on account.",
+        "ledgerHint": "Ledger-backed allocation",
+        "dueNow": "Due now",
+        "applying": "Applying",
+        "afterPayment": "After payment",
+        "afterInvoiceDue": "Invoice due after save",
+        "onAccount": "On account",
+        "outcomes": {
+          "partial": "Invoice will be partially paid",
+          "paid": "Invoice will be paid",
+          "overpayment": "Invoice will be paid"
+        },
+        "previewPaid": "Paid: {{amount}}",
+        "previewDue": "Due after: {{amount}}",
+        "previewOnAccount": "On account: {{amount}}",
+        "fields": {
+          "amount": "Amount",
+          "method": "Method",
+          "reference": "Reference",
+          "date": "Date",
+          "direction": "Direction",
+          "currency": "Currency",
+          "comment": "Comment"
+        },
+        "errors": {
+          "noOrder": "This invoice has no source order for the current payment backend.",
+          "amountPositive": "Payment amount must be greater than zero.",
+          "applyPositive": "Allocated amount cannot be negative.",
+          "overRemaining": "Allocated amount cannot exceed invoice remaining amount.",
+          "overPayment": "Allocated amount cannot exceed payment amount.",
+          "refundAllocation": "Refund payments cannot be allocated to invoices."
+        }
+      },
       "smart": {
         "order": "Order",
         "payments": "Payments",
+        "creditNote": "Credit note",
         "creditNotes": "Credit notes",
         "print": "Print",
         "open": "Open"
@@ -1063,6 +1135,288 @@
         "noVat": "No VAT breakdown",
         "noPayments": "No payments yet.",
         "noCreditNotes": "No credit notes yet."
+      }
+    },
+    "paymentDetail": {
+      "noCustomer": "Customer not selected",
+      "directions": {
+        "inbound": "Inbound",
+        "refund": "Refund"
+      },
+      "applicationStates": {
+        "unapplied": "Unapplied",
+        "partiallyApplied": "Partially applied",
+        "fullyApplied": "Fully applied"
+      },
+      "hero": {
+        "eyebrow": "Payment",
+        "applicationStatus": "Application status"
+      },
+      "vitals": {
+        "allocated": "Allocated",
+        "unapplied": "Unapplied",
+        "direction": "Direction",
+        "status": "Status"
+      },
+      "tabs": {
+        "overview": "Overview",
+        "applications": "Applications",
+        "activity": "Activity",
+        "notes": "Notes",
+        "system": "System"
+      },
+      "sections": {
+        "moneyFacts": "Money facts",
+        "documentChain": "Document chain",
+        "applications": "Applications",
+        "activity": "Activity",
+        "notes": "Notes"
+      },
+      "fields": {
+        "customer": "Customer",
+        "reference": "Reference",
+        "method": "Method",
+        "currency": "Currency",
+        "direction": "Direction",
+        "created": "Created",
+        "owner": "Owner"
+      },
+      "overview": {
+        "amount": "Amount",
+        "allocated": "Allocated",
+        "unapplied": "Unapplied",
+        "direction": "Direction",
+        "method": "Method",
+        "customer": "Customer"
+      },
+      "smart": {
+        "invoices": "Invoices",
+        "invoice": "Invoice",
+        "order": "Order",
+        "customer": "Customer",
+        "creditNotes": "Credit notes",
+        "open": "Open"
+      },
+      "applications": {
+        "subtitle": "Invoice applications from the payment ledger.",
+        "allocatedAmount": "Allocated amount",
+        "remaining": "Remaining",
+        "scope": "Scope",
+        "invoiceScope": "Invoice",
+        "remainingUnknown": "Loading"
+      },
+      "create": {
+        "eyebrow": "New money event",
+        "title": "Register payment",
+        "save": "Save payment",
+        "suggestedAmount": "Suggested amount",
+        "amountDue": "Amount due",
+        "paymentAmount": "Payment amount",
+        "applyToInvoice": "Apply to invoice",
+        "dueAfter": "Due after payment",
+        "onAccount": "On account",
+        "customer": "Customer",
+        "selectOrder": "Select order",
+        "allocationSubtitle": "Apply this payment to the source invoice.",
+        "noInvoiceSubtitle": "No invoice selected. The payment will stay on account.",
+        "sections": {
+          "moneyEvent": "Money event",
+          "result": "Result preview"
+        },
+        "result": {
+          "empty": "Enter payment amount",
+          "partial": "Invoice will be partially paid",
+          "paid": "Invoice will be paid",
+          "onAccount": "Payment will stay on account"
+        },
+        "errors": {
+          "orderRequired": "Select an order before saving payment."
+        }
+      },
+      "activity": {
+        "created": "Payment created",
+        "processed": "Money processed",
+        "applied": "Applied to invoice",
+        "empty": "No activity yet."
+      },
+      "notes": {
+        "deferred": "Payment notes are prepared for a later Knowledge Layer integration."
+      },
+      "system": {
+        "id": "Payment ID",
+        "orderId": "Order ID",
+        "reference": "Reference",
+        "transactionId": "Transaction ID",
+        "createdAt": "Created",
+        "processedAt": "Processed",
+        "orderNumber": "Order number",
+        "applicationCount": "Applications"
+      },
+      "empty": {
+        "noOrder": "No source order",
+        "onAccount": "On-account payment. It has not been applied to invoices yet."
+      },
+      "next": {
+        "available": "Use available payment action",
+        "onAccount": "Payment has unapplied balance",
+        "monitor": "Monitor settlement"
+      },
+      "errors": {
+        "loadFailed": "Failed to load payment",
+        "invoiceLoadFailed": "Failed to load source invoice",
+        "saveFailed": "Failed to save payment",
+        "notFound": "Payment not found in available order ledger data."
+      }
+    },
+    "creditNoteDetail": {
+      "title": "Credit note",
+      "noReason": "No reason provided",
+      "hero": {
+        "remainingCredit": "Remaining credit",
+        "applied": "Applied"
+      },
+      "vitals": {
+        "credited": "Credited",
+        "applied": "Applied",
+        "remaining": "Remaining",
+        "status": "Status"
+      },
+      "tabs": {
+        "overview": "Overview",
+        "applications": "Applications",
+        "preview": "Preview",
+        "activity": "Activity",
+        "system": "System"
+      },
+      "sections": {
+        "facts": "Credit facts",
+        "summary": "Summary",
+        "documentChain": "Document chain",
+        "applications": "Applications ledger"
+      },
+      "fields": {
+        "customer": "Customer",
+        "invoice": "Invoice",
+        "order": "Order",
+        "reason": "Reason",
+        "issueDate": "Issue date",
+        "currency": "Currency",
+        "owner": "Owner",
+        "creditedAmount": "Credited amount",
+        "status": "Status"
+      },
+      "actions": {
+        "apply": "Apply",
+        "refund": "Refund",
+        "done": "Done",
+        "cancel": "Cancel",
+        "applyAmount": "Amount to apply",
+        "refundAmount": "Refund amount"
+      },
+      "next": {
+        "apply": "Apply remaining credit",
+        "refund": "Refund remaining credit",
+        "done": "Credit settled"
+      },
+      "smart": {
+        "invoice": "Invoice",
+        "order": "Order",
+        "customer": "Customer",
+        "refundPayment": "Refund"
+      },
+      "applications": {
+        "applied": "Applied",
+        "remaining": "Remaining",
+        "scope": "Scope",
+        "remainingDue": "Remaining due",
+        "onAccount": "On account",
+        "refundable": "Refundable"
+      },
+      "empty": {
+        "onAccount": "No applications yet. This is on-account credit until applied or refunded."
+      },
+      "preview": {
+        "label": "Credit note",
+        "creditTo": "Credit to",
+        "sourceOrder": "Source order",
+        "totalCredit": "Total credit"
+      },
+      "activity": {
+        "created": "Credit note created",
+        "issued": "Credit note issued",
+        "applied": "Credit applied",
+        "refunded": "Credit refunded",
+        "cancelled": "Credit note cancelled",
+        "updated": "Credit note updated",
+        "empty": "No activity yet."
+      },
+      "create": {
+        "defaultReason": "Commercial correction",
+        "sections": {
+          "credit": "Credit note"
+        },
+        "selectInvoice": "Select invoice",
+        "applyAfterSave": "Save the credit note first, then apply or refund it from the detail page.",
+        "newNumber": "New credit note",
+        "eyebrow": "New credit note",
+        "title": "New credit note",
+        "subtitle": "Credit-first document",
+        "next": "Create credit note, then apply or refund",
+        "save": "Create credit note"
+      },
+      "errors": {
+        "amountPositive": "Amount must be greater than zero.",
+        "loadFailed": "Credit note load failed",
+        "notFound": "Credit note not found",
+        "invoiceRequired": "Invoice is required.",
+        "invoiceLoadFailed": "Invoice load failed",
+        "saveFailed": "Failed to save credit note"
+      }
+    },
+    "customerDocument": {
+      "companyFallback": "Sunset",
+      "footerFallback": "Generated in Sunset CRM/ERP.",
+      "actions": {
+        "print": "Print"
+      },
+      "types": {
+        "offer": "Offer",
+        "invoice": "Invoice",
+        "creditNote": "Credit note",
+        "document": "Document"
+      },
+      "labels": {
+        "customer": "Customer",
+        "taxId": "Tax ID",
+        "issueDate": "Issue date",
+        "dueDate": "Due date",
+        "validUntil": "Valid until",
+        "terms": "Terms",
+        "payment": "Payment",
+        "delivery": "Delivery",
+        "reason": "Reason",
+        "sourceInvoice": "Source invoice",
+        "sourceOrder": "Source order",
+        "tax": "Tax",
+        "noTax": "No tax",
+        "notes": "Notes",
+        "footer": "Footer"
+      },
+      "lines": {
+        "item": "Item",
+        "qty": "Qty",
+        "unitPrice": "Unit price",
+        "tax": "Tax",
+        "total": "Total",
+        "empty": "No items"
+      },
+      "totals": {
+        "net": "Net",
+        "tax": "Tax",
+        "gross": "Gross",
+        "credit": "Credit",
+        "amountDue": "Amount due",
+        "remainingCredit": "Remaining credit"
       }
     },
     "relations": {

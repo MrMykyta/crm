@@ -1,13 +1,15 @@
 FROM node:20-alpine
 
-WORKDIR /app
+WORKDIR /app/server
 
-COPY package*.json ./
+COPY server/package*.json ./
 RUN npm ci --only=production
 
-COPY . .
+COPY server/. .
+COPY shared ../shared
 
 ENV NODE_ENV=production
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 EXPOSE 3000
 

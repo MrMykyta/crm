@@ -19,6 +19,7 @@ const {
   CreditNote,
 } = require('../src/models');
 const orderService = require('../src/services/oms/orderService');
+const paymentLedgerService = require('../src/services/oms/paymentLedgerService');
 
 const results = [];
 
@@ -163,7 +164,7 @@ function allCountsNumeric(counts = {}) {
       totalGross: order.totalGross,
     }, { transaction: tx });
 
-    await Payment.create({
+    const payment = await Payment.create({
       companyId: company.id,
       orderId: order.id,
       method: 'bank_transfer',
@@ -172,6 +173,13 @@ function allCountsNumeric(counts = {}) {
       transactionId: `DTO-PAY-${suffix}`,
       processedAt: new Date(),
     }, { transaction: tx });
+    await paymentLedgerService.applyPayment({
+      companyId: company.id,
+      paymentId: payment.id,
+      applications: [{ invoiceId: invoice.id, amount: 100 }],
+      userId: owner.id,
+      transaction: tx,
+    });
 
     await CreditNote.create({
       companyId: company.id,
@@ -193,7 +201,7 @@ function allCountsNumeric(counts = {}) {
     check('counts exists and numeric', allCountsNumeric(detail.counts), JSON.stringify(detail.counts || {}));
     check('amountPaid exists', Number.isFinite(Number(detail.amountPaid)), `amountPaid=${detail.amountPaid}`);
     check('amountDue exists', Number.isFinite(Number(detail.amountDue)), `amountDue=${detail.amountDue}`);
-    check('amountPaid uses paid/authorized payments', money(detail.amountPaid) === 100, `amountPaid=${detail.amountPaid}`);
+    check('amountPaid uses payment applications', money(detail.amountPaid) === 100, `amountPaid=${detail.amountPaid}`);
     check('amountDue does not break total gross', money(detail.amountDue) === money(Number(detail.totalGross) - 100), `amountDue=${detail.amountDue}`);
     check('event row surfaced', detail.events.length === 1 && detail.events[0].label, `label=${detail.events?.[0]?.label || 'null'}`);
     check('shipment row surfaced', detail.shipments.length === 1 && detail.shipments[0].items.length === 1);

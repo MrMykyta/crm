@@ -20,6 +20,15 @@ module.exports = (sequelize, DataTypes) => {
         as: 'invoice', 
         foreignKey: 'invoiceId' 
       });
+      CreditNote.belongsTo(models.Order, {
+        as: 'order',
+        foreignKey: 'orderId',
+      });
+      CreditNote.hasMany(models.CreditNoteApplication, {
+        as: 'applications',
+        foreignKey: 'creditNoteId',
+        onDelete: 'CASCADE',
+      });
     }
   }
   CreditNote.init({
@@ -53,6 +62,25 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(14,2), 
       allowNull: false, 
       field: 'amount_gross' 
+    },
+    status: {
+      type: DataTypes.STRING(32),
+      allowNull: true,
+      defaultValue: 'issued',
+    },
+    number: {
+      type: DataTypes.STRING(128),
+      allowNull: true,
+    },
+    issuedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'issued_at',
+    },
+    orderId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'order_id',
     },
     reason: { 
       type: DataTypes.STRING(256) 

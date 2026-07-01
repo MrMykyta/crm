@@ -10,6 +10,7 @@ import {
   Calendar,
   MessagesSquare,
   FileText,
+  CreditCard,
   Package,
   ClipboardList,
   Tag,
@@ -70,6 +71,7 @@ export const MENU = [
 
   { key: "oms", icon: FileText, labelKey: "menu.oms", type: "section" },
   { key: "invoices", icon: FileText, labelKey: "menu.invoices", route: "/main/oms/invoices", type: "item" },
+  { key: "payments", icon: CreditCard, labelKey: "menu.payments", route: "/main/oms/payments", type: "item" },
   { key: "orders", icon: ClipboardList, labelKey: "menu.orders", route: "/main/oms/orders", type: "item" },
   { key: "offers", icon: FileText, labelKey: "menu.offers", route: "/main/oms/offers", type: "item" },
   { key: "documents", icon: FileText, labelKey: "menu.documents", route: "/main/documents", type: "item", requiredPermission: "document:read" },

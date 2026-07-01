@@ -241,6 +241,8 @@ export const crmApi = createApi({
     'OrderList',
     'Invoice',
     'InvoiceList',
+    'CreditNote',
+    'CreditNoteList',
     'Document',
     'DocumentList',
     'DocumentNumberingSettings',

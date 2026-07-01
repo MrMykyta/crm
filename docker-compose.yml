@@ -8,10 +8,24 @@ services:
     depends_on:
       - backend
 
+  pdf:
+    build: ./docker/pdf
+    container_name: crm_pdf
+    restart: unless-stopped
+    expose:
+      - "9222"
+    shm_size: "512mb"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9222/json/version | grep -q webSocketDebuggerUrl || exit 1"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+      start_period: 2s
+
   backend:
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: server/Dockerfile
     container_name: crm_backend
     restart: unless-stopped
     env_file:
@@ -20,12 +34,15 @@ services:
       NODE_ENV: production
       PORT: "3000"
       FILES_STORAGE_ROOT: /app
+      PUPPETEER_BROWSER_URL: http://pdf:9222
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://146.59.232.254}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://localhost:80,http://127.0.0.1,http://127.0.0.1:80,http://localhost:3000,http://127.0.0.1:3000,http://146.59.232.254,http://146.59.232.254:80}
     volumes:
       - ./server/uploads:/app/uploads
       - ./server/uploads-tmp:/app/uploads-tmp
     depends_on:
+      pdf:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       mongo:

@@ -11,6 +11,7 @@ const {
 const {
   getCompanyWarehouseDocumentSettingsForUsage,
 } = require('../crm/companyWarehouseDocumentSettingsService');
+const paymentLedgerService = require('./paymentLedgerService');
 
 function assertCompanyContext(userContext = {}) {
   const companyId = userContext?.companyId;
@@ -113,15 +114,30 @@ function invoiceItemDto(item) {
   };
 }
 
-function paymentDto(payment, fallbackCurrencyCode = null) {
+function paymentDto(payment, fallbackCurrencyCode = null, ledger = {}) {
   if (!payment) return null;
+  const allocatedAmount = asNumber(ledger.allocatedAmount, 0);
   return {
     id: payment.id,
     method: payment.method || null,
     status: payment.status || null,
     amount: asNumber(payment.amount, 0),
+    direction: payment.direction || 'inbound',
     currency: payment.currency || payment.currencyCode || fallbackCurrencyCode || null,
     currencyCode: payment.currencyCode || payment.currency || fallbackCurrencyCode || null,
+    reference: payment.reference || payment.transactionId || null,
+    allocatedAmount,
+    unappliedAmount: Number.isFinite(Number(ledger.unappliedAmount))
+      ? asNumber(ledger.unappliedAmount, 0)
+      : round(Math.max(0, asNumber(payment.amount, 0) - allocatedAmount), 2),
+    applications: Array.isArray(ledger.applications)
+      ? ledger.applications.map((application) => ({
+        id: application.id,
+        invoiceId: application.invoiceId,
+        amount: asNumber(application.amount, 0),
+        allocatedAt: application.allocatedAt || null,
+      }))
+      : [],
     paidAt: payment.processedAt || (['paid', 'authorized'].includes(asText(payment.status).toLowerCase()) ? payment.createdAt : null),
     processedAt: payment.processedAt || null,
     createdAt: payment.createdAt || null,
@@ -197,37 +213,80 @@ function getAvailableActions(invoice, { amountDue = 0, paymentState = null } = {
   };
 }
 
-function invoiceDto(invoice, { includeItems = false, payments = [] } = {}) {
+function creditNoteDto(creditNote, fallbackCurrencyCode = null) {
+  if (!creditNote) return null;
+  const raw = typeof creditNote.toJSON === 'function' ? creditNote.toJSON() : creditNote;
+  const applications = Array.isArray(raw.applications) ? raw.applications : [];
+  const appliedAmount = round(applications.reduce((sum, application) => sum + asNumber(application.amount, 0), 0), 2);
+  const remainingCredit = round(Math.max(0, asNumber(raw.amountGross, 0) - appliedAmount), 2);
+  return {
+    id: raw.id,
+    number: raw.number || null,
+    status: raw.status || null,
+    invoiceId: raw.invoiceId || null,
+    orderId: raw.orderId || null,
+    amount: asNumber(raw.amountGross, 0),
+    amountNet: asNumber(raw.amountNet, 0),
+    amountTax: asNumber(raw.amountTax, 0),
+    amountGross: asNumber(raw.amountGross, 0),
+    appliedAmount,
+    remainingCredit,
+    unappliedAmount: remainingCredit,
+    currency: raw.currency || raw.currencyCode || fallbackCurrencyCode || null,
+    currencyCode: raw.currencyCode || raw.currency || fallbackCurrencyCode || null,
+    reason: raw.reason || null,
+    applications: applications.map((application) => ({
+      id: application.id,
+      invoiceId: application.invoiceId || null,
+      amount: asNumber(application.amount, 0),
+      allocatedAt: application.allocatedAt || null,
+      createdAt: application.createdAt || null,
+    })),
+    issuedAt: raw.issuedAt || null,
+    createdAt: raw.createdAt || null,
+  };
+}
+
+function invoiceDto(invoice, { includeItems = false, payments = [], settlement = null, paymentSummaries = new Map(), creditNotes = [] } = {}) {
   if (!invoice) return null;
   const raw = typeof invoice.toJSON === 'function' ? invoice.toJSON() : invoice;
   const items = Array.isArray(raw.items) ? raw.items.map(invoiceItemDto) : [];
   const fallbackCurrencyCode = raw.order?.currencyCode || raw.currencyCode || null;
   const paymentRows = Array.isArray(payments) ? payments : [];
-  const mappedPayments = paymentRows.map((payment) => paymentDto(payment, fallbackCurrencyCode)).filter(Boolean);
+  const mappedPayments = paymentRows.map((payment) => {
+    const key = String(payment.id);
+    return paymentDto(payment, fallbackCurrencyCode, paymentSummaries.get(key) || {});
+  }).filter(Boolean);
   const totalGross = asNumber(raw.totalGross, 0);
   const paidFromPayments = calculateAmountPaid(paymentRows);
-  const amountPaid = raw.paidDate && paidFromPayments <= 0
+  const amountPaid = settlement
+    ? asNumber(settlement.amountPaid, 0)
+    : raw.paidDate && paidFromPayments <= 0
     ? totalGross
     : round(Math.min(totalGross, paidFromPayments), 2);
-  const amountDue = round(Math.max(0, totalGross - amountPaid), 2);
-  const overdue = amountDue > 0 && isPastDate(raw.dueDate);
-  const paymentState = derivePaymentState(raw, { amountPaid, amountDue, overdue });
+  const amountCredited = settlement ? asNumber(settlement.amountCredited, 0) : 0;
+  const amountDue = settlement
+    ? asNumber(settlement.amountDue, 0)
+    : round(Math.max(0, totalGross - amountPaid), 2);
+  const overdue = settlement ? Boolean(settlement.overdue) : amountDue > 0 && isPastDate(raw.dueDate);
+  const paymentState = settlement?.paymentState || derivePaymentState(raw, { amountPaid, amountDue, overdue });
   const dto = {
     ...raw,
     status: raw.status || deriveInvoiceStatus(raw),
     counterparty: counterpartyDto(raw.order),
     order: orderDto(raw.order),
     amountPaid,
+    amountCredited,
     amountDue,
     overdue,
     paymentState,
     payments: mappedPayments,
     paymentSource: {
-      scope: 'order',
-      reason: 'payments_are_order_scoped',
+      scope: settlement ? 'invoice_applications' : 'order',
+      reason: settlement ? 'payment_applications' : 'payments_are_order_scoped',
     },
     vatBreakdown: buildVatBreakdown(items),
-    creditNotes: [],
+    creditNotes: creditNotes.map((creditNote) => creditNoteDto(creditNote, fallbackCurrencyCode)).filter(Boolean),
     availableActions: getAvailableActions(raw, { amountDue, paymentState }),
   };
   if (includeItems) {
@@ -504,8 +563,19 @@ module.exports.get = async (id, userContext = {}) => {
       transaction,
     })
     : [];
+  const [settlement, paymentSummaries, creditNotes] = await Promise.all([
+    paymentLedgerService.deriveInvoiceSettlement({ companyId, invoiceId: invoice.id, invoice, transaction }),
+    paymentLedgerService.summarizePayments({ companyId, payments, transaction }),
+    paymentLedgerService.listCreditNotesForInvoice({ companyId, invoiceId: invoice.id, transaction }),
+  ]);
 
-  return invoiceDto(invoice, { includeItems: true, payments });
+  return invoiceDto(invoice, {
+    includeItems: true,
+    payments,
+    settlement,
+    paymentSummaries,
+    creditNotes,
+  });
 };
 
 // cancel: переводит счёт в статус cancelled.

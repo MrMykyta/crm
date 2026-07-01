@@ -12,6 +12,7 @@ const {
 } = require('../src/models');
 const orderService = require('../src/services/oms/orderService');
 const invoiceService = require('../src/services/oms/invoiceService');
+const paymentLedgerService = require('../src/services/oms/paymentLedgerService');
 
 const results = [];
 
@@ -99,7 +100,7 @@ function money(value) {
       dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
     }, { transaction: tx });
 
-    await Payment.create({
+    const payment = await Payment.create({
       companyId: company.id,
       orderId: order.id,
       method: 'bank_transfer',
@@ -108,6 +109,13 @@ function money(value) {
       transactionId: `DTO-INV-PAY-${suffix}`,
       processedAt: new Date(),
     }, { transaction: tx });
+    await paymentLedgerService.applyPayment({
+      companyId: company.id,
+      paymentId: payment.id,
+      applications: [{ invoiceId: invoice.id, amount: 100 }],
+      userId: owner.id,
+      transaction: tx,
+    });
 
     const detail = await invoiceService.get(invoice.id, ctx);
 
@@ -116,15 +124,15 @@ function money(value) {
     check('payments is array', Array.isArray(detail.payments), `payments=${detail.payments?.length}`);
     check('amountPaid exists', Number.isFinite(Number(detail.amountPaid)), `amountPaid=${detail.amountPaid}`);
     check('amountDue exists', Number.isFinite(Number(detail.amountDue)), `amountDue=${detail.amountDue}`);
-    check('amountPaid uses order payment rows', money(detail.amountPaid) === 100, `amountPaid=${detail.amountPaid}`);
+    check('amountPaid uses payment applications', money(detail.amountPaid) === 100, `amountPaid=${detail.amountPaid}`);
     check(
-      'amountDue is invoice total minus order payments',
+      'amountDue is invoice total minus applications',
       money(detail.amountDue) === money(Number(detail.totalGross) - 100),
       `amountDue=${detail.amountDue}, totalGross=${detail.totalGross}`
     );
     check('overdue is true when due date is past and balance remains', detail.overdue === true);
     check('paymentState reflects partial overdue payment', detail.paymentState === 'partially_paid_overdue', `paymentState=${detail.paymentState}`);
-    check('payment source caveat is order-scoped', detail.paymentSource?.scope === 'order');
+    check('payment source is invoice applications', detail.paymentSource?.scope === 'invoice_applications');
     check('order summary includes customer and totals', Boolean(detail.order?.counterparty?.id) && money(detail.order?.totalGross) === money(order.totalGross));
     check('VAT breakdown is present', Array.isArray(detail.vatBreakdown) && detail.vatBreakdown.length === 1);
     check('VAT rate is copied from invoice items', money(detail.vatBreakdown?.[0]?.rate) === 23, `rate=${detail.vatBreakdown?.[0]?.rate}`);

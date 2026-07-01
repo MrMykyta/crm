@@ -34,6 +34,16 @@ module.exports = (sequelize, DataTypes) => {
           onDelete: 'CASCADE',
         });
       }
+      Invoice.hasMany(models.PaymentApplication, {
+        as: 'paymentApplications',
+        foreignKey: 'invoiceId',
+        onDelete: 'CASCADE',
+      });
+      Invoice.hasMany(models.CreditNoteApplication, {
+        as: 'creditNoteApplications',
+        foreignKey: 'invoiceId',
+        onDelete: 'CASCADE',
+      });
     }
   }
   Invoice.init({

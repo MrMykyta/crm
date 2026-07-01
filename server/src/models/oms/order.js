@@ -142,7 +142,7 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 'draft',
     },
     paymentStatus: {
-      type: DataTypes.ENUM('pending', 'paid', 'refunded', 'partially_refunded'),
+      type: DataTypes.ENUM('pending', 'partially_paid', 'paid', 'refunded', 'partially_refunded'),
       field: 'payment_status',
       defaultValue: 'pending',
     },

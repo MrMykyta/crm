@@ -953,7 +953,11 @@ function BillingTab({ order, invoices, paidAmount, dueAmount, t, locale, currenc
             {payments.map((payment) => (
               <div key={payment.id} className={s.itemRow}>
                 <div>
-                  <strong>{statusLabel(payment.status, t)}</strong>
+                  <strong>
+                    <Link to={`/main/oms/payments/${payment.id}${order?.id ? `?orderId=${encodeURIComponent(order.id)}` : ''}`}>
+                      {payment.reference || statusLabel(payment.status, t)}
+                    </Link>
+                  </strong>
                   <span>
                     {payment.method || t('oms.orderDetail.billing.paymentMethodUnknown', 'Unknown method')}
                     {' · '}

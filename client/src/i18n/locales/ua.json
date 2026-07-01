@@ -79,6 +79,7 @@
     "primary": "Основний",
     "saved": "Збережено",
     "unsaved": "Є незбережені зміни",
+    "create": "Створити",
     "yes": "Так",
     "no": "Ні",
     "all": "Усі",
@@ -665,6 +666,7 @@
     "calendar": "Календар",
     "oms": "OMS",
     "invoices": "Рахунки",
+    "payments": "Платежі",
     "receipts": "Квитанції",
     "orders": "Замовлення",
     "offers": "Пропозиції",
@@ -989,6 +991,34 @@
         "totalGross": "Брутто"
       }
     },
+    "payments": {
+      "title": "Платежі",
+      "search": "Пошук платежів, клієнта, методу...",
+      "open": "Відкрити платіж",
+      "workspaceCount": "{{count}}",
+      "emptyTitle": "Платежів немає",
+      "emptyText": "Тут зʼявляться платежі, записані в замовленнях.",
+      "errorTitle": "Не вдалося завантажити платежі",
+      "columns": {
+        "reference": "Референс",
+        "amount": "Сума",
+        "allocated": "Розподілено",
+        "unapplied": "Не розподілено",
+        "direction": "Напрям",
+        "status": "Статус",
+        "application": "Застосування",
+        "date": "Дата"
+      }
+    },
+    "paymentMethods": {
+      "bank_transfer": "Банківський переказ",
+      "card": "Картка",
+      "cash": "Готівка",
+      "cod": "Оплата при доставці",
+      "paypal": "PayPal",
+      "stripe": "Stripe",
+      "other": "Інше"
+    },
     "invoiceDetail": {
       "subtitle": "Робочий простір вимоги оплати",
       "noCustomer": "Клієнта не вибрано",
@@ -1057,9 +1087,51 @@
       "actions": {
         "registerPayment": "Зареєструвати платіж"
       },
+      "registerPayment": {
+        "eyebrow": "Фінансова дія",
+        "title": "Зареєструвати платіж",
+        "save": "Зареєструвати платіж",
+        "invoice": "Рахунок",
+        "remaining": "Залишок",
+        "amountToApply": "Сума до застосування",
+        "allocationTitle": "Розподіл",
+        "allocationSubtitle": "Застосуйте платіж до цього рахунку. Залишок лишиться на рахунку клієнта.",
+        "ledgerHint": "Розподіл через ledger",
+        "dueNow": "До сплати зараз",
+        "applying": "Застосовуємо",
+        "afterPayment": "Після платежу",
+        "afterInvoiceDue": "Залишок рахунку після збереження",
+        "onAccount": "На рахунку клієнта",
+        "outcomes": {
+          "partial": "Рахунок буде частково оплачено",
+          "paid": "Рахунок буде оплачено",
+          "overpayment": "Рахунок буде оплачено"
+        },
+        "previewPaid": "Оплачено: {{amount}}",
+        "previewDue": "Залишок: {{amount}}",
+        "previewOnAccount": "На рахунку клієнта: {{amount}}",
+        "fields": {
+          "amount": "Сума",
+          "method": "Метод",
+          "reference": "Референс",
+          "date": "Дата",
+          "direction": "Напрям",
+          "currency": "Валюта",
+          "comment": "Коментар"
+        },
+        "errors": {
+          "noOrder": "У цього рахунку немає джерельного замовлення для поточного payment backend.",
+          "amountPositive": "Сума платежу має бути більшою за нуль.",
+          "applyPositive": "Сума розподілу не може бути відʼємною.",
+          "overRemaining": "Сума розподілу не може перевищувати залишок рахунку.",
+          "overPayment": "Сума розподілу не може перевищувати суму платежу.",
+          "refundAllocation": "Платежі-повернення не можна розподіляти на рахунки."
+        }
+      },
       "smart": {
         "order": "Замовлення",
         "payments": "Платежі",
+        "creditNote": "Кредит-нота",
         "creditNotes": "Коригування",
         "print": "Друк",
         "open": "Відкрити"
@@ -1095,6 +1167,288 @@
         "noVat": "Розбивки ПДВ немає",
         "noPayments": "Платежів поки немає.",
         "noCreditNotes": "Коригувань поки немає."
+      }
+    },
+    "paymentDetail": {
+      "noCustomer": "Клієнта не вибрано",
+      "directions": {
+        "inbound": "Вхідний",
+        "refund": "Повернення"
+      },
+      "applicationStates": {
+        "unapplied": "Не розподілений",
+        "partiallyApplied": "Частково розподілений",
+        "fullyApplied": "Повністю розподілений"
+      },
+      "hero": {
+        "eyebrow": "Платіж",
+        "applicationStatus": "Статус розподілу"
+      },
+      "vitals": {
+        "allocated": "Розподілено",
+        "unapplied": "Не розподілено",
+        "direction": "Напрям",
+        "status": "Статус"
+      },
+      "tabs": {
+        "overview": "Огляд",
+        "applications": "Застосування",
+        "activity": "Активність",
+        "notes": "Нотатки",
+        "system": "Система"
+      },
+      "sections": {
+        "moneyFacts": "Факти грошей",
+        "documentChain": "Ланцюг документів",
+        "applications": "Застосування",
+        "activity": "Активність",
+        "notes": "Нотатки"
+      },
+      "fields": {
+        "customer": "Клієнт",
+        "reference": "Референс",
+        "method": "Метод",
+        "currency": "Валюта",
+        "direction": "Напрям",
+        "created": "Створено",
+        "owner": "Відповідальний"
+      },
+      "overview": {
+        "amount": "Сума",
+        "allocated": "Розподілено",
+        "unapplied": "Не розподілено",
+        "direction": "Напрям",
+        "method": "Метод",
+        "customer": "Клієнт"
+      },
+      "smart": {
+        "invoices": "Рахунки",
+        "invoice": "Рахунок",
+        "order": "Замовлення",
+        "customer": "Клієнт",
+        "creditNotes": "Коригування",
+        "open": "Відкрити"
+      },
+      "applications": {
+        "subtitle": "Застосування до рахунків з платіжного ledger.",
+        "allocatedAmount": "Розподілена сума",
+        "remaining": "Залишок",
+        "scope": "Область",
+        "invoiceScope": "Рахунок",
+        "remainingUnknown": "Завантаження"
+      },
+      "create": {
+        "eyebrow": "Новий рух грошей",
+        "title": "Зареєструвати платіж",
+        "save": "Зберегти платіж",
+        "suggestedAmount": "Запропонована сума",
+        "amountDue": "До сплати",
+        "paymentAmount": "Сума платежу",
+        "applyToInvoice": "Застосувати до рахунку",
+        "dueAfter": "Залишок після платежу",
+        "onAccount": "На рахунку клієнта",
+        "customer": "Клієнт",
+        "selectOrder": "Оберіть замовлення",
+        "allocationSubtitle": "Застосуйте цей платіж до джерельного рахунку.",
+        "noInvoiceSubtitle": "Рахунок не вибрано. Платіж залишиться на рахунку клієнта.",
+        "sections": {
+          "moneyEvent": "Рух грошей",
+          "result": "Попередній результат"
+        },
+        "result": {
+          "empty": "Введіть суму платежу",
+          "partial": "Рахунок буде частково оплачено",
+          "paid": "Рахунок буде оплачено",
+          "onAccount": "Платіж залишиться на рахунку клієнта"
+        },
+        "errors": {
+          "orderRequired": "Оберіть замовлення перед збереженням платежу."
+        }
+      },
+      "activity": {
+        "created": "Платіж створено",
+        "processed": "Гроші оброблено",
+        "applied": "Застосовано до рахунку",
+        "empty": "Активності поки немає."
+      },
+      "notes": {
+        "deferred": "Нотатки платежів підготовлені для майбутньої інтеграції Knowledge Layer."
+      },
+      "system": {
+        "id": "ID платежу",
+        "orderId": "ID замовлення",
+        "reference": "Референс",
+        "transactionId": "ID транзакції",
+        "createdAt": "Створено",
+        "processedAt": "Оброблено",
+        "orderNumber": "Номер замовлення",
+        "applicationCount": "Застосування"
+      },
+      "empty": {
+        "noOrder": "Немає джерельного замовлення",
+        "onAccount": "Платіж на рахунку клієнта. Він ще не застосований до рахунків."
+      },
+      "next": {
+        "available": "Використати доступну дію платежу",
+        "onAccount": "У платежу є нерозподілений залишок",
+        "monitor": "Контролювати закриття"
+      },
+      "errors": {
+        "loadFailed": "Не вдалося завантажити платіж",
+        "invoiceLoadFailed": "Не вдалося завантажити джерельний рахунок",
+        "saveFailed": "Не вдалося зберегти платіж",
+        "notFound": "Платіж не знайдено в доступних даних ledger замовлень."
+      }
+    },
+    "creditNoteDetail": {
+      "title": "Кредит-нота",
+      "noReason": "Причину не вказано",
+      "hero": {
+        "remainingCredit": "Залишок кредиту",
+        "applied": "Застосовано"
+      },
+      "vitals": {
+        "credited": "Кредит",
+        "applied": "Застосовано",
+        "remaining": "Залишок",
+        "status": "Статус"
+      },
+      "tabs": {
+        "overview": "Огляд",
+        "applications": "Застосування",
+        "preview": "Прев'ю",
+        "activity": "Активність",
+        "system": "Система"
+      },
+      "sections": {
+        "facts": "Факти кредиту",
+        "summary": "Зведення",
+        "documentChain": "Ланцюг документів",
+        "applications": "Ledger застосувань"
+      },
+      "fields": {
+        "customer": "Клієнт",
+        "invoice": "Рахунок",
+        "order": "Замовлення",
+        "reason": "Причина",
+        "issueDate": "Дата виставлення",
+        "currency": "Валюта",
+        "owner": "Відповідальний",
+        "creditedAmount": "Сума кредиту",
+        "status": "Статус"
+      },
+      "actions": {
+        "apply": "Застосувати",
+        "refund": "Повернути",
+        "done": "Готово",
+        "cancel": "Скасувати",
+        "applyAmount": "Сума до застосування",
+        "refundAmount": "Сума повернення"
+      },
+      "next": {
+        "apply": "Застосувати залишок кредиту",
+        "refund": "Повернути залишок кредиту",
+        "done": "Кредит закрито"
+      },
+      "smart": {
+        "invoice": "Рахунок",
+        "order": "Замовлення",
+        "customer": "Клієнт",
+        "refundPayment": "Повернення"
+      },
+      "applications": {
+        "applied": "Застосовано",
+        "remaining": "Залишок",
+        "scope": "Область",
+        "remainingDue": "Залишок рахунку",
+        "onAccount": "На рахунку клієнта",
+        "refundable": "Доступно до повернення"
+      },
+      "empty": {
+        "onAccount": "Застосувань поки немає. Це кредит на рахунку клієнта, доки його не застосовано або не повернуто."
+      },
+      "preview": {
+        "label": "Кредит-нота",
+        "creditTo": "Кредит для",
+        "sourceOrder": "Джерельне замовлення",
+        "totalCredit": "Усього кредит"
+      },
+      "activity": {
+        "created": "Кредит-ноту створено",
+        "issued": "Кредит-ноту виставлено",
+        "applied": "Кредит застосовано",
+        "refunded": "Кредит повернуто",
+        "cancelled": "Кредит-ноту скасовано",
+        "updated": "Кредит-ноту оновлено",
+        "empty": "Активності поки немає."
+      },
+      "create": {
+        "defaultReason": "Комерційне коригування",
+        "sections": {
+          "credit": "Кредит-нота"
+        },
+        "selectInvoice": "Оберіть рахунок",
+        "applyAfterSave": "Спочатку збережіть кредит-ноту, потім застосуйте або поверніть її на сторінці деталі.",
+        "newNumber": "Нова кредит-нота",
+        "eyebrow": "Нова кредит-нота",
+        "title": "Нова кредит-нота",
+        "subtitle": "Документ кредиту",
+        "next": "Створіть кредит-ноту, потім застосуйте або поверніть кредит",
+        "save": "Створити кредит-ноту"
+      },
+      "errors": {
+        "amountPositive": "Сума має бути більшою за нуль.",
+        "loadFailed": "Не вдалося завантажити кредит-ноту",
+        "notFound": "Кредит-ноту не знайдено",
+        "invoiceRequired": "Рахунок обов'язковий.",
+        "invoiceLoadFailed": "Не вдалося завантажити джерельний рахунок",
+        "saveFailed": "Не вдалося зберегти кредит-ноту"
+      }
+    },
+    "customerDocument": {
+      "companyFallback": "Sunset",
+      "footerFallback": "Документ створено в Sunset CRM/ERP.",
+      "actions": {
+        "print": "Друк"
+      },
+      "types": {
+        "offer": "Пропозиція",
+        "invoice": "Рахунок",
+        "creditNote": "Кредит-нота",
+        "document": "Документ"
+      },
+      "labels": {
+        "customer": "Клієнт",
+        "taxId": "Податковий номер",
+        "issueDate": "Дата виставлення",
+        "dueDate": "Строк оплати",
+        "validUntil": "Дійсно до",
+        "terms": "Умови",
+        "payment": "Оплата",
+        "delivery": "Доставка",
+        "reason": "Причина",
+        "sourceInvoice": "Джерельний рахунок",
+        "sourceOrder": "Джерельне замовлення",
+        "tax": "Податок",
+        "noTax": "Без податку",
+        "notes": "Примітки",
+        "footer": "Примітка"
+      },
+      "lines": {
+        "item": "Позиція",
+        "qty": "К-сть",
+        "unitPrice": "Ціна",
+        "tax": "Податок",
+        "total": "Разом",
+        "empty": "Позицій немає"
+      },
+      "totals": {
+        "net": "Нетто",
+        "tax": "Податок",
+        "gross": "Брутто",
+        "credit": "Кредит",
+        "amountDue": "До сплати",
+        "remainingCredit": "Залишок кредиту"
       }
     },
     "relations": {

@@ -186,6 +186,7 @@ export const ordersApi = crmApi.injectEndpoints({
 export const {
   useListOrdersQuery,
   useGetOrderByIdQuery,
+  useLazyGetOrderByIdQuery,
   useCreateOrderMutation,
   useUpdateOrderMutation,
   useDeleteOrderMutation,

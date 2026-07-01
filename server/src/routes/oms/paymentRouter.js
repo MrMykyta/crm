@@ -4,7 +4,7 @@ const { companyIdGuard } = require('../../middleware/companyIdGuard');
 
 paymentRouter.use(companyIdGuard);
 
-router.get('/', PaymentController.list);
-router.post('/', PaymentController.create);
+paymentRouter.get('/', PaymentController.list);
+paymentRouter.post('/', PaymentController.create);
 
 module.exports = paymentRouter;

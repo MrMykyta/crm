@@ -23,6 +23,7 @@ const {
   Invoice,
   Payment,
   CreditNote,
+  CreditNoteApplication,
   Shipment,
   ShipmentItem,
   Reservation,
@@ -32,6 +33,7 @@ const {
 } = require('../../models');
 const eventService = require('../system/eventService');
 const invoiceService = require('./invoiceService');
+const paymentLedgerService = require('./paymentLedgerService');
 const {
   assertDocumentTypeEnabled,
   generateNextDocumentNumber,
@@ -58,7 +60,7 @@ const ORDER_STATUSES = Object.freeze([
   'cancelled',
   'returned',
 ]);
-const PAYMENT_STATUSES = Object.freeze(['pending', 'paid', 'refunded', 'partially_refunded']);
+const PAYMENT_STATUSES = Object.freeze(['pending', 'partially_paid', 'paid', 'refunded', 'partially_refunded']);
 const FULFILLMENT_STATUSES = Object.freeze(['unfulfilled', 'partial', 'fulfilled']);
 const DISCOUNT_TYPES = Object.freeze(['none', 'fixed', 'percent']);
 
@@ -405,15 +407,30 @@ function mapReservationSummary(reservation, productById = new Map(), warehouseBy
   };
 }
 
-function mapPaymentSummary(payment, fallbackCurrencyCode = null) {
+function mapPaymentSummary(payment, fallbackCurrencyCode = null, ledger = {}) {
   if (!payment) return null;
+  const allocatedAmount = asNumber(ledger.allocatedAmount, 0);
   return {
     id: payment.id,
     method: payment.method || null,
     status: payment.status || null,
     amount: asNumber(payment.amount, 0),
+    direction: payment.direction || 'inbound',
     currency: payment.currency || payment.currencyCode || fallbackCurrencyCode || null,
     currencyCode: payment.currencyCode || payment.currency || fallbackCurrencyCode || null,
+    reference: payment.reference || payment.transactionId || null,
+    allocatedAmount,
+    unappliedAmount: Number.isFinite(Number(ledger.unappliedAmount))
+      ? asNumber(ledger.unappliedAmount, 0)
+      : round(Math.max(0, asNumber(payment.amount, 0) - allocatedAmount), 2),
+    applications: Array.isArray(ledger.applications)
+      ? ledger.applications.map((application) => ({
+        id: application.id,
+        invoiceId: application.invoiceId,
+        amount: asNumber(application.amount, 0),
+        allocatedAt: application.allocatedAt || null,
+      }))
+      : [],
     paidAt: payment.processedAt || (['paid', 'authorized'].includes(payment.status) ? payment.createdAt : null),
     processedAt: payment.processedAt || null,
     createdAt: payment.createdAt || null,
@@ -422,19 +439,34 @@ function mapPaymentSummary(payment, fallbackCurrencyCode = null) {
 
 function mapCreditNoteSummary(creditNote, fallbackCurrencyCode = null) {
   if (!creditNote) return null;
+  const raw = typeof creditNote.toJSON === 'function' ? creditNote.toJSON() : creditNote;
+  const applications = Array.isArray(raw.applications) ? raw.applications : [];
+  const appliedAmount = round(applications.reduce((sum, application) => sum + asNumber(application.amount, 0), 0), 2);
+  const remainingCredit = round(Math.max(0, asNumber(raw.amountGross, 0) - appliedAmount), 2);
   return {
-    id: creditNote.id,
-    number: creditNote.number || null,
-    status: creditNote.status || null,
-    amount: asNumber(creditNote.amountGross, 0),
-    amountNet: asNumber(creditNote.amountNet, 0),
-    amountTax: asNumber(creditNote.amountTax, 0),
-    amountGross: asNumber(creditNote.amountGross, 0),
-    currency: creditNote.currency || creditNote.currencyCode || fallbackCurrencyCode || null,
-    currencyCode: creditNote.currencyCode || creditNote.currency || fallbackCurrencyCode || null,
-    invoiceId: creditNote.invoiceId || null,
-    reason: creditNote.reason || null,
-    createdAt: creditNote.createdAt || null,
+    id: raw.id,
+    number: raw.number || null,
+    status: raw.status || null,
+    amount: asNumber(raw.amountGross, 0),
+    amountNet: asNumber(raw.amountNet, 0),
+    amountTax: asNumber(raw.amountTax, 0),
+    amountGross: asNumber(raw.amountGross, 0),
+    appliedAmount,
+    remainingCredit,
+    unappliedAmount: remainingCredit,
+    currency: raw.currency || raw.currencyCode || fallbackCurrencyCode || null,
+    currencyCode: raw.currencyCode || raw.currency || fallbackCurrencyCode || null,
+    invoiceId: raw.invoiceId || null,
+    reason: raw.reason || null,
+    applications: applications.map((application) => ({
+      id: application.id,
+      invoiceId: application.invoiceId || null,
+      amount: asNumber(application.amount, 0),
+      allocatedAt: application.allocatedAt || null,
+      createdAt: application.createdAt || null,
+    })),
+    issuedAt: raw.issuedAt || null,
+    createdAt: raw.createdAt || null,
   };
 }
 
@@ -578,6 +610,7 @@ function mapOrderToDetailDto(order, links = {}, related = {}) {
 
   return {
     ...listDto,
+    paymentStatus: related.paymentStatus || listDto.paymentStatus,
     companyId: order.companyId,
     customerId: order.customerId || null,
     counterpartyId: order.customerId || null,
@@ -1201,6 +1234,13 @@ async function loadOrderDetailRelated(order, { companyId, transaction } = {}) {
   const creditNoteRows = invoiceIds.length
     ? await CreditNote.findAll({
       where: { companyId, invoiceId: { [Op.in]: invoiceIds } },
+      include: [
+        {
+          model: CreditNoteApplication,
+          as: 'applications',
+          required: false,
+        },
+      ],
       order: [['createdAt', 'ASC']],
       transaction,
     })
@@ -1227,9 +1267,16 @@ async function loadOrderDetailRelated(order, { companyId, transaction } = {}) {
 
   const productById = new Map(reservationProducts.map((product) => [String(product.id), product]));
   const warehouseById = new Map(reservationWarehouses.map((warehouse) => [String(warehouse.id), warehouse]));
-  const payments = paymentRows.map((payment) => mapPaymentSummary(payment, currencyCode)).filter(Boolean);
-  const amountPaid = calculateAmountPaid(paymentRows);
-  const amountDue = round(Math.max(0, asNumber(order.totalGross, 0) - amountPaid), 2);
+  const [paymentSummaries, orderSettlement] = await Promise.all([
+    paymentLedgerService.summarizePayments({ companyId, payments: paymentRows, transaction }),
+    paymentLedgerService.deriveOrderPaymentStatus({ companyId, orderId, transaction }),
+  ]);
+  const payments = paymentRows.map((payment) => {
+    const key = String(payment.id);
+    return mapPaymentSummary(payment, currencyCode, paymentSummaries.get(key) || {});
+  }).filter(Boolean);
+  const amountPaid = orderSettlement.amountPaid;
+  const amountDue = orderSettlement.amountDue;
 
   const invoices = invoiceRows.map((invoice) => mapInvoiceSummary(invoice, currencyCode)).filter(Boolean);
   const events = eventRows.map(mapOrderEventSummary).filter(Boolean);
@@ -1256,6 +1303,8 @@ async function loadOrderDetailRelated(order, { companyId, transaction } = {}) {
     },
     amountPaid,
     amountDue,
+    amountCredited: orderSettlement.amountCredited,
+    paymentStatus: orderSettlement.paymentStatus,
     deal: mapDealSummary(order.sourceOffer?.deal),
   };
 }

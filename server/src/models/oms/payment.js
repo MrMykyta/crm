@@ -21,6 +21,12 @@ module.exports = (sequelize, DataTypes) => {
         as: 'order', 
         foreignKey: 'orderId' 
       });
+
+      Payment.hasMany(models.PaymentApplication, {
+        as: 'applications',
+        foreignKey: 'paymentId',
+        onDelete: 'CASCADE',
+      });
     }
   }
   Payment.init({
@@ -51,6 +57,23 @@ module.exports = (sequelize, DataTypes) => {
     amount: { 
       type: DataTypes.DECIMAL(14,2), 
       allowNull: false 
+    },
+    direction: {
+      type: DataTypes.STRING(16),
+      allowNull: false,
+      defaultValue: 'inbound',
+      validate: {
+        isIn: [['inbound', 'refund']],
+      },
+    },
+    currencyCode: {
+      type: DataTypes.STRING(3),
+      allowNull: true,
+      field: 'currency_code',
+    },
+    reference: {
+      type: DataTypes.STRING(256),
+      allowNull: true,
     },
     transactionId: { 
       type: DataTypes.STRING(128), 

@@ -74,5 +74,6 @@ export const invoicesApi = crmApi.injectEndpoints({
 export const {
   useListInvoicesQuery,
   useGetInvoiceByIdQuery,
+  useLazyGetInvoiceByIdQuery,
   useIssueInvoiceFromOrderMutation,
 } = invoicesApi;

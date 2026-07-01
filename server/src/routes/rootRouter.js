@@ -33,6 +33,8 @@ rootRouter.use("/documents", auth, companyIdGuard, require("./crm/documentRouter
 rootRouter.use("/offers", auth, companyIdGuard, require("./oms/offerRouter"));
 rootRouter.use("/orders", auth, companyIdGuard, require("./oms/orderRouter"));
 rootRouter.use("/invoices", auth, companyIdGuard, require("./oms/invoiceRouter"));
+rootRouter.use("/payments", auth, companyIdGuard, require("./oms/paymentRouter"));
+rootRouter.use("/credit-notes", auth, companyIdGuard, require("./oms/creditNoteRouter"));
 rootRouter.use(
   "/document-numbering-settings",
   auth,

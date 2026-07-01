@@ -114,6 +114,7 @@
     "primary": "Основной",
     "saved": "Сохранено",
     "unsaved": "Есть несохранённые изменения",
+    "create": "Создать",
     "noneSelected": "Не выбрано",
     "selectAll": "Выбрать всех",
     "clear": "Очистить",
@@ -672,6 +673,7 @@
     "chat": "Чат",
     "oms": "OMS",
     "invoices": "Счета",
+    "payments": "Платежи",
     "receipts": "Квитанции",
     "orders": "Заказы",
     "offers": "Оферты",
@@ -996,6 +998,34 @@
         "totalGross": "Брутто"
       }
     },
+    "payments": {
+      "title": "Платежи",
+      "search": "Поиск по платежам, клиенту, методу...",
+      "open": "Открыть платёж",
+      "workspaceCount": "{{count}}",
+      "emptyTitle": "Платежей нет",
+      "emptyText": "Здесь появятся платежи, записанные в заказах.",
+      "errorTitle": "Не удалось загрузить платежи",
+      "columns": {
+        "reference": "Референс",
+        "amount": "Сумма",
+        "allocated": "Распределено",
+        "unapplied": "Не распределено",
+        "direction": "Направление",
+        "status": "Статус",
+        "application": "Применение",
+        "date": "Дата"
+      }
+    },
+    "paymentMethods": {
+      "bank_transfer": "Банковский перевод",
+      "card": "Карта",
+      "cash": "Наличные",
+      "cod": "Оплата при доставке",
+      "paypal": "PayPal",
+      "stripe": "Stripe",
+      "other": "Другое"
+    },
     "invoiceDetail": {
       "subtitle": "Рабочее пространство требования оплаты",
       "noCustomer": "Клиент не выбран",
@@ -1064,9 +1094,51 @@
       "actions": {
         "registerPayment": "Зарегистрировать платёж"
       },
+      "registerPayment": {
+        "eyebrow": "Финансовое действие",
+        "title": "Зарегистрировать платёж",
+        "save": "Зарегистрировать платёж",
+        "invoice": "Счёт",
+        "remaining": "Остаток",
+        "amountToApply": "Сумма к применению",
+        "allocationTitle": "Распределение",
+        "allocationSubtitle": "Примените платёж к этому счёту. Остаток останется на счёте клиента.",
+        "ledgerHint": "Распределение через ledger",
+        "dueNow": "К оплате сейчас",
+        "applying": "Применяем",
+        "afterPayment": "После платежа",
+        "afterInvoiceDue": "Остаток счёта после сохранения",
+        "onAccount": "На счёте клиента",
+        "outcomes": {
+          "partial": "Счёт будет частично оплачен",
+          "paid": "Счёт будет оплачен",
+          "overpayment": "Счёт будет оплачен"
+        },
+        "previewPaid": "Оплачено: {{amount}}",
+        "previewDue": "Остаток: {{amount}}",
+        "previewOnAccount": "На счёте клиента: {{amount}}",
+        "fields": {
+          "amount": "Сумма",
+          "method": "Метод",
+          "reference": "Референс",
+          "date": "Дата",
+          "direction": "Направление",
+          "currency": "Валюта",
+          "comment": "Комментарий"
+        },
+        "errors": {
+          "noOrder": "У этого счёта нет исходного заказа для текущего payment backend.",
+          "amountPositive": "Сумма платежа должна быть больше нуля.",
+          "applyPositive": "Распределяемая сумма не может быть отрицательной.",
+          "overRemaining": "Распределяемая сумма не может превышать остаток счёта.",
+          "overPayment": "Распределяемая сумма не может превышать сумму платежа.",
+          "refundAllocation": "Платёж-возврат нельзя распределять на счета."
+        }
+      },
       "smart": {
         "order": "Заказ",
         "payments": "Платежи",
+        "creditNote": "Кредитная нота",
         "creditNotes": "Корректировки",
         "print": "Печать",
         "open": "Открыть"
@@ -1102,6 +1174,288 @@
         "noVat": "Разбивки НДС нет",
         "noPayments": "Платежей пока нет.",
         "noCreditNotes": "Корректировок пока нет."
+      }
+    },
+    "paymentDetail": {
+      "noCustomer": "Клиент не выбран",
+      "directions": {
+        "inbound": "Входящий",
+        "refund": "Возврат"
+      },
+      "applicationStates": {
+        "unapplied": "Не распределён",
+        "partiallyApplied": "Частично распределён",
+        "fullyApplied": "Полностью распределён"
+      },
+      "hero": {
+        "eyebrow": "Платёж",
+        "applicationStatus": "Статус распределения"
+      },
+      "vitals": {
+        "allocated": "Распределено",
+        "unapplied": "Не распределено",
+        "direction": "Направление",
+        "status": "Статус"
+      },
+      "tabs": {
+        "overview": "Обзор",
+        "applications": "Применения",
+        "activity": "Активность",
+        "notes": "Заметки",
+        "system": "Система"
+      },
+      "sections": {
+        "moneyFacts": "Факты денег",
+        "documentChain": "Цепочка документов",
+        "applications": "Применения",
+        "activity": "Активность",
+        "notes": "Заметки"
+      },
+      "fields": {
+        "customer": "Клиент",
+        "reference": "Референс",
+        "method": "Метод",
+        "currency": "Валюта",
+        "direction": "Направление",
+        "created": "Создан",
+        "owner": "Ответственный"
+      },
+      "overview": {
+        "amount": "Сумма",
+        "allocated": "Распределено",
+        "unapplied": "Не распределено",
+        "direction": "Направление",
+        "method": "Метод",
+        "customer": "Клиент"
+      },
+      "smart": {
+        "invoices": "Счета",
+        "invoice": "Счёт",
+        "order": "Заказ",
+        "customer": "Клиент",
+        "creditNotes": "Корректировки",
+        "open": "Открыть"
+      },
+      "applications": {
+        "subtitle": "Применения к счетам из платёжного ledger.",
+        "allocatedAmount": "Распределённая сумма",
+        "remaining": "Остаток",
+        "scope": "Область",
+        "invoiceScope": "Счёт",
+        "remainingUnknown": "Загрузка"
+      },
+      "create": {
+        "eyebrow": "Новое движение денег",
+        "title": "Зарегистрировать платёж",
+        "save": "Сохранить платёж",
+        "suggestedAmount": "Предложенная сумма",
+        "amountDue": "К оплате",
+        "paymentAmount": "Сумма платежа",
+        "applyToInvoice": "Применить к счёту",
+        "dueAfter": "Остаток после платежа",
+        "onAccount": "На счёте клиента",
+        "customer": "Клиент",
+        "selectOrder": "Выберите заказ",
+        "allocationSubtitle": "Примените этот платёж к исходному счёту.",
+        "noInvoiceSubtitle": "Счёт не выбран. Платёж останется на счёте клиента.",
+        "sections": {
+          "moneyEvent": "Движение денег",
+          "result": "Предпросмотр результата"
+        },
+        "result": {
+          "empty": "Введите сумму платежа",
+          "partial": "Счёт будет частично оплачен",
+          "paid": "Счёт будет оплачен",
+          "onAccount": "Платёж останется на счёте клиента"
+        },
+        "errors": {
+          "orderRequired": "Выберите заказ перед сохранением платежа."
+        }
+      },
+      "activity": {
+        "created": "Платёж создан",
+        "processed": "Деньги обработаны",
+        "applied": "Применён к счёту",
+        "empty": "Активности пока нет."
+      },
+      "notes": {
+        "deferred": "Заметки платежей подготовлены для будущей интеграции Knowledge Layer."
+      },
+      "system": {
+        "id": "ID платежа",
+        "orderId": "ID заказа",
+        "reference": "Референс",
+        "transactionId": "ID транзакции",
+        "createdAt": "Создан",
+        "processedAt": "Обработан",
+        "orderNumber": "Номер заказа",
+        "applicationCount": "Применения"
+      },
+      "empty": {
+        "noOrder": "Нет исходного заказа",
+        "onAccount": "Платёж на счёте клиента. Он ещё не применён к счетам."
+      },
+      "next": {
+        "available": "Использовать доступное действие платежа",
+        "onAccount": "У платежа есть нераспределённый остаток",
+        "monitor": "Контролировать закрытие"
+      },
+      "errors": {
+        "loadFailed": "Не удалось загрузить платёж",
+        "invoiceLoadFailed": "Не удалось загрузить исходный счёт",
+        "saveFailed": "Не удалось сохранить платёж",
+        "notFound": "Платёж не найден в доступных данных ledger заказов."
+      }
+    },
+    "creditNoteDetail": {
+      "title": "Кредитная нота",
+      "noReason": "Причина не указана",
+      "hero": {
+        "remainingCredit": "Остаток кредита",
+        "applied": "Применено"
+      },
+      "vitals": {
+        "credited": "Кредит",
+        "applied": "Применено",
+        "remaining": "Остаток",
+        "status": "Статус"
+      },
+      "tabs": {
+        "overview": "Обзор",
+        "applications": "Применения",
+        "preview": "Превью",
+        "activity": "Активность",
+        "system": "Система"
+      },
+      "sections": {
+        "facts": "Факты кредита",
+        "summary": "Сводка",
+        "documentChain": "Цепочка документов",
+        "applications": "Ledger применений"
+      },
+      "fields": {
+        "customer": "Клиент",
+        "invoice": "Счёт",
+        "order": "Заказ",
+        "reason": "Причина",
+        "issueDate": "Дата выставления",
+        "currency": "Валюта",
+        "owner": "Ответственный",
+        "creditedAmount": "Сумма кредита",
+        "status": "Статус"
+      },
+      "actions": {
+        "apply": "Применить",
+        "refund": "Вернуть",
+        "done": "Готово",
+        "cancel": "Отменить",
+        "applyAmount": "Сумма к применению",
+        "refundAmount": "Сумма возврата"
+      },
+      "next": {
+        "apply": "Применить остаток кредита",
+        "refund": "Вернуть остаток кредита",
+        "done": "Кредит закрыт"
+      },
+      "smart": {
+        "invoice": "Счёт",
+        "order": "Заказ",
+        "customer": "Клиент",
+        "refundPayment": "Возврат"
+      },
+      "applications": {
+        "applied": "Применено",
+        "remaining": "Остаток",
+        "scope": "Область",
+        "remainingDue": "Остаток счёта",
+        "onAccount": "На счёте клиента",
+        "refundable": "Доступно к возврату"
+      },
+      "empty": {
+        "onAccount": "Применений пока нет. Это кредит на счёте клиента, пока он не применён или не возвращён."
+      },
+      "preview": {
+        "label": "Кредитная нота",
+        "creditTo": "Кредит для",
+        "sourceOrder": "Исходный заказ",
+        "totalCredit": "Итого кредит"
+      },
+      "activity": {
+        "created": "Кредитная нота создана",
+        "issued": "Кредитная нота выставлена",
+        "applied": "Кредит применён",
+        "refunded": "Кредит возвращён",
+        "cancelled": "Кредитная нота отменена",
+        "updated": "Кредитная нота обновлена",
+        "empty": "Активности пока нет."
+      },
+      "create": {
+        "defaultReason": "Коммерческая корректировка",
+        "sections": {
+          "credit": "Кредитная нота"
+        },
+        "selectInvoice": "Выберите счёт",
+        "applyAfterSave": "Сначала сохраните кредитную ноту, затем примените или верните её на странице детали.",
+        "newNumber": "Новая кредитная нота",
+        "eyebrow": "Новая кредитная нота",
+        "title": "Новая кредитная нота",
+        "subtitle": "Документ кредита",
+        "next": "Создайте кредитную ноту, затем примените или верните кредит",
+        "save": "Создать кредитную ноту"
+      },
+      "errors": {
+        "amountPositive": "Сумма должна быть больше нуля.",
+        "loadFailed": "Не удалось загрузить кредитную ноту",
+        "notFound": "Кредитная нота не найдена",
+        "invoiceRequired": "Счёт обязателен.",
+        "invoiceLoadFailed": "Не удалось загрузить исходный счёт",
+        "saveFailed": "Не удалось сохранить кредитную ноту"
+      }
+    },
+    "customerDocument": {
+      "companyFallback": "Sunset",
+      "footerFallback": "Документ создан в Sunset CRM/ERP.",
+      "actions": {
+        "print": "Печать"
+      },
+      "types": {
+        "offer": "Оферта",
+        "invoice": "Счёт",
+        "creditNote": "Кредитная нота",
+        "document": "Документ"
+      },
+      "labels": {
+        "customer": "Клиент",
+        "taxId": "Налоговый номер",
+        "issueDate": "Дата выставления",
+        "dueDate": "Срок оплаты",
+        "validUntil": "Действительно до",
+        "terms": "Условия",
+        "payment": "Оплата",
+        "delivery": "Доставка",
+        "reason": "Причина",
+        "sourceInvoice": "Исходный счёт",
+        "sourceOrder": "Исходный заказ",
+        "tax": "Налог",
+        "noTax": "Без налога",
+        "notes": "Примечания",
+        "footer": "Примечание"
+      },
+      "lines": {
+        "item": "Позиция",
+        "qty": "Кол-во",
+        "unitPrice": "Цена",
+        "tax": "Налог",
+        "total": "Итого",
+        "empty": "Позиций нет"
+      },
+      "totals": {
+        "net": "Нетто",
+        "tax": "Налог",
+        "gross": "Брутто",
+        "credit": "Кредит",
+        "amountDue": "К оплате",
+        "remainingCredit": "Остаток кредита"
       }
     },
     "relations": {

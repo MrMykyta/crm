@@ -8,6 +8,7 @@ import {
   FileText,
   Landmark,
   ReceiptText,
+  RotateCcw,
 } from 'lucide-react';
 
 import {
@@ -16,6 +17,9 @@ import {
   DetailSection,
   DetailTabs,
 } from '../../../../components/detail';
+import CustomerDocumentRenderer, {
+  buildInvoiceDocumentDto,
+} from '../../../../components/oms/CustomerDocumentRenderer';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { asText } from '../../../../lib/format';
 import {
@@ -149,6 +153,8 @@ export default function InvoiceDetailPage() {
   const { can } = useAclPermissions();
   const canReadInvoices = can('order:read');
   const canIssueInvoices = can('order:convert');
+  const canRegisterPayments = can('order:update') || can('order:convert');
+  const canCreateCreditNote = can('order:update');
   const [activeTab, setActiveTab] = useState('overview');
   const [actionLoadingKey, setActionLoadingKey] = useState('');
   const [actionError, setActionError] = useState('');
@@ -169,7 +175,6 @@ export default function InvoiceDetailPage() {
   const currency = invoice?.order?.currencyCode || invoice?.currencyCode || 'PLN';
   const amountDue = asNumber(invoice?.amountDue, asNumber(invoice?.totalGross, 0));
   const amountPaid = asNumber(invoice?.amountPaid, 0);
-  const totalGross = asNumber(invoice?.totalGross, 0);
   const payments = Array.isArray(invoice?.payments) ? invoice.payments : [];
   const creditNotes = Array.isArray(invoice?.creditNotes) ? invoice.creditNotes : [];
   const items = Array.isArray(invoice?.items) ? invoice.items : [];
@@ -178,18 +183,42 @@ export default function InvoiceDetailPage() {
   const orderId = invoice?.order?.id || invoice?.orderId || null;
   const name = customerName(invoice) || t('oms.invoiceDetail.noCustomer');
   const tone = paymentTone(invoice);
+  const canRegisterPaymentNow = Boolean(orderId) && amountDue > 0 && (
+    availableActions.canRegisterPayment ||
+    availableActions.deferred?.registerPayment ||
+    invoice?.paymentState !== 'paid'
+  );
 
   const nextAction = useMemo(() => {
     if (!invoice) return '';
     if (availableActions.canIssue) return t('oms.invoiceDetail.next.issue');
-    if (availableActions.canRegisterPayment) return t('oms.invoiceDetail.next.registerPayment');
+    if (canRegisterPaymentNow) return t('oms.invoiceDetail.next.registerPayment');
     if (invoice.paymentState === 'paid') return t('oms.invoiceDetail.next.settled');
     if (invoice.overdue) return t('oms.invoiceDetail.next.overdue');
     return t('oms.invoiceDetail.next.monitor');
-  }, [availableActions.canIssue, availableActions.canRegisterPayment, invoice, t]);
+  }, [availableActions.canIssue, canRegisterPaymentNow, invoice, t]);
 
   const runAction = useCallback(async (key) => {
-    if (!invoice || key !== 'issue' || !invoice.orderId) return;
+    if (!invoice) return;
+    if (key === 'register-payment') {
+      const params = new URLSearchParams();
+      params.set('invoiceId', invoice.id);
+      if (orderId) params.set('orderId', orderId);
+      const customerId = invoice.order?.counterparty?.id || invoice.order?.customer?.id || invoice.counterpartyId || invoice.customerId;
+      if (customerId) params.set('customerId', customerId);
+      navigate(`/main/oms/payments/new?${params.toString()}`);
+      return;
+    }
+    if (key === 'credit-note') {
+      const params = new URLSearchParams();
+      params.set('invoiceId', invoice.id);
+      if (orderId) params.set('orderId', orderId);
+      const customerId = invoice.order?.counterparty?.id || invoice.order?.customer?.id || invoice.counterpartyId || invoice.customerId;
+      if (customerId) params.set('customerId', customerId);
+      navigate(`/main/oms/credit-notes/new?${params.toString()}`);
+      return;
+    }
+    if (key !== 'issue' || !invoice.orderId) return;
     setActionError('');
     setActionLoadingKey(key);
     try {
@@ -204,7 +233,7 @@ export default function InvoiceDetailPage() {
     } finally {
       setActionLoadingKey('');
     }
-  }, [invoice, issueInvoiceFromOrder, navigate, refetch, t]);
+  }, [invoice, issueInvoiceFromOrder, navigate, orderId, refetch, t]);
 
   const primaryAction = useMemo(() => {
     if (!invoice) return null;
@@ -216,16 +245,16 @@ export default function InvoiceDetailPage() {
         disabled: !canIssueInvoices || Boolean(actionLoadingKey),
       };
     }
-    if (availableActions.canRegisterPayment) {
+    if (canRegisterPaymentNow) {
       return {
         key: 'register-payment',
         label: t('oms.invoiceDetail.actions.registerPayment'),
         icon: <CreditCard size={15} />,
-        disabled: true,
+        disabled: !canRegisterPayments || Boolean(actionLoadingKey) || amountDue <= 0 || !orderId,
       };
     }
     return null;
-  }, [actionLoadingKey, availableActions.canIssue, availableActions.canRegisterPayment, canIssueInvoices, invoice, t]);
+  }, [actionLoadingKey, amountDue, availableActions.canIssue, canIssueInvoices, canRegisterPaymentNow, canRegisterPayments, invoice, orderId, t]);
 
   const smartButtons = useMemo(() => [
     orderId ? {
@@ -242,6 +271,13 @@ export default function InvoiceDetailPage() {
       onClick: () => setActiveTab('payments'),
       icon: <CreditCard size={14} />,
     } : null,
+    canCreateCreditNote ? {
+      key: 'new-credit-note',
+      label: t('oms.invoiceDetail.smart.creditNote', 'Credit note'),
+      value: t('common.create', 'Create'),
+      onClick: () => runAction('credit-note'),
+      icon: <RotateCcw size={14} />,
+    } : null,
     creditNotes.length ? {
       key: 'credit-notes',
       label: t('oms.invoiceDetail.smart.creditNotes'),
@@ -256,7 +292,7 @@ export default function InvoiceDetailPage() {
       onClick: () => { if (typeof window !== 'undefined') window.print(); },
       icon: <ReceiptText size={14} />,
     } : null,
-  ].filter(Boolean), [availableActions.canPrint, creditNotes.length, invoice?.order?.number, orderId, payments.length, t]);
+  ].filter(Boolean), [availableActions.canPrint, canCreateCreditNote, creditNotes.length, invoice?.order?.number, orderId, payments.length, runAction, t]);
 
   const tabs = useMemo(() => [
     {
@@ -517,7 +553,11 @@ function PaymentsTab({ invoice, payments, currency, locale, t }) {
             {payments.map((payment) => (
               <div key={payment.id} className={s.itemRow}>
                 <div>
-                  <strong>{payment.method || t('oms.invoiceDetail.payments.methodUnknown')}</strong>
+                  <strong>
+                    <Link to={`/main/oms/payments/${payment.id}${invoice?.orderId ? `?orderId=${encodeURIComponent(invoice.orderId)}` : ''}`}>
+                      {payment.reference || payment.method || t('oms.invoiceDetail.payments.methodUnknown')}
+                    </Link>
+                  </strong>
                   <span>
                     {statusLabel(payment.status, t)}
                     {' · '}
@@ -550,7 +590,11 @@ function CreditNotesTab({ creditNotes, currency, locale, t }) {
           {creditNotes.map((creditNote) => (
             <div key={creditNote.id} className={s.itemRow}>
               <div>
-                <strong>{creditNote.number || creditNote.id}</strong>
+                <strong>
+                  <Link to={`/main/oms/credit-notes/${creditNote.id}`}>
+                    {creditNote.number || creditNote.id}
+                  </Link>
+                </strong>
                 <span>{creditNote.reason || statusLabel(creditNote.status, t)}</span>
               </div>
               <MoneyAmount value={creditNote.amountGross ?? creditNote.amount} currency={creditNote.currencyCode || creditNote.currency || currency} locale={locale} />
@@ -565,57 +609,11 @@ function CreditNotesTab({ creditNotes, currency, locale, t }) {
 }
 
 function PreviewTab({ invoice, items, currency, locale, t }) {
+  const documentDto = buildInvoiceDocumentDto({ invoice, items, currency, locale });
+
   return (
     <DetailSection title={t('oms.invoiceDetail.tabs.preview')}>
-      <article className={s.preview}>
-        <header className={s.previewHeader}>
-          <div>
-            <span>{t('oms.invoiceDetail.preview.label')}</span>
-            <h2>{invoice?.number || invoice?.id}</h2>
-            <p>{t('oms.invoiceDetail.preview.claim')}</p>
-          </div>
-          <div>
-            <span>{t('oms.invoiceDetail.hero.amountDue')}</span>
-            <strong>{formatMoney(invoice?.amountDue, currency, locale)}</strong>
-            <p>{formatDate(invoice?.dueDate, locale)}</p>
-          </div>
-        </header>
-
-        <div className={s.previewCustomer}>
-          <span>{t('oms.invoiceDetail.preview.billTo')}</span>
-          <strong>{customerName(invoice) || t('oms.invoiceDetail.noCustomer')}</strong>
-          <p>{invoice?.counterparty?.fullName || invoice?.order?.counterparty?.fullName || ''}</p>
-        </div>
-
-        <div className={s.previewLines}>
-          {items.length ? items.map((item) => (
-            <div key={item.id || item.nameSnapshot} className={s.previewLine}>
-              <div>
-                <strong>{item.nameSnapshot || item.name || t('oms.invoiceDetail.items.unnamedLine')}</strong>
-                <span>{t('oms.invoiceDetail.items.quantityMeta', { qty: asNumber(item.qty, 0) })}</span>
-              </div>
-              <strong>{formatMoney(item.lineTotalGross, currency, locale)}</strong>
-            </div>
-          )) : (
-            <div className={s.previewLine}>
-              <div>
-                <strong>{t('oms.invoiceDetail.empty.noItems')}</strong>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <footer className={s.previewFooter}>
-          <div>
-            <span>{t('oms.invoiceDetail.preview.sourceOrder')}</span>
-            <p>{invoice?.order?.number || invoice?.orderId || '—'}</p>
-          </div>
-          <div className={s.previewGrandTotal}>
-            <span>{t('oms.summaryLabels.gross')}</span>
-            <MoneyAmount value={invoice?.totalGross} currency={currency} locale={locale} />
-          </div>
-        </footer>
-      </article>
+      <CustomerDocumentRenderer dto={documentDto} />
     </DetailSection>
   );
 }

@@ -32,6 +32,9 @@ import EntityNotesSection from '../../../../components/notes/EntityNotesSection'
 import { SelectField, TextField, TextareaField } from '../../../../components/ui/fields';
 import { normalizeItemSortOrder, sortItemsBySortOrder } from '../../../../components/oms/useReorderItems';
 import { isOfferEditable } from '../../../../components/oms/documentEditability';
+import CustomerDocumentRenderer, {
+  buildOfferDocumentDto,
+} from '../../../../components/oms/CustomerDocumentRenderer';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
 import { useGetContactsByCounterpartyQuery } from '../../../../store/rtk/contactsApi';
@@ -497,57 +500,11 @@ function ItemsTab({ items, onItemsChange, errors, discountTypeOptions, readonly,
 }
 
 function PreviewTab({ offer, form, items, totals, t, locale }) {
-  const currency = form.currency || offer?.currency || 'PLN';
+  const documentDto = buildOfferDocumentDto({ offer, form, items, totals, locale, t });
 
   return (
     <DetailSection title={t('oms.offerDetail.tabs.preview', 'Preview')}>
-      <article className={s.preview}>
-        <header className={s.previewHeader}>
-          <div>
-            <span>{t('oms.offerDetail.preview.label', 'Offer')}</span>
-            <h2>{form.title || offer?.number || t('oms.offers.newTitle', 'New offer')}</h2>
-            {form.subject ? <p>{form.subject}</p> : null}
-          </div>
-          <div>
-            <strong>Sunset</strong>
-            <span>{offer?.number || t('oms.offerDetail.create.draftNumber', 'Draft')}</span>
-            <span>{t('oms.detailLabels.issueDate')}: {formatDate(form.issueDate, locale)}</span>
-            <span>{t('oms.detailLabels.validUntil')}: {formatDate(form.validUntil, locale)}</span>
-          </div>
-        </header>
-        <button type="button" className={s.pdfIntent} disabled>
-          {t('oms.offerDetail.preview.pdfPlanned', 'PDF in next phase')}
-        </button>
-        <div className={s.previewCustomer}>
-          <span>{t('oms.offerDetail.preview.preparedFor', 'Prepared for')}</span>
-          <strong>{counterpartyName(offer?.counterparty) || form.counterpartyId || '—'}</strong>
-        </div>
-        <div className={s.previewLines}>
-          {items.map((item, index) => {
-            const line = calculateLine(item);
-            return (
-              <div className={s.previewLine} key={item.localId || item.id || index}>
-                <div>
-                  <strong>{item.name || t('oms.offerDetail.preview.unnamedLine', 'Unnamed line')}</strong>
-                  <span>{asNumber(item.qty, 0)} × {formatMoney(asNumber(item.priceNet, 0), currency, locale)}</span>
-                </div>
-                <strong>{formatMoney(line.lineGross, currency, locale)}</strong>
-              </div>
-            );
-          })}
-        </div>
-        <footer className={s.previewFooter}>
-          <div>
-            <span>{t('oms.offerDetail.preview.terms', 'Terms')}</span>
-            <p>{t('oms.detailLabels.paymentTerms')}: {form.paymentTerms || '—'}</p>
-            <p>{t('oms.detailLabels.deliveryTerms')}: {form.deliveryTerms || '—'}</p>
-          </div>
-          <div className={s.previewGrandTotal}>
-            <span>{t('oms.offerDetail.hero.grandTotal', 'Grand total')}</span>
-            <MoneyAmount value={totals.gross} currency={currency} locale={locale} size="lg" />
-          </div>
-        </footer>
-      </article>
+      <CustomerDocumentRenderer dto={documentDto} />
     </DetailSection>
   );
 }

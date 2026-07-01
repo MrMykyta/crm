@@ -80,6 +80,7 @@
     "primary": "Główny",
     "saved": "Zapisano",
     "unsaved": "Niezapisane zmiany",
+    "create": "Utwórz",
     "yes": "Tak",
     "no": "Nie",
     "all": "Wszystkie",
@@ -666,6 +667,7 @@
     "calendar": "Kalendarz",
     "oms": "OMS",
     "invoices": "Faktury",
+    "payments": "Płatności",
     "receipts": "Paragony",
     "orders": "Zamówienia",
     "offers": "Oferty",
@@ -990,6 +992,34 @@
         "totalGross": "Brutto razem"
       }
     },
+    "payments": {
+      "title": "Płatności",
+      "search": "Szukaj płatności, klienta, metody...",
+      "open": "Otwórz płatność",
+      "workspaceCount": "{{count}}",
+      "emptyTitle": "Brak płatności",
+      "emptyText": "Płatności zarejestrowane w zamówieniach pojawią się tutaj.",
+      "errorTitle": "Nie udało się wczytać płatności",
+      "columns": {
+        "reference": "Referencja",
+        "amount": "Kwota",
+        "allocated": "Rozliczono",
+        "unapplied": "Nierozliczone",
+        "direction": "Kierunek",
+        "status": "Status",
+        "application": "Rozliczenie",
+        "date": "Data"
+      }
+    },
+    "paymentMethods": {
+      "bank_transfer": "Przelew bankowy",
+      "card": "Karta",
+      "cash": "Gotówka",
+      "cod": "Płatność przy odbiorze",
+      "paypal": "PayPal",
+      "stripe": "Stripe",
+      "other": "Inne"
+    },
     "invoiceDetail": {
       "subtitle": "Obszar roszczenia płatności",
       "noCustomer": "Klient nie jest wybrany",
@@ -1058,9 +1088,51 @@
       "actions": {
         "registerPayment": "Zarejestruj płatność"
       },
+      "registerPayment": {
+        "eyebrow": "Akcja płatności",
+        "title": "Zarejestruj płatność",
+        "save": "Zarejestruj płatność",
+        "invoice": "Faktura",
+        "remaining": "Pozostało",
+        "amountToApply": "Kwota do rozliczenia",
+        "allocationTitle": "Rozliczenie",
+        "allocationSubtitle": "Rozlicz płatność z tą fakturą. Nadwyżka pozostanie na koncie klienta.",
+        "ledgerHint": "Rozliczenie przez ledger",
+        "dueNow": "Do zapłaty teraz",
+        "applying": "Rozliczane",
+        "afterPayment": "Po płatności",
+        "afterInvoiceDue": "Pozostało po zapisie",
+        "onAccount": "Na koncie klienta",
+        "outcomes": {
+          "partial": "Faktura będzie częściowo opłacona",
+          "paid": "Faktura będzie opłacona",
+          "overpayment": "Faktura będzie opłacona"
+        },
+        "previewPaid": "Zapłacono: {{amount}}",
+        "previewDue": "Pozostanie: {{amount}}",
+        "previewOnAccount": "Na koncie klienta: {{amount}}",
+        "fields": {
+          "amount": "Kwota",
+          "method": "Metoda",
+          "reference": "Referencja",
+          "date": "Data",
+          "direction": "Kierunek",
+          "currency": "Waluta",
+          "comment": "Komentarz"
+        },
+        "errors": {
+          "noOrder": "Ta faktura nie ma zamówienia źródłowego dla obecnego payment backend.",
+          "amountPositive": "Kwota płatności musi być większa od zera.",
+          "applyPositive": "Kwota rozliczenia nie może być ujemna.",
+          "overRemaining": "Kwota rozliczenia nie może przekraczać pozostałej kwoty faktury.",
+          "overPayment": "Kwota rozliczenia nie może przekraczać kwoty płatności.",
+          "refundAllocation": "Zwrotów nie można rozliczać z fakturami."
+        }
+      },
       "smart": {
         "order": "Zamówienie",
         "payments": "Płatności",
+        "creditNote": "Korekta",
         "creditNotes": "Korekty",
         "print": "Drukuj",
         "open": "Otwórz"
@@ -1096,6 +1168,288 @@
         "noVat": "Brak rozbicia VAT",
         "noPayments": "Brak płatności.",
         "noCreditNotes": "Brak korekt."
+      }
+    },
+    "paymentDetail": {
+      "noCustomer": "Klient nie jest wybrany",
+      "directions": {
+        "inbound": "Przychodząca",
+        "refund": "Zwrot"
+      },
+      "applicationStates": {
+        "unapplied": "Nierozliczona",
+        "partiallyApplied": "Częściowo rozliczona",
+        "fullyApplied": "W pełni rozliczona"
+      },
+      "hero": {
+        "eyebrow": "Płatność",
+        "applicationStatus": "Status rozliczenia"
+      },
+      "vitals": {
+        "allocated": "Rozliczono",
+        "unapplied": "Nierozliczone",
+        "direction": "Kierunek",
+        "status": "Status"
+      },
+      "tabs": {
+        "overview": "Przegląd",
+        "applications": "Rozliczenia",
+        "activity": "Aktywność",
+        "notes": "Notatki",
+        "system": "System"
+      },
+      "sections": {
+        "moneyFacts": "Dane pieniędzy",
+        "documentChain": "Łańcuch dokumentów",
+        "applications": "Rozliczenia",
+        "activity": "Aktywność",
+        "notes": "Notatki"
+      },
+      "fields": {
+        "customer": "Klient",
+        "reference": "Referencja",
+        "method": "Metoda",
+        "currency": "Waluta",
+        "direction": "Kierunek",
+        "created": "Utworzono",
+        "owner": "Opiekun"
+      },
+      "overview": {
+        "amount": "Kwota",
+        "allocated": "Rozliczono",
+        "unapplied": "Nierozliczone",
+        "direction": "Kierunek",
+        "method": "Metoda",
+        "customer": "Klient"
+      },
+      "smart": {
+        "invoices": "Faktury",
+        "invoice": "Faktura",
+        "order": "Zamówienie",
+        "customer": "Klient",
+        "creditNotes": "Korekty",
+        "open": "Otwórz"
+      },
+      "applications": {
+        "subtitle": "Rozliczenia faktur z ledger płatności.",
+        "allocatedAmount": "Kwota rozliczona",
+        "remaining": "Pozostało",
+        "scope": "Zakres",
+        "invoiceScope": "Faktura",
+        "remainingUnknown": "Ładowanie"
+      },
+      "create": {
+        "eyebrow": "Nowe zdarzenie pieniężne",
+        "title": "Zarejestruj płatność",
+        "save": "Zapisz płatność",
+        "suggestedAmount": "Sugerowana kwota",
+        "amountDue": "Do zapłaty",
+        "paymentAmount": "Kwota płatności",
+        "applyToInvoice": "Rozlicz z fakturą",
+        "dueAfter": "Pozostanie po płatności",
+        "onAccount": "Na koncie klienta",
+        "customer": "Klient",
+        "selectOrder": "Wybierz zamówienie",
+        "allocationSubtitle": "Rozlicz tę płatność z fakturą źródłową.",
+        "noInvoiceSubtitle": "Nie wybrano faktury. Płatność pozostanie na koncie klienta.",
+        "sections": {
+          "moneyEvent": "Zdarzenie pieniężne",
+          "result": "Podgląd wyniku"
+        },
+        "result": {
+          "empty": "Wprowadź kwotę płatności",
+          "partial": "Faktura będzie częściowo opłacona",
+          "paid": "Faktura będzie opłacona",
+          "onAccount": "Płatność pozostanie na koncie klienta"
+        },
+        "errors": {
+          "orderRequired": "Wybierz zamówienie przed zapisaniem płatności."
+        }
+      },
+      "activity": {
+        "created": "Płatność utworzona",
+        "processed": "Pieniądze przetworzone",
+        "applied": "Rozliczono z fakturą",
+        "empty": "Brak aktywności."
+      },
+      "notes": {
+        "deferred": "Notatki płatności są przygotowane do późniejszej integracji Knowledge Layer."
+      },
+      "system": {
+        "id": "ID płatności",
+        "orderId": "ID zamówienia",
+        "reference": "Referencja",
+        "transactionId": "ID transakcji",
+        "createdAt": "Utworzono",
+        "processedAt": "Przetworzono",
+        "orderNumber": "Numer zamówienia",
+        "applicationCount": "Rozliczenia"
+      },
+      "empty": {
+        "noOrder": "Brak zamówienia źródłowego",
+        "onAccount": "Płatność na koncie klienta. Nie została jeszcze rozliczona z fakturami."
+      },
+      "next": {
+        "available": "Użyj dostępnej akcji płatności",
+        "onAccount": "Płatność ma nierozliczone saldo",
+        "monitor": "Monitoruj rozliczenie"
+      },
+      "errors": {
+        "loadFailed": "Nie udało się wczytać płatności",
+        "invoiceLoadFailed": "Nie udało się załadować faktury źródłowej",
+        "saveFailed": "Nie udało się zapisać płatności",
+        "notFound": "Nie znaleziono płatności w dostępnych danych ledger zamówień."
+      }
+    },
+    "creditNoteDetail": {
+      "title": "Korekta",
+      "noReason": "Nie podano powodu",
+      "hero": {
+        "remainingCredit": "Pozostały kredyt",
+        "applied": "Rozliczono"
+      },
+      "vitals": {
+        "credited": "Kredyt",
+        "applied": "Rozliczono",
+        "remaining": "Pozostało",
+        "status": "Status"
+      },
+      "tabs": {
+        "overview": "Przegląd",
+        "applications": "Rozliczenia",
+        "preview": "Podgląd",
+        "activity": "Aktywność",
+        "system": "System"
+      },
+      "sections": {
+        "facts": "Dane korekty",
+        "summary": "Podsumowanie",
+        "documentChain": "Łańcuch dokumentów",
+        "applications": "Ledger rozliczeń"
+      },
+      "fields": {
+        "customer": "Klient",
+        "invoice": "Faktura",
+        "order": "Zamówienie",
+        "reason": "Powód",
+        "issueDate": "Data wystawienia",
+        "currency": "Waluta",
+        "owner": "Opiekun",
+        "creditedAmount": "Kwota kredytu",
+        "status": "Status"
+      },
+      "actions": {
+        "apply": "Rozlicz",
+        "refund": "Zwróć",
+        "done": "Gotowe",
+        "cancel": "Anuluj",
+        "applyAmount": "Kwota do rozliczenia",
+        "refundAmount": "Kwota zwrotu"
+      },
+      "next": {
+        "apply": "Rozlicz pozostały kredyt",
+        "refund": "Zwróć pozostały kredyt",
+        "done": "Kredyt zamknięty"
+      },
+      "smart": {
+        "invoice": "Faktura",
+        "order": "Zamówienie",
+        "customer": "Klient",
+        "refundPayment": "Zwrot"
+      },
+      "applications": {
+        "applied": "Rozliczono",
+        "remaining": "Pozostało",
+        "scope": "Zakres",
+        "remainingDue": "Pozostało do zapłaty",
+        "onAccount": "Na koncie klienta",
+        "refundable": "Dostępne do zwrotu"
+      },
+      "empty": {
+        "onAccount": "Brak rozliczeń. To kredyt na koncie klienta, dopóki nie zostanie rozliczony lub zwrócony."
+      },
+      "preview": {
+        "label": "Korekta",
+        "creditTo": "Kredyt dla",
+        "sourceOrder": "Zamówienie źródłowe",
+        "totalCredit": "Kredyt razem"
+      },
+      "activity": {
+        "created": "Korekta utworzona",
+        "issued": "Korekta wystawiona",
+        "applied": "Kredyt rozliczony",
+        "refunded": "Kredyt zwrócony",
+        "cancelled": "Korekta anulowana",
+        "updated": "Korekta zaktualizowana",
+        "empty": "Brak aktywności."
+      },
+      "create": {
+        "defaultReason": "Korekta handlowa",
+        "sections": {
+          "credit": "Korekta"
+        },
+        "selectInvoice": "Wybierz fakturę",
+        "applyAfterSave": "Najpierw zapisz korektę, a następnie rozlicz lub zwróć ją na stronie szczegółów.",
+        "newNumber": "Nowa korekta",
+        "eyebrow": "Nowa korekta",
+        "title": "Nowa korekta",
+        "subtitle": "Dokument kredytowy",
+        "next": "Utwórz korektę, następnie rozlicz lub zwróć kredyt",
+        "save": "Utwórz korektę"
+      },
+      "errors": {
+        "amountPositive": "Kwota musi być większa od zera.",
+        "loadFailed": "Nie udało się wczytać korekty",
+        "notFound": "Nie znaleziono korekty",
+        "invoiceRequired": "Faktura jest wymagana.",
+        "invoiceLoadFailed": "Nie udało się załadować faktury źródłowej",
+        "saveFailed": "Nie udało się zapisać korekty"
+      }
+    },
+    "customerDocument": {
+      "companyFallback": "Sunset",
+      "footerFallback": "Dokument utworzony w Sunset CRM/ERP.",
+      "actions": {
+        "print": "Drukuj"
+      },
+      "types": {
+        "offer": "Oferta",
+        "invoice": "Faktura",
+        "creditNote": "Korekta",
+        "document": "Dokument"
+      },
+      "labels": {
+        "customer": "Klient",
+        "taxId": "NIP",
+        "issueDate": "Data wystawienia",
+        "dueDate": "Termin płatności",
+        "validUntil": "Ważne do",
+        "terms": "Warunki",
+        "payment": "Płatność",
+        "delivery": "Dostawa",
+        "reason": "Powód",
+        "sourceInvoice": "Faktura źródłowa",
+        "sourceOrder": "Zamówienie źródłowe",
+        "tax": "Podatek",
+        "noTax": "Bez podatku",
+        "notes": "Uwagi",
+        "footer": "Stopka"
+      },
+      "lines": {
+        "item": "Pozycja",
+        "qty": "Ilość",
+        "unitPrice": "Cena",
+        "tax": "Podatek",
+        "total": "Razem",
+        "empty": "Brak pozycji"
+      },
+      "totals": {
+        "net": "Netto",
+        "tax": "Podatek",
+        "gross": "Brutto",
+        "credit": "Kredyt",
+        "amountDue": "Do zapłaty",
+        "remainingCredit": "Pozostały kredyt"
       }
     },
     "relations": {
