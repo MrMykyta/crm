@@ -38,7 +38,7 @@ const onEsc = (e) => e.key === "Escape" && onClose?.();
   useEffect(() => { setHasImg(Boolean(avatarUrl)); }, [avatarUrl]);
 
     // goProfile: вспомогательная логика компонента.
-const goProfile = () => { onClose?.(); navigate("/main/user-profile"); };
+const goProfile = () => { onClose?.(); navigate("/main/my-account"); };
 
     // doLogout: вспомогательная логика компонента.
 const doLogout = async () => {
@@ -93,4 +93,3 @@ const doLogout = async () => {
     </div>
   );
 }
-

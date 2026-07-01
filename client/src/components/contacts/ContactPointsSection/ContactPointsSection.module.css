@@ -1,0 +1,565 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-16);
+  font-weight: 700;
+}
+
+.kicker {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: var(--font-size-12);
+}
+
+.pointsSection {
+  border: 1px solid var(--detail-border, var(--card-brd));
+  border-radius: var(--detail-radius, 16px);
+  padding: 12px;
+  background: var(--detail-surface, color-mix(in srgb, var(--card-bg) 86%, transparent));
+  box-shadow: var(--detail-shadow, 0 22px 52px rgba(0, 0, 0, .28));
+  -webkit-backdrop-filter: var(--detail-blur, blur(18px) saturate(1.08));
+  backdrop-filter: var(--detail-blur, blur(18px) saturate(1.08));
+}
+
+.addPointBtn,
+.saveBtn,
+.ghostBtn {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 10px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 78%, transparent);
+  font-size: var(--font-size-13);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.addPointBtn,
+.saveBtn {
+  background: var(--btn-primary-bg, #6257ff);
+  color: var(--btn-primary-text, #fff);
+}
+
+.ghostBtn {
+  background: var(--detail-surface-soft, color-mix(in srgb, var(--card-bg) 78%, transparent));
+  color: var(--text);
+}
+
+.pointForm {
+  display: grid;
+  gap: 12px;
+  margin: 10px 0 12px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 72%, transparent);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--focus, #60a5fa) 6%, transparent), transparent 38%),
+    var(--detail-surface-soft, color-mix(in srgb, var(--card-bg) 78%, transparent));
+}
+
+.editorHead {
+  display: grid;
+  gap: 3px;
+}
+
+.editorHead strong {
+  color: var(--text);
+  font-size: var(--font-size-14);
+}
+
+.editorHead span {
+  color: var(--muted);
+  font-size: var(--font-size-12);
+}
+
+.editorGrid {
+  display: grid;
+  grid-template-columns: minmax(126px, .75fr) minmax(260px, 1.55fr) minmax(160px, .9fr);
+  gap: 10px;
+  align-items: end;
+  min-width: 0;
+}
+
+.pointForm label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--font-size-11);
+}
+
+.pointForm input,
+.pointForm select {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 76%, transparent);
+  border-radius: 9px;
+  padding: 0 10px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 86%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-size-13);
+}
+
+.valueField {
+  min-width: 190px;
+}
+
+.smartPhoneField {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  min-width: 260px;
+  color: var(--muted);
+  font-size: var(--font-size-11);
+}
+
+.phoneInputShell {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(150px, 1fr);
+  align-items: center;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 76%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 86%, transparent);
+}
+
+.phoneInputShell input {
+  min-height: 34px;
+  border: 0;
+  border-left: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 64%, transparent);
+  border-radius: 0;
+  background: transparent;
+}
+
+.countryPicker {
+  position: relative;
+  min-width: 0;
+}
+
+.countryButton {
+  width: 48px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 8px 0 0 8px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 82%, transparent);
+  color: var(--text);
+  cursor: pointer;
+  font-size: var(--font-size-16);
+}
+
+.countryButton:hover,
+.countryButton[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--focus, #60a5fa) 13%, var(--detail-surface, var(--card-bg)));
+}
+
+.countryButton svg {
+  color: var(--muted);
+}
+
+.countryMenu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  width: min(310px, calc(100vw - 40px));
+  max-width: 72vw;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 78%, transparent);
+  border-radius: 12px;
+  background: var(--detail-surface, color-mix(in srgb, var(--card-bg) 92%, #111827 8%));
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .28);
+  -webkit-backdrop-filter: var(--detail-blur, blur(18px) saturate(1.08));
+  backdrop-filter: var(--detail-blur, blur(18px) saturate(1.08));
+}
+
+.countrySearch {
+  min-height: 32px !important;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 76%, transparent) !important;
+  border-radius: 8px !important;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 86%, transparent) !important;
+}
+
+.countryOptions {
+  max-height: 230px;
+  display: grid;
+  gap: 3px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.countryOption {
+  width: 100%;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.countryOption:hover,
+.countryOptionActive {
+  border-color: color-mix(in srgb, var(--focus, #60a5fa) 34%, transparent);
+  background: color-mix(in srgb, var(--focus, #60a5fa) 12%, transparent);
+}
+
+.countryFlag {
+  font-size: var(--font-size-18);
+}
+
+.countryMeta {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.countryMeta strong,
+.countryMeta small,
+.countryEmpty {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.countryMeta strong {
+  color: var(--text);
+  font-size: var(--font-size-12);
+}
+
+.countryMeta small,
+.countryEmpty {
+  color: var(--muted);
+  font-size: var(--font-size-11);
+}
+
+.countryEmpty {
+  display: block;
+  padding: 8px;
+}
+
+.editorFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.toggleGroup {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.toggleChip {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 76%, transparent);
+  border-radius: 999px;
+  padding: 0 10px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 82%, transparent);
+  color: var(--muted);
+  font-size: var(--font-size-12);
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.toggleChip:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--focus, #60a5fa) 38%, var(--detail-border, var(--card-brd)));
+}
+
+.toggleOn {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--focus, #60a5fa) 48%, var(--detail-border, var(--card-brd)));
+  background: color-mix(in srgb, var(--focus, #60a5fa) 14%, var(--detail-surface, var(--card-bg)));
+}
+
+.normalizedHint {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--font-size-12);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hintWarning {
+  color: #fbbf24;
+}
+
+.hintOk {
+  color: color-mix(in srgb, #34d399 72%, var(--muted));
+}
+
+.inlineError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, #f59e0b 48%, var(--detail-border, var(--card-brd)));
+  border-radius: 10px;
+  background: color-mix(in srgb, #f59e0b 11%, var(--detail-surface, var(--card-bg)));
+  color: #fde68a;
+  font-size: var(--font-size-12);
+  font-weight: 720;
+}
+
+.inlineError span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.inlineError a,
+.inlineError button {
+  flex: 0 0 auto;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #fff7bf;
+  font: inherit;
+  font-weight: 760;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.formActions {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.state {
+  color: var(--muted);
+  font-size: var(--font-size-13);
+  padding: 8px 0;
+}
+
+.emptyPoints {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px dashed color-mix(in srgb, var(--detail-border, var(--card-brd)) 80%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 58%, transparent);
+  color: var(--muted);
+}
+
+.emptyPoints strong {
+  color: var(--text);
+}
+
+.pointsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pointCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 72%, transparent);
+  border-radius: 13px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 76%, transparent);
+  transition: border-color .16s ease, background .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+
+.pointCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: color-mix(in srgb, var(--point-accent, #60a5fa) 78%, transparent);
+  opacity: .82;
+}
+
+.pointCard:hover {
+  border-color: color-mix(in srgb, var(--point-accent, #60a5fa) 42%, var(--detail-border, var(--card-brd)));
+  background: color-mix(in srgb, var(--point-accent, #60a5fa) 8%, var(--detail-surface-soft, var(--card-bg)));
+  box-shadow: 0 14px 30px rgba(0, 0, 0, .18);
+}
+
+.tone_phone { --point-accent: #38bdf8; }
+.tone_email { --point-accent: #a78bfa; }
+.tone_website { --point-accent: #34d399; }
+.tone_social { --point-accent: #fb7185; }
+
+.pointIcon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--point-accent, #60a5fa) 18%, transparent);
+  color: color-mix(in srgb, var(--point-accent, #60a5fa) 80%, #fff);
+}
+
+.pointBody {
+  min-width: 0;
+}
+
+.pointTop {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.pointTop strong {
+  color: var(--text);
+  font-size: var(--font-size-13);
+}
+
+.primaryBadge,
+.privateBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: var(--font-size-11);
+  border: 1px solid transparent;
+}
+
+.primaryBadge {
+  color: #eaf7ee;
+  background: color-mix(in srgb, #1f8f53 36%, transparent);
+  border-color: color-mix(in srgb, #1f8f53 72%, transparent);
+}
+
+.privateBadge {
+  color: #f7d8d8;
+  background: color-mix(in srgb, #a33b3b 28%, transparent);
+  border-color: color-mix(in srgb, #a33b3b 58%, transparent);
+}
+
+.pointValue {
+  max-width: 100%;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-size-14);
+  font-weight: 700;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.pointValue:hover {
+  color: color-mix(in srgb, var(--point-accent, #60a5fa) 72%, var(--text));
+}
+
+.pointLabel {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--font-size-12);
+}
+
+.pointActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.pointActions button,
+.pointActions a {
+  min-width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 76%, transparent);
+  border-radius: 8px;
+  padding: 0 8px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 82%, transparent);
+  color: var(--text);
+  font-size: var(--font-size-12);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pointActions button:hover,
+.pointActions a:hover {
+  background: color-mix(in srgb, var(--point-accent, #60a5fa) 16%, var(--detail-surface, var(--card-bg)));
+}
+
+@media (max-width: 860px) {
+  .editorGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .phoneInputShell {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .phoneInputShell input {
+    border-left: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 64%, transparent);
+    border-top: 0;
+  }
+
+  .countryMenu {
+    max-width: calc(100vw - 46px);
+  }
+
+  .editorFooter,
+  .header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .normalizedHint {
+    text-align: left;
+    white-space: normal;
+  }
+
+  .pointsGrid {
+    grid-template-columns: 1fr;
+  }
+}

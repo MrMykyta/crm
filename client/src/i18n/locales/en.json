@@ -1400,6 +1400,13 @@
       "sending": "Sending...",
       "invalidEmail": "Enter a valid email address.",
       "sendFailed": "Could not send the document.",
+      "sources": {
+        "companyContactPoint": "Email from company contacts",
+        "contactPersonContactPoint": "Email from main contact person",
+        "contactPersonLegacy": "Email from contact person card",
+        "counterpartyLegacy": "Email from counterparty card",
+        "manual": "Entered manually"
+      },
       "types": {
         "offer": "Offer",
         "invoice": "Invoice",
@@ -2781,6 +2788,7 @@
     "remove": "Remove"
   },
   "userMenu": {
+    "account": "My Account",
     "profile": "Profile",
     "settings": "Settings",
     "logout": "Log out"
@@ -3003,12 +3011,25 @@
       "create": "New contact",
       "edit": "Edit contact"
     },
+    "tabs": {
+      "overview": "Description",
+      "contactPoints": "Contacts",
+      "additional": "Additional"
+    },
+    "detail": {
+      "identity": "Identity",
+      "identitySubtitle": "Name, relation and role",
+      "contactSettings": "Contact settings",
+      "contactSettingsSubtitle": "Role in the counterparty card"
+    },
     "fields": {
       "counterparty": "Counterparty",
       "firstName": "First name",
       "lastName": "Last name",
+      "displayName": "Display name",
       "position": "Position",
       "department": "Department",
+      "departmentNote": "Team / department",
       "phone": "Phone",
       "email": "Email",
       "note": "Note",
@@ -3050,12 +3071,27 @@
     },
     "messages": {
       "emptyCounterparty": "No contacts for this counterparty yet",
+      "emptyRelatedPersons": "No related people for this individual yet",
+      "noRole": "Role not specified",
+      "noCommunication": "No contact details",
       "notFound": "Contact not found"
+    },
+    "contactPoints": {
+      "title": "Contact person contact details",
+      "subtitle": "Phone, email and public channels for this person",
+      "emptyTitle": "No contact details yet",
+      "emptyText": "Add this person's phone, email or messenger.",
+      "createTitle": "New contact details",
+      "editTitle": "Edit contact details"
     },
     "hints": {
       "counterparty": "Start typing counterparty name",
       "searching": "Searching...",
-      "empty": "No results"
+      "empty": "No results",
+      "displayNameAuto": "Generated automatically from first and last name",
+      "displayNameAutoEmpty": "Enter first and last name",
+      "departmentNote": "Free-text note. It does not change access or visibility yet.",
+      "mainContact": "Used as the main contact for this company."
     },
     "meta": {
       "createdAt": "Created",
@@ -3064,7 +3100,119 @@
     },
     "section": {
       "title": "Contacts",
-      "detailsTitle": "Contact details"
+      "detailsTitle": "Contact details",
+      "subtitle": "People linked to this counterparty",
+      "relatedTitle": "Related people",
+      "relatedSubtitle": "People linked to this individual"
+    },
+    "companyPoints": {
+      "title": "Company contact points",
+      "personTitle": "Individual contact details",
+      "subtitle": "Phones, email and public channels for this company",
+      "personSubtitle": "Phone, email and public channels for this person",
+      "add": "Add",
+      "create": "Create",
+      "createTitle": "New contact point",
+      "editTitle": "Edit contact point",
+      "personCreateTitle": "New contact details",
+      "personEditTitle": "Edit contact details",
+      "editorHint": "Choose a channel, add value and mark primary when it should be the default.",
+      "channel": "Channel",
+      "country": "Country",
+      "countrySearch": "Search country or code",
+      "countryEmpty": "No countries found",
+      "prefix": "Prefix",
+      "prefixCustom": "Custom",
+      "value": "Value",
+      "valuePlaceholder": "phone, email, URL or handle",
+      "phonePlaceholder": "+48 578 273 827",
+      "label": "Label",
+      "labelPlaceholder": "Sales, billing, support",
+      "primary": "Primary",
+      "primaryShort": "Primary",
+      "visible": "Visible",
+      "private": "Hidden",
+      "noLabel": "No label",
+      "copy": "Copy",
+      "open": "Open",
+      "makePrimary": "Make primary",
+      "confirmDelete": "Delete company contact point?",
+      "emptyTitle": "No company contact points yet",
+      "emptyText": "Add a primary email, phone or website so documents and communication can use it.",
+      "personEmptyTitle": "No contact details yet",
+      "personEmptyText": "Add this person's phone, email or website.",
+      "normalizedPreview": "Will save",
+      "phoneHints": {
+        "valid": "Format looks correct",
+        "incompleteForCountry": "Number looks incomplete for {{country}}",
+        "checkDigits": "Check the number of digits",
+        "unknown": "Unknown international format"
+      },
+      "duplicates": {
+        "phoneCounterparty": "This number is already linked to counterparty {{name}}",
+        "phoneContact": "This number is already used by contact person {{name}}",
+        "emailCounterparty": "This email is already linked to counterparty {{name}}",
+        "emailContact": "This email is already used by contact person {{name}}",
+        "generic": "This contact point already exists",
+        "open": "Open"
+      },
+      "countryNames": {
+        "PL": "Poland",
+        "UA": "Ukraine",
+        "DE": "Germany",
+        "CZ": "Czechia",
+        "SK": "Slovakia",
+        "LT": "Lithuania",
+        "LV": "Latvia",
+        "EE": "Estonia",
+        "GB": "United Kingdom",
+        "IE": "Ireland",
+        "FR": "France",
+        "ES": "Spain",
+        "IT": "Italy",
+        "NL": "Netherlands",
+        "BE": "Belgium",
+        "AT": "Austria",
+        "CH": "Switzerland",
+        "SE": "Sweden",
+        "NO": "Norway",
+        "DK": "Denmark",
+        "FI": "Finland",
+        "US": "United States",
+        "CA": "Canada",
+        "TR": "Turkey",
+        "RO": "Romania",
+        "HU": "Hungary",
+        "BG": "Bulgaria",
+        "GR": "Greece",
+        "PT": "Portugal",
+        "BR": "Brazil",
+        "IN": "India",
+        "CN": "China",
+        "JP": "Japan",
+        "KR": "South Korea",
+        "AU": "Australia",
+        "CUSTOM": "Custom format"
+      },
+      "actions": {
+        "call": "Call",
+        "mail": "Mail",
+        "open": "Open"
+      },
+      "channels": {
+        "phone": "Phone",
+        "email": "Email",
+        "website": "Website",
+        "whatsapp": "WhatsApp",
+        "telegram": "Telegram",
+        "messenger": "Messenger",
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "linkedin": "LinkedIn",
+        "youtube": "YouTube",
+        "tiktok": "TikTok",
+        "custom": "Custom"
+      }
     },
     "confirm": {
       "delete": "Delete this contact?"
@@ -3515,7 +3663,9 @@
         "contacts": "Contacts",
         "offers": "Offers",
         "orders": "Orders",
-        "additional": "Additional"
+        "additional": "Additional",
+        "timeline": "Timeline",
+        "customerWorkspace": "Customer Workspace"
       },
       "sections": {
         "identity": "Main",
@@ -3558,6 +3708,41 @@
         "offersText": "Create the first offer for this counterparty.",
         "ordersTitle": "No orders yet",
         "ordersText": "Create an order when this counterparty has an active sale."
+      },
+      "customerWorkspace": {
+        "title": "Customer Workspace",
+        "subtitle": "This section is under development.",
+        "roadmap": "Access to documents, offers, orders, invoices, payments, delivery, files, and customer history.",
+        "action": "Create access",
+        "actionHint": "Available in one of the next updates.",
+        "accessTitle": "After creating the customer workspace you will be able to:",
+        "access": {
+          "secureLink": "Create a secure customer link",
+          "documents": "Grant access to documents",
+          "offers": "Grant access to offers",
+          "orders": "Grant access to orders",
+          "invoices": "Grant access to invoices",
+          "payments": "Grant access to payments",
+          "history": "Grant access to history",
+          "files": "Grant access to files",
+          "communication": "Communicate with the customer inside Workspace",
+          "tracking": "Track customer actions"
+        }
+      },
+      "timeline": {
+        "title": "Timeline",
+        "subtitle": "System changes and actions for this counterparty.",
+        "loading": "Loading history",
+        "errorTitle": "History is unavailable",
+        "errorText": "Could not load change history.",
+        "emptyTitle": "No history yet",
+        "emptyText": "Change history will appear here.",
+        "event": "Event",
+        "eventText": "Counterparty change.",
+        "events": {
+          "created": "Counterparty created",
+          "updated": "Counterparty updated"
+        }
       },
       "notesTitle": "Counterparty notes",
       "validation": {
@@ -4998,5 +5183,10 @@
     "multipleRolesWarning": "Multiple roles assigned. Choosing a new role will reduce access to one primary role.",
     "showDetailedPermissions": "Show detailed permissions",
     "hideDetailedPermissions": "Hide detailed permissions"
+  },
+  "myAccount": {
+    "eyebrow": "Account",
+    "title": "My Account",
+    "placeholder": "This section is under development."
   }
 }

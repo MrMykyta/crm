@@ -14,10 +14,12 @@ import EntityNotesSection from "../../../../components/notes/EntityNotesSection"
 import DataTable from "../../../../components/data/DataTable";
 import HtmlDescriptionSection from "../../../../components/data/HtmlDescriptionSection";
 import CounterpartyContactsSection from "../../../../components/contacts/CounterpartyContactsSection";
+import EntityTimeline from "../../../../components/timeline/EntityTimeline";
 import { SelectField, TextField } from "../../../../components/ui/fields";
 import useAclPermissions from "../../../../hooks/useAclPermissions";
 import { getCountryOptions } from "../../../../utils/countries";
 import { buildContactsPayload } from "../../../../utils/buildContactsPayload";
+import { getEntityDiff, hasEntityDiff } from "../../../../utils/entityDiff";
 import {
   COUNTERPARTY_MAX,
   toApiCounterparty,
@@ -33,6 +35,7 @@ import {
 import { useListDepartmentsQuery } from "../../../../store/rtk/departmentsApi";
 import { useListOffersQuery } from "../../../../store/rtk/offersApi";
 import { useListOrdersQuery } from "../../../../store/rtk/ordersApi";
+import { useListEntityTimelineQuery } from "../../../../store/rtk/timelineApi";
 import s from "./CounterpartyDetailPage.module.css";
 
 const CONTRAGENT_TYPES = ["partner", "supplier", "manufacturer"];
@@ -53,7 +56,6 @@ const NIP_WEIGHTS = [6, 5, 7, 2, 3, 4, 5, 6, 7];
 const PESEL_WEIGHTS = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3];
 const TAX_ID_INPUT_MAX = 32;
 const PERSON_NAME_MAX = 100;
-
 const EMPTY_VALUES = {
   shortName: "",
   fullName: "",
@@ -838,6 +840,7 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
   const [errors, setErrors] = useState({});
   const [dirty, setDirty] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [showSavedState, setShowSavedState] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [registryState, setRegistryState] = useState({ status: "idle" });
   const [registryDetailsOpen, setRegistryDetailsOpen] = useState(false);
@@ -851,6 +854,10 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
   const registryLookupSeq = useRef(0);
   const registryVerifiedRef = useRef(null);
   const loadedCounterpartyKeyRef = useRef("");
+  const initialPayloadRef = useRef(null);
+  const valuesRef = useRef(EMPTY_VALUES);
+  const contactsRef = useRef([]);
+  const taxIdInputRef = useRef("");
 
   const { data: departmentsData } = useListDepartmentsQuery(
     { includeArchived: true },
@@ -890,6 +897,15 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
     skip: isCreateMode || !id,
     refetchOnMountOrArgChange: true,
   });
+  const {
+    data: timelineData,
+    isFetching: timelineFetching,
+    isError: timelineError,
+    refetch: refetchTimeline,
+  } = useListEntityTimelineQuery(
+    { entityType: "counterparty", entityId: id, limit: 25 },
+    { skip: isCreateMode || !id }
+  );
   const [createCounterparty, { isLoading: creating }] = useCreateCounterpartyMutation();
   const [updateCounterparty, { isLoading: updating }] = useUpdateCounterpartyMutation();
   const [removeCounterparty, { isLoading: deleting }] = useRemoveCounterpartyMutation();
@@ -901,11 +917,65 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
   }, [registryVerified]);
 
   useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
+
+  useEffect(() => {
+    contactsRef.current = contacts;
+  }, [contacts]);
+
+  useEffect(() => {
+    taxIdInputRef.current = taxIdInput;
+  }, [taxIdInput]);
+
+  useEffect(() => {
+    if (!showSavedState) return undefined;
+    const timeout = window.setTimeout(() => setShowSavedState(false), 2200);
+    return () => window.clearTimeout(timeout);
+  }, [showSavedState]);
+
+  const buildSnapshotPayload = useCallback((nextValues, nextContacts = [], nextVerified = registryVerifiedRef.current) => {
+    const normalized = normalizeValuesForApi(nextValues);
+    const payload = {
+      ...toApiCounterparty(normalized),
+      ...(fixedType ? { type: fixedType } : null),
+      contacts: buildContactsPayload(nextContacts),
+      firstName: nextValues.isCompany ? null : (asText(nextValues.firstName) || null),
+      lastName: nextValues.isCompany ? null : (asText(nextValues.lastName) || null),
+      pesel: nextValues.isCompany ? null : (normalizePesel(nextValues.pesel) || null),
+      birthDate: nextValues.isCompany ? null : (asText(nextValues.birthDate) || null),
+    };
+    if (!nextValues.isCompany) {
+      payload.nip = null;
+      payload.regon = null;
+      payload.krs = null;
+    }
+    if (nextValues.isCompany && nextVerified && registryValuesMatchForm(nextValues, nextVerified)) {
+      const registryVerification = buildRegistryVerificationPayload(nextVerified);
+      if (registryVerification) payload.registryVerification = registryVerification;
+    }
+    return payload;
+  }, [fixedType]);
+
+  const syncDirty = useCallback((nextValues, nextContacts = contacts, nextVerified = registryVerifiedRef.current) => {
+    if (!initialPayloadRef.current) {
+      setDirty(true);
+      setShowSavedState(false);
+      return;
+    }
+    const hasDiff = hasEntityDiff(initialPayloadRef.current, buildSnapshotPayload(nextValues, nextContacts, nextVerified));
+    setDirty(hasDiff);
+    if (hasDiff) setShowSavedState(false);
+  }, [buildSnapshotPayload, contacts]);
+
+  useEffect(() => {
     if (isCreateMode) {
       setValues(createDefaults);
       setContacts([]);
+      initialPayloadRef.current = buildSnapshotPayload(createDefaults, [], null);
       setErrors({});
       setDirty(false);
+      setShowSavedState(false);
       setTaxIdInput("");
       setRegistryState({ status: "idle" });
       setRegistryVerified(null);
@@ -925,10 +995,14 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
     const persistedVerified = buildRegistryVerifiedFromCounterparty(detail);
     const preservedVerified = routeVerified || persistedVerified || registryVerifiedRef.current;
     const nextVerified = form.isCompany && preservedVerified?.nip === normalizedFormNip ? preservedVerified : null;
-    setValues({ ...EMPTY_VALUES, ...form, type: fixedType || form.type, contacts: undefined });
-    setContacts(Array.isArray(form.contacts) ? form.contacts : []);
+    const nextValues = { ...EMPTY_VALUES, ...form, type: fixedType || form.type, contacts: undefined };
+    const nextContacts = Array.isArray(form.contacts) ? form.contacts : [];
+    setValues(nextValues);
+    setContacts(nextContacts);
+    initialPayloadRef.current = buildSnapshotPayload(nextValues, nextContacts, nextVerified);
     setErrors({});
     setDirty(false);
+    setShowSavedState(false);
     setTaxIdInput(form.nip || "");
     setDisplayNameTouched(false);
     setBirthDateDerivedFromPesel(false);
@@ -941,7 +1015,7 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
       setRegistryApplyStatus("idle");
       setRegistryApplyMessage("");
     }
-  }, [createDefaults, detail, fixedType, id, isCreateMode, location.state]);
+  }, [buildSnapshotPayload, createDefaults, detail, fixedType, id, isCreateMode, location.state]);
 
   const setField = useCallback((field, value) => {
     setValues((current) => {
@@ -950,13 +1024,14 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
       if (typeof nextValue === "string" && COUNTERPARTY_MAX[field]) {
         nextValue = nextValue.slice(0, COUNTERPARTY_MAX[field]);
       }
-      return { ...current, [field]: nextValue };
+      const next = { ...current, [field]: nextValue };
+      syncDirty(next);
+      return next;
     });
     setErrors((current) => ({ ...current, [field]: undefined, name: undefined }));
     setRegistryApplyStatus("idle");
     setRegistryApplyMessage("");
-    setDirty(true);
-  }, []);
+  }, [syncDirty]);
 
   const setPersonNameField = useCallback((field, value) => {
     setValues((current) => {
@@ -965,13 +1040,13 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
       if (!displayNameTouched) {
         nextValues.shortName = buildPersonDisplayName(nextValues.firstName, nextValues.lastName).slice(0, COUNTERPARTY_MAX.shortName);
       }
+      syncDirty(nextValues);
       return nextValues;
     });
     setErrors((current) => ({ ...current, [field]: undefined, shortName: undefined, name: undefined }));
     setRegistryApplyStatus("idle");
     setRegistryApplyMessage("");
-    setDirty(true);
-  }, [displayNameTouched]);
+  }, [displayNameTouched, syncDirty]);
 
   const setDisplayNameField = useCallback((value) => {
     setDisplayNameTouched(true);
@@ -979,10 +1054,13 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
   }, [setField]);
 
   const setPeselField = useCallback((value) => {
-    setValues((current) => ({ ...current, pesel: normalizePesel(value) }));
+    setValues((current) => {
+      const next = { ...current, pesel: normalizePesel(value) };
+      syncDirty(next);
+      return next;
+    });
     setErrors((current) => ({ ...current, pesel: undefined }));
-    setDirty(true);
-  }, []);
+  }, [syncDirty]);
 
   const setBirthDateField = useCallback((value) => {
     setBirthDateDerivedFromPesel(false);
@@ -1018,8 +1096,12 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
     if (!isCompany) {
       setTaxIdInput("");
     }
-    setDirty(true);
-  }, []);
+    syncDirty({
+      ...values,
+      isCompany,
+      ...(isCompany ? { pesel: "", birthDate: "" } : { fullName: "", nip: "", regon: "", krs: "" }),
+    });
+  }, [syncDirty, values]);
 
   useEffect(() => {
     if (values.isCompany) return;
@@ -1032,49 +1114,29 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
     }
     setValues((current) => {
       if (current.isCompany || current.pesel !== values.pesel) return current;
-      return { ...current, birthDate: derivedBirthDate };
+      const next = { ...current, birthDate: derivedBirthDate };
+      syncDirty(next);
+      return next;
     });
     setBirthDateDerivedFromPesel(true);
     setErrors((current) => ({ ...current, birthDate: undefined }));
-    setDirty(true);
-  }, [birthDateDerivedFromPesel, values.birthDate, values.isCompany, values.pesel]);
+  }, [birthDateDerivedFromPesel, syncDirty, values.birthDate, values.isCompany, values.pesel]);
 
   const applyPeselBirthDateSuggestion = useCallback(() => {
     const derivedBirthDate = deriveBirthDateFromPesel(values.pesel);
     if (!derivedBirthDate) return;
-    setValues((current) => ({ ...current, birthDate: derivedBirthDate }));
+    setValues((current) => {
+      const next = { ...current, birthDate: derivedBirthDate };
+      syncDirty(next);
+      return next;
+    });
     setBirthDateDerivedFromPesel(true);
     setErrors((current) => ({ ...current, birthDate: undefined }));
-    setDirty(true);
-  }, [values.pesel]);
+  }, [syncDirty, values.pesel]);
 
   const buildPayloadForValues = useCallback((nextValues, nextVerified = registryVerified) => {
-    const normalized = normalizeValuesForApi(nextValues);
-    const payload = {
-      ...toApiCounterparty(normalized),
-      ...(fixedType ? { type: fixedType } : null),
-      contacts: buildContactsPayload(contacts),
-      firstName: nextValues.isCompany ? null : (asText(nextValues.firstName) || null),
-      lastName: nextValues.isCompany ? null : (asText(nextValues.lastName) || null),
-      pesel: nextValues.isCompany ? null : (normalizePesel(nextValues.pesel) || null),
-      birthDate: nextValues.isCompany ? null : (asText(nextValues.birthDate) || null),
-    };
-    if (!nextValues.isCompany) {
-      payload.nip = null;
-      payload.regon = null;
-      payload.krs = null;
-    }
-    if (nextValues.isCompany && nextVerified && registryValuesMatchForm(nextValues, nextVerified)) {
-      const registryVerification = buildRegistryVerificationPayload(nextVerified);
-      if (registryVerification) payload.registryVerification = registryVerification;
-    }
-    return payload;
-  }, [contacts, fixedType, registryVerified]);
-
-  const buildPayload = useCallback(
-    () => buildPayloadForValues(values, registryVerified),
-    [buildPayloadForValues, registryVerified, values]
-  );
+    return buildSnapshotPayload(nextValues, contacts, nextVerified);
+  }, [buildSnapshotPayload, contacts, registryVerified]);
 
   const taxIdParse = useMemo(() => parseTaxIdInput(taxIdInput), [taxIdInput]);
   const normalizedNip = normalizeNip(values.nip);
@@ -1116,13 +1178,13 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
       } else if (parsed.validFormat && parsed.country === "PL" && isValidPolishNip(parsed.value) && (!currentCountry || currentCountry === "PL")) {
         nextValues.country = "PL";
       }
+      syncDirty(nextValues);
       return nextValues;
     });
     setErrors((current) => ({ ...current, nip: undefined, country: undefined }));
     setRegistryApplyStatus("idle");
     setRegistryApplyMessage("");
-    setDirty(true);
-  }, []);
+  }, [syncDirty]);
 
   const runRegistryLookup = useCallback(async ({ forceRefresh = false } = {}) => {
     if (!registryEligible) return null;
@@ -1245,16 +1307,26 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
     setRegistryApplyStatus("saving");
     try {
       const payload = buildPayloadForValues(nextValues, verified);
-      const saved = await updateCounterparty({ id, body: payload, method: "PUT" }).unwrap();
+      const patch = getEntityDiff(initialPayloadRef.current || {}, payload);
+      if (!Object.keys(patch).length) {
+        setDirty(false);
+        return null;
+      }
+      const saved = await updateCounterparty({ id, body: patch, method: "PUT" }).unwrap();
       const form = toDetailFormCounterparty(saved);
       const persistedVerified = buildRegistryVerifiedFromCounterparty(saved) || verified;
-      setValues({ ...EMPTY_VALUES, ...form, type: fixedType || form.type, contacts: undefined });
-      setContacts(Array.isArray(form.contacts) ? form.contacts : []);
+      const savedValues = { ...EMPTY_VALUES, ...form, type: fixedType || form.type, contacts: undefined };
+      const savedContacts = Array.isArray(form.contacts) ? form.contacts : [];
+      setValues(savedValues);
+      setContacts(savedContacts);
+      initialPayloadRef.current = buildSnapshotPayload(savedValues, savedContacts, persistedVerified);
       setTaxIdInput(form.nip || nextNip);
       setRegistryVerified(persistedVerified);
       setRegistryState({ status: "idle", nip: persistedVerified?.nip || nextNip, hiddenAfterApply: true });
       setDirty(false);
       setSaveError("");
+      setShowSavedState(true);
+      refetchTimeline?.();
       setRegistryApplyStatus("success");
       setRegistryApplyMessage(t("crm.counterpartyDetail.registry.applySaved"));
     } catch (error) {
@@ -1264,7 +1336,7 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
       setRegistryApplyStatus("error");
       setRegistryApplyMessage(message);
     }
-  }, [buildPayloadForValues, editable, fixedType, id, isCreateMode, registryState.data, t, updateCounterparty, values]);
+  }, [buildPayloadForValues, buildSnapshotPayload, editable, fixedType, id, isCreateMode, refetchTimeline, registryState.data, t, updateCounterparty, values]);
 
   const handleIgnoreRegistry = useCallback(() => {
     setRegistryApplyStatus("idle");
@@ -1279,16 +1351,20 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
     runRegistryLookup({ forceRefresh: true });
   }, [runRegistryLookup]);
 
-  const handleSave = useCallback(async () => {
+  const persistCounterparty = useCallback(async ({ autosave = false } = {}) => {
     if (!editable) return null;
-    const nextErrors = validateValues(values, t);
-    const nextTaxIdError = values.isCompany ? getTaxIdValidationError(taxIdParse, t) : undefined;
+    const currentValues = autosave ? valuesRef.current : values;
+    const currentContacts = autosave ? contactsRef.current : contacts;
+    const currentVerified = registryVerifiedRef.current;
+    const currentTaxIdParse = autosave ? parseTaxIdInput(taxIdInputRef.current) : taxIdParse;
+    const nextErrors = validateValues(currentValues, t);
+    const nextTaxIdError = currentValues.isCompany ? getTaxIdValidationError(currentTaxIdParse, t) : undefined;
     if (nextTaxIdError) nextErrors.nip = nextTaxIdError;
     setErrors(nextErrors);
     setSaveError("");
     if (Object.keys(nextErrors).length) return null;
 
-    const payload = buildPayload();
+    const payload = buildSnapshotPayload(currentValues, currentContacts, currentVerified);
     try {
       if (isCreateMode) {
         const created = await createCounterparty(payload).unwrap();
@@ -1296,7 +1372,7 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
         if (createdId) {
           navigate(`${detailRoute}/${createdId}`, {
             replace: true,
-            state: registryVerified ? { registryVerified } : undefined,
+            state: currentVerified ? { registryVerified: currentVerified } : undefined,
           });
         } else {
           navigate(listRoute, { replace: true });
@@ -1304,28 +1380,69 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
         return created;
       }
 
-      const saved = await updateCounterparty({ id, body: payload, method: "PUT" }).unwrap();
-      if (Array.isArray(saved?.contacts)) {
-        setContacts(toDetailFormCounterparty(saved).contacts);
+      const patch = getEntityDiff(initialPayloadRef.current || {}, payload);
+      if (!Object.keys(patch).length) {
+        setDirty(false);
+        return null;
       }
-      setDirty(false);
+      const saved = await updateCounterparty({ id, body: patch, method: "PUT" }).unwrap();
+      if (!autosave && Array.isArray(saved?.contacts)) {
+        const form = toDetailFormCounterparty(saved);
+        const savedValues = { ...EMPTY_VALUES, ...form, type: fixedType || form.type, contacts: undefined };
+        const savedContacts = Array.isArray(form.contacts) ? form.contacts : [];
+        setValues(savedValues);
+        setContacts(savedContacts);
+        initialPayloadRef.current = buildSnapshotPayload(savedValues, savedContacts, currentVerified);
+      } else {
+        const nextBaseline = { ...(initialPayloadRef.current || {}), ...patch };
+        initialPayloadRef.current = nextBaseline;
+        const latestPayload = buildSnapshotPayload(valuesRef.current, contactsRef.current, registryVerifiedRef.current);
+        setDirty(hasEntityDiff(nextBaseline, latestPayload));
+      }
+      if (!autosave) setDirty(false);
+      setSaveError("");
+      setShowSavedState(true);
+      refetchTimeline?.();
       return saved;
     } catch (error) {
       const message = error?.data?.message || error?.message || t("crm.counterpartyDetail.messages.saveFailed");
       setSaveError(message);
+      setShowSavedState(false);
       return null;
     }
-  }, [buildPayload, createCounterparty, detailRoute, editable, id, isCreateMode, listRoute, navigate, registryVerified, t, taxIdParse, updateCounterparty, values]);
+  }, [buildSnapshotPayload, contacts, createCounterparty, detailRoute, editable, fixedType, id, isCreateMode, listRoute, navigate, refetchTimeline, t, taxIdParse, updateCounterparty, values]);
+
+  const handleSave = useCallback(() => persistCounterparty({ autosave: false }), [persistCounterparty]);
+
+  const handleAutosave = useCallback(() => persistCounterparty({ autosave: true }), [persistCounterparty]);
+
+  useEffect(() => {
+    if (isCreateMode || !editable || !dirty || saving || registryApplyStatus === "saving") return undefined;
+    const timeout = window.setTimeout(() => {
+      handleAutosave();
+    }, 1000);
+    return () => window.clearTimeout(timeout);
+  }, [dirty, editable, handleAutosave, isCreateMode, registryApplyStatus, saving]);
 
   const handleSaveDescription = useCallback(async (nextHtml) => {
-    setField("description", nextHtml);
     if (isCreateMode) return nextHtml;
     const nextValues = { ...values, description: nextHtml };
     const payload = buildPayloadForValues(nextValues, registryVerified);
-    const saved = await updateCounterparty({ id, body: payload, method: "PUT" }).unwrap();
+    const patch = getEntityDiff(initialPayloadRef.current || {}, payload);
+    if (!Object.keys(patch).length) {
+      setDirty(false);
+      return nextHtml ?? "";
+    }
+    const saved = await updateCounterparty({ id, body: patch, method: "PUT" }).unwrap();
+    const savedValues = { ...values, description: saved?.description ?? nextHtml ?? "" };
+    setValues(savedValues);
+    initialPayloadRef.current = buildSnapshotPayload(savedValues, contacts, registryVerified);
     setDirty(false);
+    setSaveError("");
+    setShowSavedState(true);
+    refetchTimeline?.();
     return saved?.description ?? nextHtml ?? "";
-  }, [buildPayloadForValues, id, isCreateMode, registryVerified, setField, updateCounterparty, values]);
+  }, [buildPayloadForValues, buildSnapshotPayload, contacts, id, isCreateMode, refetchTimeline, registryVerified, updateCounterparty, values]);
 
   const title = isCreateMode
     ? (isLeadMode
@@ -1762,6 +1879,120 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
     </div>
   ), [detail?.createdAt, detail?.updatedAt, editable, errors.bdo, id, locale, registrySystemInfo?.fetchedAt, registrySystemSource, setField, t, values.bdo]);
 
+  const timelineItems = useMemo(() => {
+    const items = Array.isArray(timelineData?.items) ? timelineData.items : [];
+    return items.map((event) => {
+      const eventTitleKey = event.eventType === "counterparty.created"
+        ? "crm.counterpartyDetail.timeline.events.created"
+        : event.eventType === "counterparty.updated"
+          ? "crm.counterpartyDetail.timeline.events.updated"
+          : null;
+      return {
+        ...event,
+        title: eventTitleKey ? t(eventTitleKey, event.title) : event.title,
+        changes: Array.isArray(event.changes)
+          ? event.changes.map((change) => ({
+            ...change,
+            label: change.labelKey ? t(change.labelKey, change.label || change.field) : change.label,
+          }))
+          : event.changes,
+      };
+    });
+  }, [t, timelineData]);
+
+  const timelinePanel = useMemo(() => (
+    <div className={`${s.tabStack} ${s.glassPanel} ${s.timelineGlass}`}>
+      <DetailSection
+        title={t("crm.counterpartyDetail.timeline.title", "История")}
+        subtitle={t("crm.counterpartyDetail.timeline.subtitle", "Системные изменения и действия по контрагенту.")}
+      >
+        <EntityTimeline
+          events={timelineItems}
+          loading={timelineFetching}
+          error={timelineError}
+          formatDate={(value) => formatDateTime(value, locale)}
+          loadingText={t("crm.counterpartyDetail.timeline.loading", "Загрузка истории")}
+          errorTitle={t("crm.counterpartyDetail.timeline.errorTitle", "История недоступна")}
+          errorText={t("crm.counterpartyDetail.timeline.errorText", "Не удалось загрузить историю изменений.")}
+          emptyTitle={t("crm.counterpartyDetail.timeline.emptyTitle", "История пока пуста")}
+          emptyText={t("crm.counterpartyDetail.timeline.emptyText", "История изменений будет отображаться здесь.")}
+        />
+      </DetailSection>
+    </div>
+  ), [locale, t, timelineError, timelineFetching, timelineItems]);
+
+  const customerWorkspacePanel = useMemo(() => {
+    const accessItems = [
+      t("crm.counterpartyDetail.customerWorkspace.access.secureLink", "Создать безопасную ссылку клиенту"),
+      t("crm.counterpartyDetail.customerWorkspace.access.documents", "Предоставить доступ к документам"),
+      t("crm.counterpartyDetail.customerWorkspace.access.offers", "Предоставить доступ к предложениям"),
+      t("crm.counterpartyDetail.customerWorkspace.access.orders", "Предоставить доступ к заказам"),
+      t("crm.counterpartyDetail.customerWorkspace.access.invoices", "Предоставить доступ к счетам"),
+      t("crm.counterpartyDetail.customerWorkspace.access.payments", "Предоставить доступ к оплатам"),
+      t("crm.counterpartyDetail.customerWorkspace.access.history", "Предоставить доступ к истории"),
+      t("crm.counterpartyDetail.customerWorkspace.access.files", "Предоставить доступ к файлам"),
+      t("crm.counterpartyDetail.customerWorkspace.access.communication", "Общаться с клиентом внутри Workspace"),
+      t("crm.counterpartyDetail.customerWorkspace.access.tracking", "Отслеживать действия клиента"),
+    ];
+    const flowItems = [
+      "Customer Workspace",
+      "Secure Link",
+      "Customer Timeline",
+      "Documents",
+      "Communication",
+      "Payments",
+      "Files",
+      "History",
+    ];
+
+    return (
+      <div className={`${s.tabStack} ${s.glassPanel} ${s.customerWorkspaceGlass}`}>
+        <section className={s.customerWorkspaceHero}>
+          <div className={s.hourglassWrap} aria-hidden="true">
+            <span className={s.hourglass}>⌛</span>
+          </div>
+          <div className={s.customerWorkspaceIntro}>
+            <p className={s.customerWorkspaceEyebrow}>Customer Workspace</p>
+            <h2>{t("crm.counterpartyDetail.customerWorkspace.title", "Кабинет клиента")}</h2>
+            <p>{t("crm.counterpartyDetail.customerWorkspace.subtitle", "Раздел находится в разработке.")}</p>
+            <p className={s.customerWorkspaceRoadmap}>
+              {t(
+                "crm.counterpartyDetail.customerWorkspace.roadmap",
+                "Доступ к документам, предложениям, заказам, счетам, оплатам, доставке, файлам и истории клиента."
+              )}
+            </p>
+          </div>
+          <div className={s.customerWorkspaceAction}>
+            <button type="button" disabled>
+              {t("crm.counterpartyDetail.customerWorkspace.action", "Создать доступ")}
+            </button>
+            <span>{t("crm.counterpartyDetail.customerWorkspace.actionHint", "Будет доступно в одном из следующих обновлений.")}</span>
+          </div>
+        </section>
+
+        <section className={s.customerWorkspaceGrid}>
+          <div className={s.customerWorkspaceList}>
+            <h3>{t("crm.counterpartyDetail.customerWorkspace.accessTitle", "После создания кабинета клиента вы сможете:")}</h3>
+            <ul>
+              {accessItems.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className={s.customerWorkspaceFlow} aria-label="Customer Workspace architecture">
+            {flowItems.map((item, index) => (
+              <div key={item} className={s.customerWorkspaceFlowItem}>
+                <span>{item}</span>
+                {index < flowItems.length - 1 ? <strong aria-hidden="true">↓</strong> : null}
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    );
+  }, [t]);
+
   const tabs = useMemo(() => {
     const baseTabs = [
       {
@@ -1808,6 +2039,7 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
             <CounterpartyContactsSection
               counterpartyId={id}
               counterpartyName={counterpartyName}
+              isCompany={Boolean(values.isCompany)}
             />
           </div>
         ),
@@ -1827,8 +2059,18 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
         label: t("crm.counterpartyDetail.tabs.additional"),
         children: additionalPanel,
       },
+      {
+        key: "timeline",
+        label: t("crm.counterpartyDetail.tabs.timeline", "История"),
+        children: timelinePanel,
+      },
+      {
+        key: "customerWorkspace",
+        label: t("crm.counterpartyDetail.tabs.customerWorkspace", "Кабинет клиента"),
+        children: customerWorkspacePanel,
+      },
     ];
-  }, [additionalPanel, addressPanel, counterpartyName, descriptionPanel, id, isCreateMode, t]);
+  }, [additionalPanel, addressPanel, counterpartyName, customerWorkspacePanel, descriptionPanel, id, isCreateMode, t, timelinePanel, values.isCompany]);
 
   const activeDetailTab = tabs.some((tab) => tab?.key === activeTab && !tab.hidden)
     ? activeTab
@@ -1858,7 +2100,9 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
             ? t("common.saving")
             : dirty
               ? t("common.unsaved")
-              : t("common.saved")),
+              : showSavedState
+                ? t("common.saved")
+                : ""),
         }}
         actions={[
           {

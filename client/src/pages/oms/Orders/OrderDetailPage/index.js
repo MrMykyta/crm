@@ -400,6 +400,10 @@ export default function OrderDetailPage() {
 
   const onSave = useCallback(async () => {
     setActionError('');
+    const nextSnapshot = buildDirtySnapshot(form, items);
+    if (!isCreate && nextSnapshot === cleanRef.current) {
+      return null;
+    }
     const nextErrors = validate();
     if (Object.keys(nextErrors).length) {
       setActionError(nextErrors.counterpartyId || t('documents.editor.validation.itemNameRequired'));
@@ -417,7 +421,7 @@ export default function OrderDetailPage() {
       await updateOrder({ id, payload }).unwrap();
       await saveOrderItems({ id, items: itemPayload }).unwrap();
       await refetch();
-      cleanRef.current = buildDirtySnapshot(form, items);
+      cleanRef.current = nextSnapshot;
       return currentOrder;
     } catch (err) {
       setActionError(getErrorText(err, t('documents.editor.saveFailed')));
@@ -652,7 +656,7 @@ export default function OrderDetailPage() {
             </button>
             <div className={s.headerMeta}>
               <span>{statusLabel(currentOrder?.status || 'draft', t)}</span>
-              {dirty ? <span>{t('oms.orderDetail.save.unsaved', 'Unsaved changes')}</span> : <span>{t('oms.orderDetail.save.saved', 'Saved')}</span>}
+              {dirty ? <span>{t('oms.orderDetail.save.unsaved', 'Unsaved changes')}</span> : null}
             </div>
           </div>
 

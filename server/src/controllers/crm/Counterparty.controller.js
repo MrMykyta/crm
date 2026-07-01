@@ -47,8 +47,11 @@ module.exports.update = async (req, res) => {
     const row = await counterpartyService.update(req.user.id, companyId, req.params.id, req.body);
     if (!row) return res.status(404).send({ error: 'Not found' });
 
-    // 🔊 realtime: обновлён контрагент
-    broadcast({ type: 'counterparty.updated', ids: [row.id], companyId });
+    const changed = (row._changedFields || []).length || row._contactsChanged;
+    if (changed) {
+      // 🔊 realtime: обновлён контрагент
+      broadcast({ type: 'counterparty.updated', ids: [row.id], companyId });
+    }
 
     res.status(200).send(row);
   } catch (e) {
@@ -88,4 +91,3 @@ module.exports.convertLead = async (req, res) => {
     res.status(500).send({ error: e.message });
   }
 };
-

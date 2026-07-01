@@ -40,6 +40,7 @@
     "smoke:pdf:generated-documents": "node scripts/smokeGeneratedDocuments.js",
     "smoke:document-delivery": "node scripts/smokeDocumentDelivery.js",
     "smoke:document-share": "node scripts/smokeDocumentShare.js",
+    "smoke:entity-timeline": "node scripts/smokeEntityTimeline.js",
     "smoke:notes:visibility": "node scripts/smokeNotesVisibility.js",
     "smoke:departments:directory": "node scripts/smokeDepartmentsDirectory.js",
     "smoke:dept:counterparties": "node scripts/smokeDeptCounterparties.js",

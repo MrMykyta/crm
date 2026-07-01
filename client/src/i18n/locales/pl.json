@@ -1433,6 +1433,13 @@
       "sending": "Wysyłanie...",
       "invalidEmail": "Wpisz poprawny adres email.",
       "sendFailed": "Nie udało się wysłać dokumentu.",
+      "sources": {
+        "companyContactPoint": "Email z kontaktów firmy",
+        "contactPersonContactPoint": "Email głównej osoby kontaktowej",
+        "contactPersonLegacy": "Email z karty osoby kontaktowej",
+        "counterpartyLegacy": "Email z karty kontrahenta",
+        "manual": "Wpisano ręcznie"
+      },
       "types": {
         "offer": "Oferta",
         "invoice": "Faktura",
@@ -2934,12 +2941,25 @@
       "create": "Nowy kontakt",
       "edit": "Edycja kontaktu"
     },
+    "tabs": {
+      "overview": "Opis",
+      "contactPoints": "Kontakty",
+      "additional": "Dodatkowe"
+    },
+    "detail": {
+      "identity": "Identyfikacja",
+      "identitySubtitle": "Imię, relacja i rola",
+      "contactSettings": "Ustawienia kontaktu",
+      "contactSettingsSubtitle": "Rola w karcie kontrahenta"
+    },
     "fields": {
       "counterparty": "Kontrahent",
       "firstName": "Imię",
       "lastName": "Nazwisko",
+      "displayName": "Nazwa wyświetlana",
       "position": "Stanowisko",
       "department": "Dział",
+      "departmentNote": "Zespół / dział",
       "phone": "Telefon",
       "email": "Email",
       "note": "Notatka",
@@ -2981,12 +3001,27 @@
     },
     "messages": {
       "emptyCounterparty": "Brak osób kontaktowych dla tego kontrahenta",
+      "emptyRelatedPersons": "Brak powiązanych osób dla tej osoby",
+      "noRole": "Rola nie podana",
+      "noCommunication": "Brak danych kontaktowych",
       "notFound": "Nie znaleziono kontaktu"
+    },
+    "contactPoints": {
+      "title": "Dane kontaktowe osoby kontaktowej",
+      "subtitle": "Telefon, email i publiczne kanały tej osoby",
+      "emptyTitle": "Brak danych kontaktowych",
+      "emptyText": "Dodaj telefon, email lub komunikator tej osoby.",
+      "createTitle": "Nowe dane kontaktowe",
+      "editTitle": "Edytuj dane kontaktowe"
     },
     "hints": {
       "counterparty": "Zacznij wpisywać nazwę kontrahenta",
       "searching": "Wyszukiwanie...",
-      "empty": "Brak wyników"
+      "empty": "Brak wyników",
+      "displayNameAuto": "Tworzone automatycznie z imienia i nazwiska",
+      "displayNameAutoEmpty": "Wpisz imię i nazwisko",
+      "departmentNote": "Notatka tekstowa. Nie zmienia jeszcze dostępu ani widoczności.",
+      "mainContact": "Używany jako główny kontakt tej firmy."
     },
     "meta": {
       "createdAt": "Utworzono",
@@ -2995,7 +3030,119 @@
     },
     "section": {
       "title": "Osoby kontaktowe",
-      "detailsTitle": "Dane kontaktowe"
+      "detailsTitle": "Dane kontaktowe",
+      "subtitle": "Osoby powiązane z tym kontrahentem",
+      "relatedTitle": "Osoby powiązane",
+      "relatedSubtitle": "Osoby powiązane z tą osobą fizyczną"
+    },
+    "companyPoints": {
+      "title": "Kontakty firmy",
+      "personTitle": "Dane kontaktowe osoby fizycznej",
+      "subtitle": "Telefony, email i publiczne kanały kontrahenta",
+      "personSubtitle": "Telefon, email i publiczne kanały tej osoby",
+      "add": "Dodaj",
+      "create": "Utwórz",
+      "createTitle": "Nowy punkt kontaktowy",
+      "editTitle": "Edytuj punkt kontaktowy",
+      "personCreateTitle": "Nowe dane kontaktowe",
+      "personEditTitle": "Edytuj dane kontaktowe",
+      "editorHint": "Wybierz kanał, dodaj wartość i oznacz jako główny, jeśli ma być domyślny.",
+      "channel": "Kanał",
+      "country": "Kraj",
+      "countrySearch": "Szukaj kraju lub kodu",
+      "countryEmpty": "Nie znaleziono krajów",
+      "prefix": "Prefiks",
+      "prefixCustom": "Własny",
+      "value": "Wartość",
+      "valuePlaceholder": "telefon, email, URL lub handle",
+      "phonePlaceholder": "+48 578 273 827",
+      "label": "Etykieta",
+      "labelPlaceholder": "Sprzedaż, faktury, wsparcie",
+      "primary": "Główny",
+      "primaryShort": "Główny",
+      "visible": "Widoczny",
+      "private": "Ukryty",
+      "noLabel": "Bez etykiety",
+      "copy": "Kopiuj",
+      "open": "Otwórz",
+      "makePrimary": "Ustaw jako główny",
+      "confirmDelete": "Usunąć kontakt firmy?",
+      "emptyTitle": "Brak kontaktów firmy",
+      "emptyText": "Dodaj główny email, telefon lub stronę, aby używać ich w dokumentach i komunikacji.",
+      "personEmptyTitle": "Brak danych kontaktowych",
+      "personEmptyText": "Dodaj telefon, email lub stronę tej osoby.",
+      "normalizedPreview": "Zostanie zapisane",
+      "phoneHints": {
+        "valid": "Format wygląda poprawnie",
+        "incompleteForCountry": "Numer wygląda na niepełny dla {{country}}",
+        "checkDigits": "Sprawdź liczbę cyfr",
+        "unknown": "Nieznany format międzynarodowy"
+      },
+      "duplicates": {
+        "phoneCounterparty": "Ten numer jest już przypisany do kontrahenta {{name}}",
+        "phoneContact": "Ten numer jest już używany przez osobę kontaktową {{name}}",
+        "emailCounterparty": "Ten email jest już przypisany do kontrahenta {{name}}",
+        "emailContact": "Ten email jest już używany przez osobę kontaktową {{name}}",
+        "generic": "Taki punkt kontaktowy już istnieje",
+        "open": "Otwórz"
+      },
+      "countryNames": {
+        "PL": "Polski",
+        "UA": "Ukrainy",
+        "DE": "Niemiec",
+        "CZ": "Czech",
+        "SK": "Słowacji",
+        "LT": "Litwy",
+        "LV": "Łotwy",
+        "EE": "Estonii",
+        "GB": "Wielkiej Brytanii",
+        "IE": "Irlandii",
+        "FR": "Francji",
+        "ES": "Hiszpanii",
+        "IT": "Włoch",
+        "NL": "Holandii",
+        "BE": "Belgii",
+        "AT": "Austrii",
+        "CH": "Szwajcarii",
+        "SE": "Szwecji",
+        "NO": "Norwegii",
+        "DK": "Danii",
+        "FI": "Finlandii",
+        "US": "USA",
+        "CA": "Kanady",
+        "TR": "Turcji",
+        "RO": "Rumunii",
+        "HU": "Węgier",
+        "BG": "Bułgarii",
+        "GR": "Grecji",
+        "PT": "Portugalii",
+        "BR": "Brazylii",
+        "IN": "Indii",
+        "CN": "Chin",
+        "JP": "Japonii",
+        "KR": "Korei Południowej",
+        "AU": "Australii",
+        "CUSTOM": "Własny format"
+      },
+      "actions": {
+        "call": "Zadzwoń",
+        "mail": "Napisz",
+        "open": "Otwórz"
+      },
+      "channels": {
+        "phone": "Telefon",
+        "email": "Email",
+        "website": "Strona",
+        "whatsapp": "WhatsApp",
+        "telegram": "Telegram",
+        "messenger": "Messenger",
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "linkedin": "LinkedIn",
+        "youtube": "YouTube",
+        "tiktok": "TikTok",
+        "custom": "Inne"
+      }
     },
     "confirm": {
       "delete": "Usunąć kontakt?"
@@ -3505,7 +3652,9 @@
         "contacts": "Kontakty",
         "offers": "Oferty",
         "orders": "Zamówienia",
-        "additional": "Dodatkowe"
+        "additional": "Dodatkowe",
+        "timeline": "Historia",
+        "customerWorkspace": "Panel klienta"
       },
       "sections": {
         "identity": "Podstawowe",
@@ -3548,6 +3697,41 @@
         "offersText": "Utwórz pierwszą ofertę dla tego kontrahenta.",
         "ordersTitle": "Brak zamówień",
         "ordersText": "Utwórz zamówienie, gdy kontrahent ma aktywną sprzedaż."
+      },
+      "customerWorkspace": {
+        "title": "Panel klienta",
+        "subtitle": "Ta sekcja jest w przygotowaniu.",
+        "roadmap": "Dostęp do dokumentów, ofert, zamówień, faktur, płatności, dostaw, plików i historii klienta.",
+        "action": "Utwórz dostęp",
+        "actionHint": "Będzie dostępne w jednej z kolejnych aktualizacji.",
+        "accessTitle": "Po utworzeniu panelu klienta będzie można:",
+        "access": {
+          "secureLink": "Utworzyć bezpieczny link dla klienta",
+          "documents": "Udostępnić dokumenty",
+          "offers": "Udostępnić oferty",
+          "orders": "Udostępnić zamówienia",
+          "invoices": "Udostępnić faktury",
+          "payments": "Udostępnić płatności",
+          "history": "Udostępnić historię",
+          "files": "Udostępnić pliki",
+          "communication": "Komunikować się z klientem w Workspace",
+          "tracking": "Śledzić działania klienta"
+        }
+      },
+      "timeline": {
+        "title": "Historia",
+        "subtitle": "Zmiany systemowe i działania dotyczące kontrahenta.",
+        "loading": "Ładowanie historii",
+        "errorTitle": "Historia jest niedostępna",
+        "errorText": "Nie udało się załadować historii zmian.",
+        "emptyTitle": "Historia jest pusta",
+        "emptyText": "Historia zmian będzie widoczna tutaj.",
+        "event": "Zdarzenie",
+        "eventText": "Zmiana kontrahenta.",
+        "events": {
+          "created": "Kontrahent utworzony",
+          "updated": "Kontrahent zaktualizowany"
+        }
       },
       "notesTitle": "Notatki kontrahenta",
       "validation": {
@@ -4992,5 +5176,10 @@
     "multipleRolesWarning": "Użytkownik ma przypisanych kilka ról. Wybór nowej roli ograniczy dostęp do jednej roli głównej.",
     "showDetailedPermissions": "Pokaż szczegółowe uprawnienia",
     "hideDetailedPermissions": "Ukryj szczegółowe uprawnienia"
+  },
+  "myAccount": {
+    "eyebrow": "Konto",
+    "title": "Moje konto",
+    "placeholder": "Ta sekcja jest w przygotowaniu."
   }
 }

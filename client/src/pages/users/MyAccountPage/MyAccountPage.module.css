@@ -1,0 +1,60 @@
+.page {
+  min-height: calc(100vh - 96px);
+  padding: 32px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.card {
+  width: min(720px, 100%);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--detail-border, rgba(255, 255, 255, 0.14));
+  border-radius: 18px;
+  background: var(--detail-surface, rgba(15, 23, 42, 0.78));
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(18px);
+}
+
+.icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--accent, #7c6cff);
+  background: color-mix(in srgb, var(--accent, #7c6cff) 16%, transparent);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--text-muted, rgba(255, 255, 255, 0.62));
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.card h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.card p {
+  margin: 0;
+  color: var(--text-muted, rgba(255, 255, 255, 0.68));
+}
+
+@media (max-width: 520px) {
+  .page {
+    padding: 16px;
+  }
+
+  .card {
+    grid-template-columns: 1fr;
+  }
+}

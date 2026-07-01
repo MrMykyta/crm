@@ -39,6 +39,37 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.derivedNameCard {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--card-brd) 78%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card-bg) 84%, transparent);
+}
+
+.derivedLabel {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 720;
+}
+
+.derivedValue {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.derivedHint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .inlineLink {
   display: inline-flex;
   align-items: center;

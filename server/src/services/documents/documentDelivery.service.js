@@ -3,7 +3,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const AppError = require('../../errors/AppError');
-const { Contact, Document, File } = require('../../models');
+const { Contact, ContactPoint, Counterparty, Document, File } = require('../../models');
 const { STORAGE_ROOT } = require('../../config/files');
 const mailer = require('../system/mailer');
 const eventService = require('../system/eventService');
@@ -123,9 +123,14 @@ function getDirectContact(entity) {
   };
 }
 
-async function findPrimaryContact({ companyId, counterpartyId }) {
+function contactName(contact) {
+  if (!contact) return null;
+  return contact.name || contact.fullName || contact.displayName || [contact.firstName, contact.lastName].filter(Boolean).join(' ') || null;
+}
+
+async function findPrimaryContactPerson({ companyId, counterpartyId }) {
   if (!companyId || !counterpartyId) return null;
-  const contact = await Contact.findOne({
+  return Contact.findOne({
     where: {
       companyId,
       counterpartyId,
@@ -136,10 +141,58 @@ async function findPrimaryContact({ companyId, counterpartyId }) {
       ['createdAt', 'ASC'],
     ],
   });
-  if (!contact?.email) return null;
+}
+
+async function findPrimaryContactEmailPoint({ companyId, contactId }) {
+  if (!companyId || !contactId) return null;
+  const point = await ContactPoint.findOne({
+    where: {
+      companyId,
+      ownerType: 'contact',
+      ownerId: contactId,
+      channel: 'email',
+    },
+    order: [
+      ['isPrimary', 'DESC'],
+      ['createdAt', 'ASC'],
+    ],
+  });
+  if (!point?.valueRaw || !isValidEmail(point.valueRaw)) return null;
   return {
-    email: contact.email,
-    name: contact.fullName || contact.displayName || [contact.firstName, contact.lastName].filter(Boolean).join(' ') || null,
+    email: point.valueRaw,
+    name: point.label || null,
+  };
+}
+
+async function findPrimaryCounterpartyEmail({ companyId, counterpartyId }) {
+  if (!companyId || !counterpartyId) return null;
+  const point = await ContactPoint.findOne({
+    where: {
+      companyId,
+      ownerType: 'counterparty',
+      ownerId: counterpartyId,
+      channel: 'email',
+    },
+    order: [
+      ['isPrimary', 'DESC'],
+      ['createdAt', 'ASC'],
+    ],
+  });
+  if (!point?.valueRaw || !isValidEmail(point.valueRaw)) return null;
+  return {
+    email: point.valueRaw,
+    name: point.label || null,
+  };
+}
+
+async function findCounterpartyLegacyEmail({ companyId, counterpartyId }) {
+  if (!companyId || !counterpartyId) return null;
+  const counterparty = await Counterparty.findOne({ where: { id: counterpartyId, companyId } });
+  const email = counterparty?.email || counterparty?.primaryEmail || counterparty?.billingEmail || counterparty?.contactEmail || null;
+  if (!email || !isValidEmail(email)) return null;
+  return {
+    email,
+    name: counterparty.shortName || counterparty.fullName || counterparty.name || null,
   };
 }
 
@@ -156,17 +209,50 @@ async function resolveRecipient({ entity, user, recipientEmail, recipientName })
     };
   }
 
-  const direct = getDirectContact(entity);
-  if (direct?.email && isValidEmail(direct.email)) {
-    return { ...direct, source: 'contact' };
+  const counterpartyId = getCounterpartyId(entity);
+  const primaryCounterpartyEmail = await findPrimaryCounterpartyEmail({
+    companyId: user.companyId,
+    counterpartyId,
+  });
+  if (primaryCounterpartyEmail?.email) {
+    return { ...primaryCounterpartyEmail, source: 'counterparty_primary_email' };
   }
 
-  const primary = await findPrimaryContact({
+  const primaryContact = await findPrimaryContactPerson({
     companyId: user.companyId,
-    counterpartyId: getCounterpartyId(entity),
+    counterpartyId,
   });
-  if (primary?.email && isValidEmail(primary.email)) {
-    return { ...primary, source: 'primary_contact' };
+  const primaryContactPoint = await findPrimaryContactEmailPoint({
+    companyId: user.companyId,
+    contactId: primaryContact?.id,
+  });
+  if (primaryContactPoint?.email) {
+    return {
+      ...primaryContactPoint,
+      name: primaryContactPoint.name || contactName(primaryContact),
+      source: 'primary_contact_email_point',
+    };
+  }
+
+  const direct = getDirectContact(entity);
+  if (direct?.email && isValidEmail(direct.email)) {
+    return { ...direct, source: 'contact_legacy_email' };
+  }
+
+  if (primaryContact?.email && isValidEmail(primaryContact.email)) {
+    return {
+      email: primaryContact.email,
+      name: contactName(primaryContact),
+      source: 'contact_legacy_email',
+    };
+  }
+
+  const counterpartyLegacy = await findCounterpartyLegacyEmail({
+    companyId: user.companyId,
+    counterpartyId,
+  });
+  if (counterpartyLegacy?.email) {
+    return { ...counterpartyLegacy, source: 'counterparty_legacy_email' };
   }
 
   throw new AppError(400, 'Recipient email is required', { code: 'RECIPIENT_REQUIRED' });

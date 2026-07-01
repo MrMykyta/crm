@@ -1021,7 +1021,7 @@ export default function DealDetailsPage({ createMode = false }) {
     ? t('common.saving', 'Saving…')
     : dirty
       ? t('common.unsaved', 'Unsaved')
-      : t('common.saved', 'Saved'));
+      : '');
 
   return (
     <>

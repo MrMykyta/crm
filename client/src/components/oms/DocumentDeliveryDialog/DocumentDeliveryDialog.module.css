@@ -40,6 +40,12 @@
   font-weight: 650;
 }
 
+.sourceHint {
+  color: var(--ui-text-3);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .field input,
 .field textarea {
   width: 100%;

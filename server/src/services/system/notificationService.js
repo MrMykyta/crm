@@ -176,4 +176,3 @@ module.exports.markAllRead = async function markAllRead(companyId, userId) {
   );
   return n;
 };
-

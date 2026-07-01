@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getEntityDiff, hasEntityDiff } from '../../utils/entityDiff';
 
 export default function useDetailData({
   initialData = null,
@@ -14,6 +15,7 @@ export default function useDetailData({
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState(null);
   const latestData = useRef(data);
+  const cleanData = useRef(initialData || {});
 
   useEffect(() => {
     latestData.current = data;
@@ -28,6 +30,7 @@ export default function useDetailData({
       .then((next) => {
         if (!cancelled) {
           setData(next);
+          cleanData.current = next || {};
           setDirty(false);
           setError(null);
         }
@@ -47,11 +50,15 @@ export default function useDetailData({
   }, [load, onError]);
 
   const patch = useCallback((nextPatch) => {
-    setData((current) => ({
-      ...(current || {}),
-      ...(typeof nextPatch === 'function' ? nextPatch(current || {}) : nextPatch),
-    }));
-    setDirty(true);
+    setData((current) => {
+      const resolvedPatch = typeof nextPatch === 'function' ? nextPatch(current || {}) : nextPatch;
+      const nextData = {
+        ...(current || {}),
+        ...resolvedPatch,
+      };
+      setDirty(hasEntityDiff(cleanData.current, nextData));
+      return nextData;
+    });
   }, []);
 
   const updateField = useCallback((name, value) => {
@@ -60,10 +67,17 @@ export default function useDetailData({
 
   const saveNow = useCallback(async () => {
     if (!save) return latestData.current;
+    const diff = getEntityDiff(cleanData.current, latestData.current);
+    if (!Object.keys(diff).length) {
+      setDirty(false);
+      return latestData.current;
+    }
     setSaving(true);
     try {
-      const result = await save(latestData.current);
-      if (result !== undefined) setData(result);
+      const result = await save(diff, latestData.current);
+      const nextData = result !== undefined ? result : latestData.current;
+      setData(nextData);
+      cleanData.current = nextData || {};
       setDirty(false);
       setError(null);
       return result;

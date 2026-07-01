@@ -16,6 +16,7 @@ export default function DocumentDeliveryDialog({
   documentLabel,
   documentNumber,
   defaultRecipientEmail,
+  defaultRecipientSource,
   defaultSubject,
   defaultBody,
   locale,
@@ -26,17 +27,26 @@ export default function DocumentDeliveryDialog({
   t,
 }) {
   const [email, setEmail] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
 
   useEffect(() => {
     if (!open) return;
     setEmail(defaultRecipientEmail || '');
+    setEmailTouched(false);
     setSubject(defaultSubject || '');
     setBody(defaultBody || '');
   }, [defaultBody, defaultRecipientEmail, defaultSubject, open]);
 
   const canSend = useMemo(() => isValidEmail(email) && !loading, [email, loading]);
+  const recipientSource = useMemo(() => {
+    const current = asText(email);
+    const original = asText(defaultRecipientEmail);
+    if (!current) return 'manual';
+    if (!emailTouched && current === original) return defaultRecipientSource || 'manual';
+    return 'manual';
+  }, [defaultRecipientEmail, defaultRecipientSource, email, emailTouched]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -81,10 +91,16 @@ export default function DocumentDeliveryDialog({
           <span>{t('oms.documentDelivery.recipientEmail', 'Recipient email')}</span>
           <input
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmailTouched(true);
+              setEmail(event.target.value);
+            }}
             placeholder={t('oms.documentDelivery.recipientPlaceholder', 'client@example.com')}
             autoComplete="email"
           />
+          <small className={s.sourceHint}>
+            {t(`oms.documentDelivery.sources.${recipientSource}`, t('oms.documentDelivery.sources.manual', 'Entered manually'))}
+          </small>
         </label>
 
         <label className={s.field}>

@@ -5,6 +5,7 @@ import s from './DetailLayout.module.css';
 function SaveState({ state }) {
   if (!state) return null;
   const { saving, dirty, error, label } = state;
+  if (!saving && !dirty && !error && !label) return null;
   const text = label || (error ? error : saving ? 'Saving...' : dirty ? 'Unsaved changes' : 'Saved');
   return (
     <span className={[

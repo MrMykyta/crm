@@ -1,4 +1,4 @@
-const { ContactPoint } = require('../../models');
+const { ContactPoint, Contact, Counterparty } = require('../../models');
 const { Op } = require('sequelize');
 const { normalizeEmail, normalizePhone } = require('../../utils/normalize');
 
@@ -9,37 +9,99 @@ const valueKey = (channel, valueNorm, valueRaw) => {
   return `${channel}::${base}`;
 };
 
+const normalizeChannel = (value) => {
+  const text = String(value || '').trim().toLowerCase();
+  if (text === 'other') return 'custom';
+  return text;
+};
+
+const normalizeValue = (channel, valueRaw) => {
+  if (channel === 'email') return normalizeEmail(valueRaw);
+  if (channel === 'phone') return normalizePhone(valueRaw);
+  if (channel === 'whatsapp') return normalizePhone(valueRaw);
+  return String(valueRaw || '').trim().toLowerCase();
+};
+
+const ownerName = async (ownerType, ownerId) => {
+  if (!ownerId) return '';
+  if (ownerType === 'counterparty') {
+    const row = await Counterparty.findByPk(ownerId);
+    return row?.fullName || row?.shortName || row?.displayName || row?.name || row?.id || '';
+  }
+  if (ownerType === 'contact') {
+    const row = await Contact.findByPk(ownerId);
+    const full = [row?.firstName, row?.lastName].filter(Boolean).join(' ').trim();
+    return full || row?.displayName || row?.id || '';
+  }
+  return ownerId;
+};
+
+const duplicateError = async (existing, value) => {
+  const name = await ownerName(existing.ownerType, existing.ownerId);
+  const err = new Error('Contact point duplicate');
+  err.status = 409;
+  err.code = 'CONTACT_POINT_DUPLICATE';
+  err.existing = {
+    ownerType: existing.ownerType,
+    ownerId: existing.ownerId,
+    ownerName: name,
+    channel: existing.channel,
+    value: existing.valueRaw || existing.valueNorm || value || '',
+  };
+  return err;
+};
+
+const assertNoDuplicate = async ({
+  companyId,
+  channel,
+  valueNorm,
+  valueRaw,
+  excludeId = null,
+}) => {
+  const normalized = (valueNorm && String(valueNorm).trim()) || null;
+  if (!normalized) return;
+  const where = {
+    companyId,
+    channel,
+    valueNorm: normalized,
+  };
+  if (excludeId) where.id = { [Op.ne]: excludeId };
+  const existing = await ContactPoint.findOne({ where });
+  if (existing) throw await duplicateError(existing, valueRaw);
+};
 
 // list: возвращает список записей с фильтрами, сортировкой и пагинацией.
 module.exports.list = async (companyId, query = {}) => {
-    const where = { company_id: companyId };
+    const where = { companyId };
     if (query.ownerType) {
-        where.owner_type = query.ownerType;
+        where.ownerType = query.ownerType;
     }
     if (query.ownerId) {
-        where.owner_id = query.ownerId;
+        where.ownerId = query.ownerId;
     }
     if (query.channel) {
-        where.channel = query.channel;
+        where.channel = normalizeChannel(query.channel);
     }
     if (query.q) {
         where[Op.or] = [
-        { value_raw:  { [Op.iLike]: `%${query.q}%` } },
-        { value_norm: { [Op.iLike]: `%${query.q}%` } },
+        { valueRaw:  { [Op.iLike]: `%${query.q}%` } },
+        { valueNorm: { [Op.iLike]: `%${query.q}%` } },
         { label:      { [Op.iLike]: `%${query.q}%` } },
         ];
     }
-    return await ContactPoint.findAll({ where, order: [['is_primary','DESC'], ['created_at','DESC']] });
+    return await ContactPoint.findAll({ where, order: [['isPrimary','DESC'], ['createdAt','DESC']] });
 };
 
 // create: создаёт новую запись и возвращает результат.
 module.exports.create = async (userId, companyId, p = {}) => {
+    const channel = normalizeChannel(p.channel);
+    const valueRaw = String(p.value ?? p.valueRaw ?? '').trim();
     const base = {
         companyId: companyId,
         ownerType: p.ownerType,      // 'counterparty'|'contact'|'user'|'company'
         ownerId: p.ownerId,
-        channel: p.channel,           // 'phone'|'email'
-        valueRaw: String(p.value).trim(),
+        channel,
+        valueRaw,
         label: p.label ?? null,
         departmentId: p.departmentId ?? null,
         isPrimary: !!p.isPrimary,
@@ -49,12 +111,13 @@ module.exports.create = async (userId, companyId, p = {}) => {
         createdBy: userId
     };
 
-    if (base.channel === 'email') {
-        base.valueNorm = normalizeEmail(base.valueRaw);
-    }
-    if (base.channel === 'phone') {
-        base.valueNorm = normalizePhone(base.valueRaw);
-    }
+    base.valueNorm = normalizeValue(base.channel, base.valueRaw);
+    await assertNoDuplicate({
+      companyId,
+      channel: base.channel,
+      valueNorm: base.valueNorm,
+      valueRaw: base.valueRaw,
+    });
 
     // если ставим is_primary=true — снимем "primary" с других по тому же owner/channel
     if (base.isPrimary) {
@@ -87,18 +150,16 @@ module.exports.addContacts = async ({
   const mapByKey = new Map();
   for (const c of Array.isArray(contacts) ? contacts : []) {
     if (!c || !c.channel) continue;
+    const channel = normalizeChannel(c.channel);
     const valueRaw = String(c.value ?? '').trim();
     if (!valueRaw) continue;
 
-    const valueNorm =
-      c.channel === 'email' ? normalizeEmail(valueRaw)
-      : c.channel === 'phone' ? normalizePhone(valueRaw)
-      : null;
+    const valueNorm = normalizeValue(channel, valueRaw);
 
-    const key = valueKey(c.channel, valueNorm, valueRaw);
+    const key = valueKey(channel, valueNorm, valueRaw);
     mapByKey.set(key, {
       key,
-      channel: c.channel,
+      channel,
       valueRaw,
       valueNorm,
       label: c.label ?? null,
@@ -227,13 +288,16 @@ module.exports.update = async (companyId, id, p = {}) => {
     }
 
     const patch = {};
-    if (p.value !== undefined) {
-        patch.valueRaw = String(p.value).trim();
-        patch.valueNorm = row.channel === 'email'
-            ? normalizeEmail(patch.valueRaw)
-            : row.channel === 'phone'
-                ? normalizePhone(patch.valueRaw)
-                : null;
+    if (p.value !== undefined || p.valueRaw !== undefined) {
+        patch.valueRaw = String(p.value ?? p.valueRaw ?? '').trim();
+        patch.valueNorm = normalizeValue(row.channel, patch.valueRaw);
+        await assertNoDuplicate({
+            companyId,
+            channel: row.channel,
+            valueNorm: patch.valueNorm,
+            valueRaw: patch.valueRaw,
+            excludeId: row.id,
+        });
     }
     if (p.label !== undefined) {
         patch.label = p.label;

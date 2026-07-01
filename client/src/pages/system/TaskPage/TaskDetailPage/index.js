@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +21,7 @@ import {
   VisibilityField,
 } from '../../../../components/ui/fields';
 import { TASK_STATUS, formatTaskDate, toApiTask, toFormTask } from '../../../../schemas/task.schema';
+import { getEntityDiff, hasEntityDiff } from '../../../../utils/entityDiff';
 import {
   PRIORITY_I18N_KEYS,
   PRIORITY_TONES,
@@ -304,6 +305,7 @@ export default function TaskDetailPage({ createMode = false }) {
   const [dirty, setDirty] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [savedAt, setSavedAt] = useState(null);
+  const initialPayloadRef = useRef(null);
   const [memberStatusError, setMemberStatusError] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -329,7 +331,9 @@ export default function TaskDetailPage({ createMode = false }) {
     const nextLoadedTaskId = `new:${createPrefillKey}`;
     if (loadedTaskId === nextLoadedTaskId) return;
     const prefill = buildCreatePrefill(searchParams);
-    setValues({ ...normalizeInitialTask(null), ...prefill });
+    const nextValues = { ...normalizeInitialTask(null), ...prefill };
+    setValues(nextValues);
+    initialPayloadRef.current = toApiTask(nextValues);
     setLoadedTaskId(nextLoadedTaskId);
     setDirty(Boolean(Object.keys(prefill).length));
     setSaveError('');
@@ -341,7 +345,9 @@ export default function TaskDetailPage({ createMode = false }) {
     if (isCreateMode) return;
     if (!base?.id) return;
     if (loadedTaskId !== base.id || !dirty) {
-      setValues(normalizeInitialTask(base));
+      const nextValues = normalizeInitialTask(base);
+      setValues(nextValues);
+      initialPayloadRef.current = toApiTask(nextValues);
       setLoadedTaskId(base.id);
       setDirty(false);
       setSaveError('');
@@ -450,9 +456,10 @@ export default function TaskDetailPage({ createMode = false }) {
   const setField = useCallback((name, nextValue) => {
     setValues((previous) => {
       if (previous[name] === nextValue) return previous;
-      setDirty(true);
+      const next = { ...previous, [name]: nextValue };
+      setDirty(hasEntityDiff(initialPayloadRef.current || {}, toApiTask(next)));
       setSaveError('');
-      return { ...previous, [name]: nextValue };
+      return next;
     });
   }, []);
 
@@ -463,13 +470,14 @@ export default function TaskDetailPage({ createMode = false }) {
       if (previous.visibility === nextVisibility && (previous.visibilityDepartmentId || null) === nextDepartmentId) {
         return previous;
       }
-      setDirty(true);
-      setSaveError('');
-      return {
+      const next = {
         ...previous,
         visibility: nextVisibility,
         visibilityDepartmentId: nextDepartmentId,
       };
+      setDirty(hasEntityDiff(initialPayloadRef.current || {}, toApiTask(next)));
+      setSaveError('');
+      return next;
     });
   }, []);
 
@@ -477,9 +485,10 @@ export default function TaskDetailPage({ createMode = false }) {
     setValues((previous) => {
       const normalizedNext = nextValue || '';
       if (String(previous[fieldName] || '') === String(normalizedNext)) return previous;
-      setDirty(true);
+      const next = { ...previous, [fieldName]: normalizedNext };
+      setDirty(hasEntityDiff(initialPayloadRef.current || {}, toApiTask(next)));
       setSaveError('');
-      return { ...previous, [fieldName]: normalizedNext };
+      return next;
     });
   }, []);
 
@@ -496,9 +505,10 @@ export default function TaskDetailPage({ createMode = false }) {
           nextRaw = raw.slice(0, 10);
         }
       }
-      setDirty(true);
+      const next = { ...previous, [fieldName]: nextRaw, [hasTimeField]: normalizedNextHasTime };
+      setDirty(hasEntityDiff(initialPayloadRef.current || {}, toApiTask(next)));
       setSaveError('');
-      return { ...previous, [fieldName]: nextRaw, [hasTimeField]: normalizedNextHasTime };
+      return next;
     });
   }, []);
 
@@ -513,7 +523,16 @@ export default function TaskDetailPage({ createMode = false }) {
       return null;
     }
     try {
-      const saved = await updateTask({ id, payload: toApiTask(values) }).unwrap();
+      const payload = toApiTask(values);
+      const patch = getEntityDiff(initialPayloadRef.current || {}, payload);
+      if (!Object.keys(patch).length) {
+        setDirty(false);
+        return null;
+      }
+      const saved = await updateTask({ id, payload: patch }).unwrap();
+      const nextValues = normalizeInitialTask(saved || { ...base, ...patch });
+      initialPayloadRef.current = toApiTask(nextValues);
+      setValues(nextValues);
       setDirty(false);
       setSaveError('');
       setSavedAt(new Date());
@@ -528,7 +547,7 @@ export default function TaskDetailPage({ createMode = false }) {
       if (reason === 'manual') throw error;
       return null;
     }
-  }, [dirty, id, isCreateMode, saving, t, updateTask, values]);
+  }, [base, dirty, id, isCreateMode, saving, t, updateTask, values]);
 
   const handleCreate = useCallback(async () => {
     if (creating) return null;
@@ -874,12 +893,15 @@ export default function TaskDetailPage({ createMode = false }) {
               placeholder={t('crm.task.placeholders.counterpartySearch')}
               clearable
               onValueChange={(nextValue) => {
-                setValues((previous) => ({
-                  ...previous,
-                  counterpartyId: nextValue || null,
-                  contactIds: nextValue ? previous.contactIds : [],
-                }));
-                setDirty(true);
+                setValues((previous) => {
+                  const next = {
+                    ...previous,
+                    counterpartyId: nextValue || null,
+                    contactIds: nextValue ? previous.contactIds : [],
+                  };
+                  setDirty(hasEntityDiff(initialPayloadRef.current || {}, toApiTask(next)));
+                  return next;
+                });
                 setSaveError('');
               }}
             />
@@ -1255,7 +1277,7 @@ export default function TaskDetailPage({ createMode = false }) {
           label: saveError
             || (isCreateMode
               ? (creating ? t('common.saving') : dirty ? t('common.unsaved') : t('crm.task.detail.create.draft', 'Черновик'))
-              : (saving ? t('common.saving') : dirty ? t('common.unsaved') : savedAt ? t('crm.task.detail.messages.saved') : t('common.saved'))),
+              : (saving ? t('common.saving') : dirty ? t('common.unsaved') : savedAt ? t('crm.task.detail.messages.saved') : '')),
         }}
         sidebar={sidebar}
         tabs={tabs}

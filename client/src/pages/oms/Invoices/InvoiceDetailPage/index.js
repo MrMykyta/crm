@@ -22,6 +22,7 @@ import CustomerDocumentRenderer, {
 } from '../../../../components/oms/CustomerDocumentRenderer';
 import DocumentDeliveryDialog from '../../../../components/oms/DocumentDeliveryDialog';
 import DocumentShareDialog from '../../../../components/oms/DocumentShareDialog';
+import { pickDocumentDeliveryRecipient } from '../../../../components/oms/documentDeliveryRecipient';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { asText } from '../../../../lib/format';
 import {
@@ -36,6 +37,7 @@ import {
   useListDocumentSharesQuery,
   useRevokeDocumentShareMutation,
 } from '../../../../store/rtk/documentSharesApi';
+import { useGetContactPointsQuery } from '../../../../store/rtk/contactPointsApi';
 import s from './InvoiceDetailPage.module.css';
 
 function asNumber(value, fallback = 0) {
@@ -628,9 +630,45 @@ function PreviewTab({ invoice, items, currency, locale, t }) {
     { entityType: 'invoice', entityId: invoice?.id },
     { skip: !invoice?.id }
   );
+  const deliveryCounterpartyId =
+    invoice?.counterpartyId ||
+    invoice?.customerId ||
+    invoice?.counterparty?.id ||
+    invoice?.customer?.id ||
+    invoice?.order?.counterparty?.id ||
+    invoice?.order?.customer?.id ||
+    '';
+  const deliveryContactId = invoice?.contactId || invoice?.contact?.id || invoice?.order?.contactId || invoice?.order?.contact?.id || '';
+  const { data: deliveryCounterpartyPoints = [] } = useGetContactPointsQuery(
+    { ownerType: 'counterparty', ownerId: deliveryCounterpartyId },
+    { skip: !deliveryCounterpartyId }
+  );
+  const { data: deliveryContactPoints = [] } = useGetContactPointsQuery(
+    { ownerType: 'contact', ownerId: deliveryContactId },
+    { skip: !deliveryContactId }
+  );
   const [getSignedFileUrl] = useLazyGetSignedFileUrlQuery();
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const deliveryRecipient = useMemo(() => pickDocumentDeliveryRecipient({
+    counterpartyContactPoints: deliveryCounterpartyPoints,
+    contactPersonContactPoints: deliveryContactPoints,
+    contactPersonLegacyEmail: invoice?.contact?.email || invoice?.order?.contact?.email,
+    counterpartyLegacyEmail:
+      invoice?.counterparty?.email ||
+      invoice?.customer?.email ||
+      invoice?.order?.counterparty?.email ||
+      invoice?.order?.customer?.email,
+  }), [
+    deliveryContactPoints,
+    deliveryCounterpartyPoints,
+    invoice?.contact?.email,
+    invoice?.counterparty?.email,
+    invoice?.customer?.email,
+    invoice?.order?.contact?.email,
+    invoice?.order?.counterparty?.email,
+    invoice?.order?.customer?.email,
+  ]);
 
   const onGeneratePdf = async () => {
     if (!invoice?.id) return;
@@ -680,7 +718,8 @@ function PreviewTab({ invoice, items, currency, locale, t }) {
         locale={locale}
         documentLabel={t('oms.documentDelivery.types.invoice')}
         documentNumber={invoice?.number}
-        defaultRecipientEmail={invoice?.contact?.email || invoice?.order?.contact?.email || ''}
+        defaultRecipientEmail={deliveryRecipient.email}
+        defaultRecipientSource={deliveryRecipient.source}
       />
       <DocumentShareDialog
         open={shareOpen}

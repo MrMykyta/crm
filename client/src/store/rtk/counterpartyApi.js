@@ -264,6 +264,7 @@ async onQueryStarted({ id, body }, { dispatch, queryFulfilled, getState }) {
 invalidatesTags: (_res, _err, { id }) => [
         { type: 'Counterparty', id },
         { type: 'Counterparty', id: 'LIST' },
+        { type: 'EntityTimeline', id: `counterparty:${id}` },
         { type: 'Department', id: 'SCOPE_READINESS' },
       ],
     }),

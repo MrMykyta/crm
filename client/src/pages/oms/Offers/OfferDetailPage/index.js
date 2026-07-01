@@ -37,9 +37,11 @@ import CustomerDocumentRenderer, {
 } from '../../../../components/oms/CustomerDocumentRenderer';
 import DocumentDeliveryDialog from '../../../../components/oms/DocumentDeliveryDialog';
 import DocumentShareDialog from '../../../../components/oms/DocumentShareDialog';
+import { pickDocumentDeliveryRecipient } from '../../../../components/oms/documentDeliveryRecipient';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
 import { useGetContactsByCounterpartyQuery } from '../../../../store/rtk/contactsApi';
+import { useGetContactPointsQuery } from '../../../../store/rtk/contactPointsApi';
 import { useListCompanyUsersQuery } from '../../../../store/rtk/companyUsersApi';
 import {
   useAcceptOfferMutation,
@@ -64,6 +66,7 @@ import {
   useListDocumentSharesQuery,
   useRevokeDocumentShareMutation,
 } from '../../../../store/rtk/documentSharesApi';
+import { getEntityDiff, hasEntityDiff } from '../../../../utils/entityDiff';
 import s from './OfferDetailPage.module.css';
 
 const EMPTY_FORM = {
@@ -519,9 +522,25 @@ function PreviewTab({ offer, form, items, totals, t, locale }) {
     { entityType: 'offer', entityId: offer?.id },
     { skip: !offer?.id }
   );
+  const deliveryCounterpartyId = offer?.counterpartyId || offer?.counterparty?.id || form?.counterpartyId || '';
+  const deliveryContactId = offer?.contactId || offer?.contact?.id || form?.contactId || '';
+  const { data: deliveryCounterpartyPoints = [] } = useGetContactPointsQuery(
+    { ownerType: 'counterparty', ownerId: deliveryCounterpartyId },
+    { skip: !deliveryCounterpartyId }
+  );
+  const { data: deliveryContactPoints = [] } = useGetContactPointsQuery(
+    { ownerType: 'contact', ownerId: deliveryContactId },
+    { skip: !deliveryContactId }
+  );
   const [getSignedFileUrl] = useLazyGetSignedFileUrlQuery();
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const deliveryRecipient = useMemo(() => pickDocumentDeliveryRecipient({
+    counterpartyContactPoints: deliveryCounterpartyPoints,
+    contactPersonContactPoints: deliveryContactPoints,
+    contactPersonLegacyEmail: offer?.contact?.email,
+    counterpartyLegacyEmail: offer?.counterparty?.email || offer?.counterparty?.primaryEmail || offer?.counterparty?.contactEmail,
+  }), [deliveryContactPoints, deliveryCounterpartyPoints, offer?.contact?.email, offer?.counterparty?.contactEmail, offer?.counterparty?.email, offer?.counterparty?.primaryEmail]);
 
   const onGeneratePdf = async () => {
     if (!offer?.id) return;
@@ -571,7 +590,8 @@ function PreviewTab({ offer, form, items, totals, t, locale }) {
         locale={locale}
         documentLabel={t('oms.documentDelivery.types.offer', 'Offer')}
         documentNumber={offer?.number}
-        defaultRecipientEmail={offer?.contact?.email || ''}
+        defaultRecipientEmail={deliveryRecipient.email}
+        defaultRecipientSource={deliveryRecipient.source}
       />
       <DocumentShareDialog
         open={shareOpen}
@@ -660,6 +680,7 @@ export default function OfferDetailPage() {
   const [actionLoading, setActionLoading] = useState('');
   const [dirty, setDirty] = useState(isCreate);
   const initRef = useRef('');
+  const cleanPayloadRef = useRef(buildPayload(form));
   const itemsHashRef = useRef(stableItemsHash(items));
 
   const { data: offer, isLoading, isFetching, isError, error, refetch } = useGetOfferByIdQuery(id, {
@@ -696,10 +717,12 @@ export default function OfferDetailPage() {
     if (!offer?.id || initRef.current === offer.id) return;
     initRef.current = offer.id;
     const nextItems = buildItemsFromOffer(offer);
-    setForm(buildFormFromOffer(offer, searchParams));
+    const nextForm = buildFormFromOffer(offer, searchParams);
+    setForm(nextForm);
     setItems(nextItems);
     setErrors({});
     setDirty(false);
+    cleanPayloadRef.current = buildPayload(nextForm);
     itemsHashRef.current = stableItemsHash(nextItems);
   }, [isCreate, offer, searchParams]);
 
@@ -753,16 +776,22 @@ export default function OfferDetailPage() {
     setForm((prev) => {
       const next = { ...prev, [key]: value };
       if (key === 'counterpartyId') next.contactId = '';
+      setDirty(
+        hasEntityDiff(cleanPayloadRef.current || {}, buildPayload(next))
+        || stableItemsHash(items) !== itemsHashRef.current
+      );
       return next;
     });
     setErrors((prev) => ({ ...prev, [key]: undefined }));
-    setDirty(true);
-  }, []);
+  }, [items]);
 
   const onItemsChange = useCallback((next) => {
     setItems(next);
-    setDirty(true);
-  }, []);
+    setDirty(
+      stableItemsHash(next) !== itemsHashRef.current
+      || hasEntityDiff(cleanPayloadRef.current || {}, buildPayload(form))
+    );
+  }, [form]);
 
   const saveOffer = useCallback(async () => {
     setActionError('');
@@ -784,9 +813,18 @@ export default function OfferDetailPage() {
         return created;
       }
 
-      await updateOffer({ id, payload }).unwrap();
+      const patch = getEntityDiff(cleanPayloadRef.current || {}, payload);
       const nextHash = stableItemsHash(items);
-      if (nextHash !== itemsHashRef.current) {
+      const itemsChanged = nextHash !== itemsHashRef.current;
+      if (!Object.keys(patch).length && !itemsChanged) {
+        setDirty(false);
+        return null;
+      }
+      if (Object.keys(patch).length) {
+        await updateOffer({ id, payload: patch }).unwrap();
+        cleanPayloadRef.current = { ...(cleanPayloadRef.current || {}), ...patch };
+      }
+      if (itemsChanged) {
         await saveOfferItems({ id, items: mappedItems }).unwrap();
         itemsHashRef.current = nextHash;
       }
@@ -1022,7 +1060,7 @@ export default function OfferDetailPage() {
         dirty,
         saving: isSaving,
         error: actionError,
-        label: actionError || (isSaving ? t('common.saving', 'Saving...') : dirty ? t('oms.offerDetail.save.unsaved', 'Unsaved changes') : t('oms.offerDetail.save.saved', 'Saved')),
+        label: actionError || (isSaving ? t('common.saving', 'Saving...') : dirty ? t('oms.offerDetail.save.unsaved', 'Unsaved changes') : ''),
       }}
       header={(
         <div className={s.headerWrap}>

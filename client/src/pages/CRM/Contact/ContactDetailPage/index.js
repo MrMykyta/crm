@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { Building2, Mail, Phone, UserRound } from "lucide-react";
+import { Building2, UserRound } from "lucide-react";
 
 import {
   DetailCard,
@@ -25,6 +25,7 @@ import {
   useUpdateContactMutation,
 } from "../../../../store/rtk/contactsApi";
 import { useGetCounterpartyLookupQuery } from "../../../../store/rtk/counterpartyApi";
+import ContactPointsSection from "../../../../components/contacts/ContactPointsSection";
 import s from "./ContactDetailPage.module.css";
 
 const EMPTY_VALUES = {
@@ -66,7 +67,7 @@ function formatDate(value, locale) {
 }
 
 function getDisplayName(values) {
-  const full = [values?.firstName, values?.middleName, values?.lastName]
+  const full = [values?.firstName, values?.lastName]
     .map(asText)
     .filter(Boolean)
     .join(" ");
@@ -284,6 +285,13 @@ export default function ContactDetailPage({ createMode = false }) {
     ? t("contacts.values.inactive", "Неактивный")
     : t("contacts.values.active", "Активный");
 
+  const generatedDisplayName = useMemo(() => {
+    return [values.firstName, values.lastName]
+      .map(asText)
+      .filter(Boolean)
+      .join(" ");
+  }, [values.firstName, values.lastName]);
+
   const title = isCreateMode
     ? t("contacts.detail.newTitle", "Новый контакт")
     : getDisplayName(values);
@@ -400,13 +408,6 @@ export default function ContactDetailPage({ createMode = false }) {
             fullWidth
           />
           <TextField
-            label={t("contacts.fields.middleName", "Отчество")}
-            value={values.middleName}
-            onValueChange={() => {}}
-            disabled
-            fullWidth
-          />
-          <TextField
             label={t("contacts.fields.lastName", "Фамилия")}
             value={values.lastName}
             onValueChange={(value) => setField("lastName", value)}
@@ -414,13 +415,15 @@ export default function ContactDetailPage({ createMode = false }) {
             disabled={!editable}
             fullWidth
           />
-          <TextField
-            label={t("contacts.fields.displayName", "Отображаемое имя")}
-            value={values.displayName}
-            onValueChange={() => {}}
-            disabled
-            fullWidth
-          />
+          <div className={s.derivedNameCard}>
+            <span className={s.derivedLabel}>{t("contacts.fields.displayName", "Отображаемое имя")}</span>
+            <strong className={s.derivedValue}>{generatedDisplayName || t("contacts.hints.displayNameAutoEmpty", "Введите имя и фамилию")}</strong>
+            <span className={s.derivedHint}>
+              {generatedDisplayName
+                ? t("contacts.hints.displayNameAuto", "Собирается автоматически из имени и фамилии")
+                : t("contacts.hints.displayNameAutoEmpty", "Введите имя и фамилию")}
+            </span>
+          </div>
           <AutocompleteField
             label={t("contacts.fields.counterparty", "Контрагент")}
             required
@@ -474,10 +477,19 @@ export default function ContactDetailPage({ createMode = false }) {
             disabled={!editable}
             fullWidth
           />
+        </div>
+      </DetailSection>
+
+      <DetailSection
+        title={t("contacts.detail.contactSettings", "Настройки контакта")}
+        subtitle={t("contacts.detail.contactSettingsSubtitle", "Роль в карточке контрагента")}
+      >
+        <div className={s.formGrid}>
           <TextField
-            label={t("contacts.fields.department", "Отдел")}
+            label={t("contacts.fields.departmentNote", "Команда / отдел")}
             value={values.department}
             onValueChange={(value) => setField("department", value)}
+            helperText={t("contacts.hints.departmentNote", "Свободная пометка. Она пока не меняет доступы и видимость.")}
             disabled={!editable}
             fullWidth
           />
@@ -493,6 +505,7 @@ export default function ContactDetailPage({ createMode = false }) {
             checked={Boolean(values.isPrimary)}
             onValueChange={(checked) => setField("isPrimary", checked)}
             label={t("contacts.fields.isMain", "Основной контакт")}
+            helperText={t("contacts.hints.mainContact", "Используется как основной контакт для этой компании.")}
             disabled={!editable}
           />
         </div>
@@ -500,49 +513,33 @@ export default function ContactDetailPage({ createMode = false }) {
     </div>
   );
 
-  const communicationActions = (
-    <div className={s.quickActions}>
-      {values.email ? (
-        <a className={s.quickAction} href={`mailto:${values.email}`}>
-          <Mail size={15} aria-hidden="true" />
-          {t("contacts.actions.email", "Написать")}
-        </a>
-      ) : null}
-      {values.phone ? (
-        <a className={s.quickAction} href={`tel:${values.phone}`}>
-          <Phone size={15} aria-hidden="true" />
-          {t("contacts.actions.call", "Позвонить")}
-        </a>
-      ) : null}
-    </div>
-  );
-
   const overviewTab = (
     <div className={s.contentStack}>
-      <DetailCard
-        title={t("contacts.detail.communication", "Коммуникация")}
-        subtitle={t("contacts.detail.communicationSubtitle", "Основные email и телефон")}
-        actions={communicationActions}
-      >
-        <div className={s.formGridTwo}>
-          <TextField
-            label={t("contacts.fields.email", "Email")}
-            type="email"
-            value={values.email}
-            onValueChange={(value) => setField("email", value)}
-            error={errors.email}
-            disabled={!editable}
-            fullWidth
-          />
-          <TextField
-            label={t("contacts.fields.phone", "Телефон")}
-            value={values.phone}
-            onValueChange={(value) => setField("phone", value)}
-            disabled={!editable}
-            fullWidth
-          />
-        </div>
-      </DetailCard>
+      {isCreateMode ? (
+        <DetailCard
+          title={t("contacts.detail.quickCommunication", "Быстрые контакты")}
+          subtitle={t("contacts.detail.quickCommunicationSubtitle", "После создания контактные данные можно вести как Contact Points")}
+        >
+          <div className={s.formGridTwo}>
+            <TextField
+              label={t("contacts.fields.email", "Email")}
+              type="email"
+              value={values.email}
+              onValueChange={(value) => setField("email", value)}
+              error={errors.email}
+              disabled={!editable}
+              fullWidth
+            />
+            <TextField
+              label={t("contacts.fields.phone", "Телефон")}
+              value={values.phone}
+              onValueChange={(value) => setField("phone", value)}
+              disabled={!editable}
+              fullWidth
+            />
+          </div>
+        </DetailCard>
+      ) : null}
 
       <DetailCard title={t("contacts.tabs.overview", "Описание")}>
         <TextareaField
@@ -556,6 +553,20 @@ export default function ContactDetailPage({ createMode = false }) {
       </DetailCard>
     </div>
   );
+
+  const contactPointsTab = !isCreateMode ? (
+    <ContactPointsSection
+      ownerType="contact"
+      ownerId={id}
+      title={t("contacts.contactPoints.title", "Контактные данные контактного лица")}
+      subtitle={t("contacts.contactPoints.subtitle", "Телефон, email и публичные каналы этого человека")}
+      emptyTitle={t("contacts.contactPoints.emptyTitle", "Контактные данные не добавлены")}
+      emptyText={t("contacts.contactPoints.emptyText", "Добавьте телефон, email или мессенджер контактного лица.")}
+      createTitle={t("contacts.contactPoints.createTitle", "Новые контактные данные")}
+      editTitle={t("contacts.contactPoints.editTitle", "Редактировать контактные данные")}
+      channelKeys={["phone", "email", "whatsapp", "telegram", "messenger", "website", "linkedin", "custom"]}
+    />
+  ) : null;
 
   const additionalTab = (
     <DetailCard title={t("contacts.tabs.additional", "Дополнительно")}>
@@ -582,12 +593,17 @@ export default function ContactDetailPage({ createMode = false }) {
       label: t("contacts.tabs.overview", "Описание"),
       children: overviewTab,
     },
+    !isCreateMode ? {
+      key: "contactPoints",
+      label: t("contacts.tabs.contactPoints", "Контакты"),
+      children: contactPointsTab,
+    } : null,
     {
       key: "additional",
       label: t("contacts.tabs.additional", "Дополнительно"),
       children: additionalTab,
     },
-  ];
+  ].filter(Boolean);
 
   if (!isCreateMode && fetchingDetail && !detail) return <Skeleton />;
 
@@ -617,7 +633,7 @@ export default function ContactDetailPage({ createMode = false }) {
             ? t("common.saving", "Сохранение...")
             : dirty
               ? t("common.unsaved", "Есть изменения")
-              : t("common.saved", "Сохранено")),
+              : ""),
         }}
         smartButtons={[
           {

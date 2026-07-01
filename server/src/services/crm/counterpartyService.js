@@ -7,6 +7,7 @@ const {
   Counterparty,
   ContactPoint,
   CompanyDepartment,
+  User,
   UserCompany,
 } = require("../../models");
 const { Op } = require("sequelize");
@@ -17,8 +18,109 @@ const {
 } = require("../../utils/pagination");
 const { addContacts } = require("./contactPointService");
 const notificationService = require("../system/notificationService");
+const timelineService = require("../system/timelineService");
 
 const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+const compareValue = (value) => {
+  if (value === undefined || value === null) return "";
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value);
+};
+const valuesDiffer = (left, right) => compareValue(left) !== compareValue(right);
+const TIMELINE_BUSINESS_FIELDS = [
+  "holdingId",
+  "departmentId",
+  "mainResponsibleUserId",
+  "firstName",
+  "lastName",
+  "pesel",
+  "birthDate",
+  "fullName",
+  "shortName",
+  "regon",
+  "nip",
+  "krs",
+  "bdo",
+  "type",
+  "status",
+  "country",
+  "city",
+  "postalCode",
+  "street",
+  "isCompany",
+  "description",
+];
+const TIMELINE_FIELD_LABELS = {
+  holdingId: "Holding",
+  departmentId: "Department",
+  mainResponsibleUserId: "Responsible user",
+  firstName: "First name",
+  lastName: "Last name",
+  pesel: "PESEL",
+  birthDate: "Birth date",
+  fullName: "Legal name",
+  shortName: "Name",
+  regon: "REGON",
+  nip: "NIP",
+  krs: "KRS",
+  bdo: "BDO",
+  type: "Type",
+  status: "Status",
+  country: "Country",
+  city: "City",
+  postalCode: "Postal code",
+  street: "Street",
+  isCompany: "Subject type",
+  description: "Description",
+};
+const TIMELINE_FIELD_LABEL_KEYS = {
+  departmentId: "crm.form.fields.department",
+  firstName: "crm.contact.fields.firstName",
+  lastName: "crm.contact.fields.lastName",
+  fullName: "crm.form.fields.fullName",
+  shortName: "crm.form.fields.shortName",
+  regon: "crm.form.fields.regon",
+  nip: "crm.form.fields.nip",
+  krs: "crm.form.fields.krs",
+  bdo: "crm.form.fields.bdo",
+  type: "crm.form.fields.type",
+  status: "crm.form.fields.status",
+  country: "crm.form.fields.country",
+  city: "crm.form.fields.city",
+  postalCode: "crm.form.fields.postalCode",
+  street: "crm.form.fields.street",
+  description: "crm.counterpartyDetail.description.title",
+};
+
+function snapshotBusinessFields(row) {
+  return TIMELINE_BUSINESS_FIELDS.reduce((acc, field) => {
+    acc[field] = row?.get ? row.get(field) : row?.[field];
+    return acc;
+  }, {});
+}
+
+function buildTimelineChanges(before = {}, after = {}, fields = TIMELINE_BUSINESS_FIELDS) {
+  return fields
+    .filter((field) => TIMELINE_BUSINESS_FIELDS.includes(field))
+    .filter((field) => valuesDiffer(before[field], after[field]))
+    .map((field) => ({
+      field,
+      labelKey: TIMELINE_FIELD_LABEL_KEYS[field] || null,
+      label: TIMELINE_FIELD_LABELS[field] || field,
+      oldValue: before[field] ?? null,
+      newValue: after[field] ?? null,
+    }));
+}
+
+async function getActorNameSnapshot(userId, transaction) {
+  if (!userId) return null;
+  const user = await User.findByPk(userId, {
+    attributes: ["firstName", "lastName", "email"],
+    transaction,
+  }).catch(() => null);
+  if (!user) return null;
+  return [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || user.email || null;
+}
 
 // какие поля разрешаем сортировать
 const SORT_WHITELIST = [
@@ -500,6 +602,25 @@ module.exports.create = async (userId, companyId, data = {}) => {
       t,
     });
 
+    await timelineService.record({
+      companyId,
+      entityType: "counterparty",
+      entityId: counterparty.id,
+      eventType: "counterparty.created",
+      eventCategory: "created",
+      title: "Counterparty created",
+      summary: buildCounterpartyName(counterparty),
+      actorUserId: userId,
+      actorNameSnapshot: await getActorNameSnapshot(userId, t),
+      sourceModule: "crm",
+      payload: {
+        name: buildCounterpartyName(counterparty),
+        type: counterparty.type,
+        status: counterparty.status,
+      },
+      transaction: t,
+    });
+
     await t.commit();
   } catch (e) {
     await t.rollback();
@@ -575,6 +696,7 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
   const t = await sequelize.transaction();
   let counterparty;
   let beforeSnapshot = null;
+  let beforeBusinessSnapshot = null;
 
   try {
     await assertHoldingInCompany(data.holdingId, companyId, t);
@@ -589,7 +711,8 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
       await t.rollback();
       return null;
     }
-    const isCompany = data.isCompany ?? counterparty.isCompany;
+    beforeBusinessSnapshot = snapshotBusinessFields(counterparty);
+    const isCompany = hasOwn(data, "isCompany") ? data.isCompany : counterparty.isCompany;
 
     // снимок до изменений — для meta.old*
     beforeSnapshot = {
@@ -599,12 +722,14 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
     };
 
     const updateValues = {
-      holdingId: data.holdingId ?? counterparty.holdingId,
+      holdingId: hasOwn(data, "holdingId") ? data.holdingId : counterparty.holdingId,
       departmentId: hasOwn(data, "departmentId")
         ? data.departmentId
         : counterparty.departmentId,
       mainResponsibleUserId:
-        data.mainResponsibleUserId ?? counterparty.mainResponsibleUserId,
+        hasOwn(data, "mainResponsibleUserId")
+          ? data.mainResponsibleUserId
+          : counterparty.mainResponsibleUserId,
 
       firstName: hasOwn(data, "firstName") ? data.firstName : counterparty.firstName,
       lastName: hasOwn(data, "lastName") ? data.lastName : counterparty.lastName,
@@ -614,25 +739,24 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
       birthDate: isCompany
         ? null
         : (hasOwn(data, "birthDate") ? normalizeDateOnly(data.birthDate) : counterparty.birthDate),
-      fullName: data.fullName ?? counterparty.fullName,
-      shortName: data.shortName ?? counterparty.shortName,
+      fullName: hasOwn(data, "fullName") ? data.fullName : counterparty.fullName,
+      shortName: hasOwn(data, "shortName") ? data.shortName : counterparty.shortName,
 
-      regon: data.regon,
-      nip: data.nip,
-      krs: data.krs,
-      bdo: data.bdo,
+      regon: hasOwn(data, "regon") ? data.regon : counterparty.regon,
+      nip: hasOwn(data, "nip") ? data.nip : counterparty.nip,
+      krs: hasOwn(data, "krs") ? data.krs : counterparty.krs,
+      bdo: hasOwn(data, "bdo") ? data.bdo : counterparty.bdo,
 
-      type: data.type ?? counterparty.type,
-      status: data.status ?? counterparty.status,
+      type: hasOwn(data, "type") ? data.type : counterparty.type,
+      status: hasOwn(data, "status") ? data.status : counterparty.status,
 
-      country: data.country ?? counterparty.country,
-      city: data.city ?? counterparty.city,
-      postalCode: data.postalCode ?? counterparty.postalCode,
-      street: data.street ?? counterparty.street,
+      country: hasOwn(data, "country") ? data.country : counterparty.country,
+      city: hasOwn(data, "city") ? data.city : counterparty.city,
+      postalCode: hasOwn(data, "postalCode") ? data.postalCode : counterparty.postalCode,
+      street: hasOwn(data, "street") ? data.street : counterparty.street,
       isCompany,
 
-      description: data.description ?? counterparty.description,
-      updatedBy: userId,
+      description: hasOwn(data, "description") ? data.description : counterparty.description,
     };
     const nextVerification = buildRegistryVerificationFields(data, updateValues);
     if (nextVerification) {
@@ -641,19 +765,69 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
       Object.assign(updateValues, clearRegistryVerificationFields());
     }
 
-    await counterparty.update(
-      updateValues,
-      { transaction: t }
-    );
+    const changedFields = Object.keys(updateValues)
+      .filter((key) => valuesDiffer(counterparty.get(key), updateValues[key]));
 
-    await addContacts({
-      companyId,
-      ownerType: "counterparty",
-      ownerId: counterparty.id,
-      contacts: data.contacts,
-      actorUserId: userId,
-      t,
-    });
+    if (changedFields.length) {
+      await counterparty.update(
+        { ...updateValues, updatedBy: userId },
+        { transaction: t }
+      );
+    }
+
+    let contactResult = null;
+    if (hasOwn(data, "contacts")) {
+      contactResult = await addContacts({
+        companyId,
+        ownerType: "counterparty",
+        ownerId: counterparty.id,
+        contacts: data.contacts,
+        actorUserId: userId,
+        t,
+      });
+    }
+    const contactsChanged = Boolean(
+      contactResult &&
+      ((contactResult.created || []).length || (contactResult.updated || []).length || contactResult.deletedCount)
+    );
+    counterparty._changedFields = changedFields;
+    counterparty._contactsChanged = contactsChanged;
+
+    const timelineChanges = buildTimelineChanges(
+      beforeBusinessSnapshot,
+      snapshotBusinessFields(counterparty),
+      changedFields
+    );
+    if (timelineChanges.length || contactsChanged) {
+      await timelineService.record({
+        companyId,
+        entityType: "counterparty",
+        entityId: counterparty.id,
+        eventType: "counterparty.updated",
+        eventCategory: "updated",
+        title: "Counterparty updated",
+        summary: buildCounterpartyName(counterparty),
+        actorUserId: userId,
+        actorNameSnapshot: await getActorNameSnapshot(userId, t),
+        sourceModule: "crm",
+        changes: contactsChanged
+          ? [
+            ...timelineChanges,
+            {
+              field: "contacts",
+              labelKey: "crm.counterpartyDetail.tabs.contacts",
+              label: "Contacts",
+              oldValue: null,
+              newValue: "changed",
+            },
+          ]
+          : timelineChanges,
+        payload: {
+          name: buildCounterpartyName(counterparty),
+        },
+        transaction: t,
+      });
+    }
 
     await t.commit();
   } catch (e) {
@@ -668,10 +842,13 @@ module.exports.update = async (userId, companyId, id, data = {}) => {
     if (userIds.length) {
       const name = buildCounterpartyName(counterparty);
 
-      const metaChanged = {
-        type: data.type ?? null,
-        status: data.status ?? null,
-      };
+      const changedFields = counterparty._changedFields || [];
+      const contactsChanged = Boolean(counterparty._contactsChanged);
+      if (!changedFields.length && !contactsChanged) return counterparty;
+      const metaChanged = changedFields.reduce((acc, field) => {
+        acc[field] = counterparty.get(field);
+        return acc;
+      }, contactsChanged ? { contacts: true } : {});
 
       await notificationService.notifyManyUsers({
         companyId,

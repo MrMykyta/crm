@@ -24,6 +24,7 @@ import {
   DetailTabs,
 } from '../../../../components/detail';
 import HtmlDescriptionSection from '../../../../components/data/HtmlDescriptionSection';
+import { getEntityDiff, hasEntityDiff } from '../../../../utils/entityDiff';
 import {
   AutocompleteField,
   CheckboxField,
@@ -549,18 +550,22 @@ export default function ProductDetailPage() {
   const [dirty, setDirty] = useState(isCreateMode);
   const [saveError, setSaveError] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
+  const initialPayloadRef = useRef(null);
   const saving = creating || updating;
 
   useEffect(() => {
     if (isCreateMode) {
       setValues({ ...EMPTY_PRODUCT });
+      initialPayloadRef.current = toApiProduct({ ...EMPTY_PRODUCT });
       setDirty(true);
       setSaveError('');
       setActiveTab('overview');
       return;
     }
     if (!base) return;
-    setValues({ ...EMPTY_PRODUCT, ...toFormProduct(base), slug: base?.slug || '' });
+    const nextValues = { ...EMPTY_PRODUCT, ...toFormProduct(base), slug: base?.slug || '' };
+    setValues(nextValues);
+    initialPayloadRef.current = toApiProduct(nextValues);
     setDirty(false);
     setSaveError('');
   }, [base, isCreateMode]);
@@ -703,8 +708,11 @@ export default function ProductDetailPage() {
   }), [selectOptions]);
 
   const setField = useCallback((field, next) => {
-    setValues((prev) => ({ ...prev, [field]: next }));
-    setDirty(true);
+    setValues((prev) => {
+      const nextValues = { ...prev, [field]: next };
+      setDirty(hasEntityDiff(initialPayloadRef.current || {}, toApiProduct(nextValues)));
+      return nextValues;
+    });
     setSaveError('');
   }, []);
 
@@ -778,8 +786,15 @@ export default function ProductDetailPage() {
         if (created?.id) navigate(`/main/products/${created.id}`, { replace: true });
         return;
       }
-      const saved = await updateProduct({ id, payload }).unwrap();
-      setValues({ ...EMPTY_PRODUCT, ...toFormProduct(saved), slug: saved?.slug || '' });
+      const patch = getEntityDiff(initialPayloadRef.current || {}, payload);
+      if (!Object.keys(patch).length) {
+        setDirty(false);
+        return;
+      }
+      const saved = await updateProduct({ id, payload: patch }).unwrap();
+      const nextValues = { ...EMPTY_PRODUCT, ...toFormProduct(saved), slug: saved?.slug || '' };
+      setValues(nextValues);
+      initialPayloadRef.current = toApiProduct(nextValues);
       setDirty(false);
     } catch (error) {
       setSaveError(error?.data?.error || error?.data?.message || error?.message || t('pim.product.detail.messages.saveFailed', 'Failed to save product.'));
@@ -801,7 +816,7 @@ export default function ProductDetailPage() {
   const latestDocument = useMemo(() => latestByDate(overviewFiles), [overviewFiles]);
   const latestMovement = useMemo(() => latestByDate(listItems(overviewMovementsData)), [overviewMovementsData]);
   const saveState = saveError
-    || (saving ? t('common.saving', 'Saving...') : dirty ? t('common.unsaved', 'Unsaved') : t('common.saved', 'Saved'));
+    || (saving ? t('common.saving', 'Saving...') : dirty ? t('common.unsaved', 'Unsaved') : '');
 
   const tabs = useMemo(() => ([
     {
@@ -838,7 +853,12 @@ export default function ProductDetailPage() {
                   description: nextHtml || '',
                 }).unwrap();
                 const finalHtml = saved?.description ?? nextHtml ?? '';
-                setValues((current) => ({ ...current, description: finalHtml }));
+                setValues((current) => {
+                  const nextValues = { ...current, description: finalHtml };
+                  initialPayloadRef.current = toApiProduct(nextValues);
+                  setDirty(false);
+                  return nextValues;
+                });
                 return finalHtml;
               }}
               placeholder={t('pim.product.detail.description.placeholder', 'Describe product usage, technical details, and sales conditions...')}
@@ -961,7 +981,9 @@ export default function ProductDetailPage() {
               <ArrowLeft size={15} aria-hidden="true" />
               {t('pim.product.detail.actions.back', 'Back to products')}
             </button>
-            <span className={`${s.v2SaveState} ${saveError ? s.v2SaveStateError : dirty ? s.v2SaveStateDirty : ''}`}>{saveState}</span>
+            {saveState ? (
+              <span className={`${s.v2SaveState} ${saveError ? s.v2SaveStateError : dirty ? s.v2SaveStateDirty : ''}`}>{saveState}</span>
+            ) : null}
           </div>
           <div className={s.v2HeroMain}>
             <MainImageBlock productId={productId} productName={values.name} disabled={isCreateMode} t={t} />

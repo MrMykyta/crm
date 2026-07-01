@@ -53,7 +53,7 @@ static associate(models) {
       },
       ownerId: { type: DataTypes.UUID, allowNull: false, field: 'owner_id' },
       channel: {
-        type: DataTypes.ENUM('phone', 'email', 'website', 'whatsapp', 'telegram', 'viber', 'facebook', 'linkedin', 'other'),
+        type: DataTypes.ENUM('phone', 'email', 'website', 'whatsapp', 'telegram', 'messenger', 'facebook', 'instagram', 'linkedin', 'youtube', 'tiktok', 'custom', 'viber', 'other'),
         allowNull: false,
       },
       valueRaw: { type: DataTypes.STRING(256), allowNull: false, field: 'value_raw' },

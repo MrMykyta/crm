@@ -10,6 +10,7 @@ import MainLayoutPage from "./pages/system/MainLayoutPage";
 import ThemeProvider from "./Providers/ThemeProvider";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import UserProfilePage from "./pages/users/UserProfilePage";
+import MyAccountPage from "./pages/users/MyAccountPage";
 import UserEntityPage from "./pages/users/UserEntityPage";
 
 import LeadsPage from "./pages/CRM/Lead/LeadsPage";
@@ -198,6 +199,7 @@ function AppShell() {
             path="user-profile"
             element={<UserProfilePage user={currentUser} />}
           />
+          <Route path="my-account" element={<MyAccountPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
 
           <Route path="company/details" element={<CompanyInfoPage />} />

@@ -13,6 +13,7 @@ rootRouter.use("/public-documents", require("./documents/publicDocumentRouter"))
 rootRouter.use("/invitations", require("./system/invitationsRouter"));
 rootRouter.use("/system", auth, require("./system/userPreferencesRouter"));
 rootRouter.use("/notifications", auth, require("./system/notificationRouter"));
+rootRouter.use("/timeline", auth, companyIdGuard, require("./system/timelineRouter"));
 rootRouter.use("/", sseRouter);
 
 //======================CRM===========================

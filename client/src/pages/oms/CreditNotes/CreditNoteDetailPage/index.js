@@ -21,6 +21,7 @@ import CustomerDocumentRenderer, {
 } from '../../../../components/oms/CustomerDocumentRenderer';
 import DocumentDeliveryDialog from '../../../../components/oms/DocumentDeliveryDialog';
 import DocumentShareDialog from '../../../../components/oms/DocumentShareDialog';
+import { pickDocumentDeliveryRecipient } from '../../../../components/oms/documentDeliveryRecipient';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { asText } from '../../../../lib/format';
 import {
@@ -42,6 +43,7 @@ import {
   useListDocumentSharesQuery,
   useRevokeDocumentShareMutation,
 } from '../../../../store/rtk/documentSharesApi';
+import { useGetContactPointsQuery } from '../../../../store/rtk/contactPointsApi';
 import s from './CreditNoteDetailPage.module.css';
 
 function asNumber(value, fallback = 0) {
@@ -1009,9 +1011,76 @@ function PreviewTab({ creditNote, sourceInvoice, currency, locale, t }) {
     { entityType: 'credit_note', entityId: creditNote?.id },
     { skip: !creditNote?.id }
   );
+  const deliveryCounterpartyId =
+    creditNote?.customerId ||
+    creditNote?.counterpartyId ||
+    creditNote?.customer?.id ||
+    creditNote?.counterparty?.id ||
+    creditNote?.sourceOrder?.customerId ||
+    creditNote?.sourceOrder?.counterpartyId ||
+    creditNote?.sourceOrder?.customer?.id ||
+    creditNote?.sourceOrder?.counterparty?.id ||
+    sourceInvoice?.customerId ||
+    sourceInvoice?.counterpartyId ||
+    sourceInvoice?.customer?.id ||
+    sourceInvoice?.counterparty?.id ||
+    sourceInvoice?.order?.customer?.id ||
+    sourceInvoice?.order?.counterparty?.id ||
+    '';
+  const deliveryContactId =
+    creditNote?.contactId ||
+    creditNote?.contact?.id ||
+    creditNote?.sourceOrder?.contactId ||
+    creditNote?.sourceOrder?.contact?.id ||
+    sourceInvoice?.contactId ||
+    sourceInvoice?.contact?.id ||
+    sourceInvoice?.order?.contactId ||
+    sourceInvoice?.order?.contact?.id ||
+    '';
+  const { data: deliveryCounterpartyPoints = [] } = useGetContactPointsQuery(
+    { ownerType: 'counterparty', ownerId: deliveryCounterpartyId },
+    { skip: !deliveryCounterpartyId }
+  );
+  const { data: deliveryContactPoints = [] } = useGetContactPointsQuery(
+    { ownerType: 'contact', ownerId: deliveryContactId },
+    { skip: !deliveryContactId }
+  );
   const [getSignedFileUrl] = useLazyGetSignedFileUrlQuery();
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const deliveryRecipient = useMemo(() => pickDocumentDeliveryRecipient({
+    counterpartyContactPoints: deliveryCounterpartyPoints,
+    contactPersonContactPoints: deliveryContactPoints,
+    contactPersonLegacyEmail:
+      creditNote?.contact?.email ||
+      creditNote?.sourceOrder?.contact?.email ||
+      sourceInvoice?.contact?.email ||
+      sourceInvoice?.order?.contact?.email,
+    counterpartyLegacyEmail:
+      creditNote?.customer?.email ||
+      creditNote?.counterparty?.email ||
+      creditNote?.sourceOrder?.customer?.email ||
+      creditNote?.sourceOrder?.counterparty?.email ||
+      sourceInvoice?.customer?.email ||
+      sourceInvoice?.counterparty?.email ||
+      sourceInvoice?.order?.customer?.email ||
+      sourceInvoice?.order?.counterparty?.email,
+  }), [
+    creditNote?.contact?.email,
+    creditNote?.counterparty?.email,
+    creditNote?.customer?.email,
+    creditNote?.sourceOrder?.contact?.email,
+    creditNote?.sourceOrder?.counterparty?.email,
+    creditNote?.sourceOrder?.customer?.email,
+    deliveryContactPoints,
+    deliveryCounterpartyPoints,
+    sourceInvoice?.contact?.email,
+    sourceInvoice?.counterparty?.email,
+    sourceInvoice?.customer?.email,
+    sourceInvoice?.order?.contact?.email,
+    sourceInvoice?.order?.counterparty?.email,
+    sourceInvoice?.order?.customer?.email,
+  ]);
 
   const onGeneratePdf = async () => {
     if (!creditNote?.id) return;
@@ -1061,7 +1130,8 @@ function PreviewTab({ creditNote, sourceInvoice, currency, locale, t }) {
         locale={locale}
         documentLabel={t('oms.documentDelivery.types.creditNote')}
         documentNumber={creditNote?.number}
-        defaultRecipientEmail={creditNote?.contact?.email || creditNote?.sourceOrder?.contact?.email || ''}
+        defaultRecipientEmail={deliveryRecipient.email}
+        defaultRecipientSource={deliveryRecipient.source}
       />
       <DocumentShareDialog
         open={shareOpen}

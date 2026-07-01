@@ -1,5 +1,16 @@
 const contactPointService = require('../../services/crm/contactPointService');
 
+const sendError = (res, error) => {
+    if (error?.code === 'CONTACT_POINT_DUPLICATE') {
+        return res.status(error.status || 409).send({
+            code: error.code,
+            message: error.message,
+            existing: error.existing,
+        });
+    }
+    return res.status(error?.status || 400).send({ error: error.message });
+};
+
 // Возвращает список контактных точек компании с учётом query-параметров.
 module.exports.list = async (req, res) => {
     try {
@@ -16,20 +27,20 @@ module.exports.create = async (req, res) => {
         const row = await contactPointService.create(req.user.id, req.user.companyId, req.body);
         res.status(201).send(row);
     } catch (e) {
-        res.status(400).send({ error: e.message });
+        sendError(res, e);
     }
 };
 
 // Обновляет контактную точку; если запись не найдена — возвращает 404.
 module.exports.update = async (req, res) => {
     try {
-        const row = await contactPointService.update(req.user.id, req.user.companyId, req.body);
+        const row = await contactPointService.update(req.user.companyId, req.params.id, req.body);
         if (!row) {
             return res.status(404).send({ error: 'Not found' });
         }
         res.status(200).send(row);
     } catch (e) {
-        res.status(400).send({ error: e.message });
+        sendError(res, e);
     }
 };
 
