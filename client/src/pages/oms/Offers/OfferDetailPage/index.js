@@ -35,6 +35,8 @@ import { isOfferEditable } from '../../../../components/oms/documentEditability'
 import CustomerDocumentRenderer, {
   buildOfferDocumentDto,
 } from '../../../../components/oms/CustomerDocumentRenderer';
+import DocumentDeliveryDialog from '../../../../components/oms/DocumentDeliveryDialog';
+import DocumentShareDialog from '../../../../components/oms/DocumentShareDialog';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
 import { useGetContactsByCounterpartyQuery } from '../../../../store/rtk/contactsApi';
@@ -47,13 +49,21 @@ import {
   useDeleteOfferMutation,
   useDuplicateOfferMutation,
   useExpireOfferMutation,
+  useGenerateOfferPdfMutation,
   useGetOfferByIdQuery,
   useGetOfferMetaQuery,
   useRejectOfferMutation,
   useSaveOfferItemsMutation,
+  useSendOfferDocumentMutation,
   useSendOfferMutation,
   useUpdateOfferMutation,
 } from '../../../../store/rtk/offersApi';
+import { useLazyGetSignedFileUrlQuery } from '../../../../store/rtk/filesApi';
+import {
+  useCreateDocumentShareMutation,
+  useListDocumentSharesQuery,
+  useRevokeDocumentShareMutation,
+} from '../../../../store/rtk/documentSharesApi';
 import s from './OfferDetailPage.module.css';
 
 const EMPTY_FORM = {
@@ -501,10 +511,85 @@ function ItemsTab({ items, onItemsChange, errors, discountTypeOptions, readonly,
 
 function PreviewTab({ offer, form, items, totals, t, locale }) {
   const documentDto = buildOfferDocumentDto({ offer, form, items, totals, locale, t });
+  const [generatePdf, { isLoading, error }] = useGenerateOfferPdfMutation();
+  const [sendDocument, sendState] = useSendOfferDocumentMutation();
+  const [createShare, createShareState] = useCreateDocumentShareMutation();
+  const [revokeShare, revokeShareState] = useRevokeDocumentShareMutation();
+  const { data: shares = [], isFetching: sharesLoading, error: sharesError } = useListDocumentSharesQuery(
+    { entityType: 'offer', entityId: offer?.id },
+    { skip: !offer?.id }
+  );
+  const [getSignedFileUrl] = useLazyGetSignedFileUrlQuery();
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+
+  const onGeneratePdf = async () => {
+    if (!offer?.id) return;
+    const result = await generatePdf({ id: offer.id, payload: { locale } }).unwrap();
+    const fileId = result?.file?.id || result?.metadata?.fileId;
+    if (!fileId) return;
+    const signed = await getSignedFileUrl(fileId).unwrap();
+    const url = signed?.data?.url || signed?.url;
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const onSendDocument = async (payload) => {
+    await sendDocument({ id: offer.id, payload }).unwrap();
+    setDeliveryOpen(false);
+  };
+
+  const onCreateShare = async (payload) => {
+    await createShare({ entityType: 'offer', entityId: offer.id, locale, ...payload }).unwrap();
+  };
+
+  const onRevokeShare = async (share) => {
+    await revokeShare({ id: share.id, entityType: 'offer', entityId: offer.id }).unwrap();
+  };
 
   return (
     <DetailSection title={t('oms.offerDetail.tabs.preview', 'Preview')}>
+      <div className={s.previewActions}>
+        <button type="button" onClick={onGeneratePdf} disabled={!offer?.id || isLoading}>
+          {isLoading ? t('oms.generatedDocuments.actions.generating', 'Generating...') : t('oms.generatedDocuments.actions.generatePdf', 'Generate PDF')}
+        </button>
+        <button type="button" onClick={() => setDeliveryOpen(true)} disabled={!offer?.id || sendState.isLoading}>
+          {sendState.isLoading ? t('oms.documentDelivery.sending', 'Sending...') : t('oms.documentDelivery.send', 'Send email')}
+        </button>
+        <button type="button" onClick={() => setShareOpen(true)} disabled={!offer?.id}>
+          {t('oms.documentShare.share', 'Share')}
+        </button>
+        {error ? <span>{t('oms.generatedDocuments.errors.generateFailed', 'Could not generate PDF')}</span> : null}
+      </div>
       <CustomerDocumentRenderer dto={documentDto} />
+      <DocumentDeliveryDialog
+        open={deliveryOpen}
+        onClose={() => setDeliveryOpen(false)}
+        onSend={onSendDocument}
+        loading={sendState.isLoading}
+        error={sendState.error}
+        t={t}
+        locale={locale}
+        documentLabel={t('oms.documentDelivery.types.offer', 'Offer')}
+        documentNumber={offer?.number}
+        defaultRecipientEmail={offer?.contact?.email || ''}
+      />
+      <DocumentShareDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        onCreate={onCreateShare}
+        onRevoke={onRevokeShare}
+        t={t}
+        locale={locale}
+        entityType="offer"
+        entityId={offer?.id}
+        documentLabel={t('oms.documentShare.types.offer', 'Offer')}
+        documentNumber={offer?.number}
+        shares={shares}
+        loading={sharesLoading}
+        creating={createShareState.isLoading}
+        revoking={revokeShareState.isLoading}
+        error={sharesError || createShareState.error || revokeShareState.error}
+      />
     </DetailSection>
   );
 }

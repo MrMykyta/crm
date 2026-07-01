@@ -1,4 +1,6 @@
 const offerService = require('../../services/oms/offerService');
+const generatedDocumentService = require('../../services/documents/generatedDocument.service');
+const documentDeliveryService = require('../../services/documents/documentDelivery.service');
 
 module.exports.list = async (req, res, next) => {
   try {
@@ -130,6 +132,35 @@ module.exports.convertToInvoice = async (req, res, next) => {
   try {
     const data = await offerService.convertOfferToInvoice(req.params.id, req.body || {}, req.user);
     res.status(201).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.generatePdf = async (req, res, next) => {
+  try {
+    const data = await generatedDocumentService.generateForEntity({
+      entityType: 'offer',
+      entityId: req.params.id,
+      user: req.user,
+      locale: req.body?.locale || req.query?.locale || 'pl',
+      templateId: req.body?.templateId || req.query?.templateId || null,
+    });
+    res.status(201).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.sendDocument = async (req, res, next) => {
+  try {
+    const data = await documentDeliveryService.sendEmail({
+      entityType: 'offer',
+      entityId: req.params.id,
+      user: req.user,
+      payload: req.body || {},
+    });
+    res.status(200).json(data);
   } catch (error) {
     next(error);
   }

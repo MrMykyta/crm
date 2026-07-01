@@ -181,6 +181,27 @@ export const offersApi = crmApi.injectEndpoints({
       ],
     }),
 
+    generateOfferPdf: build.mutation({
+      query: ({ id, payload = {} }) => ({
+        url: `/offers/${encodeURIComponent(id)}/actions/generate-pdf`,
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: (_res, _err, { id }) => [{ type: 'Offer', id }],
+    }),
+
+    sendOfferDocument: build.mutation({
+      query: ({ id, payload = {} }) => ({
+        url: `/offers/${encodeURIComponent(id)}/actions/send-document`,
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: 'Offer', id },
+        { type: 'OfferList', id: 'LIST' },
+      ],
+    }),
+
     getOfferMeta: build.query({
       query: (args = {}) => ({
         url: '/offers/meta',
@@ -207,5 +228,7 @@ export const {
   useExpireOfferMutation,
   useDuplicateOfferMutation,
   useConvertOfferToOrderMutation,
+  useGenerateOfferPdfMutation,
+  useSendOfferDocumentMutation,
   useGetOfferMetaQuery,
 } = offersApi;

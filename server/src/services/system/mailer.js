@@ -21,6 +21,10 @@ const baseConfig587 = {
 
 let transporter = nodemailer.createTransport(baseConfig465);
 
+function isDryRunEnabled() {
+  return String(process.env.MAILER_DRY_RUN || '').trim().toLowerCase() === 'true';
+}
+
 // ensureTransport: выполняет вспомогательную бизнес-логику сервиса.
 async function ensureTransport() {
   try {
@@ -37,12 +41,25 @@ async function ensureTransport() {
 }
 
 // sendMail: выполняет вспомогательную бизнес-логику сервиса.
-module.exports.sendMail = async ({ to, subject, html }) => {
+module.exports.sendMail = async ({ to, subject, html, text, attachments = [] }) => {
   console.log(`[MAIL] sending to ${to}, subject "${subject}"`);
   const from = `"${process.env.MAIL_FROM_NAME || 'CRM'}" <${process.env.MAIL_FROM_ADDR || process.env.GMAIL_USER}>`;
+  if (isDryRunEnabled()) {
+    return {
+      dryRun: true,
+      accepted: [to],
+      rejected: [],
+      envelope: { from, to: Array.isArray(to) ? to : [to] },
+      messageId: `dry-run-${Date.now()}`,
+      attachments: attachments.map((attachment) => ({
+        filename: attachment.filename,
+        contentType: attachment.contentType,
+      })),
+    };
+  }
   try {
     const t = await ensureTransport();
-    return await t.sendMail({ from, to, subject, html });
+    return await t.sendMail({ from, to, subject, html, text, attachments });
   } catch (e) {
     console.error('[MAIL send failed]', e);
     // пробрасываем ошибку — выше её обработаем мягко

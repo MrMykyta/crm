@@ -9,6 +9,7 @@ rootRouter.use("/acl", auth, require("./system/aclRouter"));
 // Unified Files API (private + public endpoints)
 rootRouter.use("/files", require("./system/filesRouter"));
 rootRouter.use("/public-files", require("./system/publicFilesRouter"));
+rootRouter.use("/public-documents", require("./documents/publicDocumentRouter"));
 rootRouter.use("/invitations", require("./system/invitationsRouter"));
 rootRouter.use("/system", auth, require("./system/userPreferencesRouter"));
 rootRouter.use("/notifications", auth, require("./system/notificationRouter"));
@@ -30,6 +31,7 @@ rootRouter.use("/tasks", auth, companyIdGuard, require("./crm/taskRouter"));
 rootRouter.use("/notes", auth, companyIdGuard, require("./crm/noteRouter"));
 rootRouter.use("/registry", auth, companyIdGuard, require("./system/registryRouter"));
 rootRouter.use("/documents", auth, companyIdGuard, require("./crm/documentRouter"));
+rootRouter.use("/document-shares", auth, companyIdGuard, require("./documents/sharedDocumentRouter"));
 rootRouter.use("/offers", auth, companyIdGuard, require("./oms/offerRouter"));
 rootRouter.use("/orders", auth, companyIdGuard, require("./oms/orderRouter"));
 rootRouter.use("/invoices", auth, companyIdGuard, require("./oms/invoiceRouter"));

@@ -186,12 +186,17 @@ async function closeBrowser() {
   }
 }
 
-/**
- * PDF-1 intentionally does not connect TemplateDefinition rendering yet.
- * PDF-2/PDF-3 will feed render.service HTML into htmlToPdf().
- */
-async function renderTemplatePdf() {
-  throw new Error('PDF template rendering is not wired yet. Use htmlToPdf(html) for PDF-1 infrastructure.');
+async function renderTemplatePdf({ templateDraft, dataContext, renderContext = {}, pdfOptions = {} } = {}) {
+  const { renderTemplateToHtml } = require('./render.service');
+  const html = renderTemplateToHtml({ templateDraft, dataContext, renderContext });
+  const buffer = await htmlToPdf(html, {
+    preferCSSPageSize: true,
+    ...pdfOptions,
+  });
+  return {
+    html,
+    buffer,
+  };
 }
 
 module.exports = {

@@ -36,6 +36,14 @@ module.exports = (sequelize, DataTypes) => {
         as: 'updater',
         foreignKey: { name: 'updatedBy', field: 'updated_by' },
       });
+      Document.belongsTo(models.User, {
+        as: 'generator',
+        foreignKey: { name: 'generatedBy', field: 'generated_by' },
+      });
+      Document.belongsTo(models.File, {
+        as: 'generatedFile',
+        foreignKey: { name: 'fileId', field: 'file_id' },
+      });
 
       Document.hasMany(models.DocumentItem, {
         as: 'items',
@@ -74,6 +82,10 @@ module.exports = (sequelize, DataTypes) => {
       currency: { type: DataTypes.STRING(3), allowNull: false, defaultValue: 'PLN' },
       language: { type: DataTypes.STRING(10), allowNull: false, defaultValue: 'pl' },
       template: { type: DataTypes.STRING(64), allowNull: true },
+      fileId: { type: DataTypes.UUID, allowNull: true, field: 'file_id' },
+      generatedAt: { type: DataTypes.DATE, allowNull: true, field: 'generated_at' },
+      generatedBy: { type: DataTypes.UUID, allowNull: true, field: 'generated_by' },
+      templateVersionId: { type: DataTypes.UUID, allowNull: true, field: 'template_version_id' },
       notes: { type: DataTypes.TEXT, allowNull: true },
       internalNotes: { type: DataTypes.TEXT, allowNull: true, field: 'internal_notes' },
       sourceEntityType: { type: DataTypes.STRING(64), allowNull: true, field: 'source_entity_type' },

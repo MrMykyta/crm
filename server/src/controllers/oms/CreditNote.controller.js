@@ -1,6 +1,8 @@
 'use strict';
 
 const service = require('../../services/oms/creditNoteService');
+const generatedDocumentService = require('../../services/documents/generatedDocument.service');
+const documentDeliveryService = require('../../services/documents/documentDelivery.service');
 
 module.exports.list = async (req, res, next) => {
   try {
@@ -72,6 +74,33 @@ module.exports.refund = async (req, res, next) => {
       method: req.body?.method,
       reference: req.body?.reference,
       userId: req.user.id,
+    }));
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.generatePdf = async (req, res, next) => {
+  try {
+    res.status(201).json(await generatedDocumentService.generateForEntity({
+      entityType: 'credit_note',
+      entityId: req.params.id,
+      user: req.user,
+      locale: req.body?.locale || req.query?.locale || 'pl',
+      templateId: req.body?.templateId || req.query?.templateId || null,
+    }));
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.sendDocument = async (req, res, next) => {
+  try {
+    res.status(200).json(await documentDeliveryService.sendEmail({
+      entityType: 'credit_note',
+      entityId: req.params.id,
+      user: req.user,
+      payload: req.body || {},
     }));
   } catch (error) {
     next(error);

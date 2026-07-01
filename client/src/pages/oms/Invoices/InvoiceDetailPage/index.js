@@ -20,12 +20,22 @@ import {
 import CustomerDocumentRenderer, {
   buildInvoiceDocumentDto,
 } from '../../../../components/oms/CustomerDocumentRenderer';
+import DocumentDeliveryDialog from '../../../../components/oms/DocumentDeliveryDialog';
+import DocumentShareDialog from '../../../../components/oms/DocumentShareDialog';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { asText } from '../../../../lib/format';
 import {
+  useGenerateInvoicePdfMutation,
   useGetInvoiceByIdQuery,
   useIssueInvoiceFromOrderMutation,
+  useSendInvoiceDocumentMutation,
 } from '../../../../store/rtk/invoicesApi';
+import { useLazyGetSignedFileUrlQuery } from '../../../../store/rtk/filesApi';
+import {
+  useCreateDocumentShareMutation,
+  useListDocumentSharesQuery,
+  useRevokeDocumentShareMutation,
+} from '../../../../store/rtk/documentSharesApi';
 import s from './InvoiceDetailPage.module.css';
 
 function asNumber(value, fallback = 0) {
@@ -610,10 +620,85 @@ function CreditNotesTab({ creditNotes, currency, locale, t }) {
 
 function PreviewTab({ invoice, items, currency, locale, t }) {
   const documentDto = buildInvoiceDocumentDto({ invoice, items, currency, locale });
+  const [generatePdf, { isLoading, error }] = useGenerateInvoicePdfMutation();
+  const [sendDocument, sendState] = useSendInvoiceDocumentMutation();
+  const [createShare, createShareState] = useCreateDocumentShareMutation();
+  const [revokeShare, revokeShareState] = useRevokeDocumentShareMutation();
+  const { data: shares = [], isFetching: sharesLoading, error: sharesError } = useListDocumentSharesQuery(
+    { entityType: 'invoice', entityId: invoice?.id },
+    { skip: !invoice?.id }
+  );
+  const [getSignedFileUrl] = useLazyGetSignedFileUrlQuery();
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+
+  const onGeneratePdf = async () => {
+    if (!invoice?.id) return;
+    const result = await generatePdf({ id: invoice.id, payload: { locale } }).unwrap();
+    const fileId = result?.file?.id || result?.metadata?.fileId;
+    if (!fileId) return;
+    const signed = await getSignedFileUrl(fileId).unwrap();
+    const url = signed?.data?.url || signed?.url;
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const onSendDocument = async (payload) => {
+    await sendDocument({ id: invoice.id, payload }).unwrap();
+    setDeliveryOpen(false);
+  };
+
+  const onCreateShare = async (payload) => {
+    await createShare({ entityType: 'invoice', entityId: invoice.id, locale, ...payload }).unwrap();
+  };
+
+  const onRevokeShare = async (share) => {
+    await revokeShare({ id: share.id, entityType: 'invoice', entityId: invoice.id }).unwrap();
+  };
 
   return (
     <DetailSection title={t('oms.invoiceDetail.tabs.preview')}>
+      <div className={s.previewActions}>
+        <button type="button" onClick={onGeneratePdf} disabled={!invoice?.id || isLoading}>
+          {isLoading ? t('oms.generatedDocuments.actions.generating') : t('oms.generatedDocuments.actions.generatePdf')}
+        </button>
+        <button type="button" onClick={() => setDeliveryOpen(true)} disabled={!invoice?.id || sendState.isLoading}>
+          {sendState.isLoading ? t('oms.documentDelivery.sending') : t('oms.documentDelivery.send')}
+        </button>
+        <button type="button" onClick={() => setShareOpen(true)} disabled={!invoice?.id}>
+          {t('oms.documentShare.share')}
+        </button>
+        {error ? <span>{t('oms.generatedDocuments.errors.generateFailed')}</span> : null}
+      </div>
       <CustomerDocumentRenderer dto={documentDto} />
+      <DocumentDeliveryDialog
+        open={deliveryOpen}
+        onClose={() => setDeliveryOpen(false)}
+        onSend={onSendDocument}
+        loading={sendState.isLoading}
+        error={sendState.error}
+        t={t}
+        locale={locale}
+        documentLabel={t('oms.documentDelivery.types.invoice')}
+        documentNumber={invoice?.number}
+        defaultRecipientEmail={invoice?.contact?.email || invoice?.order?.contact?.email || ''}
+      />
+      <DocumentShareDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        onCreate={onCreateShare}
+        onRevoke={onRevokeShare}
+        t={t}
+        locale={locale}
+        entityType="invoice"
+        entityId={invoice?.id}
+        documentLabel={t('oms.documentShare.types.invoice')}
+        documentNumber={invoice?.number}
+        shares={shares}
+        loading={sharesLoading}
+        creating={createShareState.isLoading}
+        revoking={revokeShareState.isLoading}
+        error={sharesError || createShareState.error || revokeShareState.error}
+      />
     </DetailSection>
   );
 }

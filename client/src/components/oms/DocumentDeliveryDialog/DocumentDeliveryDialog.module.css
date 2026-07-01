@@ -1,0 +1,90 @@
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.summary {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ui-surface-1) 90%, transparent);
+}
+
+.summary span {
+  color: var(--ui-text-3);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.summary strong {
+  color: var(--ui-text-1);
+  font-size: 16px;
+}
+
+.summary small {
+  color: var(--ui-text-2);
+  line-height: 1.45;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field span {
+  color: var(--ui-text-2);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ui-surface-1) 94%, transparent);
+  color: var(--ui-text-1);
+  font: inherit;
+  outline: none;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+
+.field input {
+  height: 40px;
+  padding: 0 12px;
+}
+
+.field textarea {
+  min-height: 116px;
+  resize: vertical;
+  padding: 10px 12px;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--ui-border-focus);
+  background: var(--ui-surface-1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-start) 18%, transparent);
+}
+
+.error {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, #f87171 48%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, #7f1d1d 16%, transparent);
+  color: color-mix(in srgb, #fecaca 92%, var(--ui-text-1));
+  font-size: 13px;
+}
+
+@media (max-width: 520px) {
+  .summary {
+    padding: 12px;
+  }
+
+  .field textarea {
+    min-height: 96px;
+  }
+}

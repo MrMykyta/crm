@@ -17,8 +17,8 @@ function uniquePaths(paths) {
 
 function resolveDefaultsDir() {
   const candidates = uniquePaths([
-    path.resolve(process.cwd(), 'shared/template/defaults'),
     path.resolve(process.cwd(), '../shared/template/defaults'),
+    path.resolve(process.cwd(), 'shared/template/defaults'),
     path.resolve(__dirname, '../../../../../shared/template/defaults'),
     path.resolve(__dirname, '../../../../../../shared/template/defaults'),
   ]);

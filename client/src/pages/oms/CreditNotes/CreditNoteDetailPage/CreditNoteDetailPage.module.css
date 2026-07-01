@@ -1,4 +1,4 @@
-.invoiceDetail {
+.creditNoteDetail {
   gap: 12px;
 }
 
@@ -39,7 +39,7 @@
 .headerMeta,
 .smartRow,
 .actionRow,
-.claimMeta {
+.creditMeta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -52,7 +52,7 @@
 }
 
 .headerMeta span,
-.claimMeta span {
+.creditMeta span {
   max-width: 100%;
   padding: 5px 8px;
   border: 1px solid color-mix(in srgb, var(--detail-border) 78%, transparent);
@@ -65,7 +65,8 @@
 
 .backBtn,
 .smartBtn,
-.primaryBtn {
+.primaryBtn,
+.secondaryBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -88,12 +89,30 @@
 }
 
 .smartBtn,
-.primaryBtn {
+.primaryBtn,
+.secondaryBtn {
   padding: 0 11px;
 }
 
+.primaryBtn {
+  border-color: color-mix(in srgb, #f59e0b 54%, var(--detail-border));
+  background: linear-gradient(135deg, color-mix(in srgb, #f59e0b 64%, #fff 4%), color-mix(in srgb, #22c55e 14%, #f59e0b));
+  box-shadow: 0 14px 34px color-mix(in srgb, #f59e0b 16%, transparent);
+  color: #fff;
+}
+
+.secondaryBtn {
+  color: var(--detail-muted);
+}
+
+.primaryBtn:disabled,
+.secondaryBtn:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
 .smartBtn strong {
-  max-width: 110px;
+  max-width: 120px;
   overflow: hidden;
   font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
@@ -104,21 +123,9 @@
   color: var(--detail-muted);
 }
 
-.primaryBtn {
-  border-color: color-mix(in srgb, var(--focus, #60a5fa) 64%, var(--detail-border));
-  background: linear-gradient(135deg, color-mix(in srgb, var(--focus, #60a5fa) 78%, #fff 4%), color-mix(in srgb, #22c55e 20%, var(--focus, #60a5fa)));
-  box-shadow: 0 14px 34px color-mix(in srgb, var(--focus, #60a5fa) 18%, transparent);
-  color: #fff;
-}
-
-.primaryBtn:disabled {
-  cursor: not-allowed;
-  opacity: .55;
-}
-
 .heroGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 38%);
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 36%);
   gap: 22px;
   align-items: stretch;
   min-width: 0;
@@ -137,10 +144,15 @@
   place-items: center;
   width: 58px;
   height: 58px;
-  border: 1px solid color-mix(in srgb, var(--focus, #60a5fa) 34%, var(--detail-border));
+  border: 1px solid color-mix(in srgb, #f59e0b 42%, var(--detail-border));
   border-radius: 18px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--focus, #60a5fa) 22%, var(--detail-surface-soft)), color-mix(in srgb, #22c55e 10%, var(--detail-surface)));
+  background: linear-gradient(135deg, color-mix(in srgb, #f59e0b 22%, var(--detail-surface-soft)), color-mix(in srgb, #22c55e 8%, var(--detail-surface)));
   color: var(--ui-text, #fff);
+}
+
+.heroIcon_ok {
+  border-color: color-mix(in srgb, #22c55e 38%, var(--detail-border));
+  background: linear-gradient(135deg, color-mix(in srgb, #22c55e 20%, var(--detail-surface-soft)), color-mix(in srgb, #f59e0b 8%, var(--detail-surface)));
 }
 
 .heroIcon_danger {
@@ -154,16 +166,13 @@
 }
 
 .heroText span,
-.claimPanel > span,
+.creditPanel > span,
 .factLine span,
-.itemRow span,
-.vatRow span,
-.previewHeader span,
-.previewCustomer span,
-.previewLine span,
-.previewFooter span,
+.applicationRow span,
+.allocationEditor span,
+.refundEditor label span,
 .timelineRow span,
-.scopeNote {
+.nextAction {
   color: var(--detail-muted);
   font-size: 12px;
   font-weight: 720;
@@ -171,14 +180,12 @@
 
 .heroText h1 {
   margin: 2px 0 0;
-  overflow: hidden;
+  min-width: 0;
   color: var(--ui-text, #fff);
   font-size: clamp(30px, 4vw, 54px);
   font-weight: 860;
   line-height: .98;
   letter-spacing: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .heroText p {
@@ -190,34 +197,26 @@
   white-space: nowrap;
 }
 
-.claimPanel {
+.creditPanel {
   display: grid;
   align-content: center;
   justify-items: end;
   gap: 8px;
   min-width: 0;
   padding: 18px;
-  border: 1px solid color-mix(in srgb, var(--focus, #60a5fa) 34%, var(--detail-border));
+  border: 1px solid color-mix(in srgb, #f59e0b 34%, var(--detail-border));
   border-radius: 18px;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--focus, #60a5fa) 9%, transparent), transparent 52%),
+    linear-gradient(135deg, color-mix(in srgb, #f59e0b 10%, transparent), transparent 52%),
     color-mix(in srgb, var(--detail-surface-soft) 88%, transparent);
 }
 
-.claim_ok {
+.credit_ok {
   border-color: color-mix(in srgb, #22c55e 38%, var(--detail-border));
 }
 
-.claim_warning,
-.claim_soft {
-  border-color: color-mix(in srgb, #f59e0b 34%, var(--detail-border));
-}
-
-.claim_danger {
+.credit_danger {
   border-color: color-mix(in srgb, #ef4444 52%, var(--detail-border));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, #ef4444 11%, transparent), transparent 52%),
-    color-mix(in srgb, var(--detail-surface-soft) 88%, transparent);
 }
 
 .toneText_ok {
@@ -257,33 +256,62 @@
 }
 
 .money_hero span {
-  color: color-mix(in srgb, #22c55e 86%, var(--ui-text, #fff));
+  color: color-mix(in srgb, #f59e0b 84%, var(--ui-text, #fff));
   font-size: clamp(34px, 4vw, 58px);
   letter-spacing: 0;
-}
-
-.claim_danger .money_hero span {
-  color: #fecaca;
 }
 
 .money_hero small {
   font-size: 16px;
 }
 
-.nextAction {
-  color: var(--detail-muted);
-  font-size: 12px;
-  font-weight: 780;
+.vitalsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
 }
 
-.errorBar {
-  padding: 9px 11px;
-  border: 1px solid color-mix(in srgb, #ef4444 52%, transparent);
-  border-radius: 10px;
-  background: color-mix(in srgb, #ef4444 10%, transparent);
-  color: #fecaca;
-  font-size: 12px;
-  font-weight: 750;
+.vital {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid color-mix(in srgb, var(--detail-border) 76%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft) 88%, transparent);
+}
+
+.vital span,
+.vital strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vital span {
+  color: var(--detail-muted);
+  font-size: 11px;
+  font-weight: 740;
+}
+
+.vital strong {
+  color: var(--ui-text, #fff);
+  font-size: 13px;
+  font-weight: 840;
+}
+
+.vital_ok {
+  border-color: color-mix(in srgb, #22c55e 32%, var(--detail-border));
+}
+
+.vital_warning,
+.vital_soft {
+  border-color: color-mix(in srgb, #f59e0b 32%, var(--detail-border));
+}
+
+.vital_danger {
+  border-color: color-mix(in srgb, #ef4444 38%, var(--detail-border));
 }
 
 .sidebar,
@@ -325,7 +353,8 @@
 
 .overviewGrid,
 .systemGrid,
-.factGrid {
+.factGrid,
+.createSummary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
@@ -346,7 +375,9 @@
 }
 
 .factLine strong,
-.factLine a {
+.factLine a,
+.allocationEditor strong,
+.allocationEditor a {
   min-width: 0;
   overflow: hidden;
   color: var(--ui-text, #fff);
@@ -357,7 +388,9 @@
 }
 
 .factLine a,
-.chain a {
+.chain a,
+.applicationRow a,
+.allocationEditor a {
   color: color-mix(in srgb, var(--focus, #60a5fa) 76%, var(--ui-text, #fff));
 }
 
@@ -383,15 +416,15 @@
   color: var(--detail-muted);
 }
 
-.itemRows {
+.applicationRows {
   display: grid;
   gap: 8px;
   min-width: 0;
 }
 
-.itemRow {
+.applicationRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(130px, max-content);
+  grid-template-columns: minmax(0, 1fr) repeat(3, minmax(110px, max-content));
   gap: 12px;
   align-items: center;
   min-width: 0;
@@ -401,13 +434,13 @@
   background: color-mix(in srgb, var(--detail-surface-soft) 78%, transparent);
 }
 
-.itemRow > div {
+.applicationRow > div {
   display: grid;
   gap: 3px;
   min-width: 0;
 }
 
-.itemRow strong {
+.applicationRow strong {
   overflow: hidden;
   color: var(--ui-text, #fff);
   font-size: 14px;
@@ -416,182 +449,125 @@
   white-space: nowrap;
 }
 
-.vatGrid {
+.createGrid {
   display: grid;
-  gap: 7px;
-}
-
-.vatRow {
-  display: grid;
-  grid-template-columns: 1fr repeat(3, minmax(92px, max-content));
+  grid-template-columns: minmax(240px, .9fr) minmax(0, 1.4fr);
   gap: 12px;
-  align-items: center;
-  padding: 9px 10px;
-  border: 1px solid color-mix(in srgb, var(--detail-border) 70%, transparent);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--detail-surface-soft) 70%, transparent);
-  font-variant-numeric: tabular-nums;
+  align-items: start;
+  min-width: 0;
 }
 
-.vatRow strong {
-  color: var(--ui-text, #fff);
-}
-
-.totalsCrescendo {
+.amountField,
+.formGrid label,
+.allocationEditor label,
+.refundEditor label {
   display: grid;
-  justify-self: end;
-  gap: 8px;
-  width: min(100%, 360px);
-  padding: 16px;
-  border: 1px solid color-mix(in srgb, var(--detail-border) 82%, transparent);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--detail-surface) 90%, transparent);
+  gap: 6px;
+  min-width: 0;
 }
 
-.totalsCrescendo > div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
+.amountField > span,
+.formGrid label span {
   color: var(--detail-muted);
   font-size: 12px;
-  font-weight: 760;
+  font-weight: 740;
 }
 
-.totalsCrescendo strong {
-  color: var(--ui-text, #fff);
-  font-variant-numeric: tabular-nums;
-}
-
-.grandTotalLine {
-  margin-top: 4px;
-  padding-top: 12px;
-  border-top: 1px solid color-mix(in srgb, #22c55e 34%, var(--detail-border));
-}
-
-.scopeNote {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, #f59e0b 28%, var(--detail-border));
-  border-radius: 12px;
-  background: color-mix(in srgb, #f59e0b 8%, var(--detail-surface-soft));
-}
-
-.preview {
+.amountControl {
   display: grid;
-  gap: 18px;
-  position: relative;
-  width: min(100%, 794px);
-  max-width: 100%;
-  min-width: 0;
-  margin: 0 auto;
-  padding: clamp(22px, 4vw, 46px);
-  border: 1px solid color-mix(in srgb, #dbe3ef 86%, transparent);
-  border-radius: 12px;
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
-  box-shadow: 0 24px 70px rgb(2 6 23 / 32%);
-  color: #0f172a;
-  aspect-ratio: 210 / 297;
-  align-content: start;
-}
-
-.previewHeader,
-.previewFooter {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  min-width: 0;
-}
-
-.previewHeader h2 {
-  margin: 2px 0;
-  color: #0f172a;
-  font-size: 28px;
-  line-height: 1.05;
-}
-
-.previewHeader p,
-.previewCustomer p,
-.previewFooter p {
-  margin: 0;
-  color: #64748b;
-}
-
-.previewHeader > div:last-child,
-.previewGrandTotal {
-  display: grid;
-  justify-items: end;
-  gap: 4px;
-  text-align: right;
-}
-
-.previewHeader > div:last-child strong {
-  color: #0f172a;
-  font-size: 18px;
-}
-
-.previewCustomer {
-  display: grid;
-  gap: 4px;
-  padding: 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #f8fafc;
-}
-
-.previewCustomer strong {
-  color: #0f172a;
-  font-size: 18px;
-}
-
-.previewLines {
-  display: grid;
-  gap: 8px;
-}
-
-.previewLine {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
   gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid #e2e8f0;
+  min-width: 0;
+  padding: 12px 13px;
+  border: 1px solid color-mix(in srgb, var(--detail-border) 84%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--detail-surface) 82%, transparent);
 }
 
-.previewLine:last-child {
-  border-bottom: 0;
+.amountControl input {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ui-text, #fff);
+  font: inherit;
+  font-size: 42px;
+  font-weight: 860;
+  letter-spacing: 0;
+  line-height: 1;
+  outline: none;
 }
 
-.previewLine > div {
+.amountControl strong {
+  padding-bottom: 7px;
+  color: var(--ui-text, #fff);
+  font-size: 16px;
+  font-weight: 820;
+}
+
+.formGrid,
+.refundEditor {
   display: grid;
-  gap: 3px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   min-width: 0;
 }
 
-.previewLine strong {
-  color: #0f172a;
+.fullField {
+  grid-column: 1 / -1;
 }
 
-.previewFooter {
-  align-items: flex-end;
-  padding-top: 18px;
-  border-top: 1px solid #cbd5e1;
-  color: #64748b;
+.formGrid input,
+.formGrid select,
+.allocationEditor input,
+.refundEditor input,
+.refundEditor select {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--detail-border) 82%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--detail-surface-soft) 88%, #020617 4%);
+  color: var(--ui-text, #fff);
+  font: inherit;
   font-size: 13px;
+  font-weight: 720;
+  outline: none;
 }
 
-.previewGrandTotal .moneyAmount span {
-  color: #0f172a;
+.amountControl:focus-within,
+.formGrid input:focus,
+.formGrid select:focus,
+.allocationEditor input:focus,
+.refundEditor input:focus,
+.refundEditor select:focus {
+  border-color: color-mix(in srgb, var(--focus, #60a5fa) 70%, var(--detail-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus, #60a5fa) 16%, transparent);
 }
 
-.previewHeader span,
-.previewCustomer span,
-.previewLine span,
-.previewFooter span {
-  color: #64748b;
+.allocationEditor {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) repeat(3, minmax(112px, .75fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.allocationEditor > div,
+.allocationEditor label {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--detail-border) 70%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--detail-surface-soft) 72%, transparent);
+}
+
+.onAccountBox {
+  border-color: color-mix(in srgb, #f59e0b 42%, var(--detail-border)) !important;
+  background: color-mix(in srgb, #f59e0b 13%, var(--detail-surface-soft)) !important;
 }
 
 .timeline {
@@ -611,46 +587,56 @@
   height: 9px;
   margin-top: 5px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--focus, #60a5fa) 78%, #fff);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--focus, #60a5fa) 14%, transparent);
-}
-
-.timelineRow div {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
+  background: color-mix(in srgb, #f59e0b 72%, var(--focus, #60a5fa));
+  box-shadow: 0 0 0 4px color-mix(in srgb, #f59e0b 12%, transparent);
 }
 
 .timelineRow strong {
+  display: block;
   color: var(--ui-text, #fff);
   font-size: 13px;
+  font-weight: 780;
 }
 
 .empty,
-.state {
-  padding: 18px;
+.state,
+.errorBar {
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--detail-border) 74%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft) 84%, transparent);
   color: var(--detail-muted);
   font-size: 13px;
+  font-weight: 720;
 }
 
 .state {
-  border: 1px solid var(--detail-border);
-  border-radius: 16px;
-  background: var(--detail-surface);
+  margin: 24px;
 }
 
-@media (max-width: 1100px) {
+.errorBar {
+  border-color: color-mix(in srgb, #ef4444 52%, transparent);
+  background: color-mix(in srgb, #ef4444 10%, transparent);
+  color: #fecaca;
+}
+
+@media (max-width: 920px) {
   .heroGrid,
-  .headerActions {
-    display: grid;
+  .createGrid,
+  .allocationEditor,
+  .refundEditor {
     grid-template-columns: 1fr;
   }
 
-  .smartRow,
-  .actionRow,
-  .claimPanel {
-    justify-content: flex-start;
-    justify-items: start;
+  .vitalsGrid,
+  .overviewGrid,
+  .systemGrid,
+  .createSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .applicationRow {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -683,51 +669,51 @@
   font-size: 12px;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 520px) {
   .headerWrap {
-    position: static;
     padding: 12px;
     border-radius: 14px;
   }
 
-  .headerTop {
-    display: grid;
-    justify-items: start;
+  .headerTop,
+  .headerActions,
+  .actionRow {
+    align-items: stretch;
+    flex-direction: column;
   }
 
-  .heroGrid {
-    gap: 12px;
+  .smartRow,
+  .headerMeta {
+    justify-content: flex-start;
   }
 
   .heroMain {
     align-items: flex-start;
   }
 
-  .heroText h1,
-  .heroText p {
-    white-space: normal;
+  .heroIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
   }
 
   .heroText h1 {
-    font-size: 28px;
+    font-size: 30px;
   }
 
+  .money_hero span {
+    font-size: 34px;
+  }
+
+  .vitalsGrid,
   .overviewGrid,
   .systemGrid,
-  .vatRow {
+  .createSummary,
+  .formGrid {
     grid-template-columns: 1fr;
   }
 
-  .itemRow,
-  .previewHeader,
-  .previewLine,
-  .previewFooter {
-    display: grid;
-  }
-
-  .previewHeader > div:last-child,
-  .previewGrandTotal {
-    justify-items: start;
-    text-align: left;
+  .amountControl input {
+    font-size: 32px;
   }
 }

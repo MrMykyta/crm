@@ -108,6 +108,27 @@ export const creditNotesApi = crmApi.injectEndpoints({
         { type: 'OrderList', id: 'LIST' },
       ].filter(Boolean),
     }),
+
+    generateCreditNotePdf: build.mutation({
+      query: ({ id, payload = {} }) => ({
+        url: `/credit-notes/${encodeURIComponent(id)}/actions/generate-pdf`,
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: (_res, _err, { id }) => [{ type: 'CreditNote', id }],
+    }),
+
+    sendCreditNoteDocument: build.mutation({
+      query: ({ id, payload = {} }) => ({
+        url: `/credit-notes/${encodeURIComponent(id)}/actions/send-document`,
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: 'CreditNote', id },
+        { type: 'CreditNoteList', id: 'LIST' },
+      ],
+    }),
   }),
   overrideExisting: true,
 });
@@ -119,4 +140,6 @@ export const {
   useApplyCreditNoteMutation,
   useCancelCreditNoteMutation,
   useRefundCreditNoteMutation,
+  useGenerateCreditNotePdfMutation,
+  useSendCreditNoteDocumentMutation,
 } = creditNotesApi;

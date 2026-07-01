@@ -1,0 +1,130 @@
+.wrap {
+  display: grid;
+  gap: 14px;
+}
+
+.summary,
+.linkCard,
+.empty,
+.error {
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ui-surface-1) 92%, transparent);
+}
+
+.summary {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+}
+
+.summary span,
+.metaGrid span,
+.linkCard label span {
+  color: var(--ui-text-3);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.summary strong {
+  color: var(--ui-text-1);
+  font-size: 16px;
+}
+
+.summary small {
+  color: var(--ui-text-2);
+  line-height: 1.45;
+}
+
+.linkCard {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.linkCard label {
+  display: grid;
+  gap: 6px;
+}
+
+.linkCard input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ui-surface-2) 92%, transparent);
+  color: var(--ui-text-1);
+  font: inherit;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.metaGrid div {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ui-surface-2) 84%, transparent);
+}
+
+.metaGrid strong {
+  color: var(--ui-text-1);
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actions button,
+.actions a {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 11px;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ui-surface-2) 94%, transparent);
+  color: var(--ui-text-1);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.actions button:hover,
+.actions a:hover {
+  border-color: var(--ui-border-focus);
+}
+
+.actions .danger {
+  color: color-mix(in srgb, #fca5a5 88%, var(--ui-text-1));
+  border-color: color-mix(in srgb, #f87171 36%, var(--ui-border-soft));
+}
+
+.empty,
+.error {
+  padding: 12px;
+  color: var(--ui-text-2);
+}
+
+.error {
+  color: color-mix(in srgb, #fecaca 92%, var(--ui-text-1));
+  border-color: color-mix(in srgb, #f87171 48%, transparent);
+  background: color-mix(in srgb, #7f1d1d 16%, transparent);
+}
+
+@media (max-width: 520px) {
+  .metaGrid {
+    grid-template-columns: 1fr;
+  }
+}

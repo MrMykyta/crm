@@ -67,6 +67,27 @@ export const invoicesApi = crmApi.injectEndpoints({
         { type: 'OrderList', id: 'LIST' },
       ],
     }),
+
+    generateInvoicePdf: build.mutation({
+      query: ({ id, payload = {} }) => ({
+        url: `/invoices/${encodeURIComponent(id)}/actions/generate-pdf`,
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: (_res, _err, { id }) => [{ type: 'Invoice', id }],
+    }),
+
+    sendInvoiceDocument: build.mutation({
+      query: ({ id, payload = {} }) => ({
+        url: `/invoices/${encodeURIComponent(id)}/actions/send-document`,
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: 'Invoice', id },
+        { type: 'InvoiceList', id: 'LIST' },
+      ],
+    }),
   }),
   overrideExisting: true,
 });
@@ -76,4 +97,6 @@ export const {
   useGetInvoiceByIdQuery,
   useLazyGetInvoiceByIdQuery,
   useIssueInvoiceFromOrderMutation,
+  useGenerateInvoicePdfMutation,
+  useSendInvoiceDocumentMutation,
 } = invoicesApi;

@@ -26,6 +26,7 @@ static associate(models) {
           'task',
           'order',
           'offer',
+          'document',
           'contact',
           'department',
           'chatMessage',
@@ -84,4 +85,3 @@ static associate(models) {
 
   return File;
 };
-

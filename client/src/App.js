@@ -71,6 +71,7 @@ const InvoiceDetailPage = lazy(() => import('./pages/oms/Invoices/InvoiceDetailP
 const OfferDetailPage = lazy(() => import('./pages/oms/Offers/OfferDetailPage'));
 const PaymentDetailPage = lazy(() => import('./pages/oms/Payments/PaymentDetailPage'));
 const CreditNoteDetailPage = lazy(() => import('./pages/oms/CreditNotes/CreditNoteDetailPage'));
+const PublicDocumentPage = lazy(() => import('./pages/PublicDocumentPage'));
 const ReceiptDetailPage = lazy(() => import('./pages/wms/ReceiptDetailPage'));
 const TransferDetailPage = lazy(() => import('./pages/wms/TransferDetailPage'));
 const ShipmentDetailPage = lazy(() => import('./pages/wms/ShipmentDetailPage'));
@@ -180,6 +181,7 @@ function AppShell() {
         <Route path="/auth/company-setup" element={<CompanySetupPage />} />
         <Route path="/auth/reset" element={<ResetPasswordPage />} />
         <Route path="/invite/accept" element={<InviteAcceptPage />} />
+        <Route path="/public/doc/:token" element={<LazyPage><PublicDocumentPage /></LazyPage>} />
         <Route
           path="/main"
           element={

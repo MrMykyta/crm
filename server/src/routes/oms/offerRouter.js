@@ -28,5 +28,7 @@ offerRouter.post('/:id/actions/expire', validateBody(offerSchema.actionPayload),
 offerRouter.post('/:id/actions/duplicate', validateBody(offerSchema.duplicatePayload), authorize('offer:create'), OfferController.duplicate);
 offerRouter.post('/:id/actions/convert-to-order', validateBody(offerSchema.convertPayload), authorize('offer:convert'), OfferController.convertToOrder);
 offerRouter.post('/:id/actions/convert-to-invoice', validateBody(offerSchema.convertPayload), authorize('offer:convert'), OfferController.convertToInvoice);
+offerRouter.post('/:id/actions/generate-pdf', authorize('offer:update'), OfferController.generatePdf);
+offerRouter.post('/:id/actions/send-document', authorize('offer:update'), OfferController.sendDocument);
 
 module.exports = offerRouter;

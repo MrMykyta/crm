@@ -1303,6 +1303,7 @@
     },
     "creditNoteDetail": {
       "title": "Korekta",
+      "noCustomer": "Brak klienta",
       "noReason": "Nie podano powodu",
       "hero": {
         "remainingCredit": "Pozostały kredyt",
@@ -1366,7 +1367,8 @@
         "refundable": "Dostępne do zwrotu"
       },
       "empty": {
-        "onAccount": "Brak rozliczeń. To kredyt na koncie klienta, dopóki nie zostanie rozliczony lub zwrócony."
+        "onAccount": "Brak rozliczeń. To kredyt na koncie klienta, dopóki nie zostanie rozliczony lub zwrócony.",
+        "noInvoice": "Brak powiązanej faktury źródłowej."
       },
       "preview": {
         "label": "Korekta",
@@ -1394,6 +1396,7 @@
         "eyebrow": "Nowa korekta",
         "title": "Nowa korekta",
         "subtitle": "Dokument kredytowy",
+        "suggestedAmount": "Sugerowany kredyt",
         "next": "Utwórz korektę, następnie rozlicz lub zwróć kredyt",
         "save": "Utwórz korektę"
       },
@@ -1405,6 +1408,71 @@
         "invoiceLoadFailed": "Nie udało się załadować faktury źródłowej",
         "saveFailed": "Nie udało się zapisać korekty"
       }
+    },
+    "generatedDocuments": {
+      "actions": {
+        "generatePdf": "Wygeneruj PDF",
+        "generating": "Generowanie..."
+      },
+      "errors": {
+        "generateFailed": "Nie udało się wygenerować PDF"
+      }
+    },
+    "documentDelivery": {
+      "title": "Wyślij dokument",
+      "document": "Dokument",
+      "eyebrow": "Wysyłka email",
+      "attachmentHint": "Wygenerowany PDF zostanie dołączony automatycznie.",
+      "recipientEmail": "Email odbiorcy",
+      "recipientPlaceholder": "client@example.com",
+      "subject": "Temat",
+      "subjectAuto": "Użyj automatycznego tematu",
+      "body": "Wiadomość",
+      "bodyAuto": "Użyj automatycznej wiadomości",
+      "send": "Wyślij email",
+      "sending": "Wysyłanie...",
+      "invalidEmail": "Wpisz poprawny adres email.",
+      "sendFailed": "Nie udało się wysłać dokumentu.",
+      "types": {
+        "offer": "Oferta",
+        "invoice": "Faktura",
+        "creditNote": "Korekta"
+      }
+    },
+    "documentShare": {
+      "title": "Link publiczny",
+      "document": "Dokument",
+      "share": "Udostępnij",
+      "eyebrow": "Dostęp klienta tylko do odczytu",
+      "hint": "Link publiczny otwiera dokument klienta tylko do odczytu. Notatki wewnętrzne, właściciele, marża, koszty i pola systemowe nie są ujawniane.",
+      "generate": "Wygeneruj link",
+      "generating": "Generowanie...",
+      "publicUrl": "Publiczny URL",
+      "expiresAt": "Wygasa",
+      "views": "Wyświetlenia",
+      "downloads": "Pobrania",
+      "copy": "Kopiuj",
+      "copied": "Skopiowano",
+      "open": "Otwórz",
+      "revoke": "Cofnij",
+      "revoking": "Cofanie...",
+      "empty": "Brak aktywnego linku publicznego.",
+      "error": "Nie udało się zaktualizować linku publicznego.",
+      "types": {
+        "offer": "Oferta",
+        "invoice": "Faktura",
+        "creditNote": "Korekta"
+      }
+    },
+    "publicDocument": {
+      "loading": "Ładowanie dokumentu...",
+      "expired": "Ten link nie jest już aktywny.",
+      "unavailable": "Dokument niedostępny.",
+      "unavailableHint": "Poproś nadawcę o nowy bezpieczny link.",
+      "eyebrow": "Udostępniony dokument",
+      "document": "Dokument",
+      "expiresAt": "Wygasa",
+      "downloadPdf": "Pobierz PDF"
     },
     "customerDocument": {
       "companyFallback": "Sunset",

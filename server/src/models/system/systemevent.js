@@ -53,13 +53,15 @@ module.exports = (sequelize, DataTypes) => {
     createdAt: { 
       type: DataTypes.DATE, 
       allowNull:false, 
-      field:'created_at' 
+      field:'created_at',
+      defaultValue: DataTypes.NOW
     }
   }, {
     sequelize,
     modelName: 'SystemEvent',
     tableName:'system_events',
-    underscored: true
+    underscored: true,
+    timestamps: false
   });
   return SystemEvent;
 };

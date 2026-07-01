@@ -1270,6 +1270,7 @@
     },
     "creditNoteDetail": {
       "title": "Credit note",
+      "noCustomer": "No customer",
       "noReason": "No reason provided",
       "hero": {
         "remainingCredit": "Remaining credit",
@@ -1333,7 +1334,8 @@
         "refundable": "Refundable"
       },
       "empty": {
-        "onAccount": "No applications yet. This is on-account credit until applied or refunded."
+        "onAccount": "No applications yet. This is on-account credit until applied or refunded.",
+        "noInvoice": "No source invoice linked."
       },
       "preview": {
         "label": "Credit note",
@@ -1361,6 +1363,7 @@
         "eyebrow": "New credit note",
         "title": "New credit note",
         "subtitle": "Credit-first document",
+        "suggestedAmount": "Suggested credit",
         "next": "Create credit note, then apply or refund",
         "save": "Create credit note"
       },
@@ -1372,6 +1375,71 @@
         "invoiceLoadFailed": "Invoice load failed",
         "saveFailed": "Failed to save credit note"
       }
+    },
+    "generatedDocuments": {
+      "actions": {
+        "generatePdf": "Generate PDF",
+        "generating": "Generating..."
+      },
+      "errors": {
+        "generateFailed": "Could not generate PDF"
+      }
+    },
+    "documentDelivery": {
+      "title": "Send document",
+      "document": "Document",
+      "eyebrow": "Email delivery",
+      "attachmentHint": "A generated PDF will be attached automatically.",
+      "recipientEmail": "Recipient email",
+      "recipientPlaceholder": "client@example.com",
+      "subject": "Subject",
+      "subjectAuto": "Use automatic subject",
+      "body": "Message",
+      "bodyAuto": "Use automatic message",
+      "send": "Send email",
+      "sending": "Sending...",
+      "invalidEmail": "Enter a valid email address.",
+      "sendFailed": "Could not send the document.",
+      "types": {
+        "offer": "Offer",
+        "invoice": "Invoice",
+        "creditNote": "Credit note"
+      }
+    },
+    "documentShare": {
+      "title": "Public share",
+      "document": "Document",
+      "share": "Share",
+      "eyebrow": "Read-only customer access",
+      "hint": "The public link opens a read-only customer document. Internal notes, owners, margins, costs, and system fields are not exposed.",
+      "generate": "Generate link",
+      "generating": "Generating...",
+      "publicUrl": "Public URL",
+      "expiresAt": "Expires",
+      "views": "Views",
+      "downloads": "Downloads",
+      "copy": "Copy",
+      "copied": "Copied",
+      "open": "Open",
+      "revoke": "Revoke",
+      "revoking": "Revoking...",
+      "empty": "No active public link yet.",
+      "error": "Could not update public link.",
+      "types": {
+        "offer": "Offer",
+        "invoice": "Invoice",
+        "creditNote": "Credit note"
+      }
+    },
+    "publicDocument": {
+      "loading": "Loading document...",
+      "expired": "This link is no longer active.",
+      "unavailable": "Document unavailable.",
+      "unavailableHint": "Ask the sender for a new secure link.",
+      "eyebrow": "Shared document",
+      "document": "Document",
+      "expiresAt": "Expires",
+      "downloadPdf": "Download PDF"
     },
     "customerDocument": {
       "companyFallback": "Sunset",

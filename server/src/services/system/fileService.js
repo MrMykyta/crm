@@ -15,6 +15,7 @@ const {
   Task,
   Order,
   Offer,
+  Document,
   Contact,
   Department,
   Brand,
@@ -41,6 +42,7 @@ const OWNER_TYPES = new Set([
   'task',
   'order',
   'offer',
+  'document',
   'contact',
   'department',
   'chatMessage',
@@ -510,6 +512,7 @@ async function assertOwnerInCompany({ ownerType, ownerId, companyId, userId }) {
   if (ownerType === 'task') return assertByModel(Task, 'Task');
   if (ownerType === 'order') return assertByModel(Order, 'Order');
   if (ownerType === 'offer') return assertByModel(Offer, 'Offer');
+  if (ownerType === 'document') return assertByModel(Document, 'Document');
   if (ownerType === 'contact') return assertByModel(Contact, 'Contact');
   if (ownerType === 'department') return assertByModel(Department, 'Department');
   if (ownerType === 'brand') return assertByModel(Brand, 'Brand');
@@ -672,6 +675,95 @@ module.exports.createFromUpload = async ({
     safeName,
     mime: normalizedMime || file.mimetype,
     size: file.size,
+    storagePath,
+    uploadedBy: user.id,
+  });
+
+  return toFileDto(row);
+};
+
+module.exports.createFromBuffer = async ({
+  buffer,
+  filename,
+  mime = 'application/pdf',
+  ownerType,
+  ownerId,
+  purpose = 'document',
+  visibility = 'private',
+  companyId,
+  user,
+  enforcePolicy = false,
+}) => {
+  if (!Buffer.isBuffer(buffer) || buffer.length <= 0) {
+    throw new ApplicationError('VALIDATION_ERROR: buffer is required', 400);
+  }
+
+  const normalizedOwnerType = normalizeOwnerType(ownerType);
+  if (!OWNER_TYPES.has(normalizedOwnerType)) {
+    throw new ApplicationError('VALIDATION_ERROR: invalid ownerType', 400);
+  }
+  if (!VISIBILITY.has(visibility)) throw new ApplicationError('VALIDATION_ERROR: invalid visibility', 400);
+
+  const normalizedMime = String(mime || '').trim().toLowerCase() || 'application/pdf';
+  const normalizedPurpose = normalizePurposeForOwner({
+    ownerType: normalizedOwnerType,
+    purpose,
+    mime: normalizedMime,
+    filename,
+  });
+  if (!PURPOSES.has(normalizedPurpose)) throw new ApplicationError('VALIDATION_ERROR: invalid purpose', 400);
+
+  const maxSize = resolveMaxSizeByMime(normalizedMime);
+  if (buffer.length > maxSize.bytes) {
+    throw new ApplicationError(
+      `VALIDATION_ERROR: file too large for ${maxSize.label} (max ${maxSize.maxMb} MB)`,
+      413
+    );
+  }
+
+  assertVisibilityAllowed(normalizedOwnerType, normalizedPurpose, visibility);
+  assertMimeAllowed(normalizedPurpose, normalizedMime);
+
+  await assertOwnerInCompany({
+    ownerType: normalizedOwnerType,
+    ownerId,
+    companyId,
+    userId: user.id,
+  });
+
+  if (enforcePolicy && !canUploadByPolicy({ user, ownerType: normalizedOwnerType, ownerId })) {
+    throw new ApplicationError('Insufficient permissions', 403);
+  }
+
+  const fileId = crypto.randomUUID();
+  const safeName = safeBaseName(filename || 'document.pdf');
+  const publicKey = visibility === 'public' ? makePublicKey() : null;
+
+  const { absPath, storagePath } = buildStoragePath({
+    companyId,
+    ownerType: normalizedOwnerType,
+    ownerId,
+    fileId,
+    safeName,
+    visibility,
+    publicKey,
+  });
+
+  await ensureDir(path.dirname(absPath));
+  await fs.writeFile(absPath, buffer);
+
+  const row = await File.create({
+    id: fileId,
+    companyId,
+    ownerType: normalizedOwnerType,
+    ownerId,
+    purpose: normalizedPurpose,
+    visibility,
+    publicKey,
+    filename: filename || safeName,
+    safeName,
+    mime: normalizedMime,
+    size: buffer.length,
     storagePath,
     uploadedBy: user.id,
   });
