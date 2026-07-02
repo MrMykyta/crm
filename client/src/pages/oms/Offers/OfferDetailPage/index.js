@@ -23,7 +23,6 @@ import {
   asText,
   calculateLine,
   calculateTotals,
-  createEmptyItem,
   mapLinesToPayload,
   stableItemsHash,
   toEditorItem,
@@ -37,7 +36,12 @@ import CustomerDocumentRenderer, {
 } from '../../../../components/oms/CustomerDocumentRenderer';
 import DocumentDeliveryDialog from '../../../../components/oms/DocumentDeliveryDialog';
 import DocumentShareDialog from '../../../../components/oms/DocumentShareDialog';
+import DocumentActionStrip from '../../../../components/oms/DocumentActionStrip';
 import { pickDocumentDeliveryRecipient } from '../../../../components/oms/documentDeliveryRecipient';
+import {
+  openGeneratedPdf,
+  pickGeneratedPdfUrl,
+} from '../../../../components/oms/generatedPdf';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
 import { useGetContactsByCounterpartyQuery } from '../../../../store/rtk/contactsApi';
@@ -262,7 +266,33 @@ function buildItemsFromOffer(offer) {
   if (Array.isArray(offer?.items) && offer.items.length) {
     return normalizeItemSortOrder(sortItemsBySortOrder(offer.items).map(toEditorItem));
   }
-  return normalizeItemSortOrder([createEmptyItem()]);
+  return [];
+}
+
+function isBlankCustomItem(item) {
+  if (!item) return false;
+  const isCustom = Boolean(item.isCustomLine) || (!item.productId && asText(item.lineType || 'custom') === 'custom');
+  if (!isCustom || item.id || item.productId || item.variantId) return false;
+  return !asText(item.skuSnapshot)
+    && !asText(item.name)
+    && !asText(item.descriptionSnapshot)
+    && !asText(item.unitSnapshot)
+    && !asText(item.productTypeSnapshot)
+    && !item.metadataSnapshot
+    && asNumber(item.qty, 1) === 1
+    && asNumber(item.priceNet, 0) === 0
+    && (!item.discountType || item.discountType === 'none')
+    && asNumber(item.discountValue, 0) === 0;
+}
+
+function compactOfferItems(items = []) {
+  return normalizeItemSortOrder((items || []).filter((item) => !isBlankCustomItem(item)));
+}
+
+function normalizeVisibleOfferItems(items = []) {
+  const rows = Array.isArray(items) ? items : [];
+  if (!rows.some((item) => !isBlankCustomItem(item))) return normalizeItemSortOrder(rows);
+  return compactOfferItems(rows);
 }
 
 function buildPayload(form) {
@@ -344,10 +374,9 @@ function FactLine({ label, children }) {
   );
 }
 
-function OfferHero({ offer, form, totals, isCreate, validity, t, locale }) {
+function OfferHero({ offer, form, totals, isCreate, validity, t, locale, customerLabel }) {
   const currency = form.currency || offer?.currency || 'PLN';
-  const customer = offer?.counterparty ? counterpartyName(offer.counterparty) : '';
-  const gross = isCreate ? totals.gross : Number(offer?.totalGross ?? totals.gross);
+  const gross = Number.isFinite(Number(totals?.gross)) ? totals.gross : Number(offer?.totalGross ?? 0);
   const number = offer?.number || (isCreate ? t('oms.offerDetail.create.draftNumber', 'Draft') : offer?.id);
   const subject = form.subject || form.title || t('oms.offerDetail.hero.defaultSubject', 'Proposal prepared for your approval');
 
@@ -357,7 +386,7 @@ function OfferHero({ offer, form, totals, isCreate, validity, t, locale }) {
         <div className={s.heroIcon}>S</div>
         <div className={s.heroText}>
           <span>{t('oms.offerDetail.hero.offerNumberEyebrow', 'Offer')} · {number}</span>
-          <h1>{customer || t('oms.offerDetail.noCustomer', 'No customer selected')}</h1>
+          <h1>{customerLabel || t('oms.offerDetail.noCustomer', 'No customer selected')}</h1>
           <p>{subject}</p>
         </div>
       </div>
@@ -374,8 +403,9 @@ function OfferHero({ offer, form, totals, isCreate, validity, t, locale }) {
   );
 }
 
-function OverviewTab({ offer, form, totals, isCreate, validity, t, locale, onTab }) {
+function OverviewTab({ offer, form, totals, isCreate, validity, t, locale, onTab, customerLabel }) {
   const currency = form.currency || offer?.currency || 'PLN';
+  const gross = Number.isFinite(Number(totals?.gross)) ? totals.gross : Number(offer?.totalGross ?? 0);
   const convertedOrder = offer?.convertedOrder;
   const invoices = Array.isArray(offer?.invoices) ? offer.invoices : [];
 
@@ -386,10 +416,10 @@ function OverviewTab({ offer, form, totals, isCreate, validity, t, locale, onTab
           <FactLine label={t('oms.offerDetail.overview.customer', 'Customer')}>
             {offer?.counterparty?.id ? (
               <Link to={`/main/counterparties/${offer.counterparty.id}`}>{counterpartyName(offer.counterparty)}</Link>
-            ) : counterpartyName(offer?.counterparty) || form.counterpartyId || '—'}
+            ) : customerLabel || (form.counterpartyId ? t('oms.offerDetail.customerSelected', 'Customer selected') : '—')}
           </FactLine>
           <FactLine label={t('oms.offerDetail.overview.total', 'Total')}>
-            {formatMoney(isCreate ? totals.gross : offer?.totalGross ?? totals.gross, currency, locale)}
+            {formatMoney(gross, currency, locale)}
           </FactLine>
           <FactLine label={t('oms.offerDetail.overview.validity', 'Validity')}>
             {validity.label}
@@ -535,6 +565,7 @@ function PreviewTab({ offer, form, items, totals, t, locale }) {
   const [getSignedFileUrl] = useLazyGetSignedFileUrlQuery();
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [pdfOpenState, setPdfOpenState] = useState({ url: '', opened: false });
   const deliveryRecipient = useMemo(() => pickDocumentDeliveryRecipient({
     counterpartyContactPoints: deliveryCounterpartyPoints,
     contactPersonContactPoints: deliveryContactPoints,
@@ -544,12 +575,12 @@ function PreviewTab({ offer, form, items, totals, t, locale }) {
 
   const onGeneratePdf = async () => {
     if (!offer?.id) return;
+    setPdfOpenState({ url: '', opened: false });
     const result = await generatePdf({ id: offer.id, payload: { locale } }).unwrap();
     const fileId = result?.file?.id || result?.metadata?.fileId;
-    if (!fileId) return;
-    const signed = await getSignedFileUrl(fileId).unwrap();
-    const url = signed?.data?.url || signed?.url;
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    const signed = fileId ? await getSignedFileUrl(fileId).unwrap() : null;
+    const url = pickGeneratedPdfUrl(result, signed);
+    setPdfOpenState(openGeneratedPdf(url));
   };
 
   const onSendDocument = async (payload) => {
@@ -567,18 +598,22 @@ function PreviewTab({ offer, form, items, totals, t, locale }) {
 
   return (
     <DetailSection title={t('oms.offerDetail.tabs.preview', 'Preview')}>
-      <div className={s.previewActions}>
-        <button type="button" onClick={onGeneratePdf} disabled={!offer?.id || isLoading}>
-          {isLoading ? t('oms.generatedDocuments.actions.generating', 'Generating...') : t('oms.generatedDocuments.actions.generatePdf', 'Generate PDF')}
-        </button>
-        <button type="button" onClick={() => setDeliveryOpen(true)} disabled={!offer?.id || sendState.isLoading}>
-          {sendState.isLoading ? t('oms.documentDelivery.sending', 'Sending...') : t('oms.documentDelivery.send', 'Send email')}
-        </button>
-        <button type="button" onClick={() => setShareOpen(true)} disabled={!offer?.id}>
-          {t('oms.documentShare.share', 'Share')}
-        </button>
-        {error ? <span>{t('oms.generatedDocuments.errors.generateFailed', 'Could not generate PDF')}</span> : null}
-      </div>
+      <DocumentActionStrip
+        t={t}
+        title={t('oms.documentActions.offerTitle', 'Offer document')}
+        subtitle={t('oms.documentActions.offerSubtitle', 'Prepare the customer-facing offer, then choose PDF, email, or customer link.')}
+        onGeneratePdf={onGeneratePdf}
+        pdfLoading={isLoading}
+        pdfDisabled={!offer?.id}
+        pdfOpened={pdfOpenState.opened}
+        pdfFallbackUrl={pdfOpenState.opened ? '' : pdfOpenState.url}
+        onSend={() => setDeliveryOpen(true)}
+        sendLoading={sendState.isLoading}
+        sendDisabled={!offer?.id}
+        onShare={() => setShareOpen(true)}
+        shareDisabled={!offer?.id}
+        error={error}
+      />
       <CustomerDocumentRenderer dto={documentDto} />
       <DocumentDeliveryDialog
         open={deliveryOpen}
@@ -674,7 +709,7 @@ export default function OfferDetailPage() {
 
   const [activeTab, setActiveTab] = useState('overview');
   const [form, setForm] = useState(() => buildFormFromOffer(null, searchParams));
-  const [items, setItems] = useState(() => normalizeItemSortOrder([createEmptyItem()]));
+  const [items, setItems] = useState(() => []);
   const [errors, setErrors] = useState({});
   const [actionError, setActionError] = useState('');
   const [actionLoading, setActionLoading] = useState('');
@@ -730,9 +765,15 @@ export default function OfferDetailPage() {
   const readonly = !editable;
   const totals = useMemo(() => calculateTotals(items), [items]);
   const currency = form.currency || offer?.currency || 'PLN';
-  const decisionGross = isCreate ? totals.gross : Number(offer?.totalGross ?? totals.gross);
+  const decisionGross = Number.isFinite(Number(totals?.gross)) ? totals.gross : Number(offer?.totalGross ?? 0);
   const validity = useMemo(() => getValidity(isCreate ? form : offer, t, locale), [form, isCreate, locale, offer, t]);
   const isSaving = isCreating || isUpdating || isSavingItems || isDeleting;
+  const selectedCounterparty = useMemo(() => {
+    if (offer?.counterparty) return offer.counterparty;
+    if (!form.counterpartyId) return null;
+    return (counterpartiesData?.items || []).find((row) => row.id === form.counterpartyId) || null;
+  }, [counterpartiesData?.items, form.counterpartyId, offer?.counterparty]);
+  const customerLabel = counterpartyName(selectedCounterparty) || (form.counterpartyId ? t('oms.offerDetail.customerSelected', 'Customer selected') : '');
 
   const counterpartyOptions = useMemo(() => {
     const rows = counterpartiesData?.items || [];
@@ -786,16 +827,18 @@ export default function OfferDetailPage() {
   }, [items]);
 
   const onItemsChange = useCallback((next) => {
-    setItems(next);
+    const nextItems = normalizeVisibleOfferItems(next);
+    setItems(nextItems);
     setDirty(
-      stableItemsHash(next) !== itemsHashRef.current
+      stableItemsHash(nextItems) !== itemsHashRef.current
       || hasEntityDiff(cleanPayloadRef.current || {}, buildPayload(form))
     );
   }, [form]);
 
   const saveOffer = useCallback(async () => {
     setActionError('');
-    const nextErrors = validateOfferForm(form, items, t);
+    const itemsForSave = compactOfferItems(items);
+    const nextErrors = validateOfferForm(form, itemsForSave, t);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       setActionError(nextErrors.counterpartyId || t('documents.editor.validation.itemNameRequired'));
@@ -803,7 +846,7 @@ export default function OfferDetailPage() {
     }
 
     const payload = buildPayload(form);
-    const mappedItems = mapLinesToPayload(items);
+    const mappedItems = mapLinesToPayload(itemsForSave);
 
     try {
       if (isCreate) {
@@ -814,7 +857,7 @@ export default function OfferDetailPage() {
       }
 
       const patch = getEntityDiff(cleanPayloadRef.current || {}, payload);
-      const nextHash = stableItemsHash(items);
+      const nextHash = stableItemsHash(itemsForSave);
       const itemsChanged = nextHash !== itemsHashRef.current;
       if (!Object.keys(patch).length && !itemsChanged) {
         setDirty(false);
@@ -898,7 +941,7 @@ export default function OfferDetailPage() {
       };
     }
     if (available.canSend && canUpdateOffer) {
-      return { key: 'send', label: t('oms.actionLabels.send'), icon: <Send size={15} aria-hidden="true" />, disabled: actionLoading === 'send', onClick: () => runAction('send', () => sendOffer({ id, payload: {} })) };
+      return { key: 'send', label: t('oms.actionLabels.markSent', 'Mark as sent'), icon: <Send size={15} aria-hidden="true" />, disabled: actionLoading === 'send', onClick: () => runAction('send', () => sendOffer({ id, payload: {} })) };
     }
     if (available.canAccept && canUpdateOffer) {
       return { key: 'accept', label: t('oms.actionLabels.accept'), icon: <BadgeCheck size={15} aria-hidden="true" />, disabled: actionLoading === 'accept', onClick: () => runAction('accept', () => acceptOffer({ id, payload: {} })) };
@@ -967,6 +1010,7 @@ export default function OfferDetailPage() {
           t={t}
           locale={locale}
           onTab={setActiveTab}
+          customerLabel={customerLabel}
         />
       ),
     },
@@ -1025,7 +1069,7 @@ export default function OfferDetailPage() {
       label: t('oms.offerDetail.tabs.system', 'System'),
       render: () => <SystemTab offer={offer} t={t} locale={locale} />,
     },
-  ], [currency, discountTypeOptions, errors, form, id, isCreate, items, locale, offer, onItemsChange, readonly, t, totals, validity]);
+  ], [currency, customerLabel, discountTypeOptions, errors, form, id, isCreate, items, locale, offer, onItemsChange, readonly, t, totals, validity]);
 
   if ((isCreate && !canCreateOffer) || (!isCreate && !canReadOffer)) {
     return <div className={s.state}>{t('common.noPermission', 'No permission')}</div>;
@@ -1049,7 +1093,7 @@ export default function OfferDetailPage() {
         { label: isCreate ? t('oms.offers.newTitle') : offer?.number || offer?.id },
       ]}
       title={form.title || offer?.number || t('oms.offers.newTitle')}
-      subtitle={form.subject || counterpartyName(offer?.counterparty) || t('oms.offerDetail.subtitle', 'Persuasion workspace')}
+      subtitle={form.subject || customerLabel || t('oms.offerDetail.subtitle', 'Persuasion workspace')}
       icon={<FileText size={18} aria-hidden="true" />}
       status={{ value: isCreate ? 'draft' : offer?.status, label: isCreate ? statusLabel('draft', t) : statusLabel(offer?.status, t) }}
       smartButtons={smartButtons}
@@ -1070,7 +1114,7 @@ export default function OfferDetailPage() {
               {t('oms.offers.title')}
             </button>
           </div>
-          <OfferHero offer={offer} form={form} totals={totals} isCreate={isCreate} validity={validity} t={t} locale={locale} />
+          <OfferHero offer={offer} form={form} totals={totals} isCreate={isCreate} validity={validity} t={t} locale={locale} customerLabel={customerLabel} />
           <div className={s.headerActions}>
             <div className={s.smartRow}>
               {smartButtons.map((item) => (

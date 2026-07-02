@@ -1,6 +1,7 @@
 'use strict';
 
 const AppError = require('../../errors/AppError');
+const { sequelize } = require('../../db/models');
 const templateService = require('../../services/documents/template/template.service');
 const { setCompanyDefaultTemplate } = templateService;
 const templateDraftService = require('../../services/documents/template/templateDraft.service');
@@ -36,6 +37,13 @@ function isUuid(value) {
 
 function countSections(content) {
   return Array.isArray(content?.sections) ? content.sections.length : 0;
+}
+
+function cloneDraftContent(content, { templateName, documentTypeKey }) {
+  const cloned = JSON.parse(JSON.stringify(content || {}));
+  cloned.templateName = templateName;
+  cloned.documentTypeKey = documentTypeKey;
+  return cloned;
 }
 
 function requiresDefaultBootstrap(documentTypeKey) {
@@ -119,7 +127,7 @@ function buildInitialDraft({ template }) {
   };
 }
 
-async function ensureTemplateAccess({ templateId, companyId }) {
+async function ensureTemplateAccess({ templateId, companyId, transaction }) {
   if (!isUuid(templateId)) {
     throw new AppError(400, 'templateId must be a valid UUID');
   }
@@ -128,6 +136,7 @@ async function ensureTemplateAccess({ templateId, companyId }) {
     templateId,
     companyId,
     includeArchived: true,
+    transaction,
   });
   if (!template) {
     throw new AppError(404, 'Template not found');
@@ -204,6 +213,70 @@ module.exports.create = async (req, res, next) => {
     });
 
     res.status(201).json({ item: templatePlain });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports.duplicate = async (req, res, next) => {
+  try {
+    const copyPlain = await sequelize.transaction(async (transaction) => {
+      const sourceTemplate = await ensureTemplateAccess({
+        templateId: req.params.templateId,
+        companyId: req.user.companyId,
+        transaction,
+      });
+      const sourcePlain = toPlain(sourceTemplate);
+      const requestedName = String(req.body?.name || '').trim();
+      const copyName = requestedName || `${sourcePlain.name || 'Template'} — Copy`;
+
+      const copy = await templateService.createTemplate({
+        companyId: req.user.companyId,
+        documentTypeKey: sourcePlain.documentTypeKey,
+        name: copyName,
+        description: sourcePlain.description || null,
+        status: 'draft',
+        scope: 'custom',
+        createdBy: req.user?.id || null,
+        transaction,
+      });
+      const createdPlain = toPlain(copy);
+
+      const sourceDraft = await templateDraftService.getDraftByTemplateId({
+        templateId: sourcePlain.id,
+        transaction,
+      });
+
+      let content = sourceDraft?.content || null;
+      if (!content && sourcePlain.currentVersionId) {
+        const version = await templateVersionService.getVersionById({
+          versionId: sourcePlain.currentVersionId,
+          includeContent: true,
+          transaction,
+        });
+        content = version?.content || null;
+      }
+      if (!content) {
+        content = buildInitialDraft({ template: sourcePlain });
+      }
+
+      const clonedContent = cloneDraftContent(content, {
+        templateName: copyName,
+        documentTypeKey: sourcePlain.documentTypeKey,
+      });
+
+      await templateDraftService.saveDraft({
+        templateId: createdPlain.id,
+        content: clonedContent,
+        schemaVersion: clonedContent.schemaVersion,
+        updatedBy: req.user?.id || null,
+        transaction,
+      });
+
+      return createdPlain;
+    });
+
+    res.status(201).json({ item: copyPlain });
   } catch (error) {
     next(error);
   }

@@ -19,7 +19,7 @@ import { SelectField, TextField } from "../../../../components/ui/fields";
 import useAclPermissions from "../../../../hooks/useAclPermissions";
 import { getCountryOptions } from "../../../../utils/countries";
 import { buildContactsPayload } from "../../../../utils/buildContactsPayload";
-import { getEntityDiff, hasEntityDiff } from "../../../../utils/entityDiff";
+import { getEntityDiff, hasEntityDiff, stableEntityStringify } from "../../../../utils/entityDiff";
 import {
   COUNTERPARTY_MAX,
   toApiCounterparty,
@@ -76,6 +76,14 @@ const EMPTY_VALUES = {
   type: "partner",
   status: "active",
   isCompany: true,
+};
+
+const SAVE_STATUS = {
+  IDLE: "idle",
+  DIRTY: "dirty",
+  SAVING: "saving",
+  SAVED: "saved",
+  FAILED: "failed",
 };
 
 function asText(value) {
@@ -807,6 +815,39 @@ function getTaxIdValidationError(parsed, t) {
   return undefined;
 }
 
+function getBackendErrorPayload(error) {
+  return error?.data?.error || error?.data || error?.error || error || {};
+}
+
+function normalizeSaveError(error, t) {
+  const payload = getBackendErrorPayload(error);
+  const code = payload.code || error?.code || "";
+  const field = payload.field || error?.field || "";
+  const message = payload.message || error?.data?.message || error?.message || "";
+  const lowerMessage = String(message).toLowerCase();
+  const lowerCode = String(code).toLowerCase();
+
+  if (lowerCode.includes("permission") || error?.status === 403) {
+    return t("crm.counterpartyDetail.autosave.errors.forbidden", "Недостаточно прав для сохранения изменений.");
+  }
+  if (lowerCode.includes("duplicate") || lowerCode.includes("unique") || lowerMessage.includes("duplicate") || lowerMessage.includes("unique")) {
+    if (field && String(field).toLowerCase().includes("nip")) {
+      return t("crm.counterpartyDetail.autosave.errors.duplicateNip", "Такой NIP уже существует.");
+    }
+    if (field && /email|phone/i.test(String(field))) {
+      return t("crm.counterpartyDetail.autosave.errors.duplicateContact", "Этот email или телефон уже используется.");
+    }
+    return t("crm.counterpartyDetail.autosave.errors.duplicate", "Такая запись уже существует.");
+  }
+  if (lowerCode.includes("validation") || error?.status === 400 || error?.status === 422) {
+    return message || t("crm.counterpartyDetail.autosave.errors.validation", "Проверьте заполненные поля.");
+  }
+  if (error?.status === "FETCH_ERROR" || lowerMessage.includes("network") || lowerMessage.includes("fetch")) {
+    return t("crm.counterpartyDetail.autosave.errors.network", "Нет соединения с сервером.");
+  }
+  return message || t("crm.counterpartyDetail.autosave.errors.generic", "Не удалось сохранить изменения.");
+}
+
 export default function CounterpartyDetailPage({ createMode = false, entityType = "counterparty" }) {
   const { id } = useParams();
   const isCreateMode = createMode || id === "new" || !id;
@@ -840,7 +881,7 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
   const [errors, setErrors] = useState({});
   const [dirty, setDirty] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [showSavedState, setShowSavedState] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(SAVE_STATUS.IDLE);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [registryState, setRegistryState] = useState({ status: "idle" });
   const [registryDetailsOpen, setRegistryDetailsOpen] = useState(false);
@@ -855,9 +896,16 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
   const registryVerifiedRef = useRef(null);
   const loadedCounterpartyKeyRef = useRef("");
   const initialPayloadRef = useRef(null);
+  const baselineValuesRef = useRef(EMPTY_VALUES);
+  const baselineContactsRef = useRef([]);
+  const baselineVerifiedRef = useRef(null);
   const valuesRef = useRef(EMPTY_VALUES);
   const contactsRef = useRef([]);
   const taxIdInputRef = useRef("");
+  const dirtyRef = useRef(false);
+  const saveStatusRef = useRef(SAVE_STATUS.IDLE);
+  const savingPromiseRef = useRef(null);
+  const savingPayloadSignatureRef = useRef("");
 
   const { data: departmentsData } = useListDepartmentsQuery(
     { includeArchived: true },
@@ -929,10 +977,22 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
   }, [taxIdInput]);
 
   useEffect(() => {
-    if (!showSavedState) return undefined;
-    const timeout = window.setTimeout(() => setShowSavedState(false), 2200);
+    dirtyRef.current = dirty;
+  }, [dirty]);
+
+  useEffect(() => {
+    saveStatusRef.current = saveStatus;
+  }, [saveStatus]);
+
+  useEffect(() => {
+    if (saveStatus !== SAVE_STATUS.SAVED) return undefined;
+    const timeout = window.setTimeout(() => {
+      if (!dirtyRef.current && saveStatusRef.current === SAVE_STATUS.SAVED) {
+        setSaveStatus(SAVE_STATUS.IDLE);
+      }
+    }, 2200);
     return () => window.clearTimeout(timeout);
-  }, [showSavedState]);
+  }, [saveStatus]);
 
   const buildSnapshotPayload = useCallback((nextValues, nextContacts = [], nextVerified = registryVerifiedRef.current) => {
     const normalized = normalizeValuesForApi(nextValues);
@@ -960,12 +1020,19 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
   const syncDirty = useCallback((nextValues, nextContacts = contacts, nextVerified = registryVerifiedRef.current) => {
     if (!initialPayloadRef.current) {
       setDirty(true);
-      setShowSavedState(false);
+      setSaveStatus(SAVE_STATUS.DIRTY);
+      setSaveError("");
       return;
     }
     const hasDiff = hasEntityDiff(initialPayloadRef.current, buildSnapshotPayload(nextValues, nextContacts, nextVerified));
     setDirty(hasDiff);
-    if (hasDiff) setShowSavedState(false);
+    if (hasDiff) {
+      setSaveStatus(SAVE_STATUS.DIRTY);
+      setSaveError("");
+    } else if (saveStatusRef.current !== SAVE_STATUS.SAVING) {
+      setSaveStatus(SAVE_STATUS.IDLE);
+      setSaveError("");
+    }
   }, [buildSnapshotPayload, contacts]);
 
   useEffect(() => {
@@ -973,9 +1040,13 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
       setValues(createDefaults);
       setContacts([]);
       initialPayloadRef.current = buildSnapshotPayload(createDefaults, [], null);
+      baselineValuesRef.current = createDefaults;
+      baselineContactsRef.current = [];
+      baselineVerifiedRef.current = null;
       setErrors({});
       setDirty(false);
-      setShowSavedState(false);
+      setSaveStatus(SAVE_STATUS.IDLE);
+      setSaveError("");
       setTaxIdInput("");
       setRegistryState({ status: "idle" });
       setRegistryVerified(null);
@@ -1000,9 +1071,13 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
     setValues(nextValues);
     setContacts(nextContacts);
     initialPayloadRef.current = buildSnapshotPayload(nextValues, nextContacts, nextVerified);
+    baselineValuesRef.current = nextValues;
+    baselineContactsRef.current = nextContacts;
+    baselineVerifiedRef.current = nextVerified;
     setErrors({});
     setDirty(false);
-    setShowSavedState(false);
+    setSaveStatus(SAVE_STATUS.IDLE);
+    setSaveError("");
     setTaxIdInput(form.nip || "");
     setDisplayNameTouched(false);
     setBirthDateDerivedFromPesel(false);
@@ -1283,6 +1358,7 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
 
     if (isCreateMode) {
       setDirty(true);
+      setSaveStatus(SAVE_STATUS.DIRTY);
       setRegistryApplyStatus("idle");
       setRegistryState({ status: "idle", nip: verified?.nip || nextNip, hiddenAfterApply: true });
       return;
@@ -1290,6 +1366,7 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
 
     if (!editable) {
       setDirty(true);
+      setSaveStatus(SAVE_STATUS.DIRTY);
       return;
     }
 
@@ -1299,17 +1376,20 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       setDirty(true);
+      setSaveStatus(SAVE_STATUS.FAILED);
       setRegistryApplyStatus("error");
       setRegistryApplyMessage(t("crm.counterpartyDetail.messages.saveFailed"));
       return;
     }
 
     setRegistryApplyStatus("saving");
+    setSaveStatus(SAVE_STATUS.SAVING);
     try {
       const payload = buildPayloadForValues(nextValues, verified);
       const patch = getEntityDiff(initialPayloadRef.current || {}, payload);
       if (!Object.keys(patch).length) {
         setDirty(false);
+        setSaveStatus(SAVE_STATUS.IDLE);
         return null;
       }
       const saved = await updateCounterparty({ id, body: patch, method: "PUT" }).unwrap();
@@ -1320,18 +1400,22 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
       setValues(savedValues);
       setContacts(savedContacts);
       initialPayloadRef.current = buildSnapshotPayload(savedValues, savedContacts, persistedVerified);
+      baselineValuesRef.current = savedValues;
+      baselineContactsRef.current = savedContacts;
+      baselineVerifiedRef.current = persistedVerified;
       setTaxIdInput(form.nip || nextNip);
       setRegistryVerified(persistedVerified);
       setRegistryState({ status: "idle", nip: persistedVerified?.nip || nextNip, hiddenAfterApply: true });
       setDirty(false);
       setSaveError("");
-      setShowSavedState(true);
+      setSaveStatus(SAVE_STATUS.SAVED);
       refetchTimeline?.();
       setRegistryApplyStatus("success");
       setRegistryApplyMessage(t("crm.counterpartyDetail.registry.applySaved"));
     } catch (error) {
-      const message = error?.data?.message || error?.message || t("crm.counterpartyDetail.messages.saveFailed");
+      const message = normalizeSaveError(error, t);
       setSaveError(message);
+      setSaveStatus(SAVE_STATUS.FAILED);
       setDirty(true);
       setRegistryApplyStatus("error");
       setRegistryApplyMessage(message);
@@ -1352,7 +1436,7 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
   }, [runRegistryLookup]);
 
   const persistCounterparty = useCallback(async ({ autosave = false } = {}) => {
-    if (!editable) return null;
+    if (!editable) return { ok: true, skipped: true };
     const currentValues = autosave ? valuesRef.current : values;
     const currentContacts = autosave ? contactsRef.current : contacts;
     const currentVerified = registryVerifiedRef.current;
@@ -1361,14 +1445,23 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
     const nextTaxIdError = currentValues.isCompany ? getTaxIdValidationError(currentTaxIdParse, t) : undefined;
     if (nextTaxIdError) nextErrors.nip = nextTaxIdError;
     setErrors(nextErrors);
-    setSaveError("");
-    if (Object.keys(nextErrors).length) return null;
+    if (Object.keys(nextErrors).length) {
+      const message = Object.values(nextErrors)[0] || t("crm.counterpartyDetail.autosave.errors.validation", "Проверьте заполненные поля.");
+      setSaveError(message);
+      setSaveStatus(SAVE_STATUS.FAILED);
+      setDirty(true);
+      return { ok: false, error: message };
+    }
 
     const payload = buildSnapshotPayload(currentValues, currentContacts, currentVerified);
-    try {
-      if (isCreateMode) {
+    if (isCreateMode) {
+      setSaveError("");
+      setSaveStatus(SAVE_STATUS.SAVING);
+      try {
         const created = await createCounterparty(payload).unwrap();
         const createdId = created?.id;
+        setDirty(false);
+        setSaveStatus(SAVE_STATUS.SAVED);
         if (createdId) {
           navigate(`${detailRoute}/${createdId}`, {
             replace: true,
@@ -1377,14 +1470,33 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
         } else {
           navigate(listRoute, { replace: true });
         }
-        return created;
+        return { ok: true, saved: created };
+      } catch (error) {
+        const message = normalizeSaveError(error, t);
+        setSaveError(message);
+        setSaveStatus(SAVE_STATUS.FAILED);
+        setDirty(true);
+        return { ok: false, error: message };
       }
+    }
 
-      const patch = getEntityDiff(initialPayloadRef.current || {}, payload);
-      if (!Object.keys(patch).length) {
-        setDirty(false);
-        return null;
-      }
+    const patch = getEntityDiff(initialPayloadRef.current || {}, payload);
+    if (!Object.keys(patch).length) {
+      setDirty(false);
+      setSaveError("");
+      setSaveStatus(SAVE_STATUS.IDLE);
+      return { ok: true, skipped: true };
+    }
+
+    const payloadSignature = stableEntityStringify(patch);
+    if (savingPromiseRef.current && savingPayloadSignatureRef.current === payloadSignature) {
+      return savingPromiseRef.current;
+    }
+
+    const savePromise = (async () => {
+      setSaveError("");
+      setSaveStatus(SAVE_STATUS.SAVING);
+      try {
       const saved = await updateCounterparty({ id, body: patch, method: "PUT" }).unwrap();
       if (!autosave && Array.isArray(saved?.contacts)) {
         const form = toDetailFormCounterparty(saved);
@@ -1393,36 +1505,143 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
         setValues(savedValues);
         setContacts(savedContacts);
         initialPayloadRef.current = buildSnapshotPayload(savedValues, savedContacts, currentVerified);
+        baselineValuesRef.current = savedValues;
+        baselineContactsRef.current = savedContacts;
+        baselineVerifiedRef.current = currentVerified;
+        setDirty(false);
+        setSaveStatus(SAVE_STATUS.SAVED);
       } else {
         const nextBaseline = { ...(initialPayloadRef.current || {}), ...patch };
         initialPayloadRef.current = nextBaseline;
+        baselineValuesRef.current = currentValues;
+        baselineContactsRef.current = currentContacts;
+        baselineVerifiedRef.current = currentVerified;
         const latestPayload = buildSnapshotPayload(valuesRef.current, contactsRef.current, registryVerifiedRef.current);
-        setDirty(hasEntityDiff(nextBaseline, latestPayload));
+        const hasLatestDiff = hasEntityDiff(nextBaseline, latestPayload);
+        setDirty(hasLatestDiff);
+        setSaveStatus(hasLatestDiff ? SAVE_STATUS.DIRTY : SAVE_STATUS.SAVED);
       }
-      if (!autosave) setDirty(false);
       setSaveError("");
-      setShowSavedState(true);
       refetchTimeline?.();
-      return saved;
+      return { ok: true, saved };
     } catch (error) {
-      const message = error?.data?.message || error?.message || t("crm.counterpartyDetail.messages.saveFailed");
+      const message = normalizeSaveError(error, t);
       setSaveError(message);
-      setShowSavedState(false);
-      return null;
-    }
+      setSaveStatus(SAVE_STATUS.FAILED);
+      setDirty(true);
+      return { ok: false, error: message };
+      } finally {
+        if (savingPayloadSignatureRef.current === payloadSignature) {
+          savingPayloadSignatureRef.current = "";
+          savingPromiseRef.current = null;
+        }
+      }
+    })();
+
+    savingPayloadSignatureRef.current = payloadSignature;
+    savingPromiseRef.current = savePromise;
+    return savePromise;
   }, [buildSnapshotPayload, contacts, createCounterparty, detailRoute, editable, fixedType, id, isCreateMode, listRoute, navigate, refetchTimeline, t, taxIdParse, updateCounterparty, values]);
 
   const handleSave = useCallback(() => persistCounterparty({ autosave: false }), [persistCounterparty]);
 
   const handleAutosave = useCallback(() => persistCounterparty({ autosave: true }), [persistCounterparty]);
 
+  const handleRevertChanges = useCallback(() => {
+    const baselineValues = baselineValuesRef.current || EMPTY_VALUES;
+    const baselineContacts = baselineContactsRef.current || [];
+    const baselineVerified = baselineVerifiedRef.current || null;
+    setValues(baselineValues);
+    setContacts(baselineContacts);
+    setRegistryVerified(baselineVerified);
+    setTaxIdInput(baselineValues.nip || "");
+    setErrors({});
+    setSaveError("");
+    setDirty(false);
+    setSaveStatus(SAVE_STATUS.IDLE);
+  }, []);
+
   useEffect(() => {
-    if (isCreateMode || !editable || !dirty || saving || registryApplyStatus === "saving") return undefined;
+    if (isCreateMode || !editable || !dirty || saveStatus !== SAVE_STATUS.DIRTY || saving || registryApplyStatus === "saving") return undefined;
     const timeout = window.setTimeout(() => {
       handleAutosave();
     }, 1000);
     return () => window.clearTimeout(timeout);
-  }, [dirty, editable, handleAutosave, isCreateMode, registryApplyStatus, saving]);
+  }, [dirty, editable, handleAutosave, isCreateMode, registryApplyStatus, saveStatus, saving]);
+
+  const getPendingPatch = useCallback(() => {
+    if (!initialPayloadRef.current) return {};
+    const latestPayload = buildSnapshotPayload(valuesRef.current, contactsRef.current, registryVerifiedRef.current);
+    return getEntityDiff(initialPayloadRef.current, latestPayload);
+  }, [buildSnapshotPayload]);
+
+  const hasLeaveRisk = useCallback(() => {
+    if (isCreateMode) return dirtyRef.current || saveStatusRef.current === SAVE_STATUS.FAILED;
+    return dirtyRef.current || saveStatusRef.current === SAVE_STATUS.SAVING || saveStatusRef.current === SAVE_STATUS.FAILED || Boolean(savingPromiseRef.current);
+  }, [isCreateMode]);
+
+  const ensureSavedBeforeLeave = useCallback(async () => {
+    if (!hasLeaveRisk()) return true;
+    if (isCreateMode) {
+      const message = t("crm.counterpartyDetail.autosave.unsavedChanges", "Есть несохранённые изменения.");
+      setSaveError(message);
+      setSaveStatus(SAVE_STATUS.FAILED);
+      return false;
+    }
+    if (saveStatusRef.current === SAVE_STATUS.FAILED && Object.keys(getPendingPatch()).length) {
+      setSaveError((current) => current || t("crm.counterpartyDetail.autosave.unsavedChanges", "Есть несохранённые изменения."));
+      setSaveStatus(SAVE_STATUS.FAILED);
+      return false;
+    }
+
+    const result = savingPromiseRef.current
+      ? await savingPromiseRef.current
+      : await persistCounterparty({ autosave: true });
+
+    if (!result?.ok) {
+      setSaveStatus(SAVE_STATUS.FAILED);
+      return false;
+    }
+
+    if (Object.keys(getPendingPatch()).length) {
+      setSaveError(t("crm.counterpartyDetail.autosave.unsavedChanges", "Есть несохранённые изменения."));
+      setSaveStatus(SAVE_STATUS.FAILED);
+      setDirty(true);
+      return false;
+    }
+    return true;
+  }, [getPendingPatch, hasLeaveRisk, isCreateMode, persistCounterparty, t]);
+
+  useEffect(() => {
+    const onBeforeUnload = (event) => {
+      if (!hasLeaveRisk()) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [hasLeaveRisk]);
+
+  useEffect(() => {
+    const onDocumentClick = (event) => {
+      if (!hasLeaveRisk()) return;
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = event.target?.closest?.("a[href]");
+      if (!anchor || anchor.target || anchor.hasAttribute("download")) return;
+      const nextUrl = new URL(anchor.href, window.location.href);
+      if (nextUrl.origin !== window.location.origin) return;
+      const nextPath = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      if (nextPath === currentPath) return;
+      event.preventDefault();
+      event.stopPropagation();
+      ensureSavedBeforeLeave().then((canLeave) => {
+        if (canLeave) navigate(nextPath);
+      });
+    };
+    document.addEventListener("click", onDocumentClick, true);
+    return () => document.removeEventListener("click", onDocumentClick, true);
+  }, [ensureSavedBeforeLeave, hasLeaveRisk, navigate]);
 
   const handleSaveDescription = useCallback(async (nextHtml) => {
     if (isCreateMode) return nextHtml;
@@ -1431,18 +1650,31 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
     const patch = getEntityDiff(initialPayloadRef.current || {}, payload);
     if (!Object.keys(patch).length) {
       setDirty(false);
+      setSaveStatus(SAVE_STATUS.IDLE);
       return nextHtml ?? "";
     }
-    const saved = await updateCounterparty({ id, body: patch, method: "PUT" }).unwrap();
-    const savedValues = { ...values, description: saved?.description ?? nextHtml ?? "" };
-    setValues(savedValues);
-    initialPayloadRef.current = buildSnapshotPayload(savedValues, contacts, registryVerified);
-    setDirty(false);
-    setSaveError("");
-    setShowSavedState(true);
-    refetchTimeline?.();
-    return saved?.description ?? nextHtml ?? "";
-  }, [buildPayloadForValues, buildSnapshotPayload, contacts, id, isCreateMode, refetchTimeline, registryVerified, updateCounterparty, values]);
+    setSaveStatus(SAVE_STATUS.SAVING);
+    try {
+      const saved = await updateCounterparty({ id, body: patch, method: "PUT" }).unwrap();
+      const savedValues = { ...values, description: saved?.description ?? nextHtml ?? "" };
+      setValues(savedValues);
+      initialPayloadRef.current = buildSnapshotPayload(savedValues, contacts, registryVerified);
+      baselineValuesRef.current = savedValues;
+      baselineContactsRef.current = contacts;
+      baselineVerifiedRef.current = registryVerified;
+      setDirty(false);
+      setSaveError("");
+      setSaveStatus(SAVE_STATUS.SAVED);
+      refetchTimeline?.();
+      return saved?.description ?? nextHtml ?? "";
+    } catch (error) {
+      const message = normalizeSaveError(error, t);
+      setSaveError(message);
+      setSaveStatus(SAVE_STATUS.FAILED);
+      setDirty(true);
+      throw error;
+    }
+  }, [buildPayloadForValues, buildSnapshotPayload, contacts, id, isCreateMode, refetchTimeline, registryVerified, t, updateCounterparty, values]);
 
   const title = isCreateMode
     ? (isLeadMode
@@ -2076,6 +2308,23 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
     ? activeTab
     : undefined;
 
+  const saveErrorPanel = saveStatus === SAVE_STATUS.FAILED && saveError ? (
+    <div className={s.autosaveErrorPanel} role="alert">
+      <div>
+        <strong>{t("crm.counterpartyDetail.autosave.failedTitle", "Ошибка сохранения")}</strong>
+        <p>{saveError}</p>
+      </div>
+      <div className={s.autosaveErrorActions}>
+        <button type="button" onClick={handleSave} disabled={saving}>
+          {saving ? t("common.saving") : t("crm.counterpartyDetail.autosave.retry", "Повторить сохранение")}
+        </button>
+        <button type="button" onClick={handleRevertChanges} disabled={saving}>
+          {t("crm.counterpartyDetail.autosave.revert", "Отменить изменения")}
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   if (!isCreateMode && fetchingDetail && !detail) return <Skeleton />;
   if (!isCreateMode && !fetchingDetail && !detail) return <Skeleton />;
 
@@ -2093,16 +2342,18 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
         icon={<Building2 size={18} aria-hidden="true" />}
         status={{ value: values.status, label: statusLabel, tone: getStatusTone(values.status) }}
         saveState={{
-          saving,
-          dirty,
-          error: saveError,
-          label: saveError || (saving
-            ? t("common.saving")
-            : dirty
-              ? t("common.unsaved")
-              : showSavedState
-                ? t("common.saved")
-                : ""),
+          saving: saveStatus === SAVE_STATUS.SAVING || saving,
+          dirty: saveStatus === SAVE_STATUS.DIRTY,
+          error: saveStatus === SAVE_STATUS.FAILED,
+          label: saveStatus === SAVE_STATUS.FAILED
+            ? t("crm.counterpartyDetail.autosave.failedLabel", "Ошибка сохранения")
+            : (saveStatus === SAVE_STATUS.SAVING || saving)
+              ? t("common.saving")
+              : saveStatus === SAVE_STATUS.DIRTY
+                ? t("common.unsaved")
+                : saveStatus === SAVE_STATUS.SAVED
+                  ? t("common.saved")
+                  : "",
         }}
         actions={[
           {
@@ -2112,7 +2363,9 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
               : isClientMode
                 ? t("crm.clientDetail.actions.back", "К списку клиентов")
                 : t("crm.counterpartyDetail.actions.back"),
-            onClick: () => navigate(listRoute),
+            onClick: async () => {
+              if (await ensureSavedBeforeLeave()) navigate(listRoute);
+            },
           },
           {
             key: "delete",
@@ -2133,7 +2386,9 @@ export default function CounterpartyDetailPage({ createMode = false, entityType 
         tabs={tabs}
         activeTab={activeDetailTab}
         onActiveTabChange={handleActiveTabChange}
-      />
+      >
+        {saveErrorPanel}
+      </DetailLayout>
       <ConfirmDialog
         open={deleteOpen}
         title={t("crm.counterparties.confirmDeleteTitle")}

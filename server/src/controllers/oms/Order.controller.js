@@ -111,6 +111,15 @@ module.exports.confirm = async (req, res, next) => {
   }
 };
 
+module.exports.reserve = async (req, res, next) => {
+  try {
+    const data = await orderService.reserveOrderStock(req.params.id, req.body || {}, req.user);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports.cancel = async (req, res, next) => {
   try {
     const data = await orderService.changeOrderStatus(req.params.id, 'cancelled', req.body || {}, req.user);

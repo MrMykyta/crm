@@ -20,9 +20,14 @@ import {
 import CustomerDocumentRenderer, {
   buildInvoiceDocumentDto,
 } from '../../../../components/oms/CustomerDocumentRenderer';
+import DocumentActionStrip from '../../../../components/oms/DocumentActionStrip';
 import DocumentDeliveryDialog from '../../../../components/oms/DocumentDeliveryDialog';
 import DocumentShareDialog from '../../../../components/oms/DocumentShareDialog';
 import { pickDocumentDeliveryRecipient } from '../../../../components/oms/documentDeliveryRecipient';
+import {
+  openGeneratedPdf,
+  pickGeneratedPdfUrl,
+} from '../../../../components/oms/generatedPdf';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { asText } from '../../../../lib/format';
 import {
@@ -38,6 +43,7 @@ import {
   useRevokeDocumentShareMutation,
 } from '../../../../store/rtk/documentSharesApi';
 import { useGetContactPointsQuery } from '../../../../store/rtk/contactPointsApi';
+import { paymentMethodLabel } from '../../../../components/oms/paymentLabels';
 import s from './InvoiceDetailPage.module.css';
 
 function asNumber(value, fallback = 0) {
@@ -460,7 +466,7 @@ export default function InvoiceDetailPage() {
               <Fact label={t('oms.invoiceDetail.fields.currency')} value={currency} />
               <Fact label={t('oms.invoiceDetail.fields.vatProfile')} value={vatBreakdown.length ? t('oms.invoiceDetail.fields.vatRates', { count: vatBreakdown.length }) : '—'} />
               <Fact label={t('oms.invoiceDetail.fields.owner')} value={invoice.owner?.name || invoice.order?.owner?.name || '—'} />
-              <Fact label={t('oms.invoiceDetail.fields.bankPayment')} value={invoice.paymentMethod || invoice.order?.paymentMethod || '—'} />
+              <Fact label={t('oms.invoiceDetail.fields.bankPayment')} value={paymentMethodLabel(invoice.paymentMethod || invoice.order?.paymentMethod, t)} />
             </div>
           </DetailCard>
         </aside>
@@ -567,7 +573,7 @@ function PaymentsTab({ invoice, payments, currency, locale, t }) {
                 <div>
                   <strong>
                     <Link to={`/main/oms/payments/${payment.id}${invoice?.orderId ? `?orderId=${encodeURIComponent(invoice.orderId)}` : ''}`}>
-                      {payment.reference || payment.method || t('oms.invoiceDetail.payments.methodUnknown')}
+                      {payment.reference || paymentMethodLabel(payment.method, t)}
                     </Link>
                   </strong>
                   <span>
@@ -650,6 +656,7 @@ function PreviewTab({ invoice, items, currency, locale, t }) {
   const [getSignedFileUrl] = useLazyGetSignedFileUrlQuery();
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [pdfOpenState, setPdfOpenState] = useState({ url: '', opened: false });
   const deliveryRecipient = useMemo(() => pickDocumentDeliveryRecipient({
     counterpartyContactPoints: deliveryCounterpartyPoints,
     contactPersonContactPoints: deliveryContactPoints,
@@ -672,12 +679,12 @@ function PreviewTab({ invoice, items, currency, locale, t }) {
 
   const onGeneratePdf = async () => {
     if (!invoice?.id) return;
+    setPdfOpenState({ url: '', opened: false });
     const result = await generatePdf({ id: invoice.id, payload: { locale } }).unwrap();
     const fileId = result?.file?.id || result?.metadata?.fileId;
-    if (!fileId) return;
-    const signed = await getSignedFileUrl(fileId).unwrap();
-    const url = signed?.data?.url || signed?.url;
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    const signed = fileId ? await getSignedFileUrl(fileId).unwrap() : null;
+    const url = pickGeneratedPdfUrl(result, signed);
+    setPdfOpenState(openGeneratedPdf(url));
   };
 
   const onSendDocument = async (payload) => {
@@ -695,18 +702,22 @@ function PreviewTab({ invoice, items, currency, locale, t }) {
 
   return (
     <DetailSection title={t('oms.invoiceDetail.tabs.preview')}>
-      <div className={s.previewActions}>
-        <button type="button" onClick={onGeneratePdf} disabled={!invoice?.id || isLoading}>
-          {isLoading ? t('oms.generatedDocuments.actions.generating') : t('oms.generatedDocuments.actions.generatePdf')}
-        </button>
-        <button type="button" onClick={() => setDeliveryOpen(true)} disabled={!invoice?.id || sendState.isLoading}>
-          {sendState.isLoading ? t('oms.documentDelivery.sending') : t('oms.documentDelivery.send')}
-        </button>
-        <button type="button" onClick={() => setShareOpen(true)} disabled={!invoice?.id}>
-          {t('oms.documentShare.share')}
-        </button>
-        {error ? <span>{t('oms.generatedDocuments.errors.generateFailed')}</span> : null}
-      </div>
+      <DocumentActionStrip
+        t={t}
+        title={t('oms.documentActions.invoiceTitle')}
+        subtitle={t('oms.documentActions.invoiceSubtitle')}
+        onGeneratePdf={onGeneratePdf}
+        pdfLoading={isLoading}
+        pdfDisabled={!invoice?.id}
+        pdfOpened={pdfOpenState.opened}
+        pdfFallbackUrl={pdfOpenState.opened ? '' : pdfOpenState.url}
+        onSend={() => setDeliveryOpen(true)}
+        sendLoading={sendState.isLoading}
+        sendDisabled={!invoice?.id}
+        onShare={() => setShareOpen(true)}
+        shareDisabled={!invoice?.id}
+        error={error}
+      />
       <CustomerDocumentRenderer dto={documentDto} />
       <DocumentDeliveryDialog
         open={deliveryOpen}

@@ -56,14 +56,19 @@ export default function LineItemsEditor({
   const emit = useCallback((next) => onChange?.(normalizeItemSortOrder(next)), [onChange]);
 
   const setItemField = useCallback((localId, key, value) => {
-    onChange?.(lines.map((item) => (item.localId === localId ? { ...item, [key]: value } : item)));
+    onChange?.(lines.map((item) => {
+      if (item.localId !== localId) return item;
+      if (key === 'taxRate') {
+        return { ...item, taxRate: value, vatRateSnapshot: value };
+      }
+      return { ...item, [key]: value };
+    }));
   }, [lines, onChange]);
 
   const addCustomItem = useCallback(() => emit([...lines, createEmptyItem()]), [emit, lines]);
 
   const addProductItem = useCallback((product) => {
     emit([...lines, createProductItem(product)]);
-    setProductPickerOpen(false);
   }, [emit, lines]);
 
   const removeItem = useCallback((localId) => {
@@ -232,12 +237,29 @@ export default function LineItemsEditor({
             <button type="button" className={s.addRowButton} onClick={addCustomItem}>
               {t('documents.lines.addCustom')}
             </button>
-            <button type="button" className={s.addRowButton} onClick={() => setProductPickerOpen(true)}>
-              {t('documents.lines.addProduct')}
+            <button
+              type="button"
+              className={isProductPickerOpen ? `${s.addRowButton} ${s.addRowButtonActive}` : s.addRowButton}
+              onClick={() => setProductPickerOpen((current) => !current)}
+            >
+              {isProductPickerOpen
+                ? t('documents.lines.hideProductBrowser', 'Hide products')
+                : t('documents.lines.addProduct')}
             </button>
           </div>
         ) : null}
       </div>
+
+      {!readonly && isProductPickerOpen ? (
+        <div className={s.inlineProductBrowser}>
+          <OmsProductPicker
+            variant="inline"
+            onClose={() => setProductPickerOpen(false)}
+            onSelect={addProductItem}
+            title={productPickerTitle || t('documents.lines.productPickerTitle')}
+          />
+        </div>
+      ) : null}
 
       {readonly && !lines.length ? (
         <EmptyState size="sm" title={t('oms.itemsTable.empty')} />
@@ -265,15 +287,6 @@ export default function LineItemsEditor({
           </table>
         </div>
       )}
-
-      {!readonly ? (
-        <OmsProductPicker
-          open={isProductPickerOpen}
-          onClose={() => setProductPickerOpen(false)}
-          onSelect={addProductItem}
-          title={productPickerTitle || t('documents.lines.productPickerTitle')}
-        />
-      ) : null}
     </div>
   );
 }

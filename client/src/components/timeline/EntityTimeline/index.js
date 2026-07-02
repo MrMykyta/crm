@@ -124,7 +124,7 @@ export default function EntityTimeline({
               {links.length ? (
                 <div className={s.links}>
                   {links.map((link) => (
-                    <span key={link.id}>{link.role}: {link.entityType}</span>
+                    <span key={link.id}>{link.role}: {link.label || link.name || link.entityName || link.entityType}</span>
                   ))}
                 </div>
               ) : null}

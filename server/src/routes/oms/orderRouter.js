@@ -32,6 +32,12 @@ orderRouter.post(
   OrderController.confirm
 );
 orderRouter.post(
+  '/:id/actions/reserve',
+  validateBody(orderSchema.actionPayload),
+  authorize('order:update'),
+  OrderController.reserve
+);
+orderRouter.post(
   '/:id/actions/cancel',
   validateBody(orderSchema.actionPayload),
   authorize('order:update'),

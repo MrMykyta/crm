@@ -20,6 +20,7 @@ import {
   DetailTabs,
 } from '../../../../components/detail';
 import LineItemsEditor from '../../../../components/documents/LineItemsEditor';
+import EntityTimeline from '../../../../components/timeline/EntityTimeline';
 import {
   asNumber,
   asText,
@@ -34,6 +35,7 @@ import EntityNotesSection from '../../../../components/notes/EntityNotesSection'
 import { SelectField, TextField, TextareaField } from '../../../../components/ui/fields';
 import { normalizeItemSortOrder, sortItemsBySortOrder } from '../../../../components/oms/useReorderItems';
 import { isOrderEditable } from '../../../../components/oms/documentEditability';
+import { paymentMethodLabel } from '../../../../components/oms/paymentLabels';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { useListCounterpartiesQuery } from '../../../../store/rtk/counterpartyApi';
 import { useGetContactsByCounterpartyQuery } from '../../../../store/rtk/contactsApi';
@@ -42,16 +44,18 @@ import {
   useCancelOrderMutation,
   useCompleteOrderMutation,
   useConfirmOrderMutation,
-  useConvertOrderToInvoiceMutation,
   useCreateOrderMutation,
   useDeleteOrderMutation,
   useGetOrderByIdQuery,
   useGetOrderMetaQuery,
+  useReserveOrderMutation,
   useReturnOrderMutation,
   useSaveOrderItemsMutation,
   useShipOrderMutation,
   useUpdateOrderMutation,
 } from '../../../../store/rtk/ordersApi';
+import { useIssueInvoiceFromOrderMutation } from '../../../../store/rtk/invoicesApi';
+import { useListEntityTimelineQuery } from '../../../../store/rtk/timelineApi';
 import s from './OrderDetailPage.module.css';
 
 const EMPTY_FORM = {
@@ -68,6 +72,87 @@ const EMPTY_FORM = {
 
 function getErrorText(error, fallback) {
   return error?.data?.message || error?.data?.error || error?.error || error?.message || fallback;
+}
+
+function getApiErrorCode(error) {
+  return error?.data?.code || error?.data?.details?.code || error?.code || '';
+}
+
+function getOrderActionErrorText(error, t) {
+  const raw = getErrorText(error, '');
+  if (/Cannot return shipped\/completed order without a shipped WZ document/i.test(raw)) {
+    return t(
+      'oms.errors.returnRequiresShippedWz',
+      'This order can be returned only after a shipped WZ document exists.'
+    );
+  }
+  return raw || t('oms.errors.actionFailed', 'Failed to run action');
+}
+
+function getReserveOrderErrorText(error, t) {
+  const code = getApiErrorCode(error);
+  if (code) {
+    return t(`oms.orderDetail.fulfillment.reserveErrors.${code}`, t('oms.orderDetail.fulfillment.reserveErrors.UNKNOWN', 'Could not reserve stock.'));
+  }
+  return getErrorText(error, t('oms.orderDetail.fulfillment.reserveErrors.UNKNOWN', 'Could not reserve stock.'));
+}
+
+function readableEventType(value) {
+  if (!value) return '';
+  return String(value)
+    .replace(/[._-]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function localizeOrderTimelineEvent(event, t) {
+  const eventType = event?.eventType || '';
+  const eventKey = eventType.replace(/[.:]/g, '_');
+  const titleFallback = event?.title || readableEventType(eventType);
+  const payload = event?.payload || {};
+  const warehouseName = payload.warehouseName || '';
+  let summary = event?.summary || '';
+
+  if (eventType === 'order.stock_reserved') {
+    summary = warehouseName
+      ? t('oms.orderDetail.activity.summaries.order_stock_reserved_with_warehouse', {
+        warehouse: warehouseName,
+        defaultValue: `Stock reserved at ${warehouseName}`,
+      })
+      : t('oms.orderDetail.activity.summaries.order_stock_reserved', 'Stock reserved for this order.');
+  } else if (eventType === 'order.fulfillment_planned') {
+    summary = t('oms.orderDetail.activity.summaries.order_fulfillment_planned', event?.summary || 'Fulfillment plan prepared.');
+  } else if (eventType === 'document.pdf_generated') {
+    summary = t('oms.orderDetail.activity.summaries.document_pdf_generated', event?.summary || 'PDF document generated.');
+  }
+
+  return {
+    ...event,
+    title: eventKey
+      ? t(`oms.orderDetail.activity.events.${eventKey}`, titleFallback)
+      : titleFallback,
+    summary,
+    changes: Array.isArray(event?.changes)
+      ? event.changes.map((change) => ({
+        ...change,
+        label: change.labelKey ? t(change.labelKey, change.label || change.field) : change.label,
+      }))
+      : event?.changes,
+    links: Array.isArray(event?.links)
+      ? event.links.map((link) => ({
+        ...link,
+        role: link.role === 'warehouse' ? t('oms.orderDetail.activity.links.warehouse', 'Warehouse') : link.role,
+        label: link.role === 'warehouse' && warehouseName ? warehouseName : link.label,
+      }))
+      : event?.links,
+  };
+}
+
+function getInvoiceId(result) {
+  return result?.invoice?.id
+    || result?.data?.invoice?.id
+    || result?.data?.id
+    || result?.id
+    || '';
 }
 
 function dateInput(value) {
@@ -133,6 +218,187 @@ function statusLabel(status, t) {
   return t(`statuses.${key}`, key);
 }
 
+function fulfillmentPlanStatusLabel(status, t) {
+  const key = asText(status).toLowerCase();
+  if (!key) return '—';
+  return t(`oms.orderDetail.fulfillment.planStatuses.${key}`, statusLabel(key, t));
+}
+
+function fulfillmentPlanModeLabel(mode, t) {
+  const key = asText(mode).toLowerCase();
+  if (!key) return '—';
+  return t(`oms.orderDetail.fulfillment.planModes.${key}`, key);
+}
+
+function fulfillmentWarningLabel(code, t) {
+  const key = asText(code).toLowerCase();
+  if (!key) return '';
+  return t(`oms.orderDetail.fulfillment.warnings.${key}`, key);
+}
+
+function fulfillmentLineStatusKey(status) {
+  const key = asText(status).toLowerCase();
+  if (key === 'ready') return 'available';
+  if (key === 'already_fulfilled') return 'fulfilled';
+  return key || 'unknown';
+}
+
+function fulfillmentTone(status) {
+  const key = fulfillmentLineStatusKey(status);
+  if (['available', 'ready', 'reserved', 'fulfilled'].includes(key)) return 'ok';
+  if (['shortage'].includes(key)) return 'danger';
+  if (['partial'].includes(key)) return 'warning';
+  return 'muted';
+}
+
+function fulfillmentSetupMessage(plan, t) {
+  if (!plan) return t('oms.orderDetail.fulfillment.planUnavailable', 'Fulfillment plan is not available for this order.');
+  if (plan.status === 'shortage') {
+    return t('oms.orderDetail.fulfillment.setupMessages.shortage', 'There is not enough stock to fulfill the order.');
+  }
+  if (plan.mode === 'split_suggested') {
+    return t('oms.orderDetail.fulfillment.setupMessages.split', 'Some lines need another warehouse.');
+  }
+  if (plan.recommendedWarehouseName && plan.mode === 'single_warehouse') {
+    return t('oms.orderDetail.fulfillment.setupMessages.single', 'This warehouse covers all order lines.');
+  }
+  if (plan.status === 'reserved') {
+    return t('oms.orderDetail.fulfillment.setupMessages.reserved', 'Stock is already reserved for this order.');
+  }
+  if (['fulfilled', 'already_fulfilled'].includes(plan.status)) {
+    return t('oms.orderDetail.fulfillment.setupMessages.fulfilled', 'The order has already been shipped.');
+  }
+  return t('oms.orderDetail.fulfillment.setupMessages.manual', 'Review stock availability before the next fulfillment step.');
+}
+
+function fulfillmentReserveState(plan, t) {
+  if (!plan) return t('oms.orderDetail.fulfillment.states.unavailable', 'Unavailable');
+  if (plan.canReserve) return t('oms.orderDetail.fulfillment.states.canReserve', 'The order can be reserved');
+  if (plan.status === 'shortage') return t('oms.orderDetail.fulfillment.states.cannotReserve', 'Reservation is blocked by shortage');
+  if (plan.status === 'reserved') return t('oms.orderDetail.fulfillment.states.alreadyReserved', 'Stock is reserved');
+  return t('oms.orderDetail.fulfillment.states.readOnly', 'Read-only recommendation');
+}
+
+function fulfillmentShipState(plan, t) {
+  if (!plan) return t('oms.orderDetail.fulfillment.states.unavailable', 'Unavailable');
+  if (plan.canShip) return t('oms.orderDetail.fulfillment.states.canShip', 'Shipment can be prepared');
+  if (plan.status === 'shortage') return t('oms.orderDetail.fulfillment.states.cannotShip', 'Shipment is blocked by shortage');
+  if (['fulfilled', 'already_fulfilled'].includes(plan.status)) return t('oms.orderDetail.fulfillment.states.shipped', 'Order shipped');
+  return t('oms.orderDetail.fulfillment.states.notReadyToShip', 'Shipment is not ready yet');
+}
+
+function fulfillmentNextStep(plan, t) {
+  if (!plan) {
+    return {
+      title: t('oms.orderDetail.fulfillment.nextSteps.unavailableTitle', 'Fulfillment plan unavailable'),
+      body: t('oms.orderDetail.fulfillment.nextSteps.unavailableBody', 'Fulfillment plan is not available for this order.'),
+      action: t('oms.orderDetail.fulfillment.readOnlyPlan', 'Read-only plan'),
+      tone: 'muted',
+    };
+  }
+  if (plan.status === 'shortage') {
+    return {
+      title: t('oms.orderDetail.fulfillment.nextSteps.shortageTitle', 'Cannot fulfill the order completely'),
+      body: t('oms.orderDetail.fulfillment.nextSteps.shortageBody', 'Check stock balances or adjust order lines before fulfillment.'),
+      action: t('oms.orderDetail.fulfillment.actions.reviewStock', 'Review stock'),
+      tone: 'danger',
+    };
+  }
+  if (plan.status === 'reserved') {
+    return {
+      title: t('oms.orderDetail.fulfillment.nextSteps.reservedTitle', 'Stock is reserved'),
+      body: t('oms.orderDetail.fulfillment.nextSteps.reservedBody', 'Shipment/WZ creation will be connected in the next step.'),
+      action: t('oms.orderDetail.fulfillment.actions.createShipmentPrepared', 'Create shipment'),
+      tone: 'ok',
+    };
+  }
+  if (['fulfilled', 'already_fulfilled'].includes(plan.status)) {
+    return {
+      title: t('oms.orderDetail.fulfillment.nextSteps.fulfilledTitle', 'Order shipped'),
+      body: t('oms.orderDetail.fulfillment.nextSteps.fulfilledBody', 'Fulfillment is complete for this order.'),
+      action: t('oms.orderDetail.fulfillment.readOnlyPlan', 'Read-only plan'),
+      tone: 'ok',
+    };
+  }
+  if (plan.canReserve) {
+    return {
+      title: t('oms.orderDetail.fulfillment.nextSteps.reserveTitle', 'Next step: reserve stock'),
+      body: t('oms.orderDetail.fulfillment.nextSteps.reserveBody', 'Reservation will be connected in the next fulfillment step.'),
+      action: t('oms.orderDetail.fulfillment.actions.reservePrepared', 'Reserve'),
+      tone: 'ok',
+    };
+  }
+  return {
+    title: t('oms.orderDetail.fulfillment.nextSteps.manualTitle', 'Review fulfillment setup'),
+    body: t('oms.orderDetail.fulfillment.nextSteps.manualBody', 'Review warehouse availability before continuing.'),
+    action: t('oms.orderDetail.fulfillment.readOnlyPlan', 'Read-only plan'),
+    tone: 'muted',
+  };
+}
+
+function fulfillmentReserveActionState(plan, t) {
+  if (!plan) {
+    return {
+      canRun: false,
+      reason: t('oms.orderDetail.fulfillment.reserveDisabled.unavailable', 'Fulfillment plan is not available.'),
+    };
+  }
+  if (plan.status === 'reserved') {
+    return {
+      canRun: false,
+      reason: t('oms.orderDetail.fulfillment.reserveDisabled.reserved', 'Shipment/WZ creation will be connected in the next step.'),
+    };
+  }
+  if (['fulfilled', 'already_fulfilled'].includes(plan.status)) {
+    return {
+      canRun: false,
+      reason: t('oms.orderDetail.fulfillment.reserveDisabled.fulfilled', 'Order is already fulfilled.'),
+    };
+  }
+  if (plan.status === 'shortage') {
+    return {
+      canRun: false,
+      reason: t('oms.orderDetail.fulfillment.reserveDisabled.shortage', 'Not enough stock to reserve the order.'),
+    };
+  }
+  if (plan.mode === 'split_suggested') {
+    return {
+      canRun: false,
+      reason: t('oms.orderDetail.fulfillment.reserveDisabled.split', 'Several warehouses are needed. Split reservation will be available later.'),
+    };
+  }
+  if (!stockTrackedPlanLines(plan).length) {
+    return {
+      canRun: false,
+      reason: t('oms.orderDetail.fulfillment.reserveDisabled.noStock', 'This order does not require stock reservation.'),
+    };
+  }
+  if (!plan.recommendedWarehouseId) {
+    return {
+      canRun: false,
+      reason: t('oms.orderDetail.fulfillment.reserveDisabled.noWarehouse', 'No recommended warehouse is available.'),
+    };
+  }
+  if (!plan.canReserve) {
+    return {
+      canRun: false,
+      reason: t('oms.orderDetail.fulfillment.reserveDisabled.default', 'Reservation is not available for this order.'),
+    };
+  }
+  return {
+    canRun: true,
+    reason: t('oms.orderDetail.fulfillment.reserveEnabled', 'Ready to reserve stock.'),
+  };
+}
+
+function fulfillmentShortageCount(plan) {
+  return (Array.isArray(plan?.lines) ? plan.lines : []).filter((line) => asNumber(line.shortageQty, 0) > 0).length;
+}
+
+function stockTrackedPlanLines(plan = {}) {
+  return (Array.isArray(plan?.lines) ? plan.lines : []).filter((line) => line?.status !== 'not_stock_tracked');
+}
+
 function buildFormFromOrder(order, searchParams) {
   if (!order?.id) {
     return {
@@ -196,6 +462,14 @@ function getPrimaryActionKey(order, availableActions) {
   if (availableActions?.canComplete) return 'complete';
   if (availableActions?.canConvertToInvoice) return 'convert-to-invoice';
   return '';
+}
+
+function canOrderIssueInvoice(order, invoices, dueAmount) {
+  if (!order?.id) return false;
+  if (Array.isArray(invoices) && invoices.length) return false;
+  if (asNumber(dueAmount, 0) <= 0) return false;
+  const status = asText(order.status).toLowerCase();
+  return !['cancelled', 'returned', 'refunded'].includes(status);
 }
 
 function axisTone(value) {
@@ -291,7 +565,8 @@ export default function OrderDetailPage() {
   const [completeOrder] = useCompleteOrderMutation();
   const [cancelOrder] = useCancelOrderMutation();
   const [returnOrder] = useReturnOrderMutation();
-  const [convertOrderToInvoice] = useConvertOrderToInvoiceMutation();
+  const [issueInvoiceFromOrder, { isLoading: isIssuingInvoice }] = useIssueInvoiceFromOrderMutation();
+  const [issuedInvoice, setIssuedInvoice] = useState(null);
 
   useEffect(() => {
     if (isCreate) {
@@ -319,6 +594,13 @@ export default function OrderDetailPage() {
   const totals = useMemo(() => calculateTotals(items), [items]);
   const dirty = buildDirtySnapshot(form, items) !== cleanRef.current;
   const invoices = useMemo(() => mapInvoiceList(currentOrder), [currentOrder]);
+  const canIssueInvoice = Boolean(
+    (canConvertOrder || canUpdateOrder)
+    && (
+      availableActions?.canConvertToInvoice
+      || canOrderIssueInvoice(currentOrder, invoices, isCreate ? totals.gross : calcDue(currentOrder))
+    )
+  );
   const counterparty = currentOrder?.counterparty || currentOrder?.customer;
   const selectedCounterparty = counterparty || (counterpartiesData?.items || []).find((row) => row.id === form.counterpartyId);
   const customerLabel = counterpartyName(selectedCounterparty) || t('oms.orderDetail.noCustomer', 'Customer not selected');
@@ -443,13 +725,24 @@ export default function OrderDetailPage() {
       await refetch();
       return result;
     } catch (err) {
-      const message = getErrorText(err, t('oms.errors.actionFailed'));
+      const message = getOrderActionErrorText(err, t);
       setActionError(message);
       return null;
     } finally {
       setActionLoadingKey('');
     }
   }, [id, navigate, refetch, t]);
+
+  const issueInvoice = useCallback(() => {
+    if (!id) return;
+    return void runAction('issue-invoice', () => issueInvoiceFromOrder({ orderId: id, payload: {} }), {
+      redirect: (result) => {
+        const invoiceId = getInvoiceId(result);
+        setIssuedInvoice(invoiceId ? { id: invoiceId, ...(result?.invoice || result?.data?.invoice || result?.data || result || {}) } : null);
+        return null;
+      },
+    });
+  }, [id, issueInvoiceFromOrder, runAction]);
 
   const handleAction = useCallback((key) => {
     if (key === 'create') return void onSave();
@@ -470,14 +763,9 @@ export default function OrderDetailPage() {
       return void runAction('delete', () => deleteOrder(id), { redirect: () => '/main/oms/orders' });
     }
     if (key === 'convert-to-invoice') {
-      return void runAction('convert-to-invoice', () => convertOrderToInvoice({ id, payload: {} }), {
-        redirect: (result) => {
-          const invoiceId = result?.invoice?.id || result?.data?.invoice?.id;
-          return invoiceId ? `/main/documents/${invoiceId}` : null;
-        },
-      });
+      return issueInvoice();
     }
-  }, [cancelOrder, completeOrder, confirmOrder, convertOrderToInvoice, deleteOrder, id, onSave, returnOrder, runAction, shipOrder, t]);
+  }, [cancelOrder, completeOrder, confirmOrder, deleteOrder, id, issueInvoice, onSave, returnOrder, runAction, shipOrder, t]);
 
   const primaryActionKey = getPrimaryActionKey(currentOrder, availableActions);
   const primaryAction = useMemo(() => {
@@ -501,9 +789,9 @@ export default function OrderDetailPage() {
       key: primaryActionKey,
       label: labels[primaryActionKey] || primaryActionKey,
       icon: icons[primaryActionKey],
-      disabled: Boolean(actionLoadingKey) || (primaryActionKey === 'convert-to-invoice' && !canConvertOrder),
+      disabled: Boolean(actionLoadingKey) || (primaryActionKey === 'convert-to-invoice' && !canIssueInvoice),
     };
-  }, [actionLoadingKey, canConvertOrder, isCreate, isSaving, primaryActionKey, t]);
+  }, [actionLoadingKey, canIssueInvoice, isCreate, isSaving, primaryActionKey, t]);
 
   const overflowActions = useMemo(() => [
     currentOrder?.id && canUpdateOrder && availableActions.canCancel ? { key: 'cancel', label: t('oms.actionLabels.cancel'), danger: true } : null,
@@ -530,7 +818,7 @@ export default function OrderDetailPage() {
       key: 'invoices',
       label: t('oms.orderDetail.smart.invoices', 'Invoices'),
       value: String(currentOrder?.counts?.invoices ?? invoices.length),
-      to: invoices[0]?.id ? `/main/documents/${invoices[0].id}` : null,
+      to: invoices[0]?.id ? `/main/oms/invoices/${invoices[0].id}` : null,
       icon: <ReceiptText size={14} />,
     } : null,
     currentOrder?.counts?.payments ? {
@@ -557,12 +845,16 @@ export default function OrderDetailPage() {
       render: () => (
         <OverviewTab
           order={currentOrder}
-          totals={isCreate ? totals : null}
+          totals={totals}
           currency={currency}
           paidAmount={paidAmount}
           dueAmount={dueAmount}
           nextAction={nextAction}
           invoices={invoices}
+          canIssueInvoice={canIssueInvoice}
+          issueLoading={isIssuingInvoice || actionLoadingKey === 'issue-invoice'}
+          issuedInvoice={issuedInvoice}
+          onIssueInvoice={issueInvoice}
           t={t}
           locale={locale}
           onTab={setActiveTab}
@@ -595,7 +887,21 @@ export default function OrderDetailPage() {
     {
       key: 'billing',
       label: t('oms.orderDetail.tabs.billing', 'Billing'),
-      render: () => <BillingTab order={currentOrder} invoices={invoices} paidAmount={paidAmount} dueAmount={dueAmount} t={t} locale={locale} currency={currency} />,
+      render: () => (
+        <BillingTab
+          order={currentOrder}
+          invoices={invoices}
+          paidAmount={paidAmount}
+          dueAmount={dueAmount}
+          t={t}
+          locale={locale}
+          currency={currency}
+          canIssueInvoice={canIssueInvoice}
+          issueLoading={isIssuingInvoice || actionLoadingKey === 'issue-invoice'}
+          issuedInvoice={issuedInvoice}
+          onIssueInvoice={issueInvoice}
+        />
+      ),
     },
     {
       key: 'activity',
@@ -629,7 +935,7 @@ export default function OrderDetailPage() {
       label: t('oms.orderDetail.tabs.system', 'System'),
       render: () => <SystemTab order={currentOrder} t={t} locale={locale} />,
     },
-  ], [currency, currentOrder, discountTypeOptions, dueAmount, errors, id, invoices, isCreate, items, locale, nextAction, onItemsChange, paidAmount, readonly, t, totals]);
+  ], [actionLoadingKey, canIssueInvoice, currency, currentOrder, discountTypeOptions, dueAmount, errors, id, invoices, isCreate, isIssuingInvoice, issueInvoice, issuedInvoice, items, locale, nextAction, onItemsChange, paidAmount, readonly, t, totals]);
 
   if ((isCreate && !canCreateOrder) || (!isCreate && !canReadOrder)) {
     return <div className={s.state}>{t('common.noPermission', 'No permission')}</div>;
@@ -800,8 +1106,26 @@ function VitalTile({ label, value, detail, tone, icon }) {
   );
 }
 
-function OverviewTab({ order, totals, currency, paidAmount, dueAmount, nextAction, invoices, t, locale, onTab }) {
-  const gross = order?.totalGross ?? totals?.gross ?? 0;
+function OverviewTab({
+  order,
+  totals,
+  currency,
+  paidAmount,
+  dueAmount,
+  nextAction,
+  invoices,
+  canIssueInvoice,
+  issueLoading,
+  issuedInvoice,
+  onIssueInvoice,
+  t,
+  locale,
+  onTab,
+}) {
+  const gross = Number.isFinite(Number(totals?.gross)) ? totals.gross : order?.totalGross ?? 0;
+  const visibleIssuedInvoice = issuedInvoice || invoices[0] || null;
+  const fulfillmentPlan = order?.fulfillmentPlan || null;
+  const shortageCount = fulfillmentShortageCount(fulfillmentPlan);
   return (
     <div className={s.stack}>
       <div className={s.overviewGrid}>
@@ -812,12 +1136,54 @@ function OverviewTab({ order, totals, currency, paidAmount, dueAmount, nextActio
         <Fact label={t('oms.orderDetail.overview.paid', 'Amount paid')} value={formatMoney(paidAmount, currency, locale)} />
         <Fact label={t('oms.orderDetail.overview.nextAction', 'Next action')} value={nextAction} />
       </div>
+      <DetailSection title={t('oms.orderDetail.fulfillment.overviewTitle', 'Fulfillment readiness')}>
+        <div className={`${s.nextStepCard} ${s[`tone_${fulfillmentTone(fulfillmentPlan?.status)}`] || ''}`}>
+          <div>
+            <strong>
+              {fulfillmentPlan?.recommendedWarehouseName
+                ? t('oms.orderDetail.fulfillment.recommendedWarehouse', 'Recommended warehouse: {{warehouse}}', { warehouse: fulfillmentPlan.recommendedWarehouseName })
+                : fulfillmentPlanStatusLabel(fulfillmentPlan?.status || 'not_required', t)}
+            </strong>
+            <span>
+              {fulfillmentPlan
+                ? `${fulfillmentPlanStatusLabel(fulfillmentPlan.status, t)} · ${fulfillmentPlanModeLabel(fulfillmentPlan.mode, t)}${shortageCount ? ` · ${t('oms.orderDetail.fulfillment.shortageLines', '{{count}} shortage lines', { count: shortageCount })}` : ''}`
+                : t('oms.orderDetail.fulfillment.planUnavailable', 'Fulfillment plan is not available for this order.')}
+            </span>
+          </div>
+          <button type="button" className={s.actionBtn} onClick={() => onTab('fulfillment')}>
+            {t('oms.orderDetail.actions.openFulfillment', 'Open fulfillment')}
+          </button>
+        </div>
+      </DetailSection>
       <DetailSection title={t('oms.orderDetail.sections.documentChain', 'Document chain')}>
         <div className={s.chain}>
           {order?.sourceOffer?.id ? <Link to={`/main/oms/offers/${order.sourceOffer.id}`}>{t('oms.orderDetail.smart.offer', 'Offer')} · {order.sourceOffer.number || order.sourceOffer.id}</Link> : <span>{t('oms.orderDetail.chain.noOffer', 'No source offer')}</span>}
-          {invoices.length ? invoices.map((invoice) => <Link key={invoice.id} to={`/main/documents/${invoice.id}`}>{t('oms.orderDetail.smart.invoices', 'Invoice')} · {invoice.number || invoice.id}</Link>) : <span>{t('oms.orderDetail.chain.noInvoice', 'No invoice yet')}</span>}
+          {invoices.length ? invoices.map((invoice) => <Link key={invoice.id} to={`/main/oms/invoices/${invoice.id}`}>{t('oms.orderDetail.smart.invoices', 'Invoice')} · {invoice.number || invoice.id}</Link>) : <span>{t('oms.orderDetail.chain.noInvoice', 'No invoice yet')}</span>}
         </div>
       </DetailSection>
+      {canIssueInvoice || visibleIssuedInvoice ? (
+        <DetailSection title={t('oms.orderDetail.billing.issueInvoiceTitle', 'Issue invoice')}>
+          <div className={s.nextStepCard}>
+            <div>
+              <strong>{visibleIssuedInvoice ? t('oms.orderDetail.billing.invoiceReady', 'Invoice is ready') : t('oms.orderDetail.billing.invoiceNextAction', 'Create the invoice for this order')}</strong>
+              <span>
+                {visibleIssuedInvoice
+                  ? t('oms.orderDetail.billing.invoiceReadyHint', 'Open the created invoice or continue with payments.')
+                  : t('oms.orderDetail.billing.invoiceNextActionHint', 'Billing starts here: issue an invoice, then register the payment.')}
+              </span>
+            </div>
+            {visibleIssuedInvoice?.id ? (
+              <Link className={s.actionBtn} to={`/main/oms/invoices/${visibleIssuedInvoice.id}`}>
+                {t('oms.orderDetail.billing.openInvoice', 'Open invoice')}
+              </Link>
+            ) : (
+              <button type="button" className={s.primaryBtn} onClick={onIssueInvoice} disabled={!canIssueInvoice || issueLoading}>
+                {issueLoading ? t('common.loading', 'Loading') : t('oms.actionLabels.issueInvoice', 'Issue invoice')}
+              </button>
+            )}
+          </div>
+        </DetailSection>
+      ) : null}
       <div className={s.anchorActions}>
         <button type="button" onClick={() => onTab('items')}>{t('oms.orderDetail.actions.openItems', 'Open items')}</button>
         <button type="button" onClick={() => onTab('fulfillment')}>{t('oms.orderDetail.actions.openFulfillment', 'Open fulfillment')}</button>
@@ -871,17 +1237,265 @@ function ItemsTab({ items, onItemsChange, errors, discountTypeOptions, totals, t
   );
 }
 
+function FulfillmentSetupCard({
+  plan,
+  t,
+  reserveAction,
+  reserveConfirmOpen,
+  onOpenReserveConfirm,
+  onCloseReserveConfirm,
+  onConfirmReserve,
+  reserveLoading,
+  reserveError,
+  reserveSuccess,
+}) {
+  const nextStep = fulfillmentNextStep(plan, t);
+  const stockLineCount = stockTrackedPlanLines(plan).length;
+  return (
+    <DetailSection title={t('oms.orderDetail.fulfillment.setupCardTitle', 'Fulfillment setup')}>
+      <div className={`${s.fulfillmentSetup} ${s[`tone_${fulfillmentTone(plan?.status)}`] || ''}`}>
+        <div className={s.fulfillmentSetupMain}>
+          <span>{t('oms.orderDetail.fulfillment.setupEyebrow', 'Order fulfillment cabin')}</span>
+          <strong>
+            {plan?.recommendedWarehouseName
+              ? t('oms.orderDetail.fulfillment.recommendedWarehouse', 'Recommended warehouse: {{warehouse}}', { warehouse: plan.recommendedWarehouseName })
+              : fulfillmentPlanStatusLabel(plan?.status || 'not_required', t)}
+          </strong>
+          <p>{fulfillmentSetupMessage(plan, t)}</p>
+        </div>
+        <div className={s.fulfillmentSetupFacts}>
+          <Fact label={t('oms.orderDetail.fulfillment.planMode', 'Fulfillment mode')} value={plan ? fulfillmentPlanModeLabel(plan.mode, t) : '—'} />
+          <Fact label={t('oms.orderDetail.fulfillment.status', 'Fulfillment status')} value={plan ? fulfillmentPlanStatusLabel(plan.status, t) : '—'} />
+          <Fact label={t('oms.orderDetail.fulfillment.reserveState', 'Reserve state')} value={fulfillmentReserveState(plan, t)} />
+          <Fact label={t('oms.orderDetail.fulfillment.shipState', 'Ship state')} value={fulfillmentShipState(plan, t)} />
+        </div>
+        <div className={`${s.nextStepCard} ${s[`tone_${nextStep.tone}`] || ''}`}>
+          <div>
+            <strong>{nextStep.title}</strong>
+            <span>{nextStep.body}</span>
+          </div>
+          <button
+            type="button"
+            className={reserveAction.canRun ? s.primaryBtn : s.actionBtn}
+            disabled={!reserveAction.canRun || reserveLoading}
+            title={reserveAction.canRun ? t('oms.orderDetail.fulfillment.reserveEnabled', 'Ready to reserve stock.') : reserveAction.reason}
+            onClick={reserveAction.canRun ? onOpenReserveConfirm : undefined}
+          >
+            {reserveLoading ? t('common.loading', 'Loading') : nextStep.action}
+          </button>
+        </div>
+        {!reserveAction.canRun ? (
+          <div className={s.reserveHint}>{reserveAction.reason}</div>
+        ) : null}
+        {reserveConfirmOpen ? (
+          <div className={s.reserveConfirm}>
+            <div>
+              <strong>{t('oms.orderDetail.fulfillment.reserveConfirm.title', 'Reserve stock?')}</strong>
+              <span>
+                {t(
+                  'oms.orderDetail.fulfillment.reserveConfirm.text',
+                  'The system will reserve available lines at the recommended warehouse: {{warehouse}}.',
+                  { warehouse: plan?.recommendedWarehouseName || '—' }
+                )}
+              </span>
+            </div>
+            <div className={s.reserveConfirmFacts}>
+              <Fact label={t('oms.orderDetail.fields.warehouse', 'Warehouse')} value={plan?.recommendedWarehouseName || '—'} />
+              <Fact label={t('oms.orderDetail.fulfillment.stockTrackedLines', 'Stock-tracked lines')} value={stockLineCount} />
+              <Fact label={t('oms.orderDetail.fulfillment.warningsTitle', 'Warnings')} value={Array.isArray(plan?.warnings) ? plan.warnings.length : 0} />
+            </div>
+            {Array.isArray(plan?.warnings) && plan.warnings.length ? (
+              <div className={s.reserveConfirmWarnings}>
+                {plan.warnings.map((warning, index) => (
+                  <span key={`${warning.code}-${index}`}>{fulfillmentWarningLabel(warning.code, t)}</span>
+                ))}
+              </div>
+            ) : null}
+            <div className={s.reserveConfirmActions}>
+              <button type="button" className={s.actionBtn} onClick={onCloseReserveConfirm} disabled={reserveLoading}>
+                {t('common.cancel', 'Cancel')}
+              </button>
+              <button type="button" className={s.primaryBtn} onClick={onConfirmReserve} disabled={reserveLoading}>
+                {reserveLoading ? t('common.loading', 'Loading') : t('oms.orderDetail.fulfillment.actions.reserveStock', 'Reserve stock')}
+              </button>
+            </div>
+          </div>
+        ) : null}
+        {reserveError ? <div className={s.errorBar}>{reserveError}</div> : null}
+        {reserveSuccess ? <div className={s.successBar}>{reserveSuccess}</div> : null}
+      </div>
+    </DetailSection>
+  );
+}
+
+function FulfillmentWarnings({ warnings, t }) {
+  if (!warnings.length) {
+    return (
+      <div className={`${s.warningCard} ${s.tone_ok}`}>
+        <strong>{t('oms.orderDetail.fulfillment.noWarnings', 'No fulfillment warnings.')}</strong>
+        <span>{t('oms.orderDetail.fulfillment.noWarningsHint', 'The current read-only plan has no blocking warnings.')}</span>
+      </div>
+    );
+  }
+  return (
+    <div className={s.warningGrid}>
+      {warnings.map((warning, index) => (
+        <div key={`${warning.code}-${warning.orderItemId || index}`} className={`${s.warningCard} ${warning.code === 'already_fulfilled' || warning.code === 'reservation_exists' ? s.tone_ok : s.tone_warning}`}>
+          <strong>{fulfillmentWarningLabel(warning.code, t)}</strong>
+          <span>
+            {warning.orderItemId
+              ? t('oms.orderDetail.fulfillment.warningLineHint', 'Linked to one order line.')
+              : t('oms.orderDetail.fulfillment.warningOrderHint', 'Applies to the whole order.')}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function WarehouseOptions({ line, t }) {
+  const options = Array.isArray(line.warehouseOptions) ? line.warehouseOptions : [];
+  if (!options.length) return null;
+  return (
+    <details className={s.warehouseOptions}>
+      <summary>{t('oms.orderDetail.fulfillment.warehouseOptions', 'Availability by warehouse')}</summary>
+      <div className={s.warehouseOptionRows}>
+        {options.map((option) => (
+          <div key={option.warehouseId || option.warehouseName} className={s.warehouseOptionRow}>
+            <div>
+              <strong>{option.warehouseName || option.warehouseId || '—'}</strong>
+              <span>{option.canCoverLine ? t('oms.orderDetail.fulfillment.canCoverLine', 'Can cover line') : t('oms.orderDetail.fulfillment.cannotCoverLine', 'Cannot cover line')}</span>
+            </div>
+            <div className={s.fulfillmentNumbers}>
+              <span><small>{t('oms.orderDetail.fulfillment.onHand', 'On hand')}</small>{asNumber(option.onHandQty, 0)}</span>
+              <span><small>{t('oms.orderDetail.fulfillment.reserved', 'Reserved')}</small>{asNumber(option.reservedQty, 0)}</span>
+              <span><small>{t('oms.orderDetail.fulfillment.available', 'Available')}</small>{asNumber(option.availableQty, 0)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function FulfillmentAvailabilityLine({ line, t }) {
+  const statusKey = fulfillmentLineStatusKey(line.status);
+  const isService = statusKey === 'not_stock_tracked';
+  return (
+    <div className={s.fulfillmentLine}>
+      <div className={s.fulfillmentLineHeader}>
+        <div>
+          <strong>{line.name || line.sku || line.productId || t('oms.orderDetail.items.unnamedLine', 'Unnamed line')}</strong>
+          <span>
+            {line.sku ? `${line.sku} · ` : ''}
+            {isService
+              ? t('oms.orderDetail.fulfillment.noStockTracking', 'Does not require warehouse')
+              : (line.recommendedWarehouseName || t('oms.orderDetail.fulfillment.noRecommendedWarehouse', 'No recommended warehouse'))}
+          </span>
+        </div>
+        <span className={`${s.statusBadge} ${s[`tone_${fulfillmentTone(statusKey)}`] || ''}`}>
+          {fulfillmentPlanStatusLabel(statusKey, t)}
+        </span>
+      </div>
+      <div className={s.fulfillmentNumbers}>
+        <span><small>{t('oms.orderDetail.fulfillment.required', 'Required')}</small>{asNumber(line.requiredQty, 0)}</span>
+        <span><small>{t('oms.orderDetail.fulfillment.available', 'Available')}</small>{isService ? '—' : asNumber(line.availableQty, 0)}</span>
+        <span><small>{t('oms.orderDetail.fulfillment.reserved', 'Reserved')}</small>{asNumber(line.reservedQty, 0)}</span>
+        <span><small>{t('oms.orderDetail.fulfillment.fulfilled', 'Fulfilled')}</small>{asNumber(line.fulfilledQty, 0)}</span>
+        <span><small>{t('oms.orderDetail.fulfillment.shortage', 'Shortage')}</small>{asNumber(line.shortageQty, 0)}</span>
+      </div>
+      {!isService ? <WarehouseOptions line={line} t={t} /> : null}
+    </div>
+  );
+}
+
 function FulfillmentTab({ order, t, locale }) {
   const shipments = Array.isArray(order?.shipments) ? order.shipments : [];
   const reservations = Array.isArray(order?.reservations) ? order.reservations : [];
+  const plan = order?.fulfillmentPlan || null;
+  const planLines = Array.isArray(plan?.lines) ? plan.lines : [];
+  const planWarnings = Array.isArray(plan?.warnings) ? plan.warnings : [];
+  const warehouseName = order?.warehouse?.name || order?.warehouseName || '';
+  const deliveryAddress = order?.shippingAddressSnapshot || order?.deliveryAddressSnapshot || '';
+  const [reserveOrder, { isLoading: reserveLoading }] = useReserveOrderMutation();
+  const [reserveConfirmOpen, setReserveConfirmOpen] = useState(false);
+  const [reserveError, setReserveError] = useState('');
+  const [reserveSuccess, setReserveSuccess] = useState('');
+  const reserveAction = fulfillmentReserveActionState(plan, t);
+
+  const handleOpenReserveConfirm = useCallback(() => {
+    if (!reserveAction.canRun) return;
+    setReserveError('');
+    setReserveSuccess('');
+    setReserveConfirmOpen(true);
+  }, [reserveAction.canRun]);
+
+  const handleConfirmReserve = useCallback(async () => {
+    if (!order?.id || !reserveAction.canRun) return;
+    setReserveError('');
+    setReserveSuccess('');
+    try {
+      await reserveOrder({ id: order.id, payload: {} }).unwrap();
+      setReserveConfirmOpen(false);
+      setReserveSuccess(t('oms.orderDetail.fulfillment.reserveSuccess', 'Stock reserved for this order.'));
+    } catch (error) {
+      setReserveError(getReserveOrderErrorText(error, t));
+    }
+  }, [order?.id, reserveAction.canRun, reserveOrder, t]);
+
   return (
     <div className={s.stack}>
       <div className={s.overviewGrid}>
         <Fact label={t('oms.orderDetail.fulfillment.status', 'Fulfillment status')} value={statusLabel(order?.fulfillmentStatus || 'unfulfilled', t)} />
+        <Fact label={t('oms.orderDetail.fields.warehouse', 'Warehouse')} value={plan?.recommendedWarehouseName || warehouseName || '—'} />
+        <Fact label={t('oms.orderDetail.fields.shipTo', 'Ship-to address')} value={deliveryAddress || '—'} />
+        <Fact
+          label={t('oms.orderDetail.fulfillment.nextStep', 'Next step')}
+          value={plan ? fulfillmentPlanStatusLabel(plan.status, t) : (shipments.length ? t('oms.orderDetail.fulfillment.trackShipment', 'Track shipment') : t('oms.orderDetail.fulfillment.setupNext', 'Set up fulfillment'))}
+        />
         <Fact label={t('oms.orderDetail.fulfillment.lifecycle', 'Lifecycle status')} value={statusLabel(order?.status || 'draft', t)} />
+        <Fact label={t('oms.orderDetail.fulfillment.planMode', 'Fulfillment mode')} value={plan ? fulfillmentPlanModeLabel(plan.mode, t) : '—'} />
         <Fact label={t('oms.orderDetail.fulfillment.shippedAt', 'Shipped at')} value={formatDateTime(order?.statusMetadata?.shippedAt, locale)} />
         <Fact label={t('oms.orderDetail.fulfillment.completedAt', 'Completed at')} value={formatDateTime(order?.statusMetadata?.completedAt, locale)} />
       </div>
+      {plan ? (
+        <>
+          <FulfillmentSetupCard
+            plan={plan}
+            t={t}
+            reserveAction={reserveAction}
+            reserveConfirmOpen={reserveConfirmOpen}
+            onOpenReserveConfirm={handleOpenReserveConfirm}
+            onCloseReserveConfirm={() => setReserveConfirmOpen(false)}
+            onConfirmReserve={handleConfirmReserve}
+            reserveLoading={reserveLoading}
+            reserveError={reserveError}
+            reserveSuccess={reserveSuccess}
+          />
+          <DetailSection title={t('oms.orderDetail.fulfillment.warningsTitle', 'Warnings')}>
+            <FulfillmentWarnings warnings={planWarnings} t={t} />
+          </DetailSection>
+          <DetailSection title={t('oms.orderDetail.fulfillment.availabilityTitle', 'Availability')}>
+            {planLines.length ? (
+              <div className={s.fulfillmentLines}>
+                {planLines.map((line) => (
+                  <FulfillmentAvailabilityLine
+                    key={line.orderItemId || `${line.productId}-${line.name}`}
+                    line={line}
+                    t={t}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState>{t('oms.orderDetail.fulfillment.noPlanLines', 'This order does not require warehouse fulfillment.')}</EmptyState>
+            )}
+          </DetailSection>
+        </>
+      ) : (
+        <DetailSection title={t('oms.orderDetail.fulfillment.setupCardTitle', 'Fulfillment setup')}>
+          <EmptyState>{t('oms.orderDetail.fulfillment.planUnavailable', 'Fulfillment plan is not available for this order.')}</EmptyState>
+        </DetailSection>
+      )}
       <DetailSection title={t('oms.orderDetail.fulfillment.shipments', 'Shipments')}>
         {shipments.length ? (
           <div className={s.itemRows}>
@@ -927,9 +1541,22 @@ function FulfillmentTab({ order, t, locale }) {
   );
 }
 
-function BillingTab({ order, invoices, paidAmount, dueAmount, t, locale, currency }) {
+function BillingTab({
+  order,
+  invoices,
+  paidAmount,
+  dueAmount,
+  t,
+  locale,
+  currency,
+  canIssueInvoice,
+  issueLoading,
+  issuedInvoice,
+  onIssueInvoice,
+}) {
   const payments = Array.isArray(order?.payments) ? order.payments : [];
   const creditNotes = Array.isArray(order?.creditNotes) ? order.creditNotes : [];
+  const visibleIssuedInvoice = issuedInvoice || invoices[0] || null;
   return (
     <div className={s.stack}>
       <div className={s.overviewGrid}>
@@ -938,11 +1565,34 @@ function BillingTab({ order, invoices, paidAmount, dueAmount, t, locale, currenc
         <Fact label={t('oms.orderDetail.billing.amountDue', 'Amount due')} value={formatMoney(dueAmount, currency, locale)} />
         <Fact label={t('oms.orderDetail.billing.invoicesCount', 'Invoices')} value={String(invoices.length)} />
       </div>
+      {(canIssueInvoice || visibleIssuedInvoice) ? (
+        <DetailSection title={t('oms.orderDetail.billing.issueInvoiceTitle', 'Issue invoice')}>
+          <div className={s.nextStepCard}>
+            <div>
+              <strong>{visibleIssuedInvoice ? t('oms.orderDetail.billing.invoiceReady', 'Invoice is ready') : t('oms.orderDetail.billing.invoiceNextAction', 'Create the invoice for this order')}</strong>
+              <span>
+                {visibleIssuedInvoice
+                  ? t('oms.orderDetail.billing.invoiceReadyHint', 'Open the created invoice or continue with payments.')
+                  : t('oms.orderDetail.billing.issueInvoiceHint', 'This creates an invoice from the current order totals and refreshes billing immediately.')}
+              </span>
+            </div>
+            {visibleIssuedInvoice?.id ? (
+              <Link className={s.actionBtn} to={`/main/oms/invoices/${visibleIssuedInvoice.id}`}>
+                {t('oms.orderDetail.billing.openInvoice', 'Open invoice')}
+              </Link>
+            ) : (
+              <button type="button" className={s.primaryBtn} onClick={onIssueInvoice} disabled={!canIssueInvoice || issueLoading}>
+                {issueLoading ? t('common.loading', 'Loading') : t('oms.actionLabels.issueInvoice', 'Issue invoice')}
+              </button>
+            )}
+          </div>
+        </DetailSection>
+      ) : null}
       <DetailSection title={t('oms.orderDetail.billing.invoices', 'Invoices')}>
         {invoices.length ? (
           <div className={s.chain}>
             {invoices.map((invoice) => (
-              <Link key={invoice.id} to={`/main/documents/${invoice.id}`}>
+              <Link key={invoice.id} to={`/main/oms/invoices/${invoice.id}`}>
                 {invoice.number || invoice.id} · {formatMoney(invoice.totalGross, invoice.currencyCode || currency, locale)}
               </Link>
             ))}
@@ -963,7 +1613,7 @@ function BillingTab({ order, invoices, paidAmount, dueAmount, t, locale, currenc
                     </Link>
                   </strong>
                   <span>
-                    {payment.method || t('oms.orderDetail.billing.paymentMethodUnknown', 'Unknown method')}
+                    {paymentMethodLabel(payment.method, t)}
                     {' · '}
                     {formatDateTime(payment.paidAt || payment.createdAt, locale)}
                   </span>
@@ -998,24 +1648,32 @@ function BillingTab({ order, invoices, paidAmount, dueAmount, t, locale, currenc
 }
 
 function ActivityTab({ order, t, locale }) {
-  const events = Array.isArray(order?.events) ? order.events : [];
+  const {
+    data: timelineData,
+    isFetching,
+    isError,
+  } = useListEntityTimelineQuery(
+    { entityType: 'order', entityId: order?.id, limit: 30 },
+    { skip: !order?.id }
+  );
+  const events = useMemo(
+    () => (Array.isArray(timelineData?.items) ? timelineData.items.map((event) => localizeOrderTimelineEvent(event, t)) : []),
+    [t, timelineData]
+  );
+
   return (
     <DetailSection title={t('oms.orderDetail.tabs.activity', 'Activity')}>
-      {events.length ? (
-        <div className={s.timeline}>
-          {events.map((event) => (
-            <div key={event.id || `${event.type}-${event.createdAt}`} className={s.timelineRow}>
-              <span className={s.timelineDot} />
-              <div>
-                <strong>{event.label || event.message || statusLabel(event.type, t)}</strong>
-                <span>{formatDateTime(event.occurredAt || event.createdAt, locale)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <EmptyState>{t('oms.orderDetail.activity.notExposed', 'Real order events are not exposed by the current detail API yet.')}</EmptyState>
-      )}
+      <EntityTimeline
+        events={events}
+        loading={isFetching}
+        error={isError}
+        formatDate={(value) => formatDateTime(value, locale)}
+        loadingText={t('oms.orderDetail.activity.loading', 'Loading activity')}
+        errorTitle={t('oms.orderDetail.activity.errorTitle', 'Activity is unavailable')}
+        errorText={t('oms.orderDetail.activity.errorText', 'Could not load order activity.')}
+        emptyTitle={t('oms.orderDetail.activity.emptyTitle', 'No activity yet')}
+        emptyText={t('oms.orderDetail.activity.emptyText', 'Order activity will appear here after business actions.')}
+      />
     </DetailSection>
   );
 }

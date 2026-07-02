@@ -108,8 +108,12 @@ function orderDto(order) {
 
 function invoiceItemDto(item) {
   const raw = typeof item?.toJSON === 'function' ? item.toJSON() : (item || {});
+  const taxRate = asNumber(raw.taxRate ?? raw.vatRateSnapshot, 0);
   return {
     ...raw,
+    taxRate,
+    vatRate: taxRate,
+    vatRateSnapshot: asNumber(raw.vatRateSnapshot ?? taxRate, 0),
     lineType: raw.lineType || 'custom',
   };
 }

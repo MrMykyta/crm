@@ -20,17 +20,21 @@ export function getLineTypeLabel(lineType) {
   return LINE_TYPE_LABELS[lineType] || LINE_TYPE_LABELS.custom;
 }
 
+export function getInventoryKindLabel(kind, t) {
+  const key = kind || 'nonStock';
+  const fallback = key === 'service' ? 'Service' : key === 'stock' ? 'Stock-tracked product' : 'Non-stock product';
+  return typeof t === 'function' ? t(`oms.productInventory.${key}`, fallback) : fallback;
+}
+
 export function getProductInventoryKind(product = {}) {
   if (asBool(product?.isService)) return 'service';
   if (asBool(product?.trackInventory)) return 'stock';
   return 'nonStock';
 }
 
-export function getProductInventoryLabel(product = {}) {
+export function getProductInventoryLabel(product = {}, t) {
   const kind = getProductInventoryKind(product);
-  if (kind === 'service') return 'Service';
-  if (kind === 'stock') return 'Stock';
-  return 'Non-stock';
+  return getInventoryKindLabel(kind, t);
 }
 
 export function getProductLineSemantics(product = {}) {

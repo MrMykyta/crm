@@ -519,6 +519,61 @@
   font-size: 13px;
 }
 
+.autosaveErrorPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+  border: 1px solid color-mix(in srgb, #ef4444 38%, var(--detail-border, transparent));
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--detail-surface, var(--card-bg)) 84%, #ef4444 8%);
+  color: var(--detail-text, #f8fafc);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+}
+
+.autosaveErrorPanel strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.autosaveErrorPanel p {
+  margin: 4px 0 0;
+  color: color-mix(in srgb, var(--detail-text, #f8fafc) 74%, transparent);
+  font-size: 13px;
+}
+
+.autosaveErrorActions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.autosaveErrorActions button {
+  border: 1px solid color-mix(in srgb, var(--detail-border, var(--card-brd)) 70%, transparent);
+  border-radius: 999px;
+  min-height: 32px;
+  padding: 0 12px;
+  background: color-mix(in srgb, var(--detail-surface-soft, var(--card-bg)) 78%, transparent);
+  color: var(--detail-text, #f8fafc);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.autosaveErrorActions button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, #ef4444 48%, var(--detail-border, transparent));
+  background: color-mix(in srgb, #ef4444 12%, var(--detail-surface-soft, var(--card-bg)));
+}
+
+.autosaveErrorActions button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
 .registryCard,
 .registryVerified {
   min-width: 0;
@@ -855,6 +910,19 @@
 }
 
 @media (max-width: 720px) {
+  .autosaveErrorPanel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .autosaveErrorActions {
+    justify-content: stretch;
+  }
+
+  .autosaveErrorActions button {
+    flex: 1 1 100%;
+  }
+
   .twoColumn {
     grid-template-columns: 1fr;
   }

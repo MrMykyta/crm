@@ -19,9 +19,14 @@ import {
 import CustomerDocumentRenderer, {
   buildCreditNoteDocumentDto,
 } from '../../../../components/oms/CustomerDocumentRenderer';
+import DocumentActionStrip from '../../../../components/oms/DocumentActionStrip';
 import DocumentDeliveryDialog from '../../../../components/oms/DocumentDeliveryDialog';
 import DocumentShareDialog from '../../../../components/oms/DocumentShareDialog';
 import { pickDocumentDeliveryRecipient } from '../../../../components/oms/documentDeliveryRecipient';
+import {
+  openGeneratedPdf,
+  pickGeneratedPdfUrl,
+} from '../../../../components/oms/generatedPdf';
 import useAclPermissions from '../../../../hooks/useAclPermissions';
 import { asText } from '../../../../lib/format';
 import {
@@ -44,6 +49,7 @@ import {
   useRevokeDocumentShareMutation,
 } from '../../../../store/rtk/documentSharesApi';
 import { useGetContactPointsQuery } from '../../../../store/rtk/contactPointsApi';
+import { paymentMethodLabel } from '../../../../components/oms/paymentLabels';
 import s from './CreditNoteDetailPage.module.css';
 
 function asNumber(value, fallback = 0) {
@@ -908,6 +914,11 @@ function ApplicationsTab({
             <span>{t('oms.creditNoteDetail.applications.onAccount')}</span>
             <strong>{formatMoney(Math.max(0, remainingCredit - asNumber(applyAmount, 0)), currency, locale)}</strong>
           </div>
+          {!canApply ? (
+            <div className={s.actionHint}>
+              {t('oms.creditNoteDetail.hints.applyUnavailable')}
+            </div>
+          ) : null}
         </div>
       </DetailSection>
 
@@ -921,13 +932,18 @@ function ApplicationsTab({
           <label>
             <span>{t('oms.invoiceDetail.registerPayment.fields.method')}</span>
             <select disabled={!canRefund} value={refundMethod} onChange={(event) => setRefundMethod(event.target.value)}>
-              {methodOptions.map((method) => <option key={method} value={method}>{t(`oms.paymentMethods.${method}`, method)}</option>)}
+              {methodOptions.map((method) => <option key={method} value={method}>{paymentMethodLabel(method, t)}</option>)}
             </select>
           </label>
           <label>
             <span>{t('oms.invoiceDetail.registerPayment.fields.reference')}</span>
             <input disabled={!canRefund} value={refundReference} onChange={(event) => setRefundReference(event.target.value)} />
           </label>
+          {!canRefund ? (
+            <div className={s.actionHint}>
+              {t('oms.creditNoteDetail.hints.refundUnavailable')}
+            </div>
+          ) : null}
         </div>
       </DetailSection>
     </div>
@@ -1048,6 +1064,7 @@ function PreviewTab({ creditNote, sourceInvoice, currency, locale, t }) {
   const [getSignedFileUrl] = useLazyGetSignedFileUrlQuery();
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [pdfOpenState, setPdfOpenState] = useState({ url: '', opened: false });
   const deliveryRecipient = useMemo(() => pickDocumentDeliveryRecipient({
     counterpartyContactPoints: deliveryCounterpartyPoints,
     contactPersonContactPoints: deliveryContactPoints,
@@ -1084,12 +1101,12 @@ function PreviewTab({ creditNote, sourceInvoice, currency, locale, t }) {
 
   const onGeneratePdf = async () => {
     if (!creditNote?.id) return;
+    setPdfOpenState({ url: '', opened: false });
     const result = await generatePdf({ id: creditNote.id, payload: { locale } }).unwrap();
     const fileId = result?.file?.id || result?.metadata?.fileId;
-    if (!fileId) return;
-    const signed = await getSignedFileUrl(fileId).unwrap();
-    const url = signed?.data?.url || signed?.url;
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    const signed = fileId ? await getSignedFileUrl(fileId).unwrap() : null;
+    const url = pickGeneratedPdfUrl(result, signed);
+    setPdfOpenState(openGeneratedPdf(url));
   };
 
   const onSendDocument = async (payload) => {
@@ -1107,18 +1124,22 @@ function PreviewTab({ creditNote, sourceInvoice, currency, locale, t }) {
 
   return (
     <DetailSection title={t('oms.creditNoteDetail.tabs.preview')}>
-      <div className={s.previewActions}>
-        <button type="button" onClick={onGeneratePdf} disabled={!creditNote?.id || isLoading}>
-          {isLoading ? t('oms.generatedDocuments.actions.generating') : t('oms.generatedDocuments.actions.generatePdf')}
-        </button>
-        <button type="button" onClick={() => setDeliveryOpen(true)} disabled={!creditNote?.id || sendState.isLoading}>
-          {sendState.isLoading ? t('oms.documentDelivery.sending') : t('oms.documentDelivery.send')}
-        </button>
-        <button type="button" onClick={() => setShareOpen(true)} disabled={!creditNote?.id}>
-          {t('oms.documentShare.share')}
-        </button>
-        {error ? <span>{t('oms.generatedDocuments.errors.generateFailed')}</span> : null}
-      </div>
+      <DocumentActionStrip
+        t={t}
+        title={t('oms.documentActions.creditNoteTitle')}
+        subtitle={t('oms.documentActions.creditNoteSubtitle')}
+        onGeneratePdf={onGeneratePdf}
+        pdfLoading={isLoading}
+        pdfDisabled={!creditNote?.id}
+        pdfOpened={pdfOpenState.opened}
+        pdfFallbackUrl={pdfOpenState.opened ? '' : pdfOpenState.url}
+        onSend={() => setDeliveryOpen(true)}
+        sendLoading={sendState.isLoading}
+        sendDisabled={!creditNote?.id}
+        onShare={() => setShareOpen(true)}
+        shareDisabled={!creditNote?.id}
+        error={error}
+      />
       <CustomerDocumentRenderer dto={documentDto} />
       <DocumentDeliveryDialog
         open={deliveryOpen}

@@ -570,6 +570,18 @@
   background: color-mix(in srgb, #f59e0b 13%, var(--detail-surface-soft)) !important;
 }
 
+.actionHint {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, #f59e0b 34%, var(--detail-border));
+  border-radius: 12px;
+  background: color-mix(in srgb, #f59e0b 10%, var(--detail-surface-soft));
+  color: color-mix(in srgb, #fde68a 84%, var(--ui-text, #fff));
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.4;
+}
+
 .timeline {
   display: grid;
   gap: 10px;

@@ -10,6 +10,7 @@ const documentRouter = express.Router();
 
 documentRouter.get('/templates', requireMember, authorize('document:template:read'), DocumentTemplateController.list);
 documentRouter.post('/templates', requireMember, authorize('document:template:manage'), DocumentTemplateController.create);
+documentRouter.post('/templates/:templateId/duplicate', requireMember, authorize('document:template:manage'), DocumentTemplateController.duplicate);
 documentRouter.get('/templates/:templateId', requireMember, authorize('document:template:read'), DocumentTemplateController.getById);
 documentRouter.delete('/templates/:templateId', requireMember, authorize('document:template:manage'), DocumentTemplateController.remove);
 documentRouter.get('/templates/:templateId/draft', requireMember, authorize('document:template:read'), DocumentTemplateController.getDraft);

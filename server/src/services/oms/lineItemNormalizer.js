@@ -102,11 +102,11 @@ function buildSnapshots(input, product, variant) {
       input.unitSnapshot || input.unit || unit?.symbol || unit?.code || unit?.name
     ),
     vatRateSnapshot: asNumber(
-      input.vatRateSnapshot ?? input.vatRate ?? input.taxRate ?? taxCategory?.rate ?? 0,
+      input.taxRate ?? input.vatRate ?? input.vatRateSnapshot ?? taxCategory?.rate ?? 0,
       0
     ),
     taxRate: asNumber(
-      input.taxRate ?? input.vatRateSnapshot ?? input.vatRate ?? taxCategory?.rate ?? 0,
+      input.taxRate ?? input.vatRate ?? input.vatRateSnapshot ?? taxCategory?.rate ?? 0,
       0
     ),
     productTypeSnapshot: asOptionalText(

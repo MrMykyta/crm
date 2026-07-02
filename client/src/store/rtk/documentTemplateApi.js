@@ -90,6 +90,24 @@ export const documentTemplateApi = crmApi.injectEndpoints({
       },
     }),
 
+    duplicateDocumentTemplate: build.mutation({
+      query: ({ templateId, name } = {}) => ({
+        url: `/documents/templates/${templateId}/duplicate`,
+        method: "POST",
+        body: {
+          ...(name ? { name } : {}),
+        },
+      }),
+      transformResponse: (response) => normalizeTemplateEntity(response),
+      invalidatesTags: (res) => {
+        const id = getEntityId(res);
+        return [
+          { type: "DocumentTemplate", id: "LIST" },
+          ...(id ? [{ type: "DocumentTemplate", id }] : []),
+        ];
+      },
+    }),
+
     getDocumentTemplateById: build.query({
       query: (templateId) => ({
         url: `/documents/templates/${templateId}`,
@@ -159,6 +177,7 @@ export const documentTemplateApi = crmApi.injectEndpoints({
 export const {
   useGetDocumentTemplatesQuery,
   useCreateDocumentTemplateMutation,
+  useDuplicateDocumentTemplateMutation,
   useGetDocumentTemplateByIdQuery,
   useGetTemplateDraftByTemplateIdQuery,
   useSaveTemplateDraftByTemplateIdMutation,

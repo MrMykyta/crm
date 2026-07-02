@@ -462,7 +462,8 @@
       "productNamePlaceholder": "Product name",
       "customNamePlaceholder": "Custom line name",
       "dragToReorder": "Drag to reorder",
-      "productPickerTitle": "Add product"
+      "productPickerTitle": "Add product",
+      "hideProductBrowser": "Hide products"
     },
     "locked": {
       "label": "Locked",
@@ -699,6 +700,7 @@
       "kicker": "Commercial offer",
       "subtitle": "Persuasion workspace",
       "noCustomer": "No customer selected",
+      "customerSelected": "Customer selected",
       "confirmDelete": "Delete this offer?",
       "create": {
         "draftNumber": "Draft"
@@ -891,7 +893,7 @@
         "confirm": "Confirm this order",
         "ship": "Ship this order",
         "complete": "Complete this order",
-        "invoice": "Convert to invoice",
+        "invoice": "Issue invoice",
         "terminal": "Terminal order",
         "monitor": "Monitor fulfillment and payment"
       },
@@ -899,12 +901,144 @@
         "itemsProgress": "{{count}} order lines",
         "status": "Fulfillment status",
         "lifecycle": "Lifecycle status",
+        "nextStep": "Next step",
+        "trackShipment": "Track shipment",
+        "setupNext": "Set up fulfillment",
+        "setupTitle": "Set up order fulfillment",
+        "setupDescription": "Choose warehouse and shipping details once fulfillment setup is connected. For now this order shows current warehouse, delivery address, shipment status, and the next step.",
+        "warehousePending": "Warehouse setup pending",
         "shippedAt": "Shipped at",
         "completedAt": "Completed at",
         "shipments": "Shipments",
         "reservations": "Reservations",
         "noShipments": "Shipment details are not exposed by the current order DTO yet.",
-        "noReservations": "Reservation details will appear here when WMS exposes them for this order."
+        "noReservations": "Reservation details will appear here when WMS exposes them for this order.",
+        "planTitle": "Fulfillment plan",
+        "planMode": "Fulfillment mode",
+        "recommendedWarehouse": "Recommended warehouse: {{warehouse}}",
+        "noWarnings": "No fulfillment warnings.",
+        "reservePossible": "Ready to reserve",
+        "readOnlyPlan": "Read-only plan",
+        "shortageQty": "Shortage {{qty}}",
+        "lineQty": "{{required}} required · {{available}} available",
+        "noPlanLines": "This order does not require warehouse fulfillment.",
+        "overviewTitle": "Fulfillment readiness",
+        "shortageLines": "{{count}} shortage lines",
+        "planUnavailable": "Fulfillment plan is not available for this order.",
+        "setupCardTitle": "Fulfillment setup",
+        "setupEyebrow": "Order fulfillment cabin",
+        "warningsTitle": "Warnings",
+        "availabilityTitle": "Availability",
+        "noWarningsHint": "The current read-only plan has no blocking warnings.",
+        "warningLineHint": "Linked to one order line.",
+        "warningOrderHint": "Applies to the whole order.",
+        "warehouseOptions": "Availability by warehouse",
+        "onHand": "On hand",
+        "required": "Required",
+        "available": "Available",
+        "reserved": "Reserved",
+        "fulfilled": "Fulfilled",
+        "shortage": "Shortage",
+        "canCoverLine": "Can cover line",
+        "cannotCoverLine": "Cannot cover line",
+        "noStockTracking": "Does not require warehouse",
+        "noRecommendedWarehouse": "No recommended warehouse",
+        "reserveState": "Reserve state",
+        "shipState": "Ship state",
+        "setupMessages": {
+          "single": "This warehouse covers all order lines.",
+          "split": "Some lines need another warehouse.",
+          "shortage": "There is not enough stock to fulfill the order.",
+          "reserved": "Stock is already reserved for this order.",
+          "fulfilled": "The order has already been shipped.",
+          "manual": "Review stock availability before the next fulfillment step."
+        },
+        "states": {
+          "unavailable": "Unavailable",
+          "canReserve": "The order can be reserved",
+          "cannotReserve": "Reservation is blocked by shortage",
+          "alreadyReserved": "Stock is reserved",
+          "readOnly": "Read-only recommendation",
+          "canShip": "Shipment can be prepared",
+          "cannotShip": "Shipment is blocked by shortage",
+          "shipped": "Order shipped",
+          "notReadyToShip": "Shipment is not ready yet"
+        },
+        "nextSteps": {
+          "unavailableTitle": "Fulfillment plan unavailable",
+          "unavailableBody": "Fulfillment plan is not available for this order.",
+          "shortageTitle": "Cannot fulfill the order completely",
+          "shortageBody": "Check stock balances or adjust order lines before fulfillment.",
+          "reservedTitle": "Stock is reserved",
+          "reservedBody": "Shipment/WZ creation will be connected in the next step.",
+          "fulfilledTitle": "Order shipped",
+          "fulfilledBody": "Fulfillment is complete for this order.",
+          "reserveTitle": "Next step: reserve stock",
+          "reserveBody": "Reservation will be connected in the next fulfillment step.",
+          "manualTitle": "Review fulfillment setup",
+          "manualBody": "Review warehouse availability before continuing."
+        },
+        "actions": {
+          "reservePrepared": "Reserve",
+          "reserveStock": "Reserve stock",
+          "createShipmentPrepared": "Create shipment",
+          "reviewStock": "Review stock",
+          "preparedTooltip": "Will be connected in the next step"
+        },
+        "reserveEnabled": "Ready to reserve stock.",
+        "reserveSuccess": "Stock reserved for this order.",
+        "reserveConfirm": {
+          "title": "Reserve stock?",
+          "text": "The system will reserve available lines at the recommended warehouse: {{warehouse}}."
+        },
+        "stockTrackedLines": "Stock-tracked lines",
+        "reserveDisabled": {
+          "unavailable": "Fulfillment plan is not available.",
+          "reserved": "Shipment/WZ creation will be connected in the next step.",
+          "fulfilled": "Order is already fulfilled.",
+          "shortage": "Not enough stock to reserve the order.",
+          "split": "Several warehouses are needed. Split reservation will be available later.",
+          "noStock": "This order does not require stock reservation.",
+          "noWarehouse": "No recommended warehouse is available.",
+          "default": "Reservation is not available for this order."
+        },
+        "reserveErrors": {
+          "INSUFFICIENT_STOCK": "Not enough stock to reserve this order.",
+          "ORDER_ALREADY_RESERVED": "Stock is already reserved for this order.",
+          "SPLIT_RESERVATION_REQUIRED": "Several warehouses are needed. Split reservation will be available later.",
+          "NO_WAREHOUSE": "No warehouse is available for reservation.",
+          "ORDER_ALREADY_FULFILLED": "Order is already fulfilled or closed.",
+          "NO_STOCK_RESERVATION_NEEDED": "This order does not require stock reservation.",
+          "ORDER_RESERVE_NOT_AVAILABLE": "Reservation is not available for this order.",
+          "UNKNOWN": "Could not reserve stock."
+        },
+        "planStatuses": {
+          "available": "Available",
+          "ready": "Ready",
+          "partial": "Partial stock",
+          "shortage": "Shortage",
+          "reserved": "Reserved",
+          "fulfilled": "Fulfilled",
+          "already_fulfilled": "Already fulfilled",
+          "not_stock_tracked": "Not stock-tracked",
+          "not_required": "Not required"
+        },
+        "planModes": {
+          "single_warehouse": "Single warehouse",
+          "split_suggested": "Split suggested",
+          "shortage": "Shortage",
+          "manual": "Manual review",
+          "unavailable": "Unavailable",
+          "not_required": "Not required"
+        },
+        "warnings": {
+          "no_stock": "No stock available",
+          "partial_stock": "Partial stock available",
+          "low_stock_after_fulfillment": "Low stock after fulfillment",
+          "no_warehouse": "No active warehouse",
+          "reservation_exists": "Reservation already exists",
+          "already_fulfilled": "Already fulfilled"
+        }
       },
       "billing": {
         "paymentStatus": "Payment status",
@@ -915,12 +1049,38 @@
         "payments": "Payments",
         "creditNotes": "Credit notes",
         "paymentMethodUnknown": "Unknown method",
+        "issueInvoiceTitle": "Issue invoice",
+        "invoiceNextAction": "Create the invoice for this order",
+        "invoiceNextActionHint": "Billing starts here: issue an invoice, then register the payment.",
+        "issueInvoiceHint": "This creates an invoice from the current order totals and refreshes billing immediately.",
+        "invoiceReady": "Invoice is ready",
+        "invoiceReadyHint": "Open the created invoice or continue with payments.",
+        "openInvoice": "Open invoice",
         "noInvoices": "No invoices yet.",
         "noPayments": "Payment details are not exposed by the current order DTO yet.",
         "noCreditNotes": "No credit notes yet."
       },
       "activity": {
-        "notExposed": "Real order events are not exposed by the current detail API yet."
+        "notExposed": "Real order events are not exposed by the current detail API yet.",
+        "loading": "Loading activity",
+        "errorTitle": "Activity is unavailable",
+        "errorText": "Could not load order activity.",
+        "emptyTitle": "No activity yet",
+        "emptyText": "Order activity will appear here after business actions.",
+        "events": {
+          "order_stock_reserved": "Stock reserved",
+          "order_fulfillment_planned": "Fulfillment planned",
+          "document_pdf_generated": "PDF generated"
+        },
+        "summaries": {
+          "order_stock_reserved": "Stock was reserved for this order.",
+          "order_stock_reserved_with_warehouse": "Stock was reserved at {{warehouse}}.",
+          "order_fulfillment_planned": "Fulfillment plan was prepared.",
+          "document_pdf_generated": "PDF document was generated."
+        },
+        "links": {
+          "warehouse": "Warehouse"
+        }
       },
       "items": {
         "unnamedLine": "Unnamed line",
@@ -979,6 +1139,7 @@
       }
     },
     "paymentMethods": {
+      "unknown": "Payment method not specified",
       "bank_transfer": "Bank transfer",
       "card": "Card",
       "cash": "Cash",
@@ -986,6 +1147,11 @@
       "paypal": "PayPal",
       "stripe": "Stripe",
       "other": "Other"
+    },
+    "productInventory": {
+      "stock": "Stock-tracked product",
+      "nonStock": "Non-stock product",
+      "service": "Service"
     },
     "invoiceDetail": {
       "subtitle": "Claim workspace",
@@ -1319,6 +1485,10 @@
         "refund": "Refund remaining credit",
         "done": "Credit settled"
       },
+      "hints": {
+        "applyUnavailable": "This credit cannot be applied to the source invoice now. If the invoice is already paid, the credit remains on account or can be refunded when the backend allows it.",
+        "refundUnavailable": "Refund is not available for this credit note state. The remaining credit stays on account until it can be applied or refunded."
+      },
       "smart": {
         "invoice": "Invoice",
         "order": "Order",
@@ -1379,11 +1549,27 @@
     "generatedDocuments": {
       "actions": {
         "generatePdf": "Generate PDF",
-        "generating": "Generating..."
+        "generating": "Generating...",
+        "openPdf": "Open PDF"
+      },
+      "success": {
+        "openedNewTab": "PDF was created and opened in a new tab.",
+        "popupBlocked": "PDF was created. If it did not open automatically, open it manually."
       },
       "errors": {
         "generateFailed": "Could not generate PDF"
       }
+    },
+    "documentActions": {
+      "eyebrow": "Document",
+      "title": "Customer document",
+      "subtitle": "Preview, generate PDF, email, or create a customer link from one place.",
+      "offerTitle": "Offer document",
+      "offerSubtitle": "Prepare the customer-facing offer, then choose PDF, email, or customer link.",
+      "invoiceTitle": "Invoice document",
+      "invoiceSubtitle": "Send the invoice, generate a PDF, or share secure read-only access.",
+      "creditNoteTitle": "Credit note document",
+      "creditNoteSubtitle": "Prepare the correction document, then choose PDF, email, or customer link."
     },
     "documentDelivery": {
       "title": "Send document",
@@ -1397,7 +1583,12 @@
       "body": "Message",
       "bodyAuto": "Use automatic message",
       "send": "Send email",
+      "sendDocument": "Send document",
       "sending": "Sending...",
+      "lifecycleSeparate": "Document delivery does not change lifecycle status.",
+      "mode": {
+        "emailAttachment": "Email with PDF attachment"
+      },
       "invalidEmail": "Enter a valid email address.",
       "sendFailed": "Could not send the document.",
       "sources": {
@@ -1509,6 +1700,7 @@
     },
     "actionLabels": {
       "send": "Send",
+      "markSent": "Mark as sent",
       "accept": "Accept",
       "reject": "Reject",
       "cancel": "Cancel",
@@ -1593,7 +1785,27 @@
       "offerNotFound": "Offer not found",
       "costingNotInitialized": "FIFO costing is not initialized for this company. Go to Company Settings → Warehouse/WMS → Wycena.",
       "invoiceLoadFailed": "Failed to load invoice",
-      "invoiceNotFound": "Invoice not found"
+      "invoiceNotFound": "Invoice not found",
+      "returnRequiresShippedWz": "This order can be returned only after a shipped WZ document exists."
+    },
+    "productPicker": {
+      "searchPlaceholder": "Search by product name, SKU, or barcode",
+      "columns": {
+        "product": "Product",
+        "sku": "SKU",
+        "kind": "Kind",
+        "available": "Available",
+        "netPrice": "Net price",
+        "tax": "VAT",
+        "unit": "Unit"
+      },
+      "unnamedProduct": "Unnamed product",
+      "trackedInventory": "Tracked inventory product",
+      "addItem": "Add item",
+      "inlineHint": "Search products and add them without leaving the item list.",
+      "loading": "Loading products...",
+      "empty": "No products match the current search.",
+      "loadFailed": "Failed to load products"
     },
     "print": {
       "loading": "Preparing printable version",
@@ -3744,6 +3956,22 @@
           "updated": "Counterparty updated"
         }
       },
+      "autosave": {
+        "failedLabel": "Save error",
+        "failedTitle": "Save error",
+        "retry": "Retry save",
+        "revert": "Revert changes",
+        "unsavedChanges": "There are unsaved changes.",
+        "errors": {
+          "generic": "Could not save changes.",
+          "network": "No connection to the server.",
+          "forbidden": "You do not have permission to save changes.",
+          "duplicate": "This record already exists.",
+          "duplicateNip": "This NIP already exists.",
+          "duplicateContact": "This email or phone is already used.",
+          "validation": "Check the filled fields."
+        }
+      },
       "notesTitle": "Counterparty notes",
       "validation": {
         "nameRequired": "Enter a counterparty name",
@@ -4399,6 +4627,110 @@
         "success": {
           "deleted": "Template deleted.",
           "defaultUpdated": "Default template updated."
+        }
+      },
+      "builder": {
+        "eyebrow": "Document platform",
+        "title": "Document templates",
+        "subtitle": "Company template management center for active templates, system defaults, and planned Polish document types.",
+        "loading": "Loading templates...",
+        "defaultTemplateName": "company template",
+        "copySuffix": "— copy",
+        "templatesCount": "Templates: {{count}}",
+        "systemDefaultText": "A system template is available. Create an editable copy when the company needs a branded version.",
+        "systemDefaultEmpty": "The system template is currently used.",
+        "plannedText": "This type is planned. It is visible in the taxonomy but not editable yet.",
+        "plannedEmpty": "Support for this document will be connected later.",
+        "unknownHint": "This type exists in data but is not described in the taxonomy yet.",
+        "untitled": "Untitled",
+        "sync": "Syncing...",
+        "sectionNavLabel": "Document template sections",
+        "sections": {
+          "offers": "Offers",
+          "orders": "Orders",
+          "invoices": "Invoices",
+          "warehouse": "Warehouse documents",
+          "other": "Other"
+        },
+        "sectionDescriptions": {
+          "offers": "Templates for commercial offers.",
+          "orders": "Templates for customer orders.",
+          "invoices": "Templates for invoices, advances, finals, and corrections.",
+          "warehouse": "Templates for warehouse documents and stock movement.",
+          "other": "Other and planned document types."
+        },
+        "groups": {
+          "sales": "Sales",
+          "warehouse": "Warehouse",
+          "accounting": "Accounting and other"
+        },
+        "groupDescriptions": {
+          "sales": "Commercial documents for offers, orders, invoices, and corrections.",
+          "warehouse": "Goods movement and warehouse issue documents.",
+          "accounting": "Future receipts and accounting notes."
+        },
+        "types": {
+          "oferta": "Offer",
+          "zamowienie": "Order",
+          "faktura_vat": "VAT Invoice",
+          "proforma": "Pro forma Invoice",
+          "faktura_zaliczkowa": "Advance Invoice",
+          "faktura_koncowa": "Final Invoice",
+          "korekta": "Credit Note / Corrective Invoice",
+          "wz": "WZ / Goods Issue",
+          "pz": "PZ / Goods Receipt",
+          "mm": "MM / Warehouse Transfer",
+          "rw": "RW / Internal Issue",
+          "pw": "PW / Internal Receipt",
+          "cc": "Stock Count",
+          "nota_ksiegowa": "Accounting Note",
+          "paragon": "Receipt"
+        },
+        "badges": {
+          "systemDefault": "System template",
+          "companyDefault": "Default",
+          "active": "Active",
+          "draft": "Draft",
+          "published": "Published",
+          "archived": "Archived",
+          "legal": "Polish document",
+          "planned": "Planned"
+        },
+        "actions": {
+          "create": "Create template",
+          "closeCreate": "Hide create",
+          "creating": "Creating...",
+          "preview": "Preview",
+          "edit": "Edit",
+          "duplicate": "Duplicate",
+          "duplicating": "Duplicating...",
+          "activate": "Make primary",
+          "activating": "Updating...",
+          "createEditableCopy": "Create editable copy"
+        },
+        "fields": {
+          "documentType": "Document type",
+          "templateName": "Template name"
+        },
+        "placeholders": {
+          "templateName": "For example: Oferta — Sunset"
+        },
+        "stats": {
+          "total": "Company templates",
+          "supported": "Active types",
+          "planned": "Planned"
+        },
+        "messages": {
+          "defaultUpdated": "Default template updated.",
+          "duplicated": "Template copy created."
+        },
+        "errors": {
+          "nameRequired": "Enter a template name.",
+          "missingId": "The template was created, but the server did not return an identifier.",
+          "createFailed": "Failed to create template.",
+          "duplicateFailed": "Failed to duplicate template.",
+          "setDefaultFailed": "Failed to update default template.",
+          "loadTitle": "Failed to load templates"
         }
       },
       "options": {

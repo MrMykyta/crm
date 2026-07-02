@@ -32,8 +32,10 @@ const {
   StockMove,
 } = require('../../models');
 const eventService = require('../system/eventService');
+const timelineService = require('../system/timelineService');
 const invoiceService = require('./invoiceService');
 const paymentLedgerService = require('./paymentLedgerService');
+const orderFulfillmentPlanService = require('./orderFulfillmentPlanService');
 const {
   assertDocumentTypeEnabled,
   generateNextDocumentNumber,
@@ -494,6 +496,8 @@ function mapOrderItemDto(item) {
     descriptionSnapshot: item.descriptionSnapshot || null,
     unitSnapshot: item.unitSnapshot || null,
     vatRateSnapshot: asNumber(item.vatRateSnapshot ?? item.taxRate, 0),
+    taxRate: asNumber(item.taxRate ?? item.vatRateSnapshot, 0),
+    vatRate: asNumber(item.taxRate ?? item.vatRateSnapshot, 0),
     productTypeSnapshot: item.productTypeSnapshot || null,
     metadataSnapshot: item.metadataSnapshot || null,
     quantity: asNumber(item.qty, 0),
@@ -633,6 +637,7 @@ function mapOrderToDetailDto(order, links = {}, related = {}) {
     reservations,
     payments,
     creditNotes,
+    fulfillmentPlan: related.fulfillmentPlan || null,
     counts,
     amountPaid,
     amountDue,
@@ -1285,6 +1290,10 @@ async function loadOrderDetailRelated(order, { companyId, transaction } = {}) {
     .map((reservation) => mapReservationSummary(reservation, productById, warehouseById))
     .filter(Boolean);
   const creditNotes = creditNoteRows.map((creditNote) => mapCreditNoteSummary(creditNote, currencyCode)).filter(Boolean);
+  const fulfillmentPlan = await orderFulfillmentPlanService.buildOrderFulfillmentPlan(order, {
+    reservations,
+    shipments,
+  }, { transaction });
 
   return {
     invoices,
@@ -1293,6 +1302,7 @@ async function loadOrderDetailRelated(order, { companyId, transaction } = {}) {
     reservations,
     payments,
     creditNotes,
+    fulfillmentPlan,
     counts: {
       shipments: shipments.length,
       reservations: reservations.length,
@@ -1629,6 +1639,185 @@ async function getOrderById(id, userContext = {}) {
     hasShipments: related.shipments.length > 0,
   };
   return mapOrderToDetailDto(order, links, related);
+}
+
+function stockTrackedPlanLines(plan = {}) {
+  return (Array.isArray(plan?.lines) ? plan.lines : [])
+    .filter((line) => line?.status !== 'not_stock_tracked');
+}
+
+function buildDeficitsFromPlan(plan = {}) {
+  return stockTrackedPlanLines(plan)
+    .filter((line) => asNumber(line.shortageQty, 0) > 0)
+    .map((line) => ({
+      orderItemId: line.orderItemId || null,
+      productId: line.productId || null,
+      sku: line.sku || null,
+      name: line.name || null,
+      requiredQty: asNumber(line.requiredQty, 0),
+      availableQty: asNumber(line.availableQty, 0),
+      deficitQty: asNumber(line.shortageQty, 0),
+      warehouseId: line.recommendedWarehouseId || plan.recommendedWarehouseId || null,
+    }));
+}
+
+function assertFulfillmentPlanReservable(order, plan) {
+  const status = asText(order?.status).toLowerCase();
+  if (['shipped', 'completed', 'returned', 'cancelled'].includes(status)) {
+    throw new AppError(409, 'Order is already fulfilled or closed', {
+      code: 'ORDER_ALREADY_FULFILLED',
+      details: { orderId: order.id, status },
+    });
+  }
+
+  if (!plan) {
+    throw new AppError(409, 'Fulfillment plan is not available for this order', {
+      code: 'ORDER_RESERVE_NOT_AVAILABLE',
+      details: { orderId: order.id },
+    });
+  }
+
+  const stockLines = stockTrackedPlanLines(plan);
+  if (!stockLines.length) {
+    throw new AppError(409, 'Order does not require stock reservation', {
+      code: 'NO_STOCK_RESERVATION_NEEDED',
+      details: { orderId: order.id },
+    });
+  }
+
+  if (plan.status === 'shortage') {
+    throw new AppError(409, 'Insufficient available stock for order reservation', {
+      code: 'INSUFFICIENT_STOCK',
+      details: { orderId: order.id, deficits: buildDeficitsFromPlan(plan) },
+    });
+  }
+
+  if (plan.mode === 'split_suggested') {
+    throw new AppError(409, 'Split reservation is required for this order', {
+      code: 'SPLIT_RESERVATION_REQUIRED',
+      details: { orderId: order.id },
+    });
+  }
+
+  if (!plan?.recommendedWarehouseId) {
+    throw new AppError(409, 'No warehouse is available for reservation', {
+      code: 'NO_WAREHOUSE',
+      details: { orderId: order.id },
+    });
+  }
+
+  if (!plan.canReserve && plan.status !== 'reserved') {
+    throw new AppError(409, 'Order cannot be reserved in its current fulfillment state', {
+      code: 'ORDER_RESERVE_NOT_AVAILABLE',
+      details: { orderId: order.id, status: plan.status, mode: plan.mode },
+    });
+  }
+}
+
+async function countActiveReservations({ companyId, orderId, transaction }) {
+  return Reservation.count({
+    where: { companyId, orderId, status: 'active' },
+    transaction,
+  });
+}
+
+async function reserveOrderStock(id, payload = {}, userContext = {}, options = {}) {
+  const companyId = assertCompanyContext(userContext);
+  const externalTx = options?.transaction || userContext?.transaction || null;
+  const tx = externalTx || await sequelize.transaction();
+  const ownTransaction = !externalTx;
+  let order = null;
+
+  try {
+    order = await getOrderEntity({
+      id,
+      companyId,
+      includeItems: true,
+      transaction: tx,
+    });
+    if (!order) {
+      throw new AppError(404, 'Order not found', { code: 'NOT_FOUND' });
+    }
+
+    const relatedBefore = await loadOrderDetailRelated(order, { companyId, transaction: tx });
+    const plan = relatedBefore.fulfillmentPlan || null;
+    const beforeActiveCount = await countActiveReservations({ companyId, orderId: order.id, transaction: tx });
+
+    if (!(plan?.status === 'reserved' && beforeActiveCount > 0)) {
+      assertFulfillmentPlanReservable(order, plan);
+
+      await reservationService.reserveOrder(order.id, {
+        companyId,
+        warehouseId: plan.recommendedWarehouseId,
+        transaction: tx,
+      });
+      const afterActiveCount = await countActiveReservations({ companyId, orderId: order.id, transaction: tx });
+
+      if (afterActiveCount > beforeActiveCount) {
+        await logOrderEvent({
+          companyId,
+          type: 'order.stock_reserved',
+          orderId: order.id,
+          userId: userContext?.id || userContext?.userId || null,
+          payload: {
+            warehouseId: plan.recommendedWarehouseId,
+            warehouseName: plan.recommendedWarehouseName || null,
+            activeReservations: afterActiveCount,
+          },
+        });
+        await timelineService.record({
+          companyId,
+          entityType: 'order',
+          entityId: order.id,
+          eventType: 'order.stock_reserved',
+          eventCategory: 'stock',
+          title: 'Stock reserved',
+          summary: plan.recommendedWarehouseName
+            ? `Reserved stock at ${plan.recommendedWarehouseName}`
+            : 'Reserved stock for order',
+          actorUserId: userContext?.id || userContext?.userId || null,
+          sourceModule: 'oms',
+          sourceEntityType: 'order',
+          sourceEntityId: order.id,
+          relatedEntities: plan.recommendedWarehouseId
+            ? [{ entityType: 'warehouse', entityId: plan.recommendedWarehouseId, role: 'warehouse' }]
+            : [],
+          payload: {
+            warehouseId: plan.recommendedWarehouseId,
+            warehouseName: plan.recommendedWarehouseName || null,
+            activeReservations: afterActiveCount,
+          },
+          transaction: tx,
+        });
+      }
+    }
+
+    if (ownTransaction) {
+      await tx.commit();
+    }
+  } catch (error) {
+    if (ownTransaction) {
+      await tx.rollback();
+    }
+    throw error;
+  }
+
+  if (externalTx) {
+    const updatedOrder = await getOrderEntity({
+      id: order.id,
+      companyId,
+      includeItems: true,
+      transaction: tx,
+    });
+    const related = await loadOrderDetailRelated(updatedOrder, { companyId, transaction: tx });
+    return mapOrderToDetailDto(updatedOrder, {
+      hasInvoices: related.invoices.length > 0,
+      hasPayments: related.payments.length > 0,
+      hasShipments: related.shipments.length > 0,
+    }, related);
+  }
+
+  return getOrderById(order.id, userContext);
 }
 
 async function createOrder(payload = {}, userContext = {}, options = {}) {
@@ -2351,6 +2540,7 @@ module.exports = {
   updateOrder,
   deleteOrder,
   saveOrderItems,
+  reserveOrderStock,
   changeOrderStatus,
   convertOrderToInvoice,
   createOrderFromOffer,
@@ -2362,6 +2552,7 @@ module.exports = {
   create: createOrder,
   update: updateOrder,
   remove: deleteOrder,
+  reserve: reserveOrderStock,
   fromOffer: createOrderFromOffer,
   convertToInvoice: convertOrderToInvoice,
 

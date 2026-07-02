@@ -1,0 +1,115 @@
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--detail-border);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--focus, #60a5fa) 9%, transparent), transparent 62%),
+    color-mix(in srgb, var(--detail-surface-soft) 90%, transparent);
+}
+
+.copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.copy span {
+  color: var(--detail-muted);
+  font-size: 11px;
+  font-weight: 820;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.copy strong {
+  overflow: hidden;
+  color: var(--ui-text, #fff);
+  font-size: 14px;
+  font-weight: 820;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy small {
+  color: var(--detail-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid color-mix(in srgb, var(--detail-border) 88%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--detail-surface) 86%, transparent);
+  color: var(--ui-text, #fff);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.action:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--focus, #60a5fa) 48%, var(--detail-border));
+  background: color-mix(in srgb, var(--focus, #60a5fa) 14%, var(--detail-surface));
+}
+
+.action:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.error {
+  width: 100%;
+  color: #fecaca;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.success,
+.warning {
+  width: 100%;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.success {
+  color: #bbf7d0;
+}
+
+.warning {
+  color: #fde68a;
+}
+
+.warning a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .strip {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+}

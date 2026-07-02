@@ -24,6 +24,7 @@ import {
 } from '../../../../store/rtk/ordersApi';
 import { useGetInvoiceByIdQuery, useLazyGetInvoiceByIdQuery } from '../../../../store/rtk/invoicesApi';
 import { useCreatePaymentMutation } from '../../../../store/rtk/paymentsApi';
+import { paymentMethodLabel } from '../../../../components/oms/paymentLabels';
 import s from './PaymentDetailPage.module.css';
 
 function asText(value) {
@@ -404,7 +405,7 @@ function PaymentReadWorkspace({ paymentId }) {
                 <span>{t('oms.paymentDetail.hero.eyebrow')} · {directionLabel(payment.direction, t)}</span>
                 <h1><MoneyAmount value={payment.amount} currency={currency} locale={locale} size="hero" /></h1>
                 <p>
-                  {payment.reference || payment.method || payment.id}
+                  {payment.reference || paymentMethodLabel(payment.method, t) || payment.id}
                   {' · '}
                   {formatDate(payment.processedAt || payment.paidAt || payment.createdAt, locale)}
                 </p>
@@ -453,7 +454,7 @@ function PaymentReadWorkspace({ paymentId }) {
             <div className={s.factGrid}>
               <Fact label={t('oms.paymentDetail.fields.customer')} value={payment.customerName || t('oms.paymentDetail.noCustomer')} to={candidateOrder?.counterparty?.id ? `/main/counterparties/${candidateOrder.counterparty.id}` : null} />
               <Fact label={t('oms.paymentDetail.fields.reference')} value={payment.reference || payment.id} />
-              <Fact label={t('oms.paymentDetail.fields.method')} value={payment.method || '—'} />
+              <Fact label={t('oms.paymentDetail.fields.method')} value={paymentMethodLabel(payment.method, t)} />
               <Fact label={t('oms.paymentDetail.fields.currency')} value={currency} />
               <Fact label={t('oms.paymentDetail.fields.direction')} value={directionLabel(payment.direction, t)} />
               <Fact label={t('oms.paymentDetail.fields.created')} value={formatDateTime(payment.createdAt, locale)} />
@@ -1012,7 +1013,7 @@ function OverviewTab({ payment, order, locale, currency, t }) {
         <Fact label={t('oms.paymentDetail.overview.allocated')} value={formatMoney(payment?.allocatedAmount, currency, locale)} />
         <Fact label={t('oms.paymentDetail.overview.unapplied')} value={formatMoney(payment?.unappliedAmount, currency, locale)} />
         <Fact label={t('oms.paymentDetail.overview.direction')} value={directionLabel(payment?.direction, t)} />
-        <Fact label={t('oms.paymentDetail.overview.method')} value={payment?.method || '—'} />
+        <Fact label={t('oms.paymentDetail.overview.method')} value={paymentMethodLabel(payment?.method, t)} />
         <Fact label={t('oms.paymentDetail.overview.customer')} value={payment?.customerName || t('oms.paymentDetail.noCustomer')} />
       </div>
       <DetailSection title={t('oms.paymentDetail.sections.documentChain')}>

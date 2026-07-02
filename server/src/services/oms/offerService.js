@@ -324,6 +324,8 @@ function mapOfferItemDto(item) {
     descriptionSnapshot: item.descriptionSnapshot || null,
     unitSnapshot: item.unitSnapshot || null,
     vatRateSnapshot: asNumber(item.vatRateSnapshot ?? item.taxRate, 0),
+    taxRate: asNumber(item.taxRate ?? item.vatRateSnapshot, 0),
+    vatRate: asNumber(item.taxRate ?? item.vatRateSnapshot, 0),
     productTypeSnapshot: item.productTypeSnapshot || null,
     metadataSnapshot: item.metadataSnapshot || null,
     quantity: asNumber(item.qty, 0),

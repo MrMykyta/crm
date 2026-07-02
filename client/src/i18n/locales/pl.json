@@ -495,7 +495,8 @@
       "productNamePlaceholder": "Nazwa produktu",
       "customNamePlaceholder": "Nazwa pozycji własnej",
       "dragToReorder": "Przeciągnij, aby zmienić kolejność",
-      "productPickerTitle": "Dodaj produkt"
+      "productPickerTitle": "Dodaj produkt",
+      "hideProductBrowser": "Ukryj produkty"
     },
     "locked": {
       "label": "Zablokowany",
@@ -732,6 +733,7 @@
       "kicker": "Oferta handlowa",
       "subtitle": "Przestrzeń pracy nad ofertą",
       "noCustomer": "Nie wybrano klienta",
+      "customerSelected": "Klient wybrany",
       "confirmDelete": "Usunąć tę ofertę?",
       "create": {
         "draftNumber": "Szkic"
@@ -924,7 +926,7 @@
         "confirm": "Potwierdź zamówienie",
         "ship": "Wyślij zamówienie",
         "complete": "Zakończ zamówienie",
-        "invoice": "Przekształć w fakturę",
+        "invoice": "Wystaw fakturę",
         "terminal": "Zamówienie końcowe",
         "monitor": "Monitoruj realizację i płatność"
       },
@@ -932,12 +934,144 @@
         "itemsProgress": "{{count}} pozycji zamówienia",
         "status": "Status realizacji",
         "lifecycle": "Status cyklu życia",
+        "nextStep": "Następny krok",
+        "trackShipment": "Śledź wysyłkę",
+        "setupNext": "Skonfiguruj realizację",
+        "setupTitle": "Skonfiguruj realizację zamówienia",
+        "setupDescription": "Wybór magazynu i szczegóły dostawy będą dostępne po podłączeniu konfiguracji realizacji. Teraz zamówienie pokazuje aktualny magazyn, adres dostawy, status wysyłki i następny krok.",
+        "warehousePending": "Konfiguracja magazynu oczekuje",
         "shippedAt": "Wysłano",
         "completedAt": "Zakończono",
         "shipments": "Wysyłki",
         "reservations": "Rezerwacje",
         "noShipments": "Szczegóły wysyłek nie są jeszcze dostępne w aktualnym DTO zamówienia.",
-        "noReservations": "Rezerwacje pojawią się tutaj, gdy WMS udostępni je dla zamówienia."
+        "noReservations": "Rezerwacje pojawią się tutaj, gdy WMS udostępni je dla zamówienia.",
+        "planTitle": "Plan realizacji",
+        "planMode": "Tryb realizacji",
+        "recommendedWarehouse": "Rekomendowany magazyn: {{warehouse}}",
+        "noWarnings": "Brak ostrzeżeń realizacji.",
+        "reservePossible": "Gotowe do rezerwacji",
+        "readOnlyPlan": "Plan tylko do odczytu",
+        "shortageQty": "Brak {{qty}}",
+        "lineQty": "Wymagane {{required}} · dostępne {{available}}",
+        "noPlanLines": "To zamówienie nie wymaga realizacji magazynowej.",
+        "overviewTitle": "Gotowość realizacji",
+        "shortageLines": "{{count}} pozycji z brakiem",
+        "planUnavailable": "Plan realizacji nie jest dostępny dla tego zamówienia.",
+        "setupCardTitle": "Konfiguracja realizacji",
+        "setupEyebrow": "Kabina realizacji zamówienia",
+        "warningsTitle": "Ostrzeżenia",
+        "availabilityTitle": "Dostępność",
+        "noWarningsHint": "Aktualny plan tylko do odczytu nie ma blokujących ostrzeżeń.",
+        "warningLineHint": "Powiązane z jedną pozycją zamówienia.",
+        "warningOrderHint": "Dotyczy całego zamówienia.",
+        "warehouseOptions": "Dostępność według magazynu",
+        "onHand": "Na stanie",
+        "required": "Wymagane",
+        "available": "Dostępne",
+        "reserved": "Rezerwacja",
+        "fulfilled": "Zrealizowano",
+        "shortage": "Brak",
+        "canCoverLine": "Pokrywa pozycję",
+        "cannotCoverLine": "Nie pokrywa pozycji",
+        "noStockTracking": "Nie wymaga magazynu",
+        "noRecommendedWarehouse": "Brak rekomendowanego magazynu",
+        "reserveState": "Stan rezerwacji",
+        "shipState": "Stan wysyłki",
+        "setupMessages": {
+          "single": "Ten magazyn pokrywa wszystkie pozycje zamówienia.",
+          "split": "Część pozycji wymaga innego magazynu.",
+          "shortage": "Brakuje towaru do realizacji zamówienia.",
+          "reserved": "Towar jest już zarezerwowany dla tego zamówienia.",
+          "fulfilled": "Zamówienie zostało już wysłane.",
+          "manual": "Sprawdź dostępność przed kolejnym krokiem realizacji."
+        },
+        "states": {
+          "unavailable": "Niedostępne",
+          "canReserve": "Zamówienie można zarezerwować",
+          "cannotReserve": "Rezerwacja zablokowana przez braki",
+          "alreadyReserved": "Towar zarezerwowany",
+          "readOnly": "Rekomendacja tylko do odczytu",
+          "canShip": "Można przygotować wysyłkę",
+          "cannotShip": "Wysyłka zablokowana przez braki",
+          "shipped": "Zamówienie wysłane",
+          "notReadyToShip": "Wysyłka nie jest jeszcze gotowa"
+        },
+        "nextSteps": {
+          "unavailableTitle": "Plan realizacji niedostępny",
+          "unavailableBody": "Plan realizacji nie jest dostępny dla tego zamówienia.",
+          "shortageTitle": "Nie można zrealizować zamówienia w całości",
+          "shortageBody": "Sprawdź stany magazynowe albo zmień pozycje zamówienia przed realizacją.",
+          "reservedTitle": "Towar zarezerwowany",
+          "reservedBody": "Tworzenie wysyłki/WZ zostanie podłączone w następnym kroku.",
+          "fulfilledTitle": "Zamówienie wysłane",
+          "fulfilledBody": "Realizacja tego zamówienia jest zakończona.",
+          "reserveTitle": "Następny krok: zarezerwuj towar",
+          "reserveBody": "Rezerwacja zostanie podłączona w następnym kroku realizacji.",
+          "manualTitle": "Sprawdź konfigurację realizacji",
+          "manualBody": "Sprawdź dostępność według magazynów przed kontynuacją."
+        },
+        "actions": {
+          "reservePrepared": "Zarezerwuj",
+          "reserveStock": "Zarezerwuj towar",
+          "createShipmentPrepared": "Utwórz wysyłkę",
+          "reviewStock": "Sprawdź stany",
+          "preparedTooltip": "Zostanie podłączone w następnym kroku"
+        },
+        "reserveEnabled": "Gotowe do rezerwacji towaru.",
+        "reserveSuccess": "Towar został zarezerwowany dla tego zamówienia.",
+        "reserveConfirm": {
+          "title": "Zarezerwować towar?",
+          "text": "System zarezerwuje dostępne pozycje w rekomendowanym magazynie: {{warehouse}}."
+        },
+        "stockTrackedLines": "Pozycje magazynowe",
+        "reserveDisabled": {
+          "unavailable": "Plan realizacji jest niedostępny.",
+          "reserved": "Tworzenie wysyłki/WZ zostanie podłączone w następnym kroku.",
+          "fulfilled": "Zamówienie jest już zrealizowane.",
+          "shortage": "Brakuje towaru do rezerwacji zamówienia.",
+          "split": "Zamówienie wymaga kilku magazynów. Rezerwacja dzielona będzie dostępna później.",
+          "noStock": "To zamówienie nie wymaga rezerwacji towaru.",
+          "noWarehouse": "Brak rekomendowanego magazynu.",
+          "default": "Rezerwacja nie jest dostępna dla tego zamówienia."
+        },
+        "reserveErrors": {
+          "INSUFFICIENT_STOCK": "Brakuje towaru do rezerwacji tego zamówienia.",
+          "ORDER_ALREADY_RESERVED": "Towar jest już zarezerwowany dla tego zamówienia.",
+          "SPLIT_RESERVATION_REQUIRED": "Zamówienie wymaga kilku magazynów. Rezerwacja dzielona będzie dostępna później.",
+          "NO_WAREHOUSE": "Brak magazynu do rezerwacji.",
+          "ORDER_ALREADY_FULFILLED": "Zamówienie jest już zrealizowane albo zamknięte.",
+          "NO_STOCK_RESERVATION_NEEDED": "To zamówienie nie wymaga rezerwacji towaru.",
+          "ORDER_RESERVE_NOT_AVAILABLE": "Rezerwacja nie jest dostępna dla tego zamówienia.",
+          "UNKNOWN": "Nie udało się zarezerwować towaru."
+        },
+        "planStatuses": {
+          "available": "Dostępne",
+          "ready": "Gotowe",
+          "partial": "Częściowy stan",
+          "shortage": "Brak",
+          "reserved": "Zarezerwowane",
+          "fulfilled": "Zrealizowano",
+          "already_fulfilled": "Już zrealizowane",
+          "not_stock_tracked": "Bez ewidencji stanów",
+          "not_required": "Nie wymagane"
+        },
+        "planModes": {
+          "single_warehouse": "Jeden magazyn",
+          "split_suggested": "Sugerowany podział",
+          "shortage": "Brak",
+          "manual": "Ręczna weryfikacja",
+          "unavailable": "Niedostępne",
+          "not_required": "Nie wymagane"
+        },
+        "warnings": {
+          "no_stock": "Brak dostępnego stanu",
+          "partial_stock": "Dostępny tylko częściowy stan",
+          "low_stock_after_fulfillment": "Niski stan po realizacji",
+          "no_warehouse": "Brak aktywnego magazynu",
+          "reservation_exists": "Rezerwacja już istnieje",
+          "already_fulfilled": "Już zrealizowane"
+        }
       },
       "billing": {
         "paymentStatus": "Status płatności",
@@ -948,12 +1082,38 @@
         "payments": "Płatności",
         "creditNotes": "Korekty",
         "paymentMethodUnknown": "Nieznana metoda",
+        "issueInvoiceTitle": "Wystaw fakturę",
+        "invoiceNextAction": "Utwórz fakturę dla tego zamówienia",
+        "invoiceNextActionHint": "Rozliczenie zaczyna się tutaj: wystaw fakturę, a potem zarejestruj płatność.",
+        "issueInvoiceHint": "Utworzy fakturę z aktualnych sum zamówienia i od razu odświeży rozliczenia.",
+        "invoiceReady": "Faktura jest gotowa",
+        "invoiceReadyHint": "Otwórz utworzoną fakturę albo kontynuuj z płatnościami.",
+        "openInvoice": "Otwórz fakturę",
         "noInvoices": "Brak faktur.",
         "noPayments": "Szczegóły płatności nie są jeszcze dostępne w aktualnym DTO zamówienia.",
         "noCreditNotes": "Brak korekt."
       },
       "activity": {
-        "notExposed": "Prawdziwe zdarzenia zamówienia nie są jeszcze dostępne w aktualnym Detail API."
+        "notExposed": "Prawdziwe zdarzenia zamówienia nie są jeszcze dostępne w aktualnym Detail API.",
+        "loading": "Ładowanie aktywności",
+        "errorTitle": "Aktywność jest niedostępna",
+        "errorText": "Nie udało się wczytać aktywności zamówienia.",
+        "emptyTitle": "Brak aktywności",
+        "emptyText": "Aktywność zamówienia pojawi się tutaj po działaniach biznesowych.",
+        "events": {
+          "order_stock_reserved": "Towar zarezerwowany",
+          "order_fulfillment_planned": "Realizacja zaplanowana",
+          "document_pdf_generated": "PDF wygenerowany"
+        },
+        "summaries": {
+          "order_stock_reserved": "Towar został zarezerwowany dla tego zamówienia.",
+          "order_stock_reserved_with_warehouse": "Towar został zarezerwowany w magazynie {{warehouse}}.",
+          "order_fulfillment_planned": "Plan realizacji został przygotowany.",
+          "document_pdf_generated": "Dokument PDF został wygenerowany."
+        },
+        "links": {
+          "warehouse": "Magazyn"
+        }
       },
       "items": {
         "unnamedLine": "Pozycja bez nazwy",
@@ -1012,6 +1172,7 @@
       }
     },
     "paymentMethods": {
+      "unknown": "Nie podano metody płatności",
       "bank_transfer": "Przelew bankowy",
       "card": "Karta",
       "cash": "Gotówka",
@@ -1019,6 +1180,11 @@
       "paypal": "PayPal",
       "stripe": "Stripe",
       "other": "Inne"
+    },
+    "productInventory": {
+      "stock": "Produkt ze stanem magazynowym",
+      "nonStock": "Produkt bez ewidencji stanu",
+      "service": "Usługa"
     },
     "invoiceDetail": {
       "subtitle": "Obszar roszczenia płatności",
@@ -1352,6 +1518,10 @@
         "refund": "Zwróć pozostały kredyt",
         "done": "Kredyt zamknięty"
       },
+      "hints": {
+        "applyUnavailable": "Tego kredytu nie można teraz rozliczyć z fakturą źródłową. Jeśli faktura jest już opłacona, kredyt pozostaje na koncie klienta albo może zostać zwrócony, gdy backend na to pozwoli.",
+        "refundUnavailable": "Zwrot nie jest dostępny dla aktualnego stanu korekty. Pozostały kredyt zostaje na koncie klienta, dopóki nie będzie można go rozliczyć albo zwrócić."
+      },
       "smart": {
         "invoice": "Faktura",
         "order": "Zamówienie",
@@ -1412,11 +1582,27 @@
     "generatedDocuments": {
       "actions": {
         "generatePdf": "Wygeneruj PDF",
-        "generating": "Generowanie..."
+        "generating": "Generowanie...",
+        "openPdf": "Otwórz PDF"
+      },
+      "success": {
+        "openedNewTab": "PDF został utworzony i otwarty w nowej karcie.",
+        "popupBlocked": "PDF został utworzony. Jeśli nie otworzył się automatycznie, otwórz go ręcznie."
       },
       "errors": {
         "generateFailed": "Nie udało się wygenerować PDF"
       }
+    },
+    "documentActions": {
+      "eyebrow": "Dokument",
+      "title": "Dokument dla klienta",
+      "subtitle": "Podgląd, PDF, email i link dla klienta są w jednym miejscu.",
+      "offerTitle": "Dokument oferty",
+      "offerSubtitle": "Przygotuj ofertę dla klienta, a potem wybierz PDF, email albo link.",
+      "invoiceTitle": "Dokument faktury",
+      "invoiceSubtitle": "Wyślij fakturę, wygeneruj PDF albo udostępnij bezpieczny dostęp tylko do odczytu.",
+      "creditNoteTitle": "Dokument korekty",
+      "creditNoteSubtitle": "Przygotuj korektę, a potem wybierz PDF, email albo link."
     },
     "documentDelivery": {
       "title": "Wyślij dokument",
@@ -1430,7 +1616,12 @@
       "body": "Wiadomość",
       "bodyAuto": "Użyj automatycznej wiadomości",
       "send": "Wyślij email",
+      "sendDocument": "Wyślij dokument",
       "sending": "Wysyłanie...",
+      "lifecycleSeparate": "Wysyłka dokumentu nie zmienia statusu cyklu życia.",
+      "mode": {
+        "emailAttachment": "Email z załącznikiem PDF"
+      },
       "invalidEmail": "Wpisz poprawny adres email.",
       "sendFailed": "Nie udało się wysłać dokumentu.",
       "sources": {
@@ -1542,6 +1733,7 @@
     },
     "actionLabels": {
       "send": "Wyślij",
+      "markSent": "Oznacz jako wysłane",
       "accept": "Akceptuj",
       "reject": "Odrzuć",
       "cancel": "Anuluj",
@@ -1626,7 +1818,27 @@
       "offerNotFound": "Nie znaleziono oferty",
       "costingNotInitialized": "Wycena FIFO nie jest zainicjalizowana dla tej firmy. Przejdź do Ustawienia firmy → Magazyn/WMS → Wycena.",
       "invoiceLoadFailed": "Nie udało się wczytać faktury",
-      "invoiceNotFound": "Nie znaleziono faktury"
+      "invoiceNotFound": "Nie znaleziono faktury",
+      "returnRequiresShippedWz": "To zamówienie można zwrócić dopiero po utworzeniu wysłanego dokumentu WZ."
+    },
+    "productPicker": {
+      "searchPlaceholder": "Szukaj po nazwie produktu, SKU lub kodzie kreskowym",
+      "columns": {
+        "product": "Produkt",
+        "sku": "SKU",
+        "kind": "Rodzaj",
+        "available": "Dostępne",
+        "netPrice": "Cena netto",
+        "tax": "VAT",
+        "unit": "Jm."
+      },
+      "unnamedProduct": "Produkt bez nazwy",
+      "trackedInventory": "Produkt z obsługą magazynu",
+      "addItem": "Dodaj pozycję",
+      "inlineHint": "Wyszukaj produkt i dodaj go bez opuszczania listy pozycji.",
+      "loading": "Ładowanie produktów...",
+      "empty": "Brak produktów dla bieżącego wyszukiwania.",
+      "loadFailed": "Nie udało się załadować produktów"
     },
     "print": {
       "loading": "Przygotowywanie wersji do druku",
@@ -3733,6 +3945,22 @@
           "updated": "Kontrahent zaktualizowany"
         }
       },
+      "autosave": {
+        "failedLabel": "Błąd zapisu",
+        "failedTitle": "Błąd zapisu",
+        "retry": "Ponów zapis",
+        "revert": "Cofnij zmiany",
+        "unsavedChanges": "Są niezapisane zmiany.",
+        "errors": {
+          "generic": "Nie udało się zapisać zmian.",
+          "network": "Brak połączenia z serwerem.",
+          "forbidden": "Brak uprawnień do zapisania zmian.",
+          "duplicate": "Taki rekord już istnieje.",
+          "duplicateNip": "Taki NIP już istnieje.",
+          "duplicateContact": "Ten email lub telefon jest już używany.",
+          "validation": "Sprawdź wypełnione pola."
+        }
+      },
       "notesTitle": "Notatki kontrahenta",
       "validation": {
         "nameRequired": "Podaj nazwę kontrahenta",
@@ -3886,6 +4114,110 @@
         "success": {
           "deleted": "Szablon został usunięty.",
           "defaultUpdated": "Domyślny szablon został zaktualizowany."
+        }
+      },
+      "builder": {
+        "eyebrow": "Platforma dokumentów",
+        "title": "Szablony dokumentów",
+        "subtitle": "Centrum zarządzania szablonami firmy: aktywne typy, domyślne wzorce systemowe i planowane polskie dokumenty.",
+        "loading": "Ładowanie szablonów...",
+        "defaultTemplateName": "szablon firmowy",
+        "copySuffix": "— kopia",
+        "templatesCount": "Szablony: {{count}}",
+        "systemDefaultText": "Dostępny jest szablon systemowy. Utwórz edytowalną kopię, jeśli firma potrzebuje własnej wersji.",
+        "systemDefaultEmpty": "Obecnie używany jest szablon systemowy.",
+        "plannedText": "Ten typ jest zaplanowany. Jest widoczny w taksonomii, ale nie można go jeszcze edytować.",
+        "plannedEmpty": "Obsługa tego dokumentu zostanie podłączona później.",
+        "unknownHint": "Ten typ istnieje w danych, ale nie jest jeszcze opisany w taksonomii.",
+        "untitled": "Bez nazwy",
+        "sync": "Synchronizacja...",
+        "sectionNavLabel": "Sekcje szablonów dokumentów",
+        "sections": {
+          "offers": "Oferty",
+          "orders": "Zamówienia",
+          "invoices": "Faktury",
+          "warehouse": "Dokumenty magazynowe",
+          "other": "Inne"
+        },
+        "sectionDescriptions": {
+          "offers": "Szablony ofert handlowych.",
+          "orders": "Szablony zamówień klienta.",
+          "invoices": "Szablony faktur, zaliczek, końcowych i korekt.",
+          "warehouse": "Szablony dokumentów magazynowych i ruchu towaru.",
+          "other": "Inne i planowane typy dokumentów."
+        },
+        "groups": {
+          "sales": "Sprzedaż",
+          "warehouse": "Magazyn",
+          "accounting": "Księgowość i inne"
+        },
+        "groupDescriptions": {
+          "sales": "Dokumenty handlowe dla ofert, zamówień, faktur i korekt.",
+          "warehouse": "Dokumenty wydań i ruchu towaru.",
+          "accounting": "Przyszłe paragony i noty księgowe."
+        },
+        "types": {
+          "oferta": "Oferta",
+          "zamowienie": "Zamówienie",
+          "faktura_vat": "Faktura VAT",
+          "proforma": "Faktura pro forma",
+          "faktura_zaliczkowa": "Faktura zaliczkowa",
+          "faktura_koncowa": "Faktura końcowa",
+          "korekta": "Faktura korygująca",
+          "wz": "WZ / Wydanie zewnętrzne",
+          "pz": "PZ / Przyjęcie zewnętrzne",
+          "mm": "MM / Przesunięcie międzymagazynowe",
+          "rw": "RW / Rozchód wewnętrzny",
+          "pw": "PW / Przychód wewnętrzny",
+          "cc": "Inwentaryzacja",
+          "nota_ksiegowa": "Nota księgowa",
+          "paragon": "Paragon"
+        },
+        "badges": {
+          "systemDefault": "Szablon systemowy",
+          "companyDefault": "Domyślny",
+          "active": "Aktywny",
+          "draft": "Roboczy",
+          "published": "Opublikowany",
+          "archived": "Archiwum",
+          "legal": "Polski dokument",
+          "planned": "Planowany"
+        },
+        "actions": {
+          "create": "Utwórz szablon",
+          "closeCreate": "Ukryj tworzenie",
+          "creating": "Tworzenie...",
+          "preview": "Podgląd",
+          "edit": "Edytuj",
+          "duplicate": "Duplikuj",
+          "duplicating": "Duplikowanie...",
+          "activate": "Ustaw jako główny",
+          "activating": "Aktualizacja...",
+          "createEditableCopy": "Utwórz edytowalną kopię"
+        },
+        "fields": {
+          "documentType": "Typ dokumentu",
+          "templateName": "Nazwa szablonu"
+        },
+        "placeholders": {
+          "templateName": "Na przykład: Oferta — Sunset"
+        },
+        "stats": {
+          "total": "Szablony firmy",
+          "supported": "Aktywne typy",
+          "planned": "Planowane"
+        },
+        "messages": {
+          "defaultUpdated": "Domyślny szablon został zaktualizowany.",
+          "duplicated": "Kopia szablonu została utworzona."
+        },
+        "errors": {
+          "nameRequired": "Podaj nazwę szablonu.",
+          "missingId": "Szablon został utworzony, ale serwer nie zwrócił identyfikatora.",
+          "createFailed": "Nie udało się utworzyć szablonu.",
+          "duplicateFailed": "Nie udało się zduplikować szablonu.",
+          "setDefaultFailed": "Nie udało się zaktualizować domyślnego szablonu.",
+          "loadTitle": "Nie udało się załadować szablonów"
         }
       },
       "options": {

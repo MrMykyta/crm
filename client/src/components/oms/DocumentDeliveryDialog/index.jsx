@@ -75,7 +75,7 @@ export default function DocumentDeliveryDialog({
             {t('common.cancel', 'Cancel')}
           </Modal.Button>
           <Modal.Button type="submit" form="document-delivery-form" variant="primary" disabled={!canSend}>
-            {loading ? t('oms.documentDelivery.sending', 'Sending...') : t('oms.documentDelivery.send', 'Send email')}
+            {loading ? t('oms.documentDelivery.sending', 'Sending...') : t('oms.documentDelivery.sendDocument', 'Send document')}
           </Modal.Button>
         </>
       )}
@@ -85,6 +85,10 @@ export default function DocumentDeliveryDialog({
           <span>{t('oms.documentDelivery.eyebrow', 'Email delivery')}</span>
           <strong>{helper}</strong>
           <small>{t('oms.documentDelivery.attachmentHint', 'A generated PDF will be attached automatically.')}</small>
+          <div className={s.deliveryMeta}>
+            <span>{t('oms.documentDelivery.mode.emailAttachment', 'Email with PDF attachment')}</span>
+            <span>{t('oms.documentDelivery.lifecycleSeparate', 'Document delivery does not change lifecycle status.')}</span>
+          </div>
         </div>
 
         <label className={s.field}>

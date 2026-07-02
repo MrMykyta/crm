@@ -111,6 +111,18 @@ export const ordersApi = crmApi.injectEndpoints({
       ],
     }),
 
+    reserveOrder: build.mutation({
+      query: ({ id, payload = {} }) => ({
+        url: `/orders/${encodeURIComponent(id)}/actions/reserve`,
+        method: 'POST',
+        body: stripCompanyId(payload),
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: 'Order', id },
+        { type: 'OrderList', id: 'LIST' },
+      ],
+    }),
+
     shipOrder: build.mutation({
       query: ({ id, payload = {} }) => ({
         url: `/orders/${encodeURIComponent(id)}/actions/ship`,
@@ -192,6 +204,7 @@ export const {
   useDeleteOrderMutation,
   useSaveOrderItemsMutation,
   useConfirmOrderMutation,
+  useReserveOrderMutation,
   useShipOrderMutation,
   useCompleteOrderMutation,
   useCancelOrderMutation,
